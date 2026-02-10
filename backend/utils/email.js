@@ -1,8 +1,20 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { Resend } = require('resend');
+
+const resendApiKey = process.env.RESEND_API_KEY;
+if (!resendApiKey) {
+  console.warn("⚠️ RESEND_API_KEY is missing. Emails will not be sent.");
+}
+
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 const sendVerificationEmail = async (email, token) => {
+  if (!resend) {
+    console.warn("Skipping email send: RESEND_API_KEY is missing.");
+    return false; 
+  }
+
   try {
     const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify?token=${token}`;
 
