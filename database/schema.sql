@@ -8,6 +8,18 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Add verification columns safely
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_verified') THEN
+        ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'verification_token') THEN
+        ALTER TABLE users ADD COLUMN verification_token VARCHAR(255);
+    END IF;
+END $$;
+
 -- Workspaces table
 CREATE TABLE IF NOT EXISTS workspaces (
   id SERIAL PRIMARY KEY,
