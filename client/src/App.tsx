@@ -10,6 +10,7 @@ import Onboarding from './components/Onboarding';
 import RoleAnalysis from './components/RoleAnalysis';
 import LearningRoadmap from './components/LearningRoadmap';
 import ResourcesHub from './components/ResourcesHub';
+import AILearningAssistant from './components/AILearningAssistant';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/role-analysis" element={<RoleAnalysis />} />
           <Route path="/roadmap" element={<LearningRoadmap />} />
           <Route path="/resources" element={<ResourcesHub />} />
+          <Route path="/ai-assistant" element={<AILearningAssistant />} />
         </Routes>
       </div>
     </BrowserRouter>

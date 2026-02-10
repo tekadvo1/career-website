@@ -356,7 +356,10 @@ export default function LearningRoadmap() {
 
         {/* Bottom Actions */}
         <div className="flex gap-3 mt-4">
-          <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors">
+          <button 
+            onClick={() => navigate('/ai-assistant', { state: { role } })}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
+          >
             <Sparkles className="w-3.5 h-3.5" />
             Get AI Learning Help
           </button>
