@@ -51,46 +51,46 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 md:p-8">
-      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-2xl p-6 md:p-12">
+    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-gray-100 p-4">
+      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10">
         
         {/* Header Section */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold mb-6 shadow-lg">
-            <Sparkles className="w-4 h-4 mr-2" />
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold mb-4">
+            <Sparkles className="w-3 h-3 mr-1.5" />
             AI-Powered Matching
           </div>
-          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
             Let's Find Your Perfect Match
           </h1>
-          <p className="text-gray-600 text-base md:text-lg">
+          <p className="text-gray-600 text-sm">
             Tell us what you're looking for or upload your resume for instant recommendations.
           </p>
         </div>
 
         {/* Main Content - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           
           {/* LEFT SIDE: Role Input */}
           <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
               What role are you looking for?
             </h2>
             
-            <div className="relative mb-4">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+            <div className="relative mb-3">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg text-base bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="e.g. Software Engineer, Product Manager"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               />
             </div>
             
-            <p className="text-sm text-gray-500 mb-8">
+            <p className="text-xs text-gray-500 mb-6">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>
 
@@ -98,13 +98,13 @@ export default function Onboarding() {
             <div className="flex gap-3 mt-auto">
               <button 
                 onClick={handleSubmit}
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-md"
+                className="flex-1 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
               >
                 Find Matches
               </button>
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all"
+                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all"
               >
                 Skip
               </button>
@@ -113,12 +113,12 @@ export default function Onboarding() {
 
           {/* RIGHT SIDE: Upload Resume */}
           <div className="flex flex-col">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <h2 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
               Upload your resume
             </h2>
             
             <div 
-              className={`flex-1 min-h-[280px] border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
+              className={`flex-1 min-h-[200px] border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isDragging 
                   ? 'border-indigo-500 bg-indigo-50' 
                   : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
@@ -138,37 +138,37 @@ export default function Onboarding() {
               
               {file ? (
                 <div className="text-center">
-                  <div className="inline-flex p-4 bg-indigo-100 rounded-full mb-4">
-                    <FileText className="w-12 h-12 text-indigo-600" />
+                  <div className="inline-flex p-3 bg-indigo-100 rounded-full mb-3">
+                    <FileText className="w-8 h-8 text-indigo-600" />
                   </div>
-                  <p className="text-base font-semibold text-gray-900 mb-1">{file.name}</p>
-                  <p className="text-sm text-gray-500 mb-4">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="text-sm font-semibold text-gray-900 mb-1 truncate max-w-full">{file.name}</p>
+                  <p className="text-xs text-gray-500 mb-3">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    className="text-red-600 text-sm font-medium hover:text-red-700 inline-flex items-center"
+                    className="text-red-600 text-xs font-medium hover:text-red-700 inline-flex items-center"
                   >
-                    <X className="w-4 h-4 mr-1" /> Remove File
+                    <X className="w-3 h-3 mr-1" /> Remove File
                   </button>
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
-                    <Upload className="w-10 h-10 text-gray-400" />
+                  <div className="inline-flex p-3 bg-gray-100 rounded-full mb-3">
+                    <Upload className="w-7 h-7 text-gray-400" />
                   </div>
-                  <p className="text-lg font-bold text-gray-900 mb-2">
+                  <p className="text-sm font-bold text-gray-900 mb-1">
                     Drop resume here
                   </p>
-                  <p className="text-sm text-gray-500 mb-6">
+                  <p className="text-xs text-gray-500 mb-4">
                     Support for PDF, DOC, DOCX
                   </p>
-                  <button className="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
+                  <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                     Browse Files
                   </button>
                 </div>
               )}
             </div>
             
-            <p className="text-xs text-gray-400 text-center mt-3">
+            <p className="text-xs text-gray-400 text-center mt-2">
               Max file size: 5MB
             </p>
           </div>
