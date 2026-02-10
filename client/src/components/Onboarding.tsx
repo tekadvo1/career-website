@@ -84,14 +84,19 @@ export default function Onboarding() {
         setIsAnalyzing(false);
       }
     } else {
-      // Navigate using just the role if no file
-      navigate('/role-analysis', {
-        state: {
-          role: role || 'General Career Path',
-          hasResume: false,
-          resumeFileName: null
-        }
-      });
+      // Show loading state briefly for UX consistency
+      setIsAnalyzing(true);
+      setTimeout(() => {
+        // Navigate using just the role if no file
+        navigate('/role-analysis', {
+          state: {
+            role: role || 'General Career Path',
+            hasResume: false,
+            resumeFileName: null
+          }
+        });
+        setIsAnalyzing(false);
+      }, 800);
     }
   };
 
@@ -197,7 +202,7 @@ export default function Onboarding() {
                     Analyzing...
                   </>
                 ) : (
-                  'Find Matches'
+                  file ? 'Analyze Resume & Find Matches' : 'Find Matches for Role'
                 )}
               </button>
               <button 
