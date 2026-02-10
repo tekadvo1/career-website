@@ -13,10 +13,7 @@ app.use(express.json());
 const pool = require('./config/db');
 
 // Initialize database schema
-const fs = require('fs');
-const path = require('path');
-
-const initDb = async (retries = 5) => {
+const initDb = async (retries = 10) => {
   while (retries > 0) {
     try {
       const client = await pool.connect();
