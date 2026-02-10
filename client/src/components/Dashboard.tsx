@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { 
-  LogOut, 
+  User,
   Search, 
   TrendingUp,
   Flame,
@@ -298,10 +298,7 @@ export default function Dashboard() {
     return matchesSearch && matchesDifficulty;
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/signin');
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -362,13 +359,13 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              {/* Profile/Logout */}
+              {/* Profile Icon */}
               <button 
-                onClick={handleLogout}
-                className="flex items-center gap-2 px-3 py-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                onClick={() => navigate('/profile')}
+                className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white hover:shadow-lg transition-shadow"
+                title="View Profile"
               >
-                <LogOut className="w-4 h-4" />
-                <span className="font-medium text-sm">Logout</span>
+                <User className="w-5 h-5" />
               </button>
             </div>
           </div>
