@@ -312,11 +312,6 @@ export default function RoleAnalysis() {
   // Get role data or use default
   const roleData = roleDatabase[role] || getDefaultRoleData(role);
 
-  // Enhanced analysis message when resume is uploaded
-  const analysisMessage = hasResume 
-    ? "AI analyzed your resume and role to provide personalized recommendations"
-    : "Analysis based on your selected role";
-
   const getPriorityColor = (priority: string) => {
     if (priority === "High Priority") return "bg-red-100 text-red-700 border-red-200";
     if (priority === "Medium Priority") return "bg-gray-800 text-white";
@@ -579,7 +574,7 @@ export default function RoleAnalysis() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between gap-4 mt-6">
+        <div className="flex gap-4 mt-6">
           <button
             onClick={() => navigate('/dashboard')}
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold flex items-center gap-2 transition-colors"
