@@ -62,7 +62,9 @@ initDb();
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const resumeRoutes = require('./routes/resumeRoutes');
 app.use('/api/auth', authRoutes);
+app.use('/api/resume', resumeRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {

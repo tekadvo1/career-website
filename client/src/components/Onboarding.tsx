@@ -42,20 +42,55 @@ export default function Onboarding() {
     }
   };
 
-  const handleSubmit = () => {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleSubmit = async () => {
     if (!role && !file) {
       alert('Please enter a role or upload a resume');
       return;
     }
 
-    // Navigate to role analysis page with data
-    navigate('/role-analysis', {
-      state: {
-        role: role || 'General Career Path',
-        hasResume: !!file,
-        resumeFileName: file?.name || null
+    if (file) {
+      setIsAnalyzing(true);
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      try {
+        const response = await fetch('/api/resume/analyze', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to analyze resume');
+        }
+
+        const data = await response.json();
+        
+        navigate('/role-analysis', {
+          state: {
+            role: data.analysis.suggestedRole || role || 'General Career Path',
+            hasResume: true,
+            resumeFileName: file.name,
+            analysis: data.analysis
+          }
+        });
+      } catch (error) {
+        console.error('Error analyzing resume:', error);
+        alert('Failed to analyze resume. Please try again or skip using role input only.');
+      } finally {
+        setIsAnalyzing(false);
       }
-    });
+    } else {
+      // Navigate using just the role if no file
+      navigate('/role-analysis', {
+        state: {
+          role: role || 'General Career Path',
+          hasResume: false,
+          resumeFileName: null
+        }
+      });
+    }
   };
 
   return (
@@ -106,9 +141,20 @@ export default function Onboarding() {
             <div className="flex gap-3 mt-auto">
               <button 
                 onClick={handleSubmit}
-                className="flex-1 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all"
+                disabled={isAnalyzing}
+                className={`flex-1 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
-                Find Matches
+                {isAnalyzing ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyzing...
+                  </>
+                ) : (
+                  'Find Matches'
+                )}
               </button>
               <button 
                 onClick={() => navigate('/dashboard')}

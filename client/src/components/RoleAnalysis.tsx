@@ -306,11 +306,33 @@ export default function RoleAnalysis() {
   const role = location.state?.role || "Software Engineer";
   const hasResume = location.state?.hasResume || false;
   const resumeFileName = location.state?.resumeFileName || null;
+  const aiAnalysis = location.state?.analysis;
   
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources'>('skills');
 
-  // Get role data or use default
-  const roleData = roleDatabase[role] || getDefaultRoleData(role);
+  // Helper to convert AI analysis to Role Data structure
+  const getAiRoleData = (analysis: any, roleName: string) => {
+    const defaultData = getDefaultRoleData(roleName);
+    
+    return {
+      ...defaultData,
+      title: analysis.suggestedRole || roleName,
+      description: `AI-analyzed career path based on your experience. Level: ${analysis.experienceLevel || 'Intermediate'}.`,
+      skills: analysis.skills?.map((skill: string) => ({
+        name: skill,
+        level: analysis.experienceLevel || "Intermediate",
+        priority: "High Priority",
+        timeToLearn: "Varies"
+      })) || defaultData.skills,
+      // Keep other fields from default or expand if AI provides them
+      resources: defaultData.resources
+    };
+  };
+
+  // Get role data: prioritize AI analysis, then static DB, then default
+  const roleData = aiAnalysis 
+    ? getAiRoleData(aiAnalysis, role)
+    : (roleDatabase[role] || getDefaultRoleData(role));
 
   const getPriorityColor = (priority: string) => {
     if (priority === "High Priority") return "bg-red-100 text-red-700 border-red-200";
