@@ -51,73 +51,77 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex items-center justify-center p-6">
-      <div className="max-w-6xl w-full bg-white rounded-3xl shadow-xl p-8 md:p-12 flex flex-col h-full max-h-[600px]">
+    <div className="min-h-screen w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 md:p-8">
+      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-2xl p-6 md:p-12">
         
         {/* Header Section */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-medium mb-4 shadow-md shadow-indigo-200">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-semibold mb-6 shadow-lg">
             <Sparkles className="w-4 h-4 mr-2" />
             AI-Powered Matching
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-3">
             Let's Find Your Perfect Match
           </h1>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-600 text-base md:text-lg">
             Tell us what you're looking for or upload your resume for instant recommendations.
           </p>
         </div>
 
-        {/* Main Content Split */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
+        {/* Main Content - Side by Side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
           
-          {/* LEFT: Role Input */}
-          <div className="flex flex-col justify-center h-full">
-            <label className="block text-lg font-bold text-gray-800 mb-4">
+          {/* LEFT SIDE: Role Input */}
+          <div className="flex flex-col">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
               What role are you looking for?
-            </label>
-            <div className="relative">
+            </h2>
+            
+            <div className="relative mb-4">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-6 w-6 text-gray-400" />
+                <Search className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl text-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all shadow-sm"
+                className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-lg text-base bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="e.g. Software Engineer, Product Manager"
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
               />
             </div>
-            <p className="mt-3 text-sm text-gray-400">
+            
+            <p className="text-sm text-gray-500 mb-8">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>
 
-            <div className="mt-8 hidden md:block">
-               <div className="flex gap-4">
-                <button 
-                  onClick={handleSubmit}
-                  className="px-8 py-3 bg-indigo-600 border border-transparent rounded-xl shadow-sm text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all transform hover:scale-105"
-                >
-                  Find Matches
-                </button>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="px-8 py-3 bg-white border border-gray-300 rounded-xl shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  Skip
-                </button>
-               </div>
+            {/* Buttons */}
+            <div className="flex gap-3 mt-auto">
+              <button 
+                onClick={handleSubmit}
+                className="flex-1 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all shadow-md"
+              >
+                Find Matches
+              </button>
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className="px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all"
+              >
+                Skip
+              </button>
             </div>
           </div>
 
-          {/* RIGHT: Upload Resume */}
-          <div className="h-full flex flex-col">
-            <label className="block text-lg font-bold text-gray-800 mb-4">
+          {/* RIGHT SIDE: Upload Resume */}
+          <div className="flex flex-col">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
               Upload your resume
-            </label>
+            </h2>
+            
             <div 
-              className={`flex-1 border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
-                isDragging ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+              className={`flex-1 min-h-[280px] border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
+                isDragging 
+                  ? 'border-indigo-500 bg-indigo-50' 
+                  : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -133,56 +137,41 @@ export default function Onboarding() {
               />
               
               {file ? (
-                <div className="flex flex-col items-center text-center p-6 bg-indigo-50 rounded-xl border border-indigo-100 w-full">
-                  <div className="p-4 bg-white rounded-full shadow-sm mb-4">
-                    <FileText className="w-10 h-10 text-indigo-600" />
+                <div className="text-center">
+                  <div className="inline-flex p-4 bg-indigo-100 rounded-full mb-4">
+                    <FileText className="w-12 h-12 text-indigo-600" />
                   </div>
-                  <p className="text-lg font-semibold text-gray-900 truncate max-w-full mb-1">{file.name}</p>
+                  <p className="text-base font-semibold text-gray-900 mb-1">{file.name}</p>
                   <p className="text-sm text-gray-500 mb-4">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    className="text-red-500 text-sm font-medium hover:text-red-700 flex items-center"
+                    className="text-red-600 text-sm font-medium hover:text-red-700 inline-flex items-center"
                   >
                     <X className="w-4 h-4 mr-1" /> Remove File
                   </button>
                 </div>
               ) : (
-                <>
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-6 text-gray-400 group-hover:text-indigo-500 transition-colors">
-                    <Upload className="w-8 h-8" />
+                <div className="text-center">
+                  <div className="inline-flex p-4 bg-gray-100 rounded-full mb-4">
+                    <Upload className="w-10 h-10 text-gray-400" />
                   </div>
-                  <p className="text-gray-900 font-bold text-lg mb-2">
+                  <p className="text-lg font-bold text-gray-900 mb-2">
                     Drop resume here
                   </p>
-                  <p className="text-gray-500 text-center mb-6">
+                  <p className="text-sm text-gray-500 mb-6">
                     Support for PDF, DOC, DOCX
                   </p>
-                  <button className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 transition-colors">
+                  <button className="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-md">
                     Browse Files
                   </button>
-                </>
+                </div>
               )}
             </div>
-             <p className="mt-3 text-center text-xs text-gray-400">
-               Max file size: 5MB
-             </p>
+            
+            <p className="text-xs text-gray-400 text-center mt-3">
+              Max file size: 5MB
+            </p>
           </div>
-        </div>
-
-        {/* Mobile Buttons (Visible only on small screens) */}
-        <div className="mt-8 md:hidden flex flex-col gap-3">
-            <button 
-              onClick={handleSubmit}
-              className="w-full py-3 bg-indigo-600 border border-transparent rounded-xl shadow-sm text-base font-medium text-white hover:bg-indigo-700"
-            >
-              Find Matches
-            </button>
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="w-full py-3 bg-white border border-gray-300 rounded-xl shadow-sm text-base font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Skip for now
-            </button>
         </div>
 
       </div>
