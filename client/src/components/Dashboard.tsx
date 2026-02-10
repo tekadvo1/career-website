@@ -10,8 +10,7 @@ import {
   Lightbulb,
   Code,
   Wrench,
-  BookOpen,
-  User
+  BookOpen
 } from 'lucide-react';
 
 interface Project {
@@ -34,7 +33,7 @@ interface Project {
 }
 
 // Mock AI-generated projects based on role
-const generateProjects = (role: string | undefined): Project[] => {
+const generateProjects = (): Project[] => {
   const allProjects: Project[] = [
     {
       id: "1",
@@ -280,7 +279,7 @@ export default function Dashboard() {
   useEffect(() => {
     // Simulate AI processing
     const timer = setTimeout(() => {
-      const generatedProjects = generateProjects(selectedRole);
+      const generatedProjects = generateProjects();
       setProjects(generatedProjects);
       setIsLoading(false);
     }, 2000);
