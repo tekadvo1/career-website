@@ -14,7 +14,7 @@
     "client": "cd client && npm run dev"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "concurrently": "^8.0.0"
