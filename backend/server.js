@@ -39,7 +39,9 @@ const initDb = async (retries = 10) => {
 
 initDb();
 
-
+// Routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', async (req, res) => {
   try {
