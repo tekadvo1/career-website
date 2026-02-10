@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -73,13 +73,13 @@ export default function SignUp() {
 
           {/* Messages */}
           {error && (
-            <div className="mb-3 bg-red-50 text-red-600 p-2 rounded-lg text-xs flex items-center">
-              <span className="mr-2">⚠️</span> {error}
+            <div className="mb-3 bg-red-50 text-red-600 p-2 rounded-lg text-xs flex items-center border border-red-100">
+              <AlertCircle size={16} className="mr-2 flex-shrink-0" /> {error}
             </div>
           )}
           {success && (
-            <div className="mb-3 bg-green-50 text-green-600 p-2 rounded-lg text-xs flex items-center">
-              <span className="mr-2">✅</span> User registered!
+            <div className="mb-3 bg-green-50 text-green-600 p-2 rounded-lg text-xs flex items-center border border-green-100">
+              <CheckCircle size={16} className="mr-2 flex-shrink-0" /> User registered!
             </div>
           )}
 
