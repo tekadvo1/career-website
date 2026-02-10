@@ -12,6 +12,8 @@ import {
   GraduationCap,
   Code,
   Sparkles,
+  X,
+  ClipboardList
 } from "lucide-react";
 
 interface Resource {
@@ -277,6 +279,53 @@ export default function ResourcesHub() {
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
   const [showFreeOnly, setShowFreeOnly] = useState(false);
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiResources, setAiResources] = useState<Resource[]>([]);
+  const [showAiResults, setShowAiResults] = useState(false);
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+  const [courseData, setCourseData] = useState<any>(null);
+  const [showCourseModal, setShowCourseModal] = useState(false);
+
+  const handleAiSearch = async () => {
+    if (!searchQuery) return;
+    setIsAiSearching(true);
+    setShowAiResults(true);
+    try {
+      const response = await fetch('/api/resources/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery, role: userRole })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAiResources(data.resources);
+      }
+    } catch (error) {
+      console.error("AI Search failed", error);
+    } finally {
+      setIsAiSearching(false);
+    }
+  };
+
+  const handleCreateCourse = async () => {
+    setIsCreatingCourse(true);
+    try {
+      const response = await fetch('/api/resources/create-course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: searchQuery || userRole, level: selectedLevel === 'all' ? 'Intermediate' : selectedLevel })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCourseData(data.course);
+        setShowCourseModal(true);
+      }
+    } catch (error) {
+      console.error("Course creation failed", error);
+    } finally {
+      setIsCreatingCourse(false);
+    }
+  };
 
   // Get user's role from location state
   const userRole = location.state?.role || "Software Engineer";
@@ -322,11 +371,13 @@ export default function ResourcesHub() {
     .filter(resource => resource.relevanceScore > 0)
     .sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  const filteredResources = personalizedResources.filter((resource) => {
-    const matchesSearch =
+  const filteredResources = (showAiResults ? aiResources : personalizedResources).filter((resource) => {
+    // If showing AI results, skip search match as AI already did it, but keep filters
+    const matchesSearch = showAiResults ? true : (
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.topics.some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase()));
+      resource.topics.some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     const matchesLevel = selectedLevel === "all" || resource.level === selectedLevel;
     const matchesType = selectedType === "all" || resource.type === selectedType;
@@ -370,16 +421,36 @@ export default function ResourcesHub() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-slate-900 mb-1">Learning Resources Hub</h1>
-              <p className="text-sm text-slate-600">
-                Personalized learning materials for <span className="font-semibold text-indigo-600">{userRole}</span>
-              </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-4">
+              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 mb-1">Learning Resources Hub</h1>
+                <p className="text-sm text-slate-600">
+                  Personalized learning materials for <span className="font-semibold text-indigo-600">{userRole}</span>
+                </p>
+              </div>
             </div>
+            
+            <button 
+              onClick={handleCreateCourse}
+              disabled={isCreatingCourse}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
+            >
+              {isCreatingCourse ? (
+                <>
+                  <Sparkles className="w-4 h-4 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Create Custom Course
+                </>
+              )}
+            </button>
           </div>
 
           {/* Personalization Info Banner */}
@@ -410,15 +481,41 @@ export default function ResourcesHub() {
           </div>
 
           {/* Search */}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search resources, topics, or technologies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
-            />
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search resources, topics, or technologies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
+              />
+            </div>
+            <button
+              onClick={handleAiSearch}
+              disabled={isAiSearching || !searchQuery}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              {isAiSearching ? (
+                 <Sparkles className="w-4 h-4 animate-spin" />
+              ) : (
+                 <Sparkles className="w-4 h-4" />
+              )}
+              AI Search
+            </button>
+            {showAiResults && (
+              <button
+                onClick={() => {
+                  setShowAiResults(false);
+                  setSearchQuery("");
+                }}
+                className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
 
           {/* Filters */}
@@ -590,6 +687,94 @@ export default function ResourcesHub() {
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">No resources found</h3>
             <p className="text-slate-600">Try adjusting your filters or search query</p>
+          </div>
+        )}
+        {/* Course Creation Modal */}
+        {showCourseModal && courseData && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+                      AI Generated Course
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold">
+                      {courseData.totalDuration}
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900">{courseData.title}</h2>
+                </div>
+                <button 
+                  onClick={() => setShowCourseModal(false)}
+                  className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto custom-scrollbar">
+                <p className="text-slate-600 mb-6">{courseData.description}</p>
+                
+                <div className="space-y-6">
+                  {courseData.modules?.map((module: any, idx: number) => (
+                    <div key={idx} className="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-sm font-bold text-indigo-600 shadow-sm">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{module.title}</h3>
+                          <p className="text-sm text-slate-500">{module.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="pl-11 space-y-3">
+                        {/* Topics */}
+                        {module.topics && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {module.topics.map((t: string, i: number) => (
+                              <span key={i} className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs text-slate-600">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Resources */}
+                        {module.resources && (
+                          <div className="bg-white rounded-lg border border-slate-200 p-3 mt-2">
+                             <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                               <ClipboardList className="w-3.5 h-3.5" />
+                               Recommended Materials
+                             </h4>
+                             <ul className="space-y-2">
+                               {module.resources.map((res: any, i: number) => (
+                                 <li key={i} className="text-sm">
+                                   <a href={res.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline flex items-center gap-1.5">
+                                     <ExternalLink className="w-3 h-3" />
+                                     {res.title} <span className="text-slate-400 text-xs">({res.type})</span>
+                                   </a>
+                                 </li>
+                               ))}
+                             </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <button
+                  onClick={() => setShowCourseModal(false)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Close & Save Progress
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -64,10 +64,12 @@ initDb();
 const authRoutes = require('./routes/authRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
 const roleRoutes = require('./routes/roleRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
 app.use('/api/role', roleRoutes);
+app.use('/api/resources', resourceRoutes);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {
