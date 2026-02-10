@@ -16,17 +16,21 @@ app.use(helmet());
 
 // Rate Limiting
 app.set('trust proxy', 1); // Trust first proxy (necessary for Railway/Heroku/etc)
-
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // limit each IP to 1000 requests per windowMs
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 15 * 60 * 1000, 
+  max: 1000, 
+  standardHeaders: true, 
+  legacyHeaders: false, 
 });
 app.use(limiter);
 
 app.use(cors());
 app.use(express.json());
+
+// Passport middleware
+require('./config/passport'); // Load passport config
+const passport = require('passport');
+app.use(passport.initialize());
 
 // Database connection
 const pool = require('./config/db');

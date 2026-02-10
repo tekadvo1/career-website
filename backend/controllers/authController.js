@@ -127,8 +127,21 @@ const loginUser = async (req, res) => {
   }
 };
 
+const googleCallback = (req, res) => {
+  const token = jwt.sign(
+    { id: req.user.id },
+    process.env.JWT_SECRET || 'secret',
+    { expiresIn: '30d' }
+  );
+
+  // Redirect to frontend with token
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  res.redirect(`${frontendUrl}/google-callback?token=${token}`);
+};
+
 module.exports = {
   registerUser,
   verifyEmail,
-  loginUser
+  loginUser,
+  googleCallback
 };

@@ -180,6 +180,7 @@ export default function SignUp() {
 
           <button
             type="button"
+            onClick={() => window.location.href = '/api/auth/google'}
             className="w-full max-w-xs flex justify-center items-center py-2.5 px-4 bg-white border border-gray-200 rounded-xl text-slate-700 font-semibold hover:bg-white hover:border-gray-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-200 transition-all duration-200 group text-sm"
           >
             <svg className="w-5 h-5 mr-2 transition-transform group-hover:scale-110" width="20" height="20" viewBox="0 0 24 24">

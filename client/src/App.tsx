@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import VerifyEmail from './components/VerifyEmail';
+import GoogleCallback from './components/GoogleCallback';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
           <Route path="/" element={<SignUp />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/verify" element={<VerifyEmail />} />
+          <Route path="/google-callback" element={<GoogleCallback />} />
         </Routes>
       </div>
     </BrowserRouter>
