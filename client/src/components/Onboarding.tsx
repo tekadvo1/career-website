@@ -84,10 +84,35 @@ export default function Onboarding() {
         setIsAnalyzing(false);
       }
     } else {
-      // Show loading state briefly for UX consistency
+      // Show loading state and fetch AI analysis for the role
       setIsAnalyzing(true);
-      setTimeout(() => {
-        // Navigate using just the role if no file
+      
+      try {
+        const response = await fetch('/api/role/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ role }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch role analysis');
+        }
+
+        const data = await response.json();
+        
+        navigate('/role-analysis', {
+          state: {
+            role: role || 'General Career Path',
+            hasResume: false,
+            resumeFileName: null,
+            analysis: data.data // Pass the full AI analysis
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching role analysis:', error);
+        // Fallback to basic navigation if API fails
         navigate('/role-analysis', {
           state: {
             role: role || 'General Career Path',
@@ -95,8 +120,9 @@ export default function Onboarding() {
             resumeFileName: null
           }
         });
+      } finally {
         setIsAnalyzing(false);
-      }, 800);
+      }
     }
   };
 

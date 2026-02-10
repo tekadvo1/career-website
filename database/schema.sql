@@ -50,3 +50,12 @@ CREATE TABLE IF NOT EXISTS projects (
   status VARCHAR(50) DEFAULT 'planned', -- planned, in-progress, completed
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Role Analyses table (for storing AI-generated career paths)
+CREATE TABLE IF NOT EXISTS role_analyses (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  role_title VARCHAR(255) NOT NULL,
+  analysis_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

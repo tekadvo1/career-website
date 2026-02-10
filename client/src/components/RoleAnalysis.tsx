@@ -314,6 +314,22 @@ export default function RoleAnalysis() {
   const getAiRoleData = (analysis: any, roleName: string) => {
     const defaultData = getDefaultRoleData(roleName);
     
+    // Check if this is a full role analysis (from role input) or resume analysis (from file)
+    const isFullAnalysis = !!analysis.salaryRange;
+
+    if (isFullAnalysis) {
+      return {
+        ...defaultData,
+        ...analysis, // Directly use the structured AI data
+        title: analysis.title || roleName,
+        // Ensure arrays exist
+        skills: analysis.skills || defaultData.skills,
+        tools: analysis.tools || defaultData.tools,
+        resources: analysis.resources || defaultData.resources,
+      };
+    }
+
+    // Fallback for old resume analysis format
     return {
       ...defaultData,
       title: analysis.suggestedRole || roleName,
@@ -324,8 +340,6 @@ export default function RoleAnalysis() {
         priority: "High Priority",
         timeToLearn: "Varies"
       })) || defaultData.skills,
-      // Keep other fields from default or expand if AI provides them
-      resources: defaultData.resources
     };
   };
 

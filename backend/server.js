@@ -63,8 +63,32 @@ initDb();
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/role', roleRoutes);
+
+// Database schema update for caching (allow NULL user_id)
+const updateSchema = async () => {
+  try {
+    const client = await pool.connect();
+    // Check if role_analyses exists, if so, modify user_id to be nullable
+    await client.query(`
+      DO $$
+      BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'role_analyses') THEN
+          ALTER TABLE role_analyses ALTER COLUMN user_id DROP NOT NULL;
+        END IF;
+      END $$;
+    `);
+    client.release();
+    console.log('Schema updated for role caching');
+  } catch (err) {
+    console.error('Schema update error:', err.message);
+  }
+};
+updateSchema();
 
 app.get('/api/health', async (req, res) => {
   try {
