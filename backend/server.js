@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg');
+
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -10,10 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+const pool = require('./config/db');
 
 // Initialize database schema
 const fs = require('fs');
