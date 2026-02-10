@@ -40,7 +40,7 @@ export default function SignIn() {
       // Handle successful login
       localStorage.setItem('token', data.token);
       console.log('User logged in:', data);
-      navigate('/dashboard');
+      navigate('/onboarding');
     } catch (err: any) {
       setError(err.message);
     } finally {
