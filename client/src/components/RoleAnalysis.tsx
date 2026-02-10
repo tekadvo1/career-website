@@ -576,7 +576,7 @@ export default function RoleAnalysis() {
         {/* Action Buttons */}
         <div className="flex gap-3 mt-4">
           <button
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/roadmap', { state: { role } })}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
           >
             Continue to Personalized Roadmap
