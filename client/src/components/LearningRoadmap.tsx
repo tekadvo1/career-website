@@ -360,7 +360,10 @@ export default function LearningRoadmap() {
             <Sparkles className="w-3.5 h-3.5" />
             Get AI Learning Help
           </button>
-          <button className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors">
+          <button 
+            onClick={() => navigate('/resources', { state: { role } })}
+            className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
+          >
             <BookOpen className="w-3.5 h-3.5" />
             Browse Resources
           </button>

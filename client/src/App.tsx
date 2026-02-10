@@ -9,6 +9,7 @@ import ResetPassword from './components/ResetPassword';
 import Onboarding from './components/Onboarding';
 import RoleAnalysis from './components/RoleAnalysis';
 import LearningRoadmap from './components/LearningRoadmap';
+import ResourcesHub from './components/ResourcesHub';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/role-analysis" element={<RoleAnalysis />} />
           <Route path="/roadmap" element={<LearningRoadmap />} />
+          <Route path="/resources" element={<ResourcesHub />} />
         </Routes>
       </div>
     </BrowserRouter>
