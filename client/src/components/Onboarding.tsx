@@ -7,6 +7,8 @@ export default function Onboarding() {
   const [role, setRole] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -129,8 +131,50 @@ export default function Onboarding() {
                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="e.g. Software Engineer, Product Manager"
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setRole(value);
+                  if (value.length > 1) {
+                    const matches = [
+                      "Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer",
+                      "Product Manager", "Product Designer", "UI/UX Designer",
+                      "Data Scientist", "Data Analyst", "Machine Learning Engineer",
+                      "DevOps Engineer", "Cloud Architect", "Cybersecurity Analyst",
+                      "Mobile App Developer", "Game Developer", "Blockchain Developer",
+                      "QA Engineer", "Technical Writer", "Systems Administrator"
+                    ].filter(r => r.toLowerCase().includes(value.toLowerCase()));
+                    setSuggestions(matches);
+                    setShowSuggestions(true);
+                  } else {
+                    setShowSuggestions(false);
+                  }
+                }}
+                onFocus={() => role.length > 1 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               />
+              
+              {/* AI Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-auto">
+                  <div className="px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 border-b border-indigo-100 flex items-center">
+                    <Sparkles className="w-3 h-3 mr-1.5" />
+                    AI Suggested Roles
+                  </div>
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                      onClick={() => {
+                        setRole(suggestion);
+                        setShowSuggestions(false);
+                      }}
+                    >
+                      {suggestion}
+                      <span className="opacity-0 group-hover:opacity-100 text-indigo-400 text-xs">Select</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             
             <p className="text-xs text-gray-500 mb-6">
