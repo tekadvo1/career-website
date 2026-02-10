@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -84,7 +84,7 @@ export default function SignIn() {
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label htmlFor="password" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Password</label>
-                <a href="/forgot-password" className="text-[10px] font-bold text-indigo-600 hover:text-indigo-500">Forgot?</a>
+                <Link to="/forgot-password" className="text-[10px] font-bold text-indigo-600 hover:text-indigo-500">Forgot?</Link>
               </div>
               <div className="relative">
                 <input

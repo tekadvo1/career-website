@@ -43,4 +43,39 @@ const sendVerificationEmail = async (email, token) => {
   }
 };
 
-module.exports = { sendVerificationEmail };
+const sendPasswordResetEmail = async (email, token) => {
+  if (!resend) {
+    console.warn("Skipping email send: RESEND_API_KEY is missing.");
+    return false; 
+  }
+
+  try {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'FindStreak <noreply@findstreak.com>', 
+      to: [email],
+      subject: 'Reset your password for FindStreak',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #4F46E5;">Reset Your Password</h2>
+          <p>You requested a password reset. Click the button below to set a new password:</p>
+          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+          <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request this, you can safely ignore this email. This link expires in 1 hour.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Error sending email:', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Email sending failed:', err);
+    return false;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };
