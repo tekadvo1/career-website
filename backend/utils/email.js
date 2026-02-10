@@ -7,7 +7,7 @@ const sendVerificationEmail = async (email, token) => {
     const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify?token=${token}`;
 
     const { data, error } = await resend.emails.send({
-      from: 'FindStreak <onboarding@resend.dev>', // Default Resend domain for testing, user should update later
+      from: process.env.EMAIL_FROM || 'FindStreak <onboarding@resend.dev>', // Use verified domain in production
       to: [email],
       subject: 'Verify your email for FindStreak',
       html: `
