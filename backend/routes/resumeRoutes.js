@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+let pdfParse = require('pdf-parse');
+// Handle potential ESM/CJS interop issues
+if (typeof pdfParse !== 'function' && pdfParse.default) {
+  pdfParse = pdfParse.default;
+}
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
