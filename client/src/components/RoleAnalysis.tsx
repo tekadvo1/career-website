@@ -329,256 +329,261 @@ export default function RoleAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold">
-              <Award className="w-3 h-3 mr-1.5" />
+      <div className="bg-white border-b flex-shrink-0">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="inline-flex items-center px-2 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold">
+              <Award className="w-3 h-3 mr-1" />
               AI-Powered Analysis
             </div>
-            <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-              <Download className="w-4 h-4" />
+            <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+              <Download className="w-3 h-3" />
               Download PDF
             </button>
           </div>
 
           {/* Resume Analysis Banner */}
           {hasResume && resumeFileName && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded-lg">
               <div className="flex items-center gap-2 text-green-700">
-                <Award className="w-4 h-4" />
+                <Award className="w-3 h-3" />
                 <div>
-                  <p className="text-xs font-semibold">Resume Analyzed</p>
-                  <p className="text-xs text-green-600">File: {resumeFileName}</p>
+                  <p className="text-xs font-semibold">Resume Analyzed: {resumeFileName}</p>
                 </div>
               </div>
             </div>
           )}
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{roleData.title}</h1>
-          <p className="text-gray-600 text-sm mb-2">{roleData.description}</p>
-          <p className="text-xs text-indigo-600 font-medium mb-4">
+          <h1 className="text-xl font-bold text-gray-900 mb-1">{roleData.title}</h1>
+          <p className="text-gray-600 text-xs mb-1">{roleData.description}</p>
+          <p className="text-xs text-indigo-600 font-medium mb-3">
             {analysisMessage}
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-green-700 mb-1">
-                <TrendingUp className="w-4 h-4" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+              <div className="flex items-center gap-1 text-green-700 mb-0.5">
+                <TrendingUp className="w-3 h-3" />
                 <span className="text-xs font-semibold">Job Growth</span>
               </div>
-              <p className="text-sm font-bold text-green-900">{roleData.jobGrowth}</p>
+              <p className="text-xs font-bold text-green-900">{roleData.jobGrowth}</p>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="flex items-center gap-2 text-blue-700 mb-1">
-                <DollarSign className="w-4 h-4" />
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+              <div className="flex items-center gap-1 text-blue-700 mb-0.5">
+                <DollarSign className="w-3 h-3" />
                 <span className="text-xs font-semibold">Salary Range</span>
               </div>
-              <p className="text-sm font-bold text-blue-900">{roleData.salaryRange}</p>
+              <p className="text-xs font-bold text-blue-900">{roleData.salaryRange}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b flex-shrink-0">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="flex gap-6">
+          <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('skills')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs transition-colors ${
                 activeTab === 'skills'
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Code className="w-4 h-4 inline mr-1" />
+              <Code className="w-3 h-3 inline mr-1" />
               Skills
             </button>
             <button
               onClick={() => setActiveTab('tools')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs transition-colors ${
                 activeTab === 'tools'
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Wrench className="w-4 h-4 inline mr-1" />
+              <Wrench className="w-3 h-3 inline mr-1" />
               Tools
             </button>
             <button
               onClick={() => setActiveTab('languages')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs transition-colors ${
                 activeTab === 'languages'
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Code className="w-4 h-4 inline mr-1" />
+              <Code className="w-3 h-3 inline mr-1" />
               Languages
             </button>
             <button
               onClick={() => setActiveTab('resources')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-2 px-1 border-b-2 font-medium text-xs transition-colors ${
                 activeTab === 'resources'
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <BookOpen className="w-4 h-4 inline mr-1" />
+              <BookOpen className="w-3 h-3 inline mr-1" />
               Resources
             </button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        {activeTab === 'skills' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Required Skills</h2>
-            <div className="space-y-3">
-              {roleData.skills.map((skill: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Award className="w-4 h-4 text-indigo-600" />
-                      <h3 className="font-semibold text-gray-900 text-sm">{skill.name}</h3>
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          {activeTab === 'skills' && (
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">Required Skills</h2>
+              <div className="space-y-2">
+                {roleData.skills.map((skill: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1 mb-0.5">
+                        <Award className="w-3 h-3 text-indigo-600" />
+                        <h3 className="font-semibold text-gray-900 text-xs">{skill.name}</h3>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-600">
+                        <span className="flex items-center gap-0.5">
+                          <Code className="w-3 h-3" />
+                          {skill.level}
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                          <Clock className="w-3 h-3" />
+                          {skill.timeToLearn}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Code className="w-3 h-3" />
-                        Level: {skill.level}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {skill.timeToLearn}
-                      </span>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(skill.priority)}`}>
-                    {skill.priority}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'tools' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Tools & Technologies</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {roleData.tools.map((tool: any, index: number) => (
-                <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-bold text-gray-900 text-sm">{tool.name}</h3>
-                      <p className="text-xs text-indigo-600 font-medium">{tool.category}</p>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getDifficultyColor(tool.difficulty)}`}>
-                      {tool.difficulty}
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getPriorityColor(skill.priority)}`}>
+                      {skill.priority}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">{tool.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'languages' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Programming Languages & Frameworks</h2>
-            
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Programming Languages</h3>
-              <div className="flex flex-wrap gap-2">
-                {roleData.languages.map((lang: string, index: number) => (
-                  <span key={index} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium border border-indigo-200">
-                    {lang}
-                  </span>
                 ))}
               </div>
             </div>
+          )}
 
-            <div>
-              <h3 className="text-sm font-bold text-gray-700 mb-3">Frameworks & Libraries</h3>
-              <div className="flex flex-wrap gap-2">
-                {roleData.frameworks.map((framework: string, index: number) => (
-                  <span key={index} className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-sm font-medium border border-purple-200">
-                    {framework}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'resources' && (
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Learning Resources</h2>
-            <div className="space-y-3">
-              {roleData.resources.map((resource: any, index: number) => (
-                <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <BookOpen className="w-4 h-4 text-indigo-600" />
-                        <h3 className="font-bold text-gray-900 text-sm">{resource.name}</h3>
+          {activeTab === 'tools' && (
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">Tools & Technologies</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {roleData.tools.map((tool: any, index: number) => (
+                  <div key={index} className="p-3 border rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1">
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-xs">{tool.name}</h3>
+                        <p className="text-xs text-indigo-600 font-medium">{tool.category}</p>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">{resource.provider}</p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {resource.duration}
-                        </span>
-                        <span>•</span>
-                        <span>{resource.category}</span>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                        resource.type === 'free' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {resource.type === 'free' ? 'Free' : 'Paid'}
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getDifficultyColor(tool.difficulty)}`}>
+                        {tool.difficulty}
                       </span>
-                      <a 
-                        href={resource.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-700 text-xs flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        Visit
-                      </a>
+                    </div>
+                    <p className="text-xs text-gray-600">{tool.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'languages' && (
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">Programming Languages & Frameworks</h2>
+              
+              <div className="mb-4">
+                <h3 className="text-xs font-bold text-gray-700 mb-2">Programming Languages</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {roleData.languages.map((lang: string, index: number) => (
+                    <span key={index} className="px-2 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium border border-indigo-200">
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-gray-700 mb-2">Frameworks & Libraries</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {roleData.frameworks.map((framework: string, index: number) => (
+                    <span key={index} className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs font-medium border border-purple-200">
+                      {framework}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'resources' && (
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">Learning Resources</h2>
+              <div className="space-y-2">
+                {roleData.resources.map((resource: any, index: number) => (
+                  <div key={index} className="p-3 border rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <BookOpen className="w-3 h-3 text-indigo-600" />
+                          <h3 className="font-bold text-gray-900 text-xs">{resource.name}</h3>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1">{resource.provider}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="w-3 h-3" />
+                            {resource.duration}
+                          </span>
+                          <span>•</span>
+                          <span>{resource.category}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                          resource.type === 'free' 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {resource.type === 'free' ? 'Free' : 'Paid'}
+                        </span>
+                        <a 
+                          href={resource.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 hover:text-indigo-700 text-xs flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Visit
+                        </a>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-3 mt-6">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex-1 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
-          >
-            Continue to Personalized Roadmap
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-6 py-3 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Skip to Dashboard
-          </button>
+      {/* Action Buttons - Fixed at bottom */}
+      <div className="bg-white border-t flex-shrink-0">
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1"
+            >
+              Continue to Dashboard
+              <ChevronRight className="w-3 h-3" />
+            </button>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Skip
+            </button>
+          </div>
         </div>
       </div>
     </div>
