@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Onboarding from './components/Onboarding';
+import RoleAnalysis from './components/RoleAnalysis';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/role-analysis" element={<RoleAnalysis />} />
         </Routes>
       </div>
     </BrowserRouter>

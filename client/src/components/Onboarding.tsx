@@ -43,11 +43,19 @@ export default function Onboarding() {
   };
 
   const handleSubmit = () => {
-    // Here we would upload the resume and save the role
-    console.log('Role:', role);
-    console.log('File:', file);
-    // For now, redirect to dashboard
-    navigate('/dashboard');
+    if (!role && !file) {
+      alert('Please enter a role or upload a resume');
+      return;
+    }
+
+    // Navigate to role analysis page with data
+    navigate('/role-analysis', {
+      state: {
+        role: role || 'General Career Path',
+        hasResume: !!file,
+        resumeFileName: file?.name || null
+      }
+    });
   };
 
   return (
