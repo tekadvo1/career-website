@@ -36,11 +36,12 @@ export default function Onboarding() {
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    // Currently only PDF is supported by the backend analysis
+    const validTypes = ['application/pdf'];
     if (validTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
     } else {
-      alert('Please upload a PDF, DOC, or DOCX file.');
+      alert('Please upload a PDF file for analysis. Word documents are coming soon!');
     }
   };
 
@@ -48,7 +49,7 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     if (!role && !file) {
-      alert('Please enter a role or upload a resume');
+      alert('Please enter a desired role OR upload a PDF resume to continue.');
       return;
     }
 
@@ -64,7 +65,8 @@ export default function Onboarding() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to analyze resume');
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to analyze resume');
         }
 
         const data = await response.json();
@@ -77,9 +79,9 @@ export default function Onboarding() {
             analysis: data.analysis
           }
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error analyzing resume:', error);
-        alert('Failed to analyze resume. Please try again or skip using role input only.');
+        alert(`Resume Analysis Failed: ${error.message || 'Unknown error'}. \n\nPlease try entering your desired role manually instead.`);
       } finally {
         setIsAnalyzing(false);
       }
