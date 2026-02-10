@@ -15,6 +15,25 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// Initialize database schema
+const fs = require('fs');
+const path = require('path');
+
+const initDb = async () => {
+  try {
+    const client = await pool.connect();
+    const schemaPath = path.join(__dirname, '../database/schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+    await client.query(schema);
+    client.release();
+    console.log('Database schema initialized successfully');
+  } catch (err) {
+    console.error('Error initializing database schema:', err);
+  }
+};
+
+initDb();
+
 
 
 app.get('/api/health', async (req, res) => {
