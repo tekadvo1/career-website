@@ -329,61 +329,62 @@ export default function RoleAnalysis() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="inline-flex items-center px-2 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold">
-              <Award className="w-3 h-3 mr-1" />
-              AI-Powered Analysis
+    <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      {/* Main Container Box */}
+      <div className="w-full max-w-5xl h-full max-h-[95vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        
+        {/* Header */}
+        <div className="border-b flex-shrink-0 bg-white">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="inline-flex items-center px-2 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold">
+                <Award className="w-3 h-3 mr-1" />
+                AI Analysis
+              </div>
+              <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+                <Download className="w-3 h-3" />
+                PDF
+              </button>
             </div>
-            <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-              <Download className="w-3 h-3" />
-              Download PDF
-            </button>
-          </div>
 
-          {/* Resume Analysis Banner */}
-          {hasResume && resumeFileName && (
-            <div className="mb-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-green-700">
-                <Award className="w-3 h-3" />
-                <div>
-                  <p className="text-xs font-semibold">Resume Analyzed: {resumeFileName}</p>
+            {/* Resume Analysis Banner */}
+            {hasResume && resumeFileName && (
+              <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 text-green-700">
+                  <Award className="w-3 h-3" />
+                  <p className="text-xs font-semibold">Resume: {resumeFileName}</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <h1 className="text-xl font-bold text-gray-900 mb-1">{roleData.title}</h1>
-          <p className="text-gray-600 text-xs mb-1">{roleData.description}</p>
-          <p className="text-xs text-indigo-600 font-medium mb-3">
-            {analysisMessage}
-          </p>
+            <h1 className="text-xl font-bold text-gray-900 mb-1">{roleData.title}</h1>
+            <p className="text-gray-600 text-xs mb-1">{roleData.description}</p>
+            <p className="text-xs text-indigo-600 font-medium mb-3">
+              {analysisMessage}
+            </p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-2">
-              <div className="flex items-center gap-1 text-green-700 mb-0.5">
-                <TrendingUp className="w-3 h-3" />
-                <span className="text-xs font-semibold">Job Growth</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+                <div className="flex items-center gap-1 text-green-700 mb-0.5">
+                  <TrendingUp className="w-3 h-3" />
+                  <span className="text-xs font-semibold">Job Growth</span>
+                </div>
+                <p className="text-xs font-bold text-green-900">{roleData.jobGrowth}</p>
               </div>
-              <p className="text-xs font-bold text-green-900">{roleData.jobGrowth}</p>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-              <div className="flex items-center gap-1 text-blue-700 mb-0.5">
-                <DollarSign className="w-3 h-3" />
-                <span className="text-xs font-semibold">Salary Range</span>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="flex items-center gap-1 text-blue-700 mb-0.5">
+                  <DollarSign className="w-3 h-3" />
+                  <span className="text-xs font-semibold">Salary Range</span>
+                </div>
+                <p className="text-xs font-bold text-blue-900">{roleData.salaryRange}</p>
               </div>
-              <p className="text-xs font-bold text-blue-900">{roleData.salaryRange}</p>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-4">
+      <div className="border-b flex-shrink-0 bg-white">
+        <div className="px-6">
           <div className="flex gap-4">
             <button
               onClick={() => setActiveTab('skills')}
@@ -434,8 +435,8 @@ export default function RoleAnalysis() {
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+      <div className="flex-1 overflow-y-auto bg-gray-50">
+        <div className="px-6 py-4">
           {activeTab === 'skills' && (
             <div className="bg-white rounded-lg shadow-sm border p-4">
               <h2 className="text-sm font-bold text-gray-900 mb-3">Required Skills</h2>
@@ -567,24 +568,26 @@ export default function RoleAnalysis() {
       </div>
 
       {/* Action Buttons - Fixed at bottom */}
-      <div className="bg-white border-t flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-4 py-3">
-          <div className="flex gap-2">
+      <div className="border-t flex-shrink-0 bg-white">
+        <div className="px-6 py-3">
+          <div className="flex gap-3">
             <button
               onClick={() => navigate('/dashboard')}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1"
+              className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-1.5"
             >
-              Continue to Dashboard
-              <ChevronRight className="w-3 h-3" />
+              Continue
+              <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2.5 bg-white border-2 border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors"
             >
               Skip
             </button>
           </div>
         </div>
+      </div>
+      
       </div>
     </div>
   );
