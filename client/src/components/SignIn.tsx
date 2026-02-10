@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function SignIn() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     identifier: '', // username or email
     password: ''
@@ -35,10 +37,10 @@ export default function SignIn() {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Handle successful login (e.g., save token, redirect)
+      // Handle successful login
+      localStorage.setItem('token', data.token);
       console.log('User logged in:', data);
-      alert('Login successful! (Token handling to be implemented)');
-      // window.location.href = '/dashboard'; // Redirect to dashboard
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
     } finally {

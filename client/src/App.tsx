@@ -3,6 +3,7 @@ import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import VerifyEmail from './components/VerifyEmail';
 import GoogleCallback from './components/GoogleCallback';
+import Dashboard from './components/Dashboard';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/verify" element={<VerifyEmail />} />
           <Route path="/google-callback" element={<GoogleCallback />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </div>
     </BrowserRouter>

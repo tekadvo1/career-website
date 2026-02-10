@@ -9,7 +9,7 @@ export default function GoogleCallback() {
     if (token) {
       localStorage.setItem('token', token);
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 1000);
     } else {
       console.error('No token found');
