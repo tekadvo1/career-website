@@ -16,16 +16,25 @@ const pool = require('./config/db');
 const fs = require('fs');
 const path = require('path');
 
-const initDb = async () => {
-  try {
-    const client = await pool.connect();
-    const schemaPath = path.join(__dirname, '../database/schema.sql');
-    const schema = fs.readFileSync(schemaPath, 'utf8');
-    await client.query(schema);
-    client.release();
-    console.log('Database schema initialized successfully');
-  } catch (err) {
-    console.error('Error initializing database schema:', err);
+const initDb = async (retries = 5) => {
+  while (retries > 0) {
+    try {
+      const client = await pool.connect();
+      const schemaPath = path.join(__dirname, '../database/schema.sql');
+      const schema = fs.readFileSync(schemaPath, 'utf8');
+      await client.query(schema);
+      client.release();
+      console.log('Database schema initialized successfully');
+      return;
+    } catch (err) {
+      console.error(`Error initializing database schema (retries left: ${retries - 1}):`, err.message);
+      retries -= 1;
+      if (retries === 0) {
+        console.error('Failed to initialize database schema after multiple attempts.');
+      } else {
+        await new Promise(res => setTimeout(res, 5000));
+      }
+    }
   }
 };
 
