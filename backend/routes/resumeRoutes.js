@@ -115,19 +115,21 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
                 { "name": "Skill Name", "level": "Current Level", "priority": "Medium Priority", "timeToLearn": "Ongoing", "reason": "How to master/advance this skill" }
               ],
               "tools": [
-                { "name": "Tool Name (e.g. Jira, Docker)", "category": "DevOps/Design/etc", "difficulty": "Easy/Hard" }
+                { "name": "Tool Name", "category": "DevOps/Design/etc", "difficulty": "Easy/Hard" }
               ],
-              "languages": ["Language 1", "Language 2"],
-              "frameworks": ["React", "Spring", "etc"],
+              "languages": ["List all relevant languages"],
+              "frameworks": ["List all relevant frameworks"],
               "resources": [
                 { "name": "Specific Course/Resource Title", "provider": "Udemy/Coursera/Docs", "type": "Course/Video", "url": "URL or generic link" }
               ],
-              "strengths": ["List specific strengths found in resume"],
-              "recommendations": ["Specific actionable advice to improve profile"]
+              "strengths": ["List all identified strengths"],
+              "recommendations": ["List all relevant recommendations"]
             }
             
             Resume text:
-            ${resumeText}`
+            ${resumeText}
+            
+            CRITICAL: Do not restrict the number of items in any list (skills, tools, languages, resources). Provide a comprehensive, real-time, exhaustive analysis based on the resume and current job market standards.`
           }
         ],
         temperature: 0.7,

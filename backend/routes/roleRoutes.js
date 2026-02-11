@@ -77,7 +77,8 @@ router.post('/analyze', async (req, res) => {
               ]
             }
             
-            Ensure the information is realistic for the current job market. Include at least 6 key skills, 5 essential tools, and 5 high-quality learning resources.`
+            Ensure the information is realistic for the current job market.
+            CRITICAL: List ALL relevant skills, tools, languages, frameworks, and resources without any artificial limit. Do not restrict the number of items. Be comprehensive and exhaustive to provide a complete guide.`
           }
         ],
         temperature: 0.7
