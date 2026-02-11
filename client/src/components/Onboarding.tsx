@@ -90,12 +90,15 @@ export default function Onboarding() {
       setIsAnalyzing(true);
       
       try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userId = user.id;
+
         const response = await fetch('/api/role/analyze', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ role }),
+          body: JSON.stringify({ role, userId }),
         });
 
         if (!response.ok) {
