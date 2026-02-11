@@ -5,6 +5,7 @@ import { Search, Upload, Sparkles, FileText, X } from 'lucide-react';
 export default function Onboarding() {
   const navigate = useNavigate();
   const [role, setRole] = useState('');
+  const [experienceLevel, setExperienceLevel] = useState('Beginner');
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -98,7 +99,7 @@ export default function Onboarding() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ role, userId }),
+          body: JSON.stringify({ role, userId, experienceLevel }), // Include experienceLevel
         });
 
         if (!response.ok) {
@@ -213,6 +214,27 @@ export default function Onboarding() {
               )}
             </div>
             
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Experience Level
+              </label>
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => setExperienceLevel(level)}
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                      experienceLevel === level
+                        ? 'bg-white text-indigo-600 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p className="text-xs text-gray-500 mb-6">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>

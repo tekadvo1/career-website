@@ -4,14 +4,14 @@ const pool = require('../config/db');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
-  const { role, userId } = req.body;
+  const { role, userId, experienceLevel = 'Beginner' } = req.body;
 
   if (!role) {
     return res.status(400).json({ error: 'Role is required' });
   }
 
   try {
-    const normalizedRole = role.trim().toLowerCase();
+    const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()})`;
     
     // 1. Check for existing analysis for this USER
     if (userId) {
@@ -21,7 +21,7 @@ router.post('/analyze', async (req, res) => {
       );
 
       if (userCache.rows.length > 0) {
-        console.log(`Returning user-specific cached analysis for user ${userId}, role: ${role}`);
+        console.log(`Returning user-specific cached analysis for user ${userId}, role: ${normalizedRole}`);
         return res.json({
           success: true,
           data: userCache.rows[0].analysis_data,
@@ -39,7 +39,7 @@ router.post('/analyze', async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error: API key missing' });
     }
 
-    console.log('Generating AI analysis for role:', role);
+    console.log(`Generating AI analysis for role: ${role} [${experienceLevel}]`);
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -52,11 +52,11 @@ router.post('/analyze', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert career coach. Provide a structured, stable, and comprehensive career guide.'
+            content: 'You are an expert career coach. Provide a structured, stable, and comprehensive career guide tailored to the specific experience level requested.'
           },
           {
             role: 'user',
-            content: `Create a definitive career guide for the role: "${role}".
+            content: `Create a definitive career guide for the role: "${role}" at the "${experienceLevel}" level.
             
             Provide the response strictly in JSON format with this structure:
             {
@@ -116,9 +116,9 @@ router.post('/analyze', async (req, res) => {
       try {
          await pool.query(
           "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
-          [userId, role, analysisData]
+          [userId, normalizedRole, analysisData]
         );
-        console.log(`Saved analysis to database for user ${userId}`);
+        console.log(`Saved analysis to database for user ${userId}, role: ${normalizedRole}`);
       } catch (dbError) {
         console.error('Database save failed:', dbError.message);
       }
