@@ -1,10 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const mammoth = require('mammoth');
 let pdfParse = require('pdf-parse');
-// Handle potential ESM/CJS interop issues
-if (typeof pdfParse !== 'function' && pdfParse.default) {
-  pdfParse = pdfParse.default;
+
+// Debug PDF Parse Import
+console.log('PDF Parse Import Type:', typeof pdfParse);
+if (typeof pdfParse === 'object') {
+  console.log('PDF Parse Keys:', Object.keys(pdfParse));
+  // Attempt to use default if function is missing
+  if (typeof pdfParse.default === 'function') {
+    pdfParse = pdfParse.default;
+  }
 }
 
 // Configure multer for file uploads
@@ -15,11 +22,15 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedTypes = [
+      'application/pdf', 
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword'
+    ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only PDF, DOC, and DOCX allowed.'));
+      cb(new Error('Invalid file type. Only PDF and DOCX allowed.'));
     }
   }
 });
@@ -36,16 +47,29 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
     // Extract text from PDF
     if (req.file.mimetype === 'application/pdf') {
       try {
+        if (typeof pdfParse !== 'function') {
+            throw new Error(`PDF Parse library is not a function (Type: ${typeof pdfParse})`);
+        }
         const pdfData = await pdfParse(req.file.buffer);
         resumeText = pdfData.text;
       } catch (err) {
         console.error('Error parsing PDF:', err);
-        return res.status(400).json({ error: 'Failed to parse PDF file' });
+        return res.status(400).json({ error: 'Failed to parse PDF file. ' + err.message });
+      }
+    } else if (
+      req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
+      req.file.mimetype === 'application/msword'
+    ) {
+      // Extract text from DOCX
+      try {
+        const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+        resumeText = result.value;
+      } catch (err) {
+         console.error('Error parsing DOCX:', err);
+         return res.status(400).json({ error: 'Failed to parse DOCX file' });
       }
     } else {
-      // For DOC/DOCX, we'll need a different parser (mammoth or textract)
-      // For now, return an error
-      return res.status(400).json({ error: 'Currently only PDF files are supported for analysis' });
+       return res.status(400).json({ error: 'Unsupported file type' });
     }
 
     // Call OpenAI API to analyze the resume

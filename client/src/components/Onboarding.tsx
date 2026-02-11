@@ -36,12 +36,12 @@ export default function Onboarding() {
   };
 
   const validateAndSetFile = (selectedFile: File) => {
-    // Currently only PDF is supported by the backend analysis
-    const validTypes = ['application/pdf'];
+    // PDF and DOCX are supported
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
     if (validTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
     } else {
-      alert('Please upload a PDF file for analysis. Word documents are coming soon!');
+      alert('Please upload a PDF or DOCX file.');
     }
   };
 
