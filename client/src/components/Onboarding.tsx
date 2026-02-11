@@ -6,6 +6,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [role, setRole] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('Beginner');
+  const [country, setCountry] = useState('USA'); // New state for country
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -99,7 +100,7 @@ export default function Onboarding() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ role, userId, experienceLevel }), // Include experienceLevel
+          body: JSON.stringify({ role, userId, experienceLevel, country }), // Include country
         });
 
         if (!response.ok) {
@@ -230,6 +231,27 @@ export default function Onboarding() {
                     }`}
                   >
                     {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Target Country
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {['USA', 'India', 'UK', 'Australia', 'Canada'].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setCountry(c)}
+                    className={`py-1.5 text-xs font-semibold rounded-md border transition-all ${
+                      country === c
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {c}
                   </button>
                 ))}
               </div>

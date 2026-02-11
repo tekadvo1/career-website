@@ -4,14 +4,14 @@ const pool = require('../config/db');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
-  const { role, userId, experienceLevel = 'Beginner' } = req.body;
+  const { role, userId, experienceLevel = 'Beginner', country = 'USA' } = req.body;
 
   if (!role) {
     return res.status(400).json({ error: 'Role is required' });
   }
 
   try {
-    const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()})`;
+    const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()} - ${country.toLowerCase()})`;
     
     // 1. Check for existing analysis for this USER
     if (userId) {
@@ -21,7 +21,7 @@ router.post('/analyze', async (req, res) => {
       );
 
       if (userCache.rows.length > 0) {
-        console.log(`Returning user-specific cached analysis for user ${userId}, role: ${normalizedRole}`);
+        console.log(`Returning cache for user ${userId}: ${normalizedRole}`);
         return res.json({
           success: true,
           data: userCache.rows[0].analysis_data,
@@ -39,7 +39,7 @@ router.post('/analyze', async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error: API key missing' });
     }
 
-    console.log(`Generating AI analysis for role: ${role} [${experienceLevel}]`);
+    console.log(`Generating AI analysis for: ${role} [${experienceLevel}, ${country}]`);
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -52,18 +52,18 @@ router.post('/analyze', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert career coach. Provide a structured, stable, and comprehensive career guide tailored to the specific experience level requested.'
+            content: `You are an expert career coach. Provide a structured, stable, and comprehensive career guide tailored to the specific experience level and country requested.`
           },
           {
             role: 'user',
-            content: `Create a definitive career guide for the role: "${role}" at the "${experienceLevel}" level.
+            content: `Create a definitive career guide for the role: "${role}" at the "${experienceLevel}" level in "${country}".
             
             Provide the response strictly in JSON format with this structure:
             {
               "title": "${role}",
               "description": "Detailed description of what this role involves.",
-              "jobGrowth": "Current market growth rate",
-              "salaryRange": "Realistic salary range",
+              "jobGrowth": "Current market growth rate in ${country}",
+              "salaryRange": "Realistic salary range in ${country} (use local currency)",
               "skills": [
                 { "name": "Skill Name", "level": "Beginner/Intermediate/Advanced", "priority": "High/Medium", "timeToLearn": "Estimated time" }
               ],
