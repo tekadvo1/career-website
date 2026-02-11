@@ -84,6 +84,19 @@ const updateSchema = async () => {
         END IF;
       END $$;
     `);
+
+    // Create user_courses table if it doesn't exist
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_courses (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        course_data JSONB NOT NULL,
+        progress INTEGER DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     client.release();
     console.log('Schema updated for role caching');
   } catch (err) {

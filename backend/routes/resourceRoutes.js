@@ -143,4 +143,60 @@ router.post('/create-course', async (req, res) => {
   }
 });
 
+const pool = require('../config/db');
+
+// POST /api/resources/save-course - Save a generated course
+router.post('/save-course', async (req, res) => {
+  const { title, courseData, userId } = req.body;
+
+  if (!courseData) return res.status(400).json({ error: 'Course data is required' });
+
+  try {
+    // For now, allow saving without user_id (anonymous) or use provided ID
+    // Ideally use req.user.id from auth middleware
+    const query = `
+      INSERT INTO user_courses (user_id, title, course_data)
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `;
+    const values = [userId || null, title || 'My Course', courseData];
+    
+    // Note: user_id references users(id). If userId is null, schemas usually allow it if not NOT NULL.
+    // If schema enforces NOT NULL, we need a valid user. 
+    // Given previous schema update for role_analyses allowed NULL, let's assume we can try null here too.
+    // Wait, my CREATE TABLE above didn't specify NOT NULL for user_id, so it defaults to nullable.
+    
+    const result = await pool.query(query, values);
+    res.json({ success: true, course: result.rows[0] });
+  } catch (error) {
+    console.error('Save Course Error:', error);
+    res.status(500).json({ error: 'Failed to save course' });
+  }
+});
+
+// GET /api/resources/my-courses - Get saved courses
+router.get('/my-courses', async (req, res) => {
+  const { userId } = req.query;
+  
+  try {
+    // Determine query based on user existence
+    let query, values;
+    if (userId) {
+       query = 'SELECT * FROM user_courses WHERE user_id = $1 ORDER BY created_at DESC';
+       values = [userId];
+    } else {
+       // If no user, maybe fetch recently created public/anonymous ones? Or just empty.
+       // For demo, let's return latest 10 anonymous courses
+       query = 'SELECT * FROM user_courses WHERE user_id IS NULL ORDER BY created_at DESC LIMIT 10';
+       values = [];
+    }
+    
+    const result = await pool.query(query, values);
+    res.json({ success: true, courses: result.rows });
+  } catch (error) {
+    console.error('Get Courses Error:', error);
+    res.status(500).json({ error: 'Failed to fetch courses' });
+  }
+});
+
 module.exports = router;
