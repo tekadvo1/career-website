@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { 
+
   TrendingUp, 
   DollarSign, 
+  ChevronRight, 
   Code, 
-  Wrench, 
   BookOpen, 
   Download,
-  ChevronRight,
-  Check,
-  Clock,
-  Award,
+  Wrench, 
+  Check, 
+  Clock, 
+  Award, 
   ExternalLink,
-  Globe
+  Globe 
 } from 'lucide-react';
 
 // Mock role data - based on user's role input
@@ -104,7 +107,7 @@ const roleDatabase: Record<string, any> = {
       { name: "User Research", level: "Intermediate", priority: "High Priority", timeToLearn: "3 months" },
       { name: "Data Analysis", level: "Intermediate", priority: "High Priority", timeToLearn: "4 months" },
       { name: "Roadmap Planning", level: "Advanced", priority: "High Priority", timeToLearn: "5 months" },
-      { name: "Stakeholder Management", level: "Intermediate", priority: "Medium Priority", timeToLearn: "3 months" },
+      { name: "Stplaceholder Management", level: "Intermediate", priority: "Medium Priority", timeToLearn: "3 months" },
       { name: "Agile/Scrum", level: "Intermediate", priority: "High Priority", timeToLearn: "2 months" }
     ],
     tools: [
@@ -304,17 +307,20 @@ const getDefaultRoleData = (roleName: string) => ({
 export default function RoleAnalysis() {
   const location = useLocation();
   const navigate = useNavigate();
+  // Using location state first, but falling back to local storage if available for persistence
+  const [roleDataState, setRoleDataState] = useState<any>(null);
+  
   const role = location.state?.role || "Software Engineer";
   const hasResume = location.state?.hasResume || false;
   const resumeFileName = location.state?.resumeFileName || null;
   const aiAnalysis = location.state?.analysis;
   
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources'>('skills');
-
   const [skillFilter, setSkillFilter] = useState<'all' | 'missing' | 'existing'>('all');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Helper to convert AI analysis to Role Data structure
-  const getAiRoleData = (analysis: any, roleName: string) => {
+  const getAiRoleData = useCallback((analysis: any, roleName: string) => {
     const defaultData = getDefaultRoleData(roleName);
     
     // Check if this is a full role analysis (from role input) or resume analysis (from file)
@@ -354,12 +360,83 @@ export default function RoleAnalysis() {
         timeToLearn: "Varies"
       })) || defaultData.skills,
     };
+  }, []);
+
+  // Effect to load data from location or local storage
+  useEffect(() => {
+    if (aiAnalysis) {
+      setRoleDataState(getAiRoleData(aiAnalysis, role));
+      // Save to local storage for persistence on refresh
+      localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+        role,
+        analysis: aiAnalysis,
+        hasResume,
+        resumeFileName,
+        timestamp: new Date().getTime()
+      }));
+    } else {
+      // Try to recover from local storage
+      const saved = localStorage.getItem('lastRoleAnalysis');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Only use if less than 1 hour old
+        if (new Date().getTime() - parsed.timestamp < 3600000) {
+           setRoleDataState(getAiRoleData(parsed.analysis, parsed.role));
+        } else {
+           navigate('/onboarding'); // Expired or invalid
+        }
+      } else {
+        // Fallback to static database if nothing else
+         if (roleDatabase[role]) {
+            setRoleDataState(roleDatabase[role]);
+         } else {
+            navigate('/onboarding'); // No data found
+         }
+      }
+    }
+  }, [aiAnalysis, role, navigate, hasResume, resumeFileName, getAiRoleData]);
+
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('role-analysis-content');
+    if (!element) return;
+    
+    setIsDownloading(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      pdf.save(`${roleDataState?.title || 'Role_Analysis'}_Roadmap.pdf`);
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
-  // Get role data: prioritize AI analysis, then static DB, then default
-  const roleData = aiAnalysis 
-    ? getAiRoleData(aiAnalysis, role)
-    : (roleDatabase[role] || getDefaultRoleData(role));
+  // Guard clause while loading
+  if (!roleDataState) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        </div>
+      );
+  }
+
+  const roleData = roleDataState;
 
   const getPriorityColor = (priority: string) => {
     if (priority === "High Priority") return "bg-red-100 text-red-700 border-red-200";
@@ -394,11 +471,18 @@ export default function RoleAnalysis() {
               )}
             </div>
             <button 
-              onClick={() => {/* Implement PDF download */}}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              onClick={handleDownloadPDF}
+              disabled={isDownloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="w-3.5 h-3.5" />
-              Download PDF
+              {isDownloading ? (
+                <span>Generating...</span>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  Download PDF
+                </>
+              )}
             </button>
           </div>
 
