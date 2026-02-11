@@ -96,23 +96,39 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
           },
           {
             role: 'user',
-            content: `Analyze this resume and provide a JSON response with the following structure:
-{
-  "suggestedRole": "The most suitable job role based on experience",
-  "experienceLevel": "Beginner/Intermediate/Advanced",
-  "skills": ["skill1", "skill2", "skill3", ...],
-  "yearsOfExperience": number,
-  "strengths": ["strength1", "strength2", "strength3"],
-  "recommendations": ["recommendation1", "recommendation2", "recommendation3"],
-  "matchingProjects": ["project type 1", "project type 2", "project type 3"]
-}
-
-Resume text:
-${resumeText}`
+            content: `Analyze this resume and provide a highly detailed career path JSON response.
+            
+            Identify the user's current level and suggest the best next role.
+            Analyze gaps between their current skills and the market trends for that role.
+            
+            Return ONLY valid JSON with this structure:
+            {
+              "suggestedRole": "Best fit job title",
+              "experienceLevel": "Beginner/Intermediate/Advanced",
+              "jobGrowth": "e.g. +22% demand",
+              "salaryRange": "e.g. $90k - $140k",
+              "description": "Professional summary and career trajectory advice based on valid resume data.",
+              "skills": [
+                { "name": "Skill Name", "level": "Current Level", "priority": "High/Medium", "timeToLearn": "e.g. 2 weeks", "gap": "true/false (if missing from resume)" }
+              ],
+              "tools": [
+                { "name": "Tool Name (e.g. Jira, Docker)", "category": "DevOps/Design/etc", "difficulty": "Easy/Hard" }
+              ],
+              "languages": ["Language 1", "Language 2"],
+              "frameworks": ["React", "Spring", "etc"],
+              "resources": [
+                { "name": "Specific Course/Resource Title", "provider": "Udemy/Coursera/Docs", "type": "Course/Video", "url": "URL or generic link" }
+              ],
+              "strengths": ["List specific strengths found in resume"],
+              "recommendations": ["Specific actionable advice to improve profile"]
+            }
+            
+            Resume text:
+            ${resumeText}`
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 2000
       })
     });
 
@@ -134,15 +150,14 @@ ${resumeText}`
       analysis = JSON.parse(jsonText);
     } catch (err) {
       console.error('Error parsing OpenAI response:', err);
-      // If parsing fails, return a basic analysis
+      // Fallback
       analysis = {
         suggestedRole: 'Software Engineer',
         experienceLevel: 'Intermediate',
-        skills: ['Problem Solving', 'Technical Skills', 'Communication'],
-        yearsOfExperience: 0,
-        strengths: ['Analyzed from resume'],
-        recommendations: ['Continue building projects', 'Learn new technologies'],
-        matchingProjects: ['Web Development', 'Mobile Apps', 'APIs']
+        description: 'Analysis failed to parse. Please try again.',
+        skills: [],
+        tools: [],
+        resources: []
       };
     }
 

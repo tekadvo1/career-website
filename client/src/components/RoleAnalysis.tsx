@@ -321,7 +321,7 @@ export default function RoleAnalysis() {
       return {
         ...defaultData,
         ...analysis, // Directly use the structured AI data
-        title: analysis.title || roleName,
+        title: analysis.title || analysis.suggestedRole || roleName,
         // Ensure arrays exist
         skills: analysis.skills || defaultData.skills,
         tools: analysis.tools || defaultData.tools,
