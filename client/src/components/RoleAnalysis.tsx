@@ -310,6 +310,8 @@ export default function RoleAnalysis() {
   
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources'>('skills');
 
+  const [skillFilter, setSkillFilter] = useState<'all' | 'missing' | 'existing'>('all');
+
   // Helper to convert AI analysis to Role Data structure
   const getAiRoleData = (analysis: any, roleName: string) => {
     const defaultData = getDefaultRoleData(roleName);
@@ -318,12 +320,22 @@ export default function RoleAnalysis() {
     const isFullAnalysis = !!analysis.salaryRange;
 
     if (isFullAnalysis) {
+      // Process skills: Combine missing and existing if present, otherwise use standard skills
+      let processedSkills = analysis.skills || defaultData.skills;
+      
+      if (analysis.missingSkills || analysis.existingSkills) {
+        processedSkills = [
+          ...(analysis.missingSkills || []).map((s: any) => ({ ...s, type: 'missing', priority: 'High Priority' })),
+          ...(analysis.existingSkills || []).map((s: any) => ({ ...s, type: 'existing', priority: 'Medium Priority' }))
+        ];
+      }
+
       return {
         ...defaultData,
         ...analysis, // Directly use the structured AI data
         title: analysis.title || analysis.suggestedRole || roleName,
         // Ensure arrays exist
-        skills: analysis.skills || defaultData.skills,
+        skills: processedSkills,
         tools: analysis.tools || defaultData.tools,
         resources: analysis.resources || defaultData.resources,
       };
@@ -459,15 +471,101 @@ export default function RoleAnalysis() {
         <div className="bg-white rounded-xl shadow-lg p-5">
           {activeTab === 'skills' && (
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Required Skills</h2>
+              <div className="flex items-center justify-between mb-4">
+                 <h2 className="text-lg font-bold text-gray-900">Skill Analysis</h2>
+                 {hasResume && (
+                   <div className="flex bg-gray-100 p-1 rounded-lg">
+                      <button 
+                        onClick={() => setSkillFilter('all')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${skillFilter === 'all' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        All
+                      </button>
+                      <button 
+                        onClick={() => setSkillFilter('missing')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${skillFilter === 'missing' ? 'bg-white shadow text-red-600' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        To Develop
+                      </button>
+                      <button 
+                        onClick={() => setSkillFilter('existing')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${skillFilter === 'existing' ? 'bg-white shadow text-green-600' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        To Master
+                      </button>
+                   </div>
+                 )}
+              </div>
+
+              {/* Two Option Cards (Only if Resume Mode) */}
+              {hasResume && skillFilter === 'all' && (
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                   <div 
+                     onClick={() => setSkillFilter('missing')}
+                     className="cursor-pointer group p-5 rounded-xl border-2 border-red-100 bg-red-50/50 hover:bg-red-50 hover:border-red-200 transition-all"
+                   >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                           <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-gray-900 group-hover:text-red-700">Develop New Skills</h3>
+                          <p className="text-xs text-gray-500">Gap Analysis</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        You have {roleData.skills.filter((s:any) => s.type === 'missing').length} skills to learn to reach the target role.
+                      </p>
+                      <span className="text-xs font-semibold text-red-600 flex items-center gap-1">
+                        View Recommendations <ChevronRight className="w-3 h-3" />
+                      </span>
+                   </div>
+
+                   <div 
+                     onClick={() => setSkillFilter('existing')}
+                     className="cursor-pointer group p-5 rounded-xl border-2 border-green-100 bg-green-50/50 hover:bg-green-50 hover:border-green-200 transition-all"
+                   >
+                      <div className="flex items-center gap-3 mb-2">
+                         <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                            <Check className="w-5 h-5" />
+                         </div>
+                         <div>
+                           <h3 className="font-bold text-gray-900 group-hover:text-green-700">Master Your Strengths</h3>
+                           <p className="text-xs text-gray-500">Skill Refinement</p>
+                         </div>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Deepen your knowledge in {roleData.skills.filter((s:any) => s.type === 'existing').length} skills you already possess.
+                      </p>
+                      <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                        View Growth Path <ChevronRight className="w-3 h-3" />
+                      </span>
+                   </div>
+                </div>
+              )}
+
               <div className="space-y-3">
-                {roleData.skills.map((skill: any, index: number) => (
+                {roleData.skills
+                  .filter((skill: any) => skillFilter === 'all' || skill.type === skillFilter)
+                  .map((skill: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition-shadow"
+                    className={`flex items-start gap-3 p-3 rounded-lg border hover:shadow-md transition-shadow ${
+                      skill.type === 'missing' ? 'bg-red-50/30 border-red-100' : 
+                      skill.type === 'existing' ? 'bg-green-50/30 border-green-100' :
+                      'bg-gray-50 border-gray-200'
+                    }`}
                   >
-                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4 text-indigo-600" />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      skill.type === 'missing' ? 'bg-red-100' :
+                      skill.type === 'existing' ? 'bg-green-100' :
+                      'bg-indigo-100'
+                    }`}>
+                      {skill.type === 'missing' ? (
+                        <TrendingUp className={`w-4 h-4 ${skill.type === 'missing' ? 'text-red-600' : 'text-indigo-600'}`} />
+                      ) : (
+                        <Check className={`w-4 h-4 ${skill.type === 'existing' ? 'text-green-600' : 'text-indigo-600'}`} />
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1.5">
@@ -478,7 +576,7 @@ export default function RoleAnalysis() {
                           {skill.priority}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-600">
+                      <div className="flex items-center gap-3 text-xs text-gray-600 mb-1">
                         <span className="flex items-center gap-1">
                           <Code className="w-3 h-3" />
                           Level: {skill.level}
@@ -488,9 +586,20 @@ export default function RoleAnalysis() {
                           {skill.timeToLearn}
                         </span>
                       </div>
+                      {skill.reason && (
+                        <p className="text-xs text-gray-500 italic mt-1">
+                          "{skill.reason}"
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
+                
+                {roleData.skills.filter((skill: any) => skillFilter === 'all' || skill.type === skillFilter).length === 0 && (
+                   <div className="text-center py-8 text-gray-500 text-sm">
+                      No skills found for this category.
+                   </div>
+                )}
               </div>
             </div>
           )}

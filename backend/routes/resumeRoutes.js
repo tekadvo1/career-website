@@ -108,8 +108,11 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
               "jobGrowth": "e.g. +22% demand",
               "salaryRange": "e.g. $90k - $140k",
               "description": "Professional summary and career trajectory advice based on valid resume data.",
-              "skills": [
-                { "name": "Skill Name", "level": "Current Level", "priority": "High/Medium", "timeToLearn": "e.g. 2 weeks", "gap": "true/false (if missing from resume)" }
+              "missingSkills": [
+                { "name": "Skill Name", "level": "Required Level", "priority": "High Priority", "timeToLearn": "e.g. 2 weeks", "reason": "Why this is needed for the role" }
+              ],
+              "existingSkills": [
+                { "name": "Skill Name", "level": "Current Level", "priority": "Medium Priority", "timeToLearn": "Ongoing", "reason": "How to master/advance this skill" }
               ],
               "tools": [
                 { "name": "Tool Name (e.g. Jira, Docker)", "category": "DevOps/Design/etc", "difficulty": "Easy/Hard" }
