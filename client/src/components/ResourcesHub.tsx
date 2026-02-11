@@ -682,7 +682,8 @@ export default function ResourcesHub() {
         </div>
 
         {viewMode === 'browse' ? (
-        /* Resources Grid */
+        <>
+        {/* Resources Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map((resource) => (
             <div key={resource.id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow flex flex-col">
