@@ -21,12 +21,17 @@ router.post('/analyze', async (req, res) => {
       );
 
       if (userCache.rows.length > 0) {
-        console.log(`Returning cache for user ${userId}: ${normalizedRole}`);
-        return res.json({
-          success: true,
-          data: userCache.rows[0].analysis_data,
-          source: 'database'
-        });
+        const cachedData = userCache.rows[0].analysis_data;
+        // Only Use cache if it has the new roadmap structure
+        if (cachedData.roadmap && Array.isArray(cachedData.roadmap)) {
+          console.log(`Returning cache for user ${userId}: ${normalizedRole}`);
+          return res.json({
+            success: true,
+            data: cachedData,
+            source: 'database'
+          });
+        }
+        console.log(`Cache found but missing roadmap, regenerating for: ${normalizedRole}`);
       }
     }
 
@@ -78,34 +83,80 @@ router.post('/analyze', async (req, res) => {
             }
             
             CRITICAL IMPERATIVE:
-            List EVERYTHING a user needs to know to master this role, but Organize it logically. 
-            Do not provide an "unlimited" random list. Provide the COMPLETE Recommended Path.
-            Include ALL essential skills, tools, and resources required for professional competence.`
-          }
-        ],
-        temperature: 0.3 // Lower temperature for more stable/consistent results
-      })
-    });
+            1. Provide a "roadmap" array that covers the entire journey from Beginner to Expert.
+            2. The roadmap MUST be exhaustive. Do not limit the number of phases or items.
+            3. "resources" MUST include REAL, VALID URLs (e.g., official docs, popular courses on Coursera/Udemy/edX/YouTube, or GitHub repos). Do not use placeholder links.
+            4. "projects" should be concrete and build a portfolio.
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('OpenAI API Error:', errorData);
-        throw new Error('Failed to fetch from OpenAI');
+            Return valid JSON with this EXACT structure:
+            {
+              "title": "${role}",
+              "description": "Detailed role description.",
+              "jobGrowth": "Market growth in ${country}",
+              "salaryRange": "Salary range in ${country}",
+              "skills": [
+                { "name": "Skill Name", "level": "Beginner/Intermediate/Advanced", "priority": "High", "timeToLearn": "e.g. 2 weeks" }
+              ],
+              "extra_sections": {
+                 "tools": [{ "name": "Tool", "category": "Type", "difficulty": "Easy/Hard" }],
+                 "languages": ["Lang 1", "Lang 2"],
+                 "frameworks": ["Frame 1", "Frame 2"]
+              },
+              "roadmap": [
+                {
+                  "phase": "Phase Name (e.g., Foundations)",
+                  "duration": "e.g., 4 weeks",
+                  "difficulty": "Beginner/Intermediate/Advanced",
+                  "description": "Goal of this phase",
+                  "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4"],
+                  "skills_covered": ["Skill A", "Skill B"],
+                  "resources": [
+                    { "name": "Resource Title", "url": "https://active-link.com", "type": "Course/Video/Article", "is_free": true }
+                  ],
+                  "projects": [
+                    { "name": "Project Name", "description": "What to build", "difficulty": "Easy/Medium/Hard" }
+                  ]
+                }
+              ]
+            }
+          `
+        }
+      ],
+      temperature: 0.4,
+      max_tokens: 4000
+    })
+  });
+
+  if (!response.ok) {
+      const errorData = await response.json();
+      console.error('OpenAI API Error:', errorData);
+      throw new Error('Failed to fetch from OpenAI');
+  }
+
+  const data = await response.json();
+  const analysisText = data.choices[0].message.content;
+
+  // Parse JSON
+  let analysisData;
+  try {
+    const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
+    const jsonText = jsonMatch ? jsonMatch[1] : analysisText; // If no match, try parsing the whole text
+    analysisData = JSON.parse(jsonText);
+  } catch (e) {
+    console.error('Failed to parse AI response:', e);
+    // If exact parsing fails, try to find the first '{' and last '}'
+    const startIndex = analysisText.indexOf('{');
+    const endIndex = analysisText.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1) {
+       try {
+          analysisData = JSON.parse(analysisText.substring(startIndex, endIndex + 1));
+       } catch (e2) {
+          throw new Error('Invalid JSON response from AI');
+       }
+    } else {
+       throw new Error('Invalid JSON response from AI');
     }
-
-    const data = await response.json();
-    const analysisText = data.choices[0].message.content;
-
-    // Parse JSON
-    let analysisData;
-    try {
-      const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
-      const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
-      analysisData = JSON.parse(jsonText);
-    } catch (e) {
-      console.error('Failed to parse AI response:', e);
-      throw new Error('Invalid JSON response from AI');
-    }
+  }
 
     // 3. Store in Database (Persistence)
     // If we have a userId, store it linked to them.

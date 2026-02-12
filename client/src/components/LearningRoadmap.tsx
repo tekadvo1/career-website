@@ -1,383 +1,445 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar,
   Target,
-  TrendingUp,
   Download,
   Sparkles,
   CheckCircle2,
-  Circle,
-  ChevronRight,
   Code,
-  Trophy,
   FolderKanban,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-interface Phase {
-  id: number;
+interface Resource {
   name: string;
-  duration: string;
-  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  status: 'current' | 'upcoming' | 'completed';
-}
-
-interface Skill {
-  name: string;
-  completed: boolean;
-}
-
-interface Milestone {
-  name: string;
-  completed: boolean;
+  url: string;
+  type: string;
+  is_free?: boolean;
 }
 
 interface Project {
   name: string;
-  difficulty: number;
+  description: string;
+  difficulty: string;
 }
 
-interface PhaseDetail {
-  name: string;
+interface RoadmapPhase {
+  phase: string;
   duration: string;
-  skills: Skill[];
-  milestones: Milestone[];
+  difficulty: string;
+  description?: string;
+  topics: string[];
+  skills_covered?: string[];
+  resources: Resource[];
   projects: Project[];
 }
 
 export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
-  const role = location.state?.role || "Software Engineer";
-  
-  const [selectedPhase, setSelectedPhase] = useState<number>(1);
+  const [role, setRole] = useState(location.state?.role || "Software Engineer");
+  const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
+  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  // Mock roadmap data
-  const roadmapPhases: Phase[] = [
-    { id: 1, name: "Foundations", duration: "2-3 months", difficulty: "Beginner", status: "current" },
-    { id: 2, name: "Core Programming", duration: "3 months", difficulty: "Intermediate", status: "upcoming" },
-    { id: 3, name: "Web Development", duration: "4 months", difficulty: "Intermediate", status: "upcoming" },
-    { id: 4, name: "Advanced Concepts", duration: "4-5 months", difficulty: "Advanced", status: "upcoming" },
-    { id: 5, name: "Career Ready", duration: "2-3 months", difficulty: "Advanced", status: "upcoming" }
-  ];
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      
+      // 1. Try to get data from location state 
+      let analysis = location.state?.analysis;
+      
+      // 2. If not in state, look in localStorage
+      if (!analysis || !analysis.roadmap) {
+         try {
+           const saved = localStorage.getItem('lastRoleAnalysis');
+           if (saved) {
+             const parsed = JSON.parse(saved);
+             if (parsed.analysis && parsed.analysis.roadmap) {
+               analysis = parsed.analysis;
+               setRole(parsed.role);
+             }
+           }
+         } catch (e) {
+           console.error("Error reading from local storage", e);
+         }
+      }
 
-  const phaseDetails: Record<number, PhaseDetail> = {
-    1: {
-      name: "Foundations",
-      duration: "2-3 months",
-      skills: [
-        { name: "Programming Basics (Variables, Loops, Functions)", completed: false },
-        { name: "Data Types & Operators", completed: false },
-        { name: "Basic Data Structures (Arrays, Objects)", completed: false },
-        { name: "Git & Version Control", completed: false }
-      ],
-      milestones: [
-        { name: "Complete CS50 Introduction", completed: false },
-        { name: "Build 5 simple console applications", completed: false },
-        { name: "Master Git commands and workflows", completed: false }
-      ],
-      projects: [
-        { name: "Calculator Application", difficulty: 1 },
-        { name: "To-Do List Manager", difficulty: 1 },
-        { name: "Number Guessing Game", difficulty: 1 }
-      ]
-    },
-    2: {
-      name: "Core Programming",
-      duration: "3 months",
-      skills: [
-        { name: "Object-Oriented Programming", completed: false },
-        { name: "Algorithms & Problem Solving", completed: false },
-        { name: "Data Structures (Stacks, Queues, Trees)", completed: false },
-        { name: "Debugging & Testing", completed: false }
-      ],
-      milestones: [
-        { name: "Solve 50 LeetCode Easy problems", completed: false },
-        { name: "Build OOP-based projects", completed: false },
-        { name: "Understand Big O notation", completed: false }
-      ],
-      projects: [
-        { name: "Library Management System", difficulty: 2 },
-        { name: "Banking Application", difficulty: 2 },
-        { name: "Student Grade Tracker", difficulty: 2 }
-      ]
-    },
-    3: {
-      name: "Web Development",
-      duration: "4 months",
-      skills: [
-        { name: "HTML, CSS, JavaScript", completed: false },
-        { name: "React & Component Design", completed: false },
-        { name: "REST APIs & HTTP", completed: false },
-        { name: "Database Basics (SQL)", completed: false }
-      ],
-      milestones: [
-        { name: "Build 3 responsive websites", completed: false },
-        { name: "Create a full-stack application", completed: false },
-        { name: "Deploy projects to production", completed: false }
-      ],
-      projects: [
-        { name: "Portfolio Website", difficulty: 2 },
-        { name: "Weather App with API", difficulty: 2 },
-        { name: "Blog Platform", difficulty: 3 }
-      ]
-    },
-    4: {
-      name: "Advanced Concepts",
-      duration: "4-5 months",
-      skills: [
-        { name: "System Design Fundamentals", completed: false },
-        { name: "Advanced Algorithms", completed: false },
-        { name: "Cloud Services (AWS/Azure)", completed: false },
-        { name: "DevOps Basics (CI/CD)", completed: false }
-      ],
-      milestones: [
-        { name: "Design scalable systems", completed: false },
-        { name: "Solve 30 LeetCode Medium problems", completed: false },
-        { name: "Deploy with Docker & CI/CD", completed: false }
-      ],
-      projects: [
-        { name: "E-commerce Platform", difficulty: 3 },
-        { name: "Real-time Chat Application", difficulty: 3 },
-        { name: "Social Media Clone", difficulty: 3 }
-      ]
-    },
-    5: {
-      name: "Career Ready",
-      duration: "2-3 months",
-      skills: [
-        { name: "Interview Preparation", completed: false },
-        { name: "System Design Interviews", completed: false },
-        { name: "Behavioral Interview Skills", completed: false },
-        { name: "Resume & Portfolio Polish", completed: false }
-      ],
-      milestones: [
-        { name: "Complete mock interviews", completed: false },
-        { name: "Build impressive portfolio", completed: false },
-        { name: "Network with professionals", completed: false }
-      ],
-      projects: [
-        { name: "Capstone Project", difficulty: 3 },
-        { name: "Open Source Contribution", difficulty: 3 },
-        { name: "Technical Blog", difficulty: 2 }
-      ]
-    }
-  };
+      // 3. If still no roadmap, we might need to fetch it (or redirect)
+      if (analysis && analysis.roadmap && Array.isArray(analysis.roadmap)) {
+         setRoadmap(analysis.roadmap);
+         setIsLoading(false);
+      } else {
+         // Determine if we have a role to fetch for
+         // If location.state.role is present, use it. Otherwise use the default.
+         const targetRole = location.state?.role || role;
+         
+         // Attempt to fetch fresh
+         try {
+           const user = JSON.parse(localStorage.getItem('user') || '{}');
+           const response = await fetch('/api/role/analyze', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: targetRole, userId: user.id })
+           });
+           
+           if (response.ok) {
+             const data = await response.json();
+             if (data.data && data.data.roadmap) {
+               setRoadmap(data.data.roadmap);
+               // Update local storage
+               localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                 role: targetRole,
+                 analysis: data.data,
+                 timestamp: new Date().getTime()
+               }));
+             } else {
+               // Fallback if API returns structure without roadmap (shouldn't happen with new prompt)
+               console.warn("API returned data but no roadmap array");
+               navigate('/onboarding');
+             }
+           } else {
+             navigate('/onboarding');
+           }
+         } catch (err) {
+           console.error("Failed to fetch roadmap", err);
+           navigate('/onboarding');
+         } finally {
+           setIsLoading(false);
+         }
+      }
+    };
 
-  const currentPhaseDetail = phaseDetails[selectedPhase];
-  const totalDuration = "20 months";
-  const completedPhases = roadmapPhases.filter(p => p.status === 'completed').length;
-  const totalPhases = roadmapPhases.length;
-  const overallProgress = 0;
+    loadData();
+  }, [location.state, role, navigate]);
+
+  const handleDownloadPDF = async () => {
+      const element = document.getElementById('roadmap-content');
+      if (!element) return;
+      
+      setIsDownloading(true);
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        const imgWidth = 297;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.save(`${role}_Learning_Roadmap.pdf`);
+      } catch (error) {
+        console.error('PDF generation failed:', error);
+        alert('Failed to generate PDF. Please try again.');
+      } finally {
+        setIsDownloading(false);
+      }
+    };
+
+  const currentPhase = roadmap[selectedPhaseIndex];
+  const totalPhases = roadmap.length;
 
   const getDifficultyColor = (difficulty: string) => {
-    if (difficulty === "Beginner") return "bg-green-100 text-green-700";
-    if (difficulty === "Intermediate") return "bg-amber-100 text-amber-700";
+    const d = difficulty.toLowerCase();
+    if (d.includes("beginner")) return "bg-green-100 text-green-700";
+    if (d.includes("intermediate")) return "bg-amber-100 text-amber-700";
     return "bg-red-100 text-red-700";
   };
 
-  const getStatusColor = (status: string) => {
-    if (status === "current") return "border-indigo-600 bg-indigo-50";
-    if (status === "completed") return "border-green-600 bg-green-50";
-    return "border-gray-300 bg-white";
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Generating your personalized roadmap...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (roadmap.length === 0) {
+     return (
+       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-4">
+          <p className="text-gray-600 mb-4">We couldn't find a roadmap for this role.</p>
+          <button 
+             onClick={() => navigate('/onboarding')}
+             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          >
+             Start New Analysis
+          </button>
+       </div>
+     );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-6" id="roadmap-content">
+      <div className="max-w-7xl mx-auto">
         
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-xs mb-2">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <div className="flex items-start justify-between mb-4 flex-wrap gap-4">
+            <div className="flex-1 min-w-[280px]">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-xs mb-2 shadow-sm">
                 <Sparkles className="w-3 h-3" />
-                <span>Personalized Learning Path</span>
+                <span>AI-Generated Path</span>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Your Learning Roadmap</h1>
-              <p className="text-sm text-gray-600">A structured path to become a {role}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1.5">{role} Roadmap</h1>
+              <p className="text-sm text-gray-600">A structured, step-by-step guide to mastery. <span className="font-medium text-indigo-600">updated just now</span></p>
             </div>
             <div className="flex gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm">
-                <Download className="w-3.5 h-3.5" />
-                Download PDF
+              <button 
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                {isDownloading ? 'Saving...' : (
+                    <>
+                        <Download className="w-4 h-4" />
+                        Download PDF
+                    </>
+                )}
               </button>
-              <button className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-semibold">
-                AI Assistant
+              <button 
+                 onClick={() => navigate('/onboarding')}
+                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> New Role
               </button>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="flex items-center gap-2.5 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="text-xs text-gray-600">Total Duration</p>
-                <p className="font-semibold text-sm text-gray-900">{totalDuration}</p>
-              </div>
+          {/* High level Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+               <p className="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-1">Total Phases</p>
+               <p className="text-2xl font-bold text-indigo-900">{totalPhases}</p>
             </div>
-            <div className="flex items-center gap-2.5 p-3 bg-green-50 rounded-lg border border-green-200">
-              <Target className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-xs text-gray-600">Phases</p>
-                <p className="font-semibold text-sm text-gray-900">{completedPhases} / {totalPhases} completed</p>
-              </div>
+             <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+               <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">Est. Duration</p>
+               <p className="text-2xl font-bold text-blue-900">
+                  {/* Sum durations vaguely or just show range */}
+                  Varies
+               </p>
             </div>
-            <div className="flex items-center gap-2.5 p-3 bg-purple-50 rounded-lg border border-purple-200">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
-              <div>
-                <p className="text-xs text-gray-600">Overall Progress</p>
-                <p className="font-semibold text-sm text-gray-900">{overallProgress}%</p>
-              </div>
+             <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
+               <p className="text-xs text-purple-600 font-bold uppercase tracking-wider mb-1">Total Topics</p>
+               <p className="text-2xl font-bold text-purple-900">
+                 {roadmap.reduce((acc, phase) => acc + (phase.topics?.length || 0), 0)}
+               </p>
+            </div>
+            <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+               <p className="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Projects</p>
+               <p className="text-2xl font-bold text-green-900">
+                 {roadmap.reduce((acc, phase) => acc + (phase.projects?.length || 0), 0)}
+               </p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left Sidebar - Phases */}
-          <div className="col-span-3">
-            <div className="bg-white rounded-xl shadow-lg p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Lightbulb className="w-4 h-4 text-indigo-600" />
-                <h2 className="text-sm font-bold text-gray-900">Roadmap Phases</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Sidebar - Phases Navigation */}
+          <div className="lg:col-span-4 space-y-4">
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-600" />
+                <h2 className="font-bold text-gray-900">Learning Phases</h2>
               </div>
-              <div className="space-y-2">
-                {roadmapPhases.map((phase) => (
+              <div className="p-2 space-y-1 max-h-[calc(100vh-300px)] overflow-y-auto">
+                {roadmap.map((phase, index) => (
                   <button
-                    key={phase.id}
-                    onClick={() => setSelectedPhase(phase.id)}
-                    className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                      selectedPhase === phase.id 
-                        ? 'border-indigo-600 bg-indigo-50' 
-                        : getStatusColor(phase.status)
+                    key={index}
+                    onClick={() => setSelectedPhaseIndex(index)}
+                    className={`w-full text-left p-4 rounded-lg border transition-all duration-200 group relative ${
+                      selectedPhaseIndex === index 
+                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 z-10' 
+                        : 'border-transparent hover:bg-gray-50 text-gray-600'
                     }`}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-gray-500">Phase {phase.id}</span>
-                      <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getDifficultyColor(phase.difficulty)}`}>
-                        {phase.difficulty}
-                      </span>
+                    <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                            selectedPhaseIndex === index ? 'bg-indigo-200 text-indigo-800' : 'bg-gray-200 text-gray-600'
+                        }`}>
+                            Phase {index + 1}
+                        </span>
+                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${getDifficultyColor(phase.difficulty)}`}>
+                            {phase.difficulty}
+                        </span>
                     </div>
-                    <h3 className="font-semibold text-sm text-gray-900">{phase.name}</h3>
-                    <p className="text-xs text-gray-600">{phase.duration}</p>
+                    <h3 className={`font-bold text-sm mb-1 ${selectedPhaseIndex === index ? 'text-indigo-900' : 'text-gray-900'}`}>
+                        {phase.phase}
+                    </h3>
+                     <div className="flex items-center gap-2 text-xs opacity-80">
+                        <Calendar className="w-3 h-3" />
+                        {phase.duration}
+                     </div>
                   </button>
                 ))}
               </div>
             </div>
+            
+             {/* Quick Actions */}
+             <div className="bg-white rounded-xl shadow p-4 hidden lg:block">
+                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h3>
+                 <div className="space-y-2">
+                     <button 
+                         onClick={() => navigate('/resources', { state: { role, analysis: location.state?.analysis } })}
+                         className="w-full flex items-center gap-3 p-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                     >
+                         <div className="p-1.5 bg-indigo-100 rounded text-indigo-600">
+                             <BookOpen className="w-4 h-4" />
+                         </div>
+                         <span>Full Resource Library</span>
+                     </button>
+                 </div>
+             </div>
           </div>
 
           {/* Right Content - Phase Details */}
-          <div className="col-span-9">
-            <div className="bg-white rounded-xl shadow-lg p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="px-2 py-1 bg-gray-800 text-white rounded text-xs font-semibold">
-                  Phase {selectedPhase}
-                </span>
-                <h2 className="text-xl font-bold text-gray-900">{currentPhaseDetail.name}</h2>
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 min-h-[500px]">
+              <div className="mb-6 pb-6 border-b border-gray-100">
+                 <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold uppercase tracking-wider">
+                     Phase {selectedPhaseIndex + 1}
+                    </span>
+                    <span className="text-gray-400 text-sm">•</span>
+                    <span className="text-sm font-medium text-gray-500">{currentPhase.duration}</span>
+                 </div>
+                 <h2 className="text-3xl font-extrabold text-gray-900 mb-3">{currentPhase.phase}</h2>
+                 <p className="text-gray-600 text-lg leading-relaxed">{currentPhase.description}</p>
               </div>
-              <p className="text-sm text-gray-600 mb-4 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {currentPhaseDetail.duration}
-              </p>
 
-              {/* Skills to Learn */}
-              <div className="mb-5">
-                <div className="flex items-center gap-1.5 mb-3">
-                  <Code className="w-4 h-4 text-indigo-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Skills to Learn</h3>
-                </div>
-                <div className="space-y-2">
-                  {currentPhaseDetail.skills.map((skill, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                      {skill.completed ? (
-                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      )}
-                      <span className="text-sm text-gray-900">{skill.name}</span>
+              {/* Topics & Skills Grid */}
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                  {/* Topics */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Lightbulb className="w-5 h-5 text-amber-500" />
+                        <h3 className="text-lg font-bold text-gray-900">Key Topics</h3>
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <ul className="space-y-3">
+                        {currentPhase.topics.map((topic, i) => (
+                            <li key={i} className="flex items-start gap-2.5">
+                                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                <span className="text-gray-700">{topic}</span>
+                            </li>
+                        ))}
+                    </ul>
+                  </div>
 
-              {/* Milestones */}
-              <div className="mb-5">
-                <div className="flex items-center gap-1.5 mb-3">
-                  <Trophy className="w-4 h-4 text-purple-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Milestones</h3>
-                </div>
-                <div className="space-y-2">
-                  {currentPhaseDetail.milestones.map((milestone, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-purple-50 rounded-lg border border-purple-200">
-                      {milestone.completed ? (
-                        <CheckCircle2 className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                      ) : (
-                        <Circle className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                      )}
-                      <span className="text-sm text-gray-900">{milestone.name}</span>
+                  {/* Skills */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <Code className="w-5 h-5 text-blue-500" />
+                        <h3 className="text-lg font-bold text-gray-900">Skills Acquired</h3>
                     </div>
-                  ))}
+                     <div className="flex flex-wrap gap-2">
+                        {(currentPhase.skills_covered || []).map((skill, i) => (
+                            <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-sm font-medium">
+                                {skill}
+                            </span>
+                        ))}
+                         {(currentPhase.skills_covered || []).length === 0 && <span className="text-gray-400 italic text-sm">Skills integrated into topics</span>}
+                    </div>
+                  </div>
+              </div>
+
+              {/* Recommended Resources (Real Links) */}
+              <div className="mb-8">
+                <div className="flex items-center gap-2 mb-4">
+                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-bold text-gray-900">Recommended Resources</h3>
+                </div>
+                <div className="grid gap-3">
+                    {currentPhase.resources.map((res, i) => (
+                        <a 
+                           key={i} 
+                           href={res.url} 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md hover:bg-gray-50 transition-all group"
+                        >
+                           <div className="flex items-center gap-3">
+                               <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                 {i + 1}
+                               </div>
+                               <div>
+                                   <div className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors flex items-center gap-2">
+                                       {res.name}
+                                       <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                   </div>
+                                   <div className="flex gap-2 text-xs mt-0.5">
+                                       <span className="font-medium text-gray-500">{res.type}</span>
+                                       {res.is_free !== undefined && (
+                                           <span className={`px-1.5 rounded ${res.is_free ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                               {res.is_free ? 'Free' : 'Paid'}
+                                           </span>
+                                       )}
+                                   </div>
+                               </div>
+                           </div>
+                           <div className="text-indigo-600 font-medium text-sm px-3 py-1 rounded-full bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+                               Start Learning
+                           </div>
+                        </a>
+                    ))}
+                     {currentPhase.resources.length === 0 && <p className="text-gray-500 italic">No specific resources listed for this phase.</p>}
                 </div>
               </div>
 
-              {/* Practice Projects */}
+              {/* Projects */}
               <div>
-                <div className="flex items-center gap-1.5 mb-3">
-                  <FolderKanban className="w-4 h-4 text-green-600" />
-                  <h3 className="text-sm font-bold text-gray-900">Practice Projects</h3>
+                <div className="flex items-center gap-2 mb-4">
+                    <FolderKanban className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-bold text-gray-900">Build & Practice</h3>
                 </div>
-                <div className="space-y-2">
-                  {currentPhaseDetail.projects.map((project, index) => (
-                    <button
-                      key={index}
-                      className="w-full flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
+                <div className="space-y-4">
+                    {currentPhase.projects.map((proj, i) => (
+                        <div key={i} className="p-5 rounded-xl border border-gray-200 bg-gray-50/50">
+                            <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-bold text-gray-900 text-lg">{proj.name}</h4>
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${getDifficultyColor(proj.difficulty)}`}>
+                                    {proj.difficulty}
+                                </span>
+                            </div>
+                            <p className="text-gray-600 leading-relaxed text-sm mb-3">
+                                {proj.description}
+                            </p>
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 cursor-pointer hover:underline">
+                                <TerminalIcon className="w-3.5 h-3.5" />
+                                View Project Brief (Coming Soon)
+                            </div>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{project.name}</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-green-600 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                  ))}
+                    ))}
+                     {currentPhase.projects.length === 0 && <p className="text-gray-500 italic">No projects listed for this phase.</p>}
                 </div>
-                <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" />
-                  Click on projects to get step-by-step guides with tutorials
-                </p>
               </div>
+
             </div>
           </div>
-        </div>
-
-        {/* Bottom Actions */}
-        <div className="flex gap-3 mt-4">
-          <button 
-            onClick={() => navigate('/ai-assistant', { state: { role } })}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Get AI Learning Help
-          </button>
-          <button 
-            onClick={() => navigate('/resources', { state: { role } })}
-            className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Browse Resources
-          </button>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm transition-colors"
-          >
-            Continue to Dashboard
-          </button>
         </div>
       </div>
     </div>
   );
+}
+
+function TerminalIcon({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+    )
 }

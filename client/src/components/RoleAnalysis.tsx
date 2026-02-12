@@ -484,6 +484,12 @@ export default function RoleAnalysis() {
                 </>
               )}
             </button>
+            <button 
+              onClick={() => navigate('/roadmap', { state: { role, analysis: roleData } })}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm ml-2 shadow-sm font-medium"
+            >
+              View Full Roadmap <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
