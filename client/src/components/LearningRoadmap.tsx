@@ -683,6 +683,14 @@ export default function LearningRoadmap() {
                     </div>
                     
                     <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
+                         {/* Context Banner */}
+                         {chatContext && (
+                             <div className="bg-indigo-50 border border-indigo-100 p-2 rounded-lg text-xs text-indigo-800 mb-2 flex items-start gap-2">
+                                 <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                 <p className="line-clamp-2"><strong>Context:</strong> {chatContext}</p>
+                             </div>
+                         )}
+
                          {/* Chat Messages */}
                          {chatMessages.map(msg => (
                              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
