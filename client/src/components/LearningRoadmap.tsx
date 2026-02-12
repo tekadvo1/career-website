@@ -84,29 +84,58 @@ export default function LearningRoadmap() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
 
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
   const openChatWithContext = (context: string) => {
       setChatContext(context);
       setChatMessages([
-          { id: '1', role: 'assistant', content: `Hi! I see you need help with: "${context}".\n\nHow can I explain this better for you?` }
+          { id: '1', role: 'assistant', content: `Hi! I see you have a question about: "${context}".\n\nHow can I help you understand this better?` }
       ]);
       setShowChat(true);
   };
 
-  const handleSendChat = () => {
+  const handleSendChat = async () => {
       if (!chatInput.trim()) return;
-      const newUserMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: chatInput };
-      setChatMessages(prev => [...prev, newUserMsg]);
-      setChatInput('');
       
-      // Simulate AI response
-      setTimeout(() => {
+      const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: chatInput };
+      setChatMessages(prev => [...prev, userMsg]);
+      setChatInput('');
+      setIsChatLoading(true);
+
+      try {
+          const response = await fetch('/api/ai/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  message: userMsg.content,
+                  context: chatContext,
+                  role: role
+              })
+          });
+
+          const data = await response.json();
+          
+          if (response.ok) {
+              setChatMessages(prev => [...prev, {
+                  id: (Date.now()+1).toString(),
+                  role: 'assistant',
+                  content: data.reply
+              }]);
+          } else {
+              throw new Error(data.error || 'Failed to get response');
+          }
+      } catch (error) {
+          console.error('Chat error:', error);
           setChatMessages(prev => [...prev, {
               id: (Date.now()+1).toString(),
               role: 'assistant',
-              content: "I'm a simulated AI for this demo. In a real app, I would explain this concept in depth! Proceed with the exercises."
+              content: "I'm having trouble connecting right now. Please try again."
           }]);
-      }, 1000);
+      } finally {
+          setIsChatLoading(false);
+      }
   };
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -703,6 +732,15 @@ export default function LearningRoadmap() {
                                  </div>
                              </div>
                          ))}
+                         {isChatLoading && (
+                             <div className="flex justify-start">
+                                 <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
+                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
+                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75" />
+                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150" />
+                                 </div>
+                             </div>
+                         )}
                     </div>
 
                     <div className="p-3 bg-white border-t border-gray-100">
