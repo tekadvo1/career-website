@@ -22,16 +22,27 @@ router.post('/analyze', async (req, res) => {
 
       if (userCache.rows.length > 0) {
         const cachedData = userCache.rows[0].analysis_data;
-        // Only Use cache if it has the new roadmap structure
-        if (cachedData.roadmap && Array.isArray(cachedData.roadmap)) {
-          console.log(`Returning cache for user ${userId}: ${normalizedRole}`);
+        
+        let isModernStructure = false;
+        if (cachedData.roadmap && Array.isArray(cachedData.roadmap) && cachedData.roadmap.length > 0) {
+            const firstPhase = cachedData.roadmap[0];
+            if (firstPhase.topics && Array.isArray(firstPhase.topics) && firstPhase.topics.length > 0) {
+                // Check if the first topic is an object, not a string
+                if (typeof firstPhase.topics[0] === 'object') {
+                    isModernStructure = true;
+                }
+            }
+        }
+
+        if (isModernStructure) {
+          console.log(`Returning detailed cache for user ${userId}: ${normalizedRole}`);
           return res.json({
             success: true,
             data: cachedData,
             source: 'database'
           });
         }
-        console.log(`Cache found but missing roadmap, regenerating for: ${normalizedRole}`);
+        console.log(`Cache found but using old structure, regenerating for: ${normalizedRole}`);
       }
     }
 
@@ -113,7 +124,17 @@ router.post('/analyze', async (req, res) => {
                   "duration": "e.g., 4 weeks",
                   "difficulty": "Beginner/Intermediate/Advanced",
                   "description": "Goal of this phase",
-                  "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4"],
+                  "topics": [
+                     {
+                       "name": "Topic Name (e.g. React Components)",
+                       "description": "Detailed explanation of what to learn.",
+                       "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
+                       "topic_resources": [
+                          { "name": "Best Udemy Course for this topic", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
+                          { "name": "Best Free Tutorial", "url": "https://youtube.com/...", "type": "Video", "is_free": true }
+                       ]
+                     }
+                  ],
                   "skills_covered": ["Skill A", "Skill B"],
                   "step_by_step_guide": ["Step 1: Do this...", "Step 2: Learn that...", "Step 3: Build this..."],
                   "resources": [
@@ -125,7 +146,24 @@ router.post('/analyze', async (req, res) => {
                 }
               ]
             }
-          `
+            
+            CRITICAL IMPERATIVE:
+            1. Provide a "roadmap" array that covers the entire journey from Beginner to Expert.
+            2. The roadmap MUST be exhaustive. Do not limit the number of phases or items.
+            3. "topics" MUST be an array of objects, NOT strings. Each topic must have:
+               - "description": What is it?
+               - "subtopics": A granular checklist of 3-5 sub-concepts.
+               - "topic_resources": At least 2 specific links for THAT topic (1 Paid/Udemy, 1 Free/YouTube/Docs).
+            4. "resources" MUST include REAL, VALID URLs. Prioritize high-quality content from:
+               - Udemy (Paid courses)
+               - YouTube (Free tutorials)
+               - Coursera/edX (Structured learning)
+               - Official Documentation
+            5. "step_by_step_guide" should be a detailed, numbered list of actions to take in this phase.
+            6. "projects" should be concrete and build a portfolio.
+
+            Return valid JSON with this EXACT structure:
+            `
         }
       ],
       temperature: 0.4,

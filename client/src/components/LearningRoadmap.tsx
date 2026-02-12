@@ -30,12 +30,26 @@ interface Project {
   difficulty: string;
 }
 
+interface TopicResource {
+    name: string;
+    url: string;
+    type: string;
+    is_free: boolean;
+}
+
+interface DetailedTopic {
+    name: string;
+    description: string;
+    subtopics: string[];
+    topic_resources: TopicResource[];
+}
+
 interface RoadmapPhase {
   phase: string;
   duration: string;
   difficulty: string;
   description?: string;
-  topics: string[];
+  topics: (string | DetailedTopic)[];
   skills_covered?: string[];
   step_by_step_guide: string[];
   resources: Resource[];
@@ -349,19 +363,83 @@ export default function LearningRoadmap() {
               {/* Topics & Skills Grid */}
               <div className="grid md:grid-cols-2 gap-8 mb-8">
                   {/* Topics */}
-                  <div>
+                  {/* Topics Detailed View */}
+                  <div className="col-span-2">
                     <div className="flex items-center gap-2 mb-4">
                         <Lightbulb className="w-5 h-5 text-amber-500" />
-                        <h3 className="text-lg font-bold text-gray-900">Key Topics</h3>
+                        <h3 className="text-lg font-bold text-gray-900">Key Topics & Modules</h3>
                     </div>
-                    <ul className="space-y-3">
-                        {currentPhase.topics.map((topic, i) => (
-                            <li key={i} className="flex items-start gap-2.5">
-                                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                <span className="text-gray-700">{topic}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="space-y-4">
+                        {currentPhase.topics.map((topic, i) => {
+                            // Check if topic is complex object or simple string
+                            if (typeof topic === 'string') {
+                                return (
+                                    <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg">
+                                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                        <span className="text-gray-700 font-medium">{topic}</span>
+                                    </div>
+                                );
+                            } else {
+                                // Render detailed topic card
+                                return (
+                                    <div key={i} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow bg-white">
+                                        <div className="flex items-start gap-3 mb-2">
+                                            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">
+                                                {i + 1}
+                                            </span>
+                                            <div>
+                                                 <h4 className="font-bold text-gray-900 text-lg">{topic.name}</h4>
+                                                 <p className="text-gray-600 text-sm leading-relaxed mt-1">{topic.description}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Subtopics Checklist */}
+                                        <div className="ml-9 mt-3 mb-4 bg-gray-50 p-3 rounded-lg">
+                                            <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">What you'll learn:</h5>
+                                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                {topic.subtopics && topic.subtopics.map((sub, j) => (
+                                                    <li key={j} className="flex items-start gap-2 text-sm text-gray-700">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0"></div>
+                                                        {sub}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        {/* Topic Specific Resources */}
+                                        {topic.topic_resources && topic.topic_resources.length > 0 && (
+                                            <div className="ml-9 mt-3">
+                                                <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Specific Resources:</h5>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {topic.topic_resources.map((res, k) => (
+                                                        <a 
+                                                            key={k}
+                                                            href={res.url}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-colors group ${
+                                                                res.is_free 
+                                                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                                                                : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                                                            }`}
+                                                        >
+                                                            {/* Simple icon logic based on type/name */}
+                                                            {res.type?.toLowerCase().includes('video') || res.name.toLowerCase().includes('youtube') 
+                                                                ? <div className="i-lucide-youtube w-3 h-3" /> 
+                                                                : <BookOpen className="w-3 h-3" />
+                                                            }
+                                                            <span className="font-semibold truncate max-w-[200px]">{res.name}</span>
+                                                            <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+                        })}
+                    </div>
                   </div>
 
                   {/* Skills */}
