@@ -153,8 +153,8 @@ router.post('/analyze', async (req, res) => {
             }
             
             CRITICAL IMPERATIVE:
-            1. Provide a "roadmap" array that covers the entire journey from Beginner to Expert.
-            2. The roadmap MUST be exhaustive. Do not limit the number of phases or items.
+            1. Provide a "roadmap" array that covers the entire journey from Absolute Beginner to World-Class Expert.
+            2. UNLIMITED PHASES: Do NOT limit the number of phases. If mastery require 10, 15, or 20 phases, provide them all. Be EXHAUSTIVE.
             3. "topics" MUST be an array of objects. Each topic must have:
                - "description": A comprehensive explanation (2-3 sentences).
                - "practical_application": A specific exercise to practice this concept.
@@ -168,8 +168,8 @@ router.post('/analyze', async (req, res) => {
             `
         }
       ],
-      temperature: 0.4,
-      max_tokens: 4000
+      temperature: 0.5,
+      max_tokens: 15000
     })
   });
 
