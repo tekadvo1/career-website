@@ -85,8 +85,13 @@ router.post('/analyze', async (req, res) => {
             CRITICAL IMPERATIVE:
             1. Provide a "roadmap" array that covers the entire journey from Beginner to Expert.
             2. The roadmap MUST be exhaustive. Do not limit the number of phases or items.
-            3. "resources" MUST include REAL, VALID URLs (e.g., official docs, popular courses on Coursera/Udemy/edX/YouTube, or GitHub repos). Do not use placeholder links.
-            4. "projects" should be concrete and build a portfolio.
+            8. "resources" MUST include REAL, VALID URLs. Prioritize high-quality content from:
+               - Udemy (Paid courses)
+               - YouTube (Free tutorials)
+               - Coursera/edX (Structured learning)
+               - Official Documentation
+            9. "step_by_step_guide" should be a detailed, numbered list of actions to take in this phase.
+            10. "projects" should be concrete and build a portfolio.
 
             Return valid JSON with this EXACT structure:
             {
@@ -110,6 +115,7 @@ router.post('/analyze', async (req, res) => {
                   "description": "Goal of this phase",
                   "topics": ["Topic 1", "Topic 2", "Topic 3", "Topic 4"],
                   "skills_covered": ["Skill A", "Skill B"],
+                  "step_by_step_guide": ["Step 1: Do this...", "Step 2: Learn that...", "Step 3: Build this..."],
                   "resources": [
                     { "name": "Resource Title", "url": "https://active-link.com", "type": "Course/Video/Article", "is_free": true }
                   ],
@@ -140,7 +146,7 @@ router.post('/analyze', async (req, res) => {
   let analysisData;
   try {
     const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
-    const jsonText = jsonMatch ? jsonMatch[1] : analysisText; // If no match, try parsing the whole text
+    const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
     analysisData = JSON.parse(jsonText);
   } catch (e) {
     console.error('Failed to parse AI response:', e);

@@ -11,7 +11,8 @@ import {
   BookOpen,
   Lightbulb,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  ListChecks
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -36,6 +37,7 @@ interface RoadmapPhase {
   description?: string;
   topics: string[];
   skills_covered?: string[];
+  step_by_step_guide: string[];
   resources: Resource[];
   projects: Project[];
 }
@@ -297,13 +299,13 @@ export default function LearningRoadmap() {
                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Actions</h3>
                  <div className="space-y-2">
                      <button 
-                         onClick={() => navigate('/resources', { state: { role, analysis: location.state?.analysis } })}
+                         onClick={() => navigate('/onboarding')}
                          className="w-full flex items-center gap-3 p-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                      >
                          <div className="p-1.5 bg-indigo-100 rounded text-indigo-600">
-                             <BookOpen className="w-4 h-4" />
+                             <RefreshCw className="w-4 h-4" />
                          </div>
-                         <span>Full Resource Library</span>
+                         <span>Start New Analysis</span>
                      </button>
                  </div>
              </div>
@@ -323,6 +325,26 @@ export default function LearningRoadmap() {
                  <h2 className="text-3xl font-extrabold text-gray-900 mb-3">{currentPhase.phase}</h2>
                  <p className="text-gray-600 text-lg leading-relaxed">{currentPhase.description}</p>
               </div>
+
+               {/* Step-by-Step Guide */}
+               {currentPhase.step_by_step_guide && currentPhase.step_by_step_guide.length > 0 && (
+                <div className="mb-8 p-6 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                  <div className="flex items-center gap-2 mb-4">
+                      <ListChecks className="w-5 h-5 text-indigo-600" />
+                      <h3 className="text-lg font-bold text-gray-900">Step specific Guide</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {currentPhase.step_by_step_guide.map((step, i) => (
+                      <div key={i} className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 font-bold text-xs flex items-center justify-center mt-0.5">
+                          {i + 1}
+                        </div>
+                        <p className="text-gray-700 leading-relaxed">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Topics & Skills Grid */}
               <div className="grid md:grid-cols-2 gap-8 mb-8">
@@ -428,6 +450,23 @@ export default function LearningRoadmap() {
                     ))}
                      {currentPhase.projects.length === 0 && <p className="text-gray-500 italic">No projects listed for this phase.</p>}
                 </div>
+              </div>
+
+             {/* Explore More Resources CTA */}
+             <div className="mt-12 p-8 bg-gradient-to-r from-gray-900 to-indigo-900 rounded-2xl text-center text-white relative overflow-hidden group cursor-pointer" onClick={() => navigate('/resources', { state: { role, analysis: location.state?.analysis } })}>
+                  <div className="relative z-10">
+                      <h3 className="text-2xl font-bold mb-2">Want to explore more learning materials?</h3>
+                      <p className="text-indigo-200 mb-6 max-w-lg mx-auto">Access our complete library of courses, tutorials, and documentation tailored for {role}.</p>
+                      <button 
+                          className="px-6 py-3 bg-white text-indigo-900 font-bold rounded-lg hover:bg-indigo-50 transition-colors inline-flex items-center gap-2 shadow-lg"
+                      >
+                          <BookOpen className="w-5 h-5" />
+                          Open Resource Hub
+                      </button>
+                  </div>
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-700"></div>
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl -ml-10 -mb-10 transition-transform group-hover:scale-125 duration-700"></div>
               </div>
 
             </div>
