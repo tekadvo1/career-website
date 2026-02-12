@@ -147,7 +147,8 @@ router.post('/analyze', async (req, res) => {
                   ],
                   "projects": [
                     { "name": "Project Name", "description": "What to build", "difficulty": "Easy/Medium/Hard" }
-                  ]
+                  ],
+                  "category": "Beginner/Intermediate/Advanced"
                 }
               ]
             }
@@ -155,14 +156,15 @@ router.post('/analyze', async (req, res) => {
             CRITICAL IMPERATIVE:
             1. Provide a "roadmap" array that covers the entire journey from Absolute Beginner to World-Class Expert.
             2. UNLIMITED PHASES: Do NOT limit the number of phases. If mastery require 10, 15, or 20 phases, provide them all. Be EXHAUSTIVE.
-            3. "topics" MUST be an array of objects. Each topic must have:
+            3. CATEGORIZATION: Each phase MUST have a "category" field with one of these exact values: "Beginner", "Intermediate", or "Advanced".
+            4. "topics" MUST be an array of objects. Each topic must have:
                - "description": A comprehensive explanation (2-3 sentences).
                - "practical_application": A specific exercise to practice this concept.
                - "subtopics": A granular checklist of 3-5 sub-concepts.
                - "topic_resources": At least 2 specific links (1 Paid/Udemy, 1 Free/YouTube).
-            4. "step_by_step_guide" should be a detailed list of INSTRUCTIONAL PARAGRAPHS, not just short sentences. Guide the user on exactly HOW to learn.
-            5. "resources" and "topic_resources" MUST include REAL, VALID URLs.
-            6. "projects" should be concrete.
+            5. "step_by_step_guide" should be a detailed list of INSTRUCTIONAL PARAGRAPHS, not just short sentences. Guide the user on exactly HOW to learn.
+            6. "resources" and "topic_resources" MUST include REAL, VALID URLs.
+            7. "projects" should be concrete.
 
             Return valid JSON with this EXACT structure:
             `

@@ -49,6 +49,7 @@ interface RoadmapPhase {
   phase: string;
   duration: string;
   difficulty: string;
+  category?: string; // Add category field
   description?: string;
   topics: (string | DetailedTopic)[];
   skills_covered?: string[];
@@ -63,6 +64,7 @@ export default function LearningRoadmap() {
   const [role, setRole] = useState(location.state?.role || "Software Engineer");
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Beginner'); // Category filtering state
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -168,8 +170,16 @@ export default function LearningRoadmap() {
       }
     };
 
-  const currentPhase = roadmap[selectedPhaseIndex];
-  const totalPhases = roadmap.length;
+  // Filter phases based on selected category
+  const filteredPhases = roadmap.filter(phase => {
+      if (!phase.category) return true; // Show all if no category (backward compatibility)
+      return phase.category.toLowerCase() === selectedCategory.toLowerCase();
+  });
+
+  // If filtered phases exist, use them. Otherwise fallback to unfiltered (or handle empty state)
+  const activeRoadmap = filteredPhases.length > 0 ? filteredPhases : roadmap;
+  const currentPhase = activeRoadmap[selectedPhaseIndex] || activeRoadmap[0];
+  const totalPhases = roadmap.length; // Keep total phases count accurate to global count
 
   const getDifficultyColor = (difficulty: string) => {
     const d = difficulty.toLowerCase();
@@ -271,41 +281,68 @@ export default function LearningRoadmap() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Sidebar - Phases Navigation */}
           <div className="lg:col-span-4 space-y-4">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                <Target className="w-4 h-4 text-indigo-600" />
-                <h2 className="font-bold text-gray-900">Learning Phases</h2>
-              </div>
-              <div className="p-2 space-y-1 max-h-[calc(100vh-300px)] overflow-y-auto">
-                {roadmap.map((phase, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedPhaseIndex(index)}
-                    className={`w-full text-left p-4 rounded-lg border transition-all duration-200 group relative ${
-                      selectedPhaseIndex === index 
-                        ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 z-10' 
-                        : 'border-transparent hover:bg-gray-50 text-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                            selectedPhaseIndex === index ? 'bg-indigo-200 text-indigo-800' : 'bg-gray-200 text-gray-600'
-                        }`}>
-                            Phase {index + 1}
-                        </span>
-                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${getDifficultyColor(phase.difficulty)}`}>
-                            {phase.difficulty}
-                        </span>
-                    </div>
-                    <h3 className={`font-bold text-sm mb-1 ${selectedPhaseIndex === index ? 'text-indigo-900' : 'text-gray-900'}`}>
-                        {phase.phase}
-                    </h3>
-                     <div className="flex items-center gap-2 text-xs opacity-80">
-                        <Calendar className="w-3 h-3" />
-                        {phase.duration}
-                     </div>
-                  </button>
+            
+            {/* Category Filter Tabs */}
+            <div className="bg-white rounded-xl shadow-sm p-1.5 flex gap-1 mb-2">
+                {['Beginner', 'Intermediate', 'Advanced'].map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => {
+                            setSelectedCategory(cat);
+                            setSelectedPhaseIndex(0);
+                        }}
+                        className={`flex-1 py-2 px-1 text-center rounded-lg text-xs font-bold transition-all ${
+                            selectedCategory === cat 
+                            ? 'bg-indigo-600 text-white shadow-sm' 
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                        }`}
+                    >
+                        {cat}
+                    </button>
                 ))}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-2">
+                <Target className="w-4 h-4 text-indigo-600" />
+                <h2 className="font-bold text-gray-900">Learning Path: {selectedCategory}</h2>
+              </div>
+              <div className="p-2 space-y-1 max-h-[calc(100vh-320px)] overflow-y-auto">
+                {activeRoadmap.length > 0 ? (
+                    activeRoadmap.map((phase, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedPhaseIndex(index)}
+                        className={`w-full text-left p-4 rounded-lg border transition-all duration-200 group relative ${
+                          selectedPhaseIndex === index 
+                            ? 'border-indigo-500 bg-indigo-50 ring-1 ring-indigo-500 z-10' 
+                            : 'border-transparent hover:bg-gray-50 text-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                                selectedPhaseIndex === index ? 'bg-indigo-200 text-indigo-800' : 'bg-gray-200 text-gray-600'
+                            }`}>
+                                Phase {index + 1}
+                            </span>
+                             <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${getDifficultyColor(phase.difficulty)}`}>
+                                {phase.difficulty}
+                            </span>
+                        </div>
+                        <h3 className={`font-bold text-sm mb-1 ${selectedPhaseIndex === index ? 'text-indigo-900' : 'text-gray-900'}`}>
+                            {phase.phase}
+                        </h3>
+                         <div className="flex items-center gap-2 text-xs opacity-80">
+                            <Calendar className="w-3 h-3" />
+                            {phase.duration}
+                         </div>
+                      </button>
+                    ))
+                ) : (
+                    <div className="p-8 text-center text-gray-400 italic text-sm">
+                        No phases found for {selectedCategory}.
+                    </div>
+                )}
               </div>
             </div>
             
