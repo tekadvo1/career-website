@@ -630,8 +630,21 @@ export default function LearningRoadmap() {
                                    </div>
                                </div>
                            </div>
-                           <div className="text-indigo-600 font-medium text-sm px-3 py-1 rounded-full bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
-                               Start Learning
+                           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                               <button 
+                                   onClick={(e) => {
+                                       e.preventDefault();
+                                       e.stopPropagation();
+                                       openChatWithContext(`I'm interested in this resource: "${res.name}". Is it good for beginners? What alternative would you suggest?`);
+                                   }}
+                                   className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                                   title="Ask AI about this resource"
+                               >
+                                   <Bot className="w-5 h-5" />
+                               </button>
+                               <div className="text-indigo-600 font-medium text-sm px-3 py-1 rounded-full bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+                                   Start Learning
+                               </div>
                            </div>
                         </a>
                     ))}
@@ -688,6 +701,19 @@ export default function LearningRoadmap() {
           </div>
         </div>
       </div>
+
+        {/* Floating Action Button (FAB) for General AI Help */}
+        {!showChat && (
+            <button
+                onClick={() => openChatWithContext(`I need general advice on the "${role}" roadmap. Where should I start?`)}
+                className="fixed bottom-6 right-6 z-40 bg-indigo-600 text-white p-4 rounded-full shadow-xl hover:bg-indigo-700 hover:scale-105 transition-all flex items-center gap-2 group animate-in slide-in-from-bottom-5 duration-500"
+            >
+                <Bot className="w-6 h-6" />
+                <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-out whitespace-nowrap font-bold">
+                    Ask AI Assistant
+                </span>
+            </button>
+        )}
 
         {/* Floating Chat Component */}
         {showChat && (
