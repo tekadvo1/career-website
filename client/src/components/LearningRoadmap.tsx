@@ -12,11 +12,17 @@ import {
   Lightbulb,
   ExternalLink,
   RefreshCw,
-  ListChecks
+  ListChecks,
+  Bot,
+  MessageSquare,
+  X,
+  ArrowRight
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+// ... imports
+// ...
 interface Resource {
   name: string;
   url: string;
@@ -28,6 +34,12 @@ interface Project {
   name: string;
   description: string;
   difficulty: string;
+}
+
+interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
 }
 
 interface TopicResource {
@@ -46,16 +58,75 @@ interface DetailedTopic {
 }
 
 interface RoadmapPhase {
-  phase: string;
-  duration: string;
-  difficulty: string;
-  category?: string; // Add category field
-  description?: string;
-  topics: (string | DetailedTopic)[];
-  skills_covered?: string[];
-  step_by_step_guide: string[];
-  resources: Resource[];
-  projects: Project[];
+// ...
+// ... inside LearningRoadmap at the bottom of return ...
+        {/* Floating Chat Component */}
+        {showChat && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] h-[600px] animate-in zoom-in-95 duration-200">
+                    <div className="p-4 bg-indigo-600 text-white flex items-center justify-between shadow-md z-10">
+                        <div className="flex items-center gap-2">
+                            <div className="bg-white/20 p-1.5 rounded-lg">
+                                <Bot className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-sm">AI Learning Assistant</h3>
+                                <p className="text-xs text-indigo-100 opacity-90">Here to help with your roadmap</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setShowChat(false)} 
+                            className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/90 hover:text-white"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    
+                    <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
+                         {/* Chat Messages */}
+                         {chatMessages.map(msg => (
+                             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                 <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
+                                     msg.role === 'user' 
+                                     ? 'bg-indigo-600 text-white rounded-tr-none shadow-sm' 
+                                     : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none shadow-sm'
+                                 }`}>
+                                     <p className="whitespace-pre-wrap">{msg.content}</p>
+                                 </div>
+                             </div>
+                         ))}
+                    </div>
+
+                    <div className="p-3 bg-white border-t border-gray-100">
+                        <div className="flex gap-2 items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+                            <input 
+                                type="text" 
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                                placeholder="Type your question..."
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 placeholder:text-gray-400"
+                                autoFocus
+                            />
+                            <button 
+                                onClick={handleSendChat}
+                                disabled={!chatInput.trim()}
+                                className="p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-center text-gray-400 mt-2">
+                            AI creates content. Check important info.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+      </div>
+    </div>
+  );
 }
 
 export default function LearningRoadmap() {
@@ -67,6 +138,34 @@ export default function LearningRoadmap() {
   const [selectedCategory, setSelectedCategory] = useState<string>('Beginner'); // Category filtering state
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatContext, setChatContext] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+
+  const openChatWithContext = (context: string) => {
+      setChatContext(context);
+      setChatMessages([
+          { id: '1', role: 'assistant', content: `Hi! I see you need help with: "${context}".\n\nHow can I explain this better for you?` }
+      ]);
+      setShowChat(true);
+  };
+
+  const handleSendChat = () => {
+      if (!chatInput.trim()) return;
+      const newUserMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: chatInput };
+      setChatMessages(prev => [...prev, newUserMsg]);
+      setChatInput('');
+      
+      // Simulate AI response
+      setTimeout(() => {
+          setChatMessages(prev => [...prev, {
+              id: (Date.now()+1).toString(),
+              role: 'assistant',
+              content: "I'm a simulated AI for this demo. In a real app, I would explain this concept in depth! Proceed with the exercises."
+          }]);
+      }, 1000);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -236,7 +335,7 @@ export default function LearningRoadmap() {
               >
                 {isDownloading ? 'Saving...' : (
                     <>
-                        <Download className="w-4 h-4" />
+                <Download className="w-4 h-4" />
                         Download PDF
                     </>
                 )}
@@ -246,6 +345,12 @@ export default function LearningRoadmap() {
                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center gap-2"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> New Role
+              </button>
+              <button 
+                 onClick={() => navigate('/dashboard')}
+                 className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-indigo-600 transition-colors text-sm font-medium flex items-center gap-2"
+              >
+                Skip to Dashboard <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -465,28 +570,37 @@ export default function LearningRoadmap() {
                                                 <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Specific Resources:</h5>
                                                 <div className="flex flex-wrap gap-2">
                                                     {topic.topic_resources.map((res, k) => (
-                                                        <a 
-                                                            key={k}
-                                                            href={res.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-colors group ${
-                                                                res.is_free 
-                                                                ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
-                                                                : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
-                                                            }`}
-                                                        >
-                                                            {/* Simple icon logic based on type/name */}
-                                                            {res.type?.toLowerCase().includes('video') || res.name.toLowerCase().includes('youtube') 
-                                                                ? <div className="i-lucide-youtube w-3 h-3" /> 
-                                                                : <BookOpen className="w-3 h-3" />
-                                                            }
-                                                            <span className="font-semibold truncate max-w-[200px]">{res.name}</span>
-                                                            <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                                                        </a>
+                                                        <div key={k} className="flex items-center gap-1">
+                                                            <a 
+                                                                href={res.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-colors group ${
+                                                                    res.is_free 
+                                                                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
+                                                                    : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
+                                                                }`}
+                                                            >
+                                                                {/* Simple icon logic based on type/name */}
+                                                                {res.type?.toLowerCase().includes('video') || res.name.toLowerCase().includes('youtube') 
+                                                                    ? <div className="i-lucide-youtube w-3 h-3" /> 
+                                                                    : <BookOpen className="w-3 h-3" />
+                                                                }
+                                                                <span className="font-semibold truncate max-w-[200px]">{res.name}</span>
+                                                                <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                                            </a>
+                                                            <button 
+                                                                onClick={() => openChatWithContext(`I'm having trouble with this resource: ${res.name} (${res.url}). Can you help me understand this topic or suggest an alternative?`)}
+                                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                                                                title="Ask AI about this"
+                                                            >
+                                                                <Bot className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>
+
                                         )}
                                     </div>
                                 );
