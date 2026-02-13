@@ -176,6 +176,26 @@ export default function LearningRoadmap() {
           }
       }
 
+      // Load progress from API (Source of Truth)
+      try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+              const user = JSON.parse(userStr);
+              // Fetch asynchronously without blocking the rest of the load
+              fetch(`/api/role/progress?role=${encodeURIComponent(role)}&userId=${user.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && Array.isArray(data.completedTopics)) {
+                        console.log("Loaded progress from API:", data.completedTopics.length);
+                        setCompletedTopics(new Set(data.completedTopics));
+                    }
+                })
+                .catch(e => console.error("Error loading progress from API", e));
+          }
+      } catch (e) {
+          console.error("Error checking user for progress load", e);
+      }
+
       // 1. Try to get data from location state 
       let analysis = location.state?.analysis;
       let targetRole = location.state?.role || role;
@@ -282,16 +302,41 @@ export default function LearningRoadmap() {
 
   // --- NEW FUNCTIONS ---
 
-  const toggleTopicCompletion = (topicName: string) => {
+  const toggleTopicCompletion = async (topicName: string) => {
+      // Check current state to determine next state
+      const isCompleted = !completedTopics.has(topicName);
+
+      // Optimistic UI Update
       setCompletedTopics(prev => {
           const newSet = new Set(prev);
-          if (newSet.has(topicName)) {
-              newSet.delete(topicName);
-          } else {
+          if (isCompleted) {
               newSet.add(topicName);
+          } else {
+              newSet.delete(topicName);
           }
           return newSet;
       });
+
+      // Sync with Backend
+      try {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+             const user = JSON.parse(userStr);
+             // Don't await this to keep UI snappy, just let it run
+             fetch('/api/role/progress', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({
+                     userId: user.id,
+                     role: role,
+                     topicName: topicName,
+                     isCompleted: isCompleted
+                 })
+             }).catch(err => console.error("Background sync failed", err));
+          }
+      } catch (error) {
+          console.error("Failed to initiate sync", error);
+      }
   };
 
   const generateQuiz = async (phase: RoadmapPhase) => {

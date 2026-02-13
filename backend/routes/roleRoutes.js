@@ -268,4 +268,56 @@ router.post('/analyze', async (req, res) => {
   }
 });
 
+
+// GET /api/role/progress - Get completed topics for a role
+router.get('/progress', async (req, res) => {
+    const { role, userId } = req.query;
+
+    if (!userId || !role) {
+        return res.status(400).json({ error: 'User ID and Role are required' });
+    }
+
+    try {
+        const result = await pool.query(
+            "SELECT topic_name FROM roadmap_progress WHERE user_id = $1 AND role = $2",
+            [userId, role]
+        );
+        
+        const completedTopics = result.rows.map(row => row.topic_name);
+        res.json({ success: true, completedTopics });
+    } catch (err) {
+        console.error('Error fetching progress:', err);
+        res.status(500).json({ error: 'Failed to fetch progress' });
+    }
+});
+
+// POST /api/role/progress - Toggle topic completion
+router.post('/progress', async (req, res) => {
+    const { role, userId, topicName, isCompleted } = req.body;
+
+    if (!userId || !role || !topicName) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        if (isCompleted) {
+            // Add to progress
+            await pool.query(
+                "INSERT INTO roadmap_progress (user_id, role, topic_name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+                [userId, role, topicName]
+            );
+        } else {
+            // Remove from progress
+            await pool.query(
+                "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_name = $3",
+                [userId, role, topicName]
+            );
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error updating progress:', err);
+        res.status(500).json({ error: 'Failed to update progress' });
+    }
+});
+
 module.exports = router;

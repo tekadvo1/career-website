@@ -68,3 +68,24 @@ CREATE TABLE IF NOT EXISTS user_courses (
   progress INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Track user progress on roadmap topics
+CREATE TABLE IF NOT EXISTS roadmap_progress (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  role VARCHAR(255) NOT NULL, -- The role this progress is for (e.g., "Full Stack Developer")
+  topic_name VARCHAR(255) NOT NULL,
+  completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, role, topic_name) -- Prevent duplicate entries for the same topic
+);
+
+-- Track quiz scores (optional but good for future)
+CREATE TABLE IF NOT EXISTS quiz_results (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(255) NOT NULL,
+    phase_index INTEGER NOT NULL,
+    score INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
