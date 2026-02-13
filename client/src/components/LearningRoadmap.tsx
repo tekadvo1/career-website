@@ -520,8 +520,50 @@ export default function LearningRoadmap() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Sidebar - Phases Navigation */}
-          <div className="lg:col-span-4 space-y-4">
+          
+          {/* Mobile Phase Navigation & Filters */}
+          <div className="lg:hidden space-y-4">
+             {/* Mobile Category Tabs */}
+             <div className="bg-white rounded-xl shadow-sm p-1.5 flex gap-1 overflow-x-auto no-scrollbar">
+                {['Beginner', 'Intermediate', 'Advanced'].map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => {
+                            setSelectedCategory(cat);
+                            setSelectedPhaseIndex(0);
+                        }}
+                        className={`flex-1 min-w-[100px] py-2 px-1 text-center rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                            selectedCategory === cat 
+                            ? 'bg-indigo-600 text-white shadow-sm' 
+                            : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                        }`}
+                    >
+                        {cat}
+                    </button>
+                ))}
+             </div>
+
+             {/* Mobile Phase Dropdown/Selector */}
+             <div className="bg-white rounded-xl shadow-sm p-3 border border-gray-100">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                    Current Phase
+                </label>
+                <select 
+                    value={selectedPhaseIndex} 
+                    onChange={(e) => setSelectedPhaseIndex(Number(e.target.value))}
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    {activeRoadmap.map((phase, index) => (
+                        <option key={index} value={index}>
+                            Phase {index + 1}: {phase.phase} ({phase.duration})
+                        </option>
+                    ))}
+                </select>
+             </div>
+          </div>
+
+          {/* Desktop Left Sidebar - Phases Navigation */}
+          <div className="hidden lg:col-span-4 lg:block space-y-4">
             
             {/* Category Filter Tabs */}
             <div className="bg-white rounded-xl shadow-sm p-1.5 flex gap-1 mb-2">
