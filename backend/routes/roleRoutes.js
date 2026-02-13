@@ -72,52 +72,94 @@ router.post('/analyze', async (req, res) => {
           },
           {
             role: 'user',
-            content: `Create a definitive career guide for the role: "${role}" at the "${experienceLevel}" level in "${country}".
+            content: `Create a definitive, EXHAUSTIVE, and DEEPLY EDUCATIONAL career guide for the role: "${role}" at the "${experienceLevel}" level in "${country}".
+            
+            Your goal is to make the user FULLY UNDERSTAND what is required and WHY. Do not hold back information. If a role requires 20 skills, list all 20. If it requires 15 tools, list all 15.
             
             Provide the response strictly in JSON format with this structure:
             {
               "title": "${role}",
-              "description": "Detailed description of what this role involves.",
-              "jobGrowth": "Current market growth rate in ${country}",
-              "salaryRange": "Realistic salary range in ${country} (use local currency)",
-              "skills": [
-                { "name": "Skill Name", "level": "Beginner/Intermediate/Advanced", "priority": "High/Medium", "timeToLearn": "Estimated time" }
-              ],
-              "tools": [
-                 { "name": "Tool Name", "category": "Category", "description": "Brief description", "difficulty": "Difficulty" }
-              ],
-              "languages": ["Relevant Language 1", "Relevant Language 2"],
-              "frameworks": ["Relevant Framework 1", "Relevant Framework 2"],
-              "resources": [
-                { "name": "Resource Title", "provider": "Provider", "type": "free/paid", "duration": "Duration", "category": "Course/Tutorial", "url": "URL" }
-              ]
-            }
-            
-            CRITICAL IMPERATIVE:
-            1. Provide a "roadmap" array that covers the entire journey from Beginner to Expert.
-            2. The roadmap MUST be exhaustive. Do not limit the number of phases or items.
-            8. "resources" MUST include REAL, VALID URLs. Prioritize high-quality content from:
-               - Udemy (Paid courses)
-               - YouTube (Free tutorials)
-               - Coursera/edX (Structured learning)
-               - Official Documentation
-            9. "step_by_step_guide" should be a detailed, numbered list of actions to take in this phase.
-            10. "projects" should be concrete and build a portfolio.
-
-            Return valid JSON with this EXACT structure:
-            {
-              "title": "${role}",
-              "description": "Detailed role description.",
-              "jobGrowth": "Market growth in ${country}",
-              "salaryRange": "Salary range in ${country}",
-              "skills": [
-                { "name": "Skill Name", "level": "Beginner/Intermediate/Advanced", "priority": "High", "timeToLearn": "e.g. 2 weeks" }
-              ],
-              "extra_sections": {
-                 "tools": [{ "name": "Tool", "category": "Type", "difficulty": "Easy/Hard" }],
-                 "languages": ["Lang 1", "Lang 2"],
-                 "frameworks": ["Frame 1", "Frame 2"]
+              "description": "Comprehensive, multi-paragraph description of exactly what this professional does day-to-day, their responsibilities, and their impact on the business.",
+              "jobGrowth": "Current market growth rate and future outlook in ${country}",
+              "salaryRange": "Overview salary range in ${country}",
+              
+              "salary_insights": {
+                 "entry_level": "e.g. $60k - $80k",
+                 "senior_level": "e.g. $120k - $160k",
+                 "salary_growth_potential": "High/Medium/Low",
+                 "negotiation_tips": "Specific advice on how to negotiate deeper compensation for this role."
               },
+
+              "day_in_the_life": [
+                 { "time": "9:00 AM", "activity": "Standup Meeting", "description": "Discuss blockers with the team." },
+                 { "time": "11:00 AM", "activity": "Deep Work", "description": "Coding core features." }
+              ],
+
+              "career_paths": [
+                 { "role": "Next Step Role 1", "timeline": "2-4 years", "description": "Explanation of this transition." },
+                 { "role": "Next Step Role 2", "timeline": "5+ years", "description": "Explanation of this transition." }
+              ],
+
+              "interview_prep": [
+                 { "question": "Common Interview Question 1", "answer_tip": "Advice on how to answer this question effectively." },
+                 { "question": "Common Interview Question 2", "answer_tip": "Advice on how to answer this question effectively." },
+                 { "question": "Common Interview Question 3", "answer_tip": "Advice on how to answer this question effectively." }
+              ],
+
+              "soft_skills": [
+                 { "name": "Communication", "description": "Why efficient communication is vital." },
+                 { "name": "Leadership", "description": "Leading small teams or initiatives." }
+              ],
+
+              "skills": [
+                { 
+                  "name": "Skill Name", 
+                  "level": "Beginner/Intermediate/Advanced", 
+                  "priority": "High/Medium/Low", 
+                  "timeToLearn": "Estimated time (e.g. 2 weeks)",
+                  "reason": "CRITICAL: Explain WHY this skill is needed for this specific role. (e.g. 'Needed to build scalable APIs').",
+                  "practical_application": "A specific example of how this skill is used on the job."
+                }
+              ],
+              
+              "tools": [
+                 { 
+                   "name": "Tool Name", 
+                   "category": "Category", 
+                   "difficulty": "Easy/Medium/Hard",
+                   "description": "What is this tool?",
+                   "usage_context": "CRITICAL: Explain exactly WHEN and HOW this tool is used. (e.g. 'Used daily for tracking bug reports in Agile teams')."
+                 }
+              ],
+              
+              "languages": [
+                {
+                   "name": "Language Name",
+                   "description": "Brief description",
+                   "usage": "CRITICAL: Explain why this language is dominant in this field. (e.g. 'Python is the industry standard for Data Science due to its rich library ecosystem')." 
+                }
+              ],
+              
+              "frameworks": [
+                 {
+                   "name": "Framework Name",
+                   "description": "Brief description",
+                   "usage": "CRITICAL: Explain why this framework is chosen over others. (e.g. 'React is preferred for its component-based architecture and huge community support')."
+                 }
+              ],
+              
+              "resources": [
+                { 
+                  "name": "Resource Title", 
+                  "provider": "Provider Name", 
+                  "type": "free/paid", 
+                  "duration": "Duration", 
+                  "category": "Course/Tutorial/Book", 
+                  "url": "Valid URL",
+                  "description": "Why is this specific resource recommended? what will they learn?"
+                }
+              ],
+
               "roadmap": [
                 {
                   "phase": "Phase Name (e.g., Foundations)",
@@ -126,24 +168,20 @@ router.post('/analyze', async (req, res) => {
                   "description": "Goal of this phase",
                   "topics": [
                      {
-                       "name": "Topic Name (e.g. React Components)",
-                       "description": "Comprehensive explanation of this concept and why it matters.",
-                       "practical_application": "A specific mini-project or exercise to practice this topic (e.g. Build a counter app).",
+                       "name": "Topic Name",
+                       "description": "Comprehensive explanation of this concept.",
+                       "practical_application": "A specific mini-project or exercise.",
                        "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
                        "topic_resources": [
-                          { "name": "Best Udemy Course for this topic", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
+                          { "name": "Best Paid Course", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
                           { "name": "Best Free Tutorial", "url": "https://youtube.com/...", "type": "Video", "is_free": true }
                        ]
                      }
                   ],
                   "skills_covered": ["Skill A", "Skill B"],
                   "step_by_step_guide": [
-                      "Step 1: start by reading the official documentation to understand the core concepts...", 
-                      "Step 2: Watch a tutorial on YouTube and code along to build a simple project...", 
-                      "Step 3: Practice by building a small feature on your own without looking at the tutorial..."
-                  ],
-                  "resources": [
-                    { "name": "Resource Title", "url": "https://active-link.com", "type": "Course/Video/Article", "is_free": true }
+                      "Step 1: textual instruction...", 
+                      "Step 2: textual instruction..."
                   ],
                   "projects": [
                     { "name": "Project Name", "description": "What to build", "difficulty": "Easy/Medium/Hard" }
@@ -153,20 +191,15 @@ router.post('/analyze', async (req, res) => {
               ]
             }
             
-            CRITICAL IMPERATIVE:
-            1. Provide a "roadmap" array that covers the entire journey from Absolute Beginner to World-Class Expert.
-            2. UNLIMITED PHASES: Do NOT limit the number of phases. If mastery require 10, 15, or 20 phases, provide them all. Be EXHAUSTIVE.
-            3. CATEGORIZATION: Each phase MUST have a "category" field with one of these exact values: "Beginner", "Intermediate", or "Advanced".
-            4. "topics" MUST be an array of objects. Each topic must have:
-               - "description": A comprehensive explanation (2-3 sentences).
-               - "practical_application": A specific exercise to practice this concept.
-               - "subtopics": A granular checklist of 3-5 sub-concepts.
-               - "topic_resources": At least 2 specific links (1 Paid/Udemy, 1 Free/YouTube).
-            5. "step_by_step_guide" should be a detailed list of INSTRUCTIONAL PARAGRAPHS, not just short sentences. Guide the user on exactly HOW to learn.
-            6. "resources" and "topic_resources" MUST include REAL, VALID URLs.
-            7. "projects" should be concrete.
-
-            Return valid JSON with this EXACT structure:
+            CRITICAL INSTRUCTIONS FOR "UNLIMITED" DEPTH:
+            1. **Exhaustive Lists**: Do not forcefully limit lists. If 12 skills are essential, list 12.
+            2. **"Why" is Key**: For every Skill, Tool, Language, and Framework, provide the "reason" or "usage" field.
+            3. **Contextualize**: Do not just say "Java". Say "Java (Used for enterprise backend systems)".
+            4. **Conditional**: If the role does not require programming languages, return an empty array [] for "languages".
+            5. **Day in the Life**: BE REALISTIC. 
+            6. **Salary Insights**: Provide separate entry/senior ranges.
+            
+            Return ONLY valid JSON.
             `
         }
       ],
