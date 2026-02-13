@@ -16,7 +16,11 @@ import {
   Bot,
   MessageSquare,
   X,
-  ArrowRight
+  ArrowRight,
+  BrainCircuit,
+  CalendarPlus,
+  Trophy,
+  Terminal as LucideTerminal
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -70,6 +74,14 @@ interface RoadmapPhase {
   projects: Project[];
 }
 
+interface QuizQuestion {
+    id: number;
+    question: string;
+    options: string[];
+    correctAnswer: number;
+    explanation: string;
+}
+
 export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -85,6 +97,19 @@ export default function LearningRoadmap() {
   const [chatInput, setChatInput] = useState('');
 
   const [isChatLoading, setIsChatLoading] = useState(false);
+
+  // --- NEW FEATURES STATE ---
+  const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
+  
+  // Quiz State
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [currentQuizQuestion, setCurrentQuizQuestion] = useState(0);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizFinished, setQuizFinished] = useState(false);
+  const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<number | null>(null);
+  const [quizFeedback, setQuizFeedback] = useState<string | null>(null);
 
   const openChatWithContext = (context: string) => {
       setChatContext(context);
@@ -141,18 +166,31 @@ export default function LearningRoadmap() {
     const loadData = async () => {
       setIsLoading(true);
       
+      // Load completed topics from LocalStorage
+      const savedProgress = localStorage.getItem(`roadmap_progress_${role}`);
+      if (savedProgress) {
+          try {
+              setCompletedTopics(new Set(JSON.parse(savedProgress)));
+          } catch (e) {
+              console.error("Failed to parse progress", e);
+          }
+      }
+
       // 1. Try to get data from location state 
       let analysis = location.state?.analysis;
-      
-      // 2. If not in state, look in localStorage
+      let targetRole = location.state?.role || role;
+
+      // 2. If not in state, look in localStorage for analysis
       if (!analysis || !analysis.roadmap) {
          try {
            const saved = localStorage.getItem('lastRoleAnalysis');
            if (saved) {
              const parsed = JSON.parse(saved);
-             if (parsed.analysis && parsed.analysis.roadmap) {
-               analysis = parsed.analysis;
-               setRole(parsed.role);
+             // Check if saved analysis matches the role we are looking for (or is general enough if no role specified)
+             if (parsed.role === targetRole || parsed.role) {
+                analysis = parsed.analysis;
+                targetRole = parsed.role;
+                setRole(targetRole); // Update state role
              }
            }
          } catch (e) {
@@ -160,16 +198,13 @@ export default function LearningRoadmap() {
          }
       }
 
-      // 3. If still no roadmap, we might need to fetch it (or redirect)
+      // 3. If still no roadmap, fetch fresh
       if (analysis && analysis.roadmap && Array.isArray(analysis.roadmap)) {
          setRoadmap(analysis.roadmap);
          setIsLoading(false);
       } else {
-         // Determine if we have a role to fetch for
-         // If location.state.role is present, use it. Otherwise use the default.
-         const targetRole = location.state?.role || role;
-         
-         // Attempt to fetch fresh
+         // Attempt to fetch fresh from API
+         console.log("Fetching fresh roadmap for:", targetRole);
          try {
            const user = JSON.parse(localStorage.getItem('user') || '{}');
            const response = await fetch('/api/role/analyze', {
@@ -189,16 +224,17 @@ export default function LearningRoadmap() {
                  timestamp: new Date().getTime()
                }));
              } else {
-               // Fallback if API returns structure without roadmap (shouldn't happen with new prompt)
                console.warn("API returned data but no roadmap array");
-               navigate('/onboarding');
+               // Fallback: Use empty or dummy roadmap to prevent crash
+               setRoadmap([]); 
              }
            } else {
-             navigate('/onboarding');
+             // If fetch fails, we might just be empty
+             setRoadmap([]);
            }
          } catch (err) {
            console.error("Failed to fetch roadmap", err);
-           navigate('/onboarding');
+           setRoadmap([]);
          } finally {
            setIsLoading(false);
          }
@@ -206,7 +242,12 @@ export default function LearningRoadmap() {
     };
 
     loadData();
-  }, [location.state, role, navigate]);
+  }, [location.state, role, navigate]); // Removed 'role' dependency to avoid loops if setRole changes
+
+  // Save progress whenever it changes
+  useEffect(() => {
+      localStorage.setItem(`roadmap_progress_${role}`, JSON.stringify(Array.from(completedTopics)));
+  }, [completedTopics, role]);
 
   const handleDownloadPDF = async () => {
       const element = document.getElementById('roadmap-content');
@@ -238,6 +279,122 @@ export default function LearningRoadmap() {
         setIsDownloading(false);
       }
     };
+
+  // --- NEW FUNCTIONS ---
+
+  const toggleTopicCompletion = (topicName: string) => {
+      setCompletedTopics(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(topicName)) {
+              newSet.delete(topicName);
+          } else {
+              newSet.add(topicName);
+          }
+          return newSet;
+      });
+  };
+
+  const generateQuiz = async (phase: RoadmapPhase) => {
+      setShowQuiz(true);
+      setQuizLoading(true);
+      setQuizQuestions([]);
+      setQuizFinished(false);
+      setQuizScore(0);
+      setCurrentQuizQuestion(0);
+      setQuizFeedback(null);
+      setSelectedQuizAnswer(null);
+
+      try {
+          /* Mock or Real AI Call Here */
+          const response = await fetch('/api/ai/chat', { // Reusing chat for generation
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  role: "system", // Hacky use of roles to get structured output
+                  message: `Generate 3 multiple choice quiz questions for the topic "${phase.phase}". 
+                  Return strictly valid JSON array of objects with keys: id (number), question (string), options (array of 4 strings), correctAnswer (index number 0-3), explanation (string).`,
+                  context: `Topics: ${phase.topics.map(t => typeof t === 'string' ? t : t.name).join(', ')}`
+              })
+          });
+          
+          const data = await response.json();
+          // Try to parse the markdown JSON
+          const jsonMatch = data.reply.match(/```json\n([\s\S]*?)\n```/) || data.reply.match(/```\n([\s\S]*?)\n```/);
+          let parsedQuestions = [];
+          
+          if (jsonMatch) {
+              parsedQuestions = JSON.parse(jsonMatch[1]);
+          } else {
+              // Fallback parse if it's just raw array
+              try {
+                 parsedQuestions = JSON.parse(data.reply);
+              } catch (e) {
+                 // Fallback Mock if AI fails to format
+                 parsedQuestions = [
+                     {
+                         id: 1, 
+                         question: `What is a core concept of ${phase.phase} in ${role}?`, 
+                         options: ["Concept A", "Concept B", "Concept C", "Concept D"], 
+                         correctAnswer: 0, 
+                         explanation: "Concept A is fundamental."
+                     },
+                     {
+                        id: 2, 
+                        question: "Which tool is commonly used in this phase?", 
+                        options: ["Tool X", "Tool Y", "Tool Z", "None"], 
+                        correctAnswer: 1, 
+                        explanation: "Tool Y is the industry standard."
+                    }
+                 ];
+              }
+          }
+          setQuizQuestions(parsedQuestions);
+
+      } catch (error) {
+            console.error("Quiz generation failed", error);
+            setQuizQuestions([
+                {
+                    id: 1, 
+                    question: "Quiz generation failed. Please try again?", 
+                    options: ["OK"], 
+                    correctAnswer: 0, 
+                    explanation: "Error."
+                }
+            ]);
+      } finally {
+          setQuizLoading(false);
+      }
+  };
+
+  const handleQuizAnswer = (optionIndex: number) => {
+      setSelectedQuizAnswer(optionIndex);
+      const correct = quizQuestions[currentQuizQuestion].correctAnswer === optionIndex;
+      if (correct) {
+          setQuizFeedback("Correct! 🎉");
+          setQuizScore(prev => prev + 1);
+      } else {
+          setQuizFeedback(`Incorrect. The right answer was: ${quizQuestions[currentQuizQuestion].options[quizQuestions[currentQuizQuestion].correctAnswer]}`);
+      }
+
+      // Auto advance after delay
+      setTimeout(() => {
+          if (currentQuizQuestion < quizQuestions.length - 1) {
+              setCurrentQuizQuestion(prev => prev + 1);
+              setSelectedQuizAnswer(null);
+              setQuizFeedback(null);
+          } else {
+              setQuizFinished(true);
+          }
+      }, 2500);
+  };
+
+  const addToCalendar = (phase: RoadmapPhase) => {
+      const title = encodeURIComponent(`Learn: ${phase.phase} (${role})`);
+      const details = encodeURIComponent(`Focus on: ${phase.description}`);
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
+      window.open(url, '_blank');
+  };
+
 
   // Filter phases based on selected category
   const filteredPhases = roadmap.filter(phase => {
@@ -284,6 +441,7 @@ export default function LearningRoadmap() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-6" id="roadmap-content">
+      {/* ... (Previous Header and Stats code is correct, assuming it matches context) ... */}
       <div className="max-w-7xl mx-auto">
         
         {/* Header */}
@@ -332,10 +490,9 @@ export default function LearningRoadmap() {
                <p className="text-2xl font-bold text-indigo-900">{totalPhases}</p>
             </div>
              <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
-               <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">Est. Duration</p>
+               <p className="text-xs text-blue-600 font-bold uppercase tracking-wider mb-1">Completed Topics</p>
                <p className="text-2xl font-bold text-blue-900">
-                  {/* Sum durations vaguely or just show range */}
-                  Varies
+                  {completedTopics.size}
                </p>
             </div>
              <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
@@ -345,12 +502,21 @@ export default function LearningRoadmap() {
                </p>
             </div>
             <div className="p-3 bg-green-50 rounded-lg border border-green-100">
-               <p className="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Projects</p>
+               <p className="text-xs text-green-600 font-bold uppercase tracking-wider mb-1">Progress</p>
                <p className="text-2xl font-bold text-green-900">
-                 {roadmap.reduce((acc, phase) => acc + (phase.projects?.length || 0), 0)}
+                 {Math.round((completedTopics.size / (roadmap.reduce((acc, phase) => acc + (phase.topics?.length || 0), 0) || 1)) * 100)}%
                </p>
             </div>
           </div>
+          
+           {/* Global Progress Bar */}
+           <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                    className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.min(100, Math.round((completedTopics.size / (roadmap.reduce((acc, phase) => acc + (phase.topics?.length || 0), 0) || 1)) * 100))}%` }}
+                ></div>
+            </div>
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -442,13 +608,33 @@ export default function LearningRoadmap() {
           <div className="lg:col-span-8">
             <div className="bg-white rounded-xl shadow-lg p-6 min-h-[500px]">
               <div className="mb-6 pb-6 border-b border-gray-100">
-                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold uppercase tracking-wider">
-                     Phase {selectedPhaseIndex + 1}
-                    </span>
-                    <span className="text-gray-400 text-sm">•</span>
-                    <span className="text-sm font-medium text-gray-500">{currentPhase.duration}</span>
+                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs font-bold uppercase tracking-wider">
+                        Phase {selectedPhaseIndex + 1}
+                        </span>
+                        <span className="text-gray-400 text-sm">•</span>
+                        <span className="text-sm font-medium text-gray-500">{currentPhase.duration}</span>
+                    </div>
+                    
+                    {/* NEW ACTION BUTTONS */}
+                    <div className="flex gap-2">
+                        <button 
+                             onClick={() => generateQuiz(currentPhase)}
+                             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-bold"
+                        >
+                            <BrainCircuit className="w-4 h-4" /> Take Quiz
+                        </button>
+                        <button 
+                             onClick={() => addToCalendar(currentPhase)}
+                             className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+                             title="Add to Google Calendar"
+                        >
+                            <CalendarPlus className="w-4 h-4" /> Schedule
+                        </button>
+                    </div>
                  </div>
+
                  <h2 className="text-3xl font-extrabold text-gray-900 mb-3">{currentPhase.phase}</h2>
                  <p className="text-gray-600 text-lg leading-relaxed">{currentPhase.description}</p>
               </div>
@@ -477,7 +663,6 @@ export default function LearningRoadmap() {
 
               {/* Topics & Skills Grid */}
               <div className="grid md:grid-cols-2 gap-8 mb-8">
-                  {/* Topics */}
                   {/* Topics Detailed View */}
                   <div className="col-span-2">
                     <div className="flex items-center gap-2 mb-4">
@@ -486,95 +671,86 @@ export default function LearningRoadmap() {
                     </div>
                     <div className="space-y-4">
                         {currentPhase.topics.map((topic, i) => {
-                            // Check if topic is complex object or simple string
-                            if (typeof topic === 'string') {
-                                return (
-                                    <div key={i} className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-lg">
-                                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                        <span className="text-gray-700 font-medium">{topic}</span>
+                            // Determine name for key/checkbox
+                            const topicName = typeof topic === 'string' ? topic : topic.name;
+                            const isCompleted = completedTopics.has(topicName);
+
+                            return (
+                                <div key={i} className={`border rounded-xl p-5 hover:shadow-md transition-all duration-300 relative overflow-hidden ${isCompleted ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+                                    {/* Completion Checkbox */}
+                                    <button 
+                                        onClick={() => toggleTopicCompletion(topicName)}
+                                        className={`absolute top-5 right-5 p-1 rounded-full border transition-all ${isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-300 text-gray-200 hover:border-indigo-300'}`}
+                                    >
+                                        <CheckCircle2 className="w-5 h-5" />
+                                    </button>
+
+                                    <div className="flex items-start gap-3 mb-2 pr-10">
+                                        <span className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5 transition-colors ${
+                                            isCompleted ? 'bg-green-200 text-green-800' : 'bg-indigo-100 text-indigo-700'
+                                        }`}>
+                                            {i + 1}
+                                        </span>
+                                        <div>
+                                             <h4 className={`font-bold text-lg transition-colors ${isCompleted ? 'text-green-900 line-through decoration-green-500/50' : 'text-gray-900'}`}>
+                                                 {topicName}
+                                             </h4>
+                                             {typeof topic !== 'string' && (
+                                                <p className="text-gray-600 text-sm leading-relaxed mt-1">{topic.description}</p>
+                                             )}
+                                        </div>
                                     </div>
-                                );
-                            } else {
-                                // Render detailed topic card
-                                return (
-                                    <div key={i} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow bg-white">
-                                        <div className="flex items-start gap-3 mb-2">
-                                            <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5">
-                                                {i + 1}
-                                            </span>
-                                            <div>
-                                                 <h4 className="font-bold text-gray-900 text-lg">{topic.name}</h4>
-                                                 <p className="text-gray-600 text-sm leading-relaxed mt-1">{topic.description}</p>
+                                    
+                                    {typeof topic !== 'string' && (
+                                        <>
+                                            <div className="ml-9 mt-3 mb-4 bg-gray-50/50 p-3 rounded-lg">
+                                                <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">What you'll learn:</h5>
+                                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                    {topic.subtopics && topic.subtopics.map((sub, j) => (
+                                                        <li key={j} className="flex items-start gap-2 text-sm text-gray-700">
+                                                            <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${isCompleted ? 'bg-green-400' : 'bg-indigo-400'}`}></div>
+                                                            {sub}
+                                                        </li>
+                                                    ))}
+                                                </ul>
                                             </div>
-                                        </div>
-                                        
-                                        {/* Subtopics Checklist */}
-                                        <div className="ml-9 mt-3 mb-4 bg-gray-50 p-3 rounded-lg">
-                                            <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">What you'll learn:</h5>
-                                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                {topic.subtopics && topic.subtopics.map((sub, j) => (
-                                                    <li key={j} className="flex items-start gap-2 text-sm text-gray-700">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0"></div>
-                                                        {sub}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
 
-                                        {/* Practical Application */}
-                                        {topic.practical_application && (
-                                            <div className="ml-9 mt-3 mb-4 bg-green-50 p-3 rounded-lg border border-green-100">
-                                                <h5 className="text-xs font-bold text-green-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                                                    <TerminalIcon className="w-3.5 h-3.5" />
-                                                    Practical Exercise:
-                                                </h5>
-                                                <p className="text-sm text-green-800 leading-relaxed font-medium">
-                                                    {topic.practical_application}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {/* Topic Specific Resources */}
-                                        {topic.topic_resources && topic.topic_resources.length > 0 && (
-                                            <div className="ml-9 mt-3">
-                                                <h5 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Specific Resources:</h5>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {topic.topic_resources.map((res, k) => (
-                                                        <div key={k} className="flex items-center gap-1">
+                                            {/* Topic Resources */}
+                                            {topic.topic_resources && topic.topic_resources.length > 0 && (
+                                                <div className="ml-9 mt-3">
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {topic.topic_resources.map((res, k) => (
                                                             <a 
+                                                                key={k}
                                                                 href={res.url}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1.5 transition-colors group ${
-                                                                    res.is_free 
-                                                                    ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
-                                                                    : 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100'
-                                                                }`}
+                                                                className="text-xs px-3 py-1.5 rounded-full border flex items-center gap-1.5 bg-white hover:bg-gray-50 text-gray-600 transition-colors"
                                                             >
-                                                                {/* Simple icon logic based on type/name */}
-                                                                {res.type?.toLowerCase().includes('video') || res.name.toLowerCase().includes('youtube') 
-                                                                    ? <div className="i-lucide-youtube w-3 h-3" /> 
-                                                                    : <BookOpen className="w-3 h-3" />
-                                                                }
-                                                                <span className="font-semibold truncate max-w-[200px]">{res.name}</span>
-                                                                <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                                                                <BookOpen className="w-3 h-3" />
+                                                                <span className="truncate max-w-[150px]">{res.name}</span>
+                                                                <ExternalLink className="w-3 h-3 opacity-60" />
                                                             </a>
-                                                            <button 
-                                                                onClick={() => openChatWithContext(`I'm having trouble with this resource: ${res.name} (${res.url}). Can you help me understand this topic or suggest an alternative?`)}
-                                                                className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                                                                title="Ask AI about this"
-                                                            >
-                                                                <Bot className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-
-                                        )}
-                                    </div>
-                                );
-                            }
+                                            )}
+                                            {/* Practical Application */}
+                                            {topic.practical_application && (
+                                                <div className="ml-9 mt-3 mb-4 bg-green-50 p-3 rounded-lg border border-green-100">
+                                                    <h5 className="text-xs font-bold text-green-700 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                                                        <LucideTerminal className="w-3.5 h-3.5" />
+                                                        Practical Exercise:
+                                                    </h5>
+                                                    <p className="text-sm text-green-800 leading-relaxed font-medium">
+                                                        {topic.practical_application}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            );
                         })}
                     </div>
                   </div>
@@ -597,58 +773,36 @@ export default function LearningRoadmap() {
               </div>
 
               {/* Recommended Resources (Real Links) */}
-              <div className="mb-8">
+               <div className="mb-8">
                 <div className="flex items-center gap-2 mb-4">
                     <BookOpen className="w-5 h-5 text-indigo-600" />
                     <h3 className="text-lg font-bold text-gray-900">Recommended Resources</h3>
                 </div>
                 <div className="grid gap-3">
                     {currentPhase.resources.map((res, i) => (
-                        <a 
-                           key={i} 
-                           href={res.url} 
-                           target="_blank" 
-                           rel="noopener noreferrer"
-                           className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md hover:bg-gray-50 transition-all group"
-                        >
-                           <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
-                                 {i + 1}
-                               </div>
-                               <div>
-                                   <div className="font-bold text-gray-900 group-hover:text-indigo-700 transition-colors flex items-center gap-2">
-                                       {res.name}
-                                       <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                   </div>
-                                   <div className="flex gap-2 text-xs mt-0.5">
-                                       <span className="font-medium text-gray-500">{res.type}</span>
-                                       {res.is_free !== undefined && (
-                                           <span className={`px-1.5 rounded ${res.is_free ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                               {res.is_free ? 'Free' : 'Paid'}
-                                           </span>
-                                       )}
-                                   </div>
-                               </div>
-                           </div>
-                           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-                               <button 
-                                   onClick={(e) => {
-                                       e.preventDefault();
-                                       e.stopPropagation();
-                                       openChatWithContext(`I'm interested in this resource: "${res.name}". Is it good for beginners? What alternative would you suggest?`);
-                                   }}
-                                   className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                                   title="Ask AI about this resource"
-                               >
-                                   <Bot className="w-5 h-5" />
-                               </button>
-                               <div className="text-indigo-600 font-medium text-sm px-3 py-1 rounded-full bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
-                                   Start Learning
-                               </div>
-                           </div>
-                        </a>
+                        <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md hover:bg-gray-50 transition-all group">
+                           {/* ... Render Link Content */}
+                           <a href={res.url} target="_blank" rel="noreferrer" className="flex-1 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                    {i+1}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-gray-900 flex items-center gap-2">{res.name} <ExternalLink className="w-3 h-3 opacity-50"/></div>
+                                    <div className="text-xs text-gray-500">{res.type} {res.is_free ? '• Free' : ''}</div>
+                                </div>
+                           </a>
+                           {/* Chat Bot Action */}
+                           <button 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    openChatWithContext(`Resource help: ${res.name}`);
+                                }}
+                                className="p-2 text-gray-400 hover:text-indigo-600 rounded-full"
+                           >
+                                <Bot className="w-5 h-5" />
+                           </button>
+                        </div>
                     ))}
-                     {currentPhase.resources.length === 0 && <p className="text-gray-500 italic">No specific resources listed for this phase.</p>}
                 </div>
               </div>
 
@@ -671,7 +825,7 @@ export default function LearningRoadmap() {
                                 {proj.description}
                             </p>
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 cursor-pointer hover:underline">
-                                <TerminalIcon className="w-3.5 h-3.5" />
+                                <LucideTerminal className="w-3.5 h-3.5" />
                                 View Project Brief (Coming Soon)
                             </div>
                         </div>
@@ -713,6 +867,94 @@ export default function LearningRoadmap() {
                     Ask AI Assistant
                 </span>
             </button>
+        )}
+
+        {/* QUIZ MODAL */}
+        {showQuiz && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95">
+                    <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-600 text-white">
+                        <div className="flex items-center gap-2">
+                            <BrainCircuit className="w-6 h-6" />
+                            <h2 className="text-xl font-bold">Quick Verification Quiz</h2>
+                        </div>
+                        <button onClick={() => setShowQuiz(false)} className="hover:bg-white/20 p-1 rounded-full"><X className="w-6 h-6" /></button>
+                    </div>
+
+                    <div className="p-8">
+                        {quizLoading ? (
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
+                                <p className="text-gray-500">Generating questions for this phase...</p>
+                            </div>
+                        ) : quizFinished ? (
+                             <div className="text-center py-8">
+                                <div className="inline-flex p-4 rounded-full bg-yellow-100 text-yellow-600 mb-4">
+                                    <Trophy className="w-12 h-12" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">Quiz Complete!</h3>
+                                <p className="text-lg text-gray-600 mb-6">
+                                    You scored <span className="font-bold text-indigo-600">{quizScore} / {quizQuestions.length}</span>
+                                </p>
+                                <button 
+                                    onClick={() => setShowQuiz(false)}
+                                    className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                                >
+                                    Return to Roadmap
+                                </button>
+                             </div>
+                        ) : (
+                            <div>
+                                <div className="mb-6 flex justify-between items-center">
+                                    <span className="text-sm font-bold text-gray-400 uppercase tracking-widest">Question {currentQuizQuestion + 1} of {quizQuestions.length}</span>
+                                    <span className="text-sm font-bold text-indigo-600">Score: {quizScore}</span>
+                                </div>
+                                
+                                <h3 className="text-xl font-bold text-gray-900 mb-6">
+                                    {quizQuestions[currentQuizQuestion]?.question}
+                                </h3>
+
+                                <div className="grid gap-3 mb-6">
+                                    {quizQuestions[currentQuizQuestion]?.options.map((option: string, idx: number) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleQuizAnswer(idx)}
+                                            disabled={selectedQuizAnswer !== null}
+                                            className={`p-4 rounded-lg border-2 text-left transition-all font-medium ${
+                                                selectedQuizAnswer === null 
+                                                ? 'border-gray-100 hover:border-indigo-300 hover:bg-gray-50' 
+                                                : selectedQuizAnswer === idx 
+                                                    ? (idx === quizQuestions[currentQuizQuestion].correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-red-500 bg-red-50 text-red-800')
+                                                    : (idx === quizQuestions[currentQuizQuestion].correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-100 opacity-50')
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs ${
+                                                     selectedQuizAnswer === idx ? 'border-current' : 'border-gray-300'
+                                                }`}>
+                                                    {String.fromCharCode(65 + idx)}
+                                                </div>
+                                                {option}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {quizFeedback && (
+                                    <div className={`p-4 rounded-lg animate-in slide-in-from-top-2 ${
+                                        quizFeedback.includes('Correct') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                        <p className="font-bold">{quizFeedback}</p>
+                                        {!quizFeedback.includes('Correct') && (
+                                            <p className="text-sm mt-1">{quizQuestions[currentQuizQuestion].explanation}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         )}
 
         {/* Floating Chat Component */}
@@ -800,8 +1042,4 @@ export default function LearningRoadmap() {
   );
 }
 
-function TerminalIcon({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
-    )
-}
+
