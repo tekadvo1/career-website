@@ -88,7 +88,7 @@ export default function LearningRoadmap() {
   const [role, setRole] = useState(location.state?.role || "Software Engineer");
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
-  const [selectedCategory, setSelectedCategory] = useState<string>('Beginner'); // Category filtering state
+  const [selectedCategory, setSelectedCategory] = useState<string>('All'); // Category filtering state
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -443,6 +443,7 @@ export default function LearningRoadmap() {
 
   // Filter phases based on selected category
   const filteredPhases = roadmap.filter(phase => {
+      if (selectedCategory === 'All') return true;
       if (!phase.category) return true; // Show all if no category (backward compatibility)
       return phase.category.toLowerCase() === selectedCategory.toLowerCase();
   });
@@ -570,7 +571,7 @@ export default function LearningRoadmap() {
           <div className="lg:hidden space-y-4">
              {/* Mobile Category Tabs */}
              <div className="bg-white rounded-xl shadow-sm p-1.5 flex gap-1 overflow-x-auto no-scrollbar">
-                {['Beginner', 'Intermediate', 'Advanced'].map((cat) => (
+                {['All', 'Beginner', 'Intermediate', 'Advanced'].map((cat) => (
                     <button
                         key={cat}
                         onClick={() => {
@@ -612,7 +613,7 @@ export default function LearningRoadmap() {
             
             {/* Category Filter Tabs */}
             <div className="bg-white rounded-xl shadow-sm p-1.5 flex gap-1 mb-2">
-                {['Beginner', 'Intermediate', 'Advanced'].map((cat) => (
+                {['All', 'Beginner', 'Intermediate', 'Advanced'].map((cat) => (
                     <button
                         key={cat}
                         onClick={() => {
