@@ -358,7 +358,7 @@ export default function LearningRoadmap() {
                   role: "system", // Hacky use of roles to get structured output
                   message: `Generate 3 multiple choice quiz questions for the topic "${phase.phase}". 
                   Return strictly valid JSON array of objects with keys: id (number), question (string), options (array of 4 strings), correctAnswer (index number 0-3), explanation (string).`,
-                  context: `Topics: ${phase.topics.map(t => typeof t === 'string' ? t : t.name).join(', ')}`
+                  context: `Topics: ${(phase.topics || []).map(t => typeof t === 'string' ? t : t.name).join(', ')}`
               })
           });
           
@@ -757,7 +757,7 @@ export default function LearningRoadmap() {
                         <h3 className="text-lg font-bold text-gray-900">Key Topics & Modules</h3>
                     </div>
                     <div className="space-y-4">
-                        {currentPhase.topics.map((topic, i) => {
+                        {(currentPhase.topics || []).map((topic, i) => {
                             // Determine name for key/checkbox
                             const topicName = typeof topic === 'string' ? topic : topic.name;
                             const isCompleted = completedTopics.has(topicName);
@@ -866,7 +866,7 @@ export default function LearningRoadmap() {
                     <h3 className="text-lg font-bold text-gray-900">Recommended Resources</h3>
                 </div>
                 <div className="grid gap-3">
-                    {currentPhase.resources.map((res, i) => (
+                    {(currentPhase.resources || []).map((res, i) => (
                         <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md hover:bg-gray-50 transition-all group">
                            {/* ... Render Link Content */}
                            <a href={res.url} target="_blank" rel="noreferrer" className="flex-1 flex items-center gap-3">
@@ -900,7 +900,7 @@ export default function LearningRoadmap() {
                     <h3 className="text-lg font-bold text-gray-900">Build & Practice</h3>
                 </div>
                 <div className="space-y-4">
-                    {currentPhase.projects.map((proj, i) => (
+                    {(currentPhase.projects || []).map((proj, i) => (
                         <div key={i} className="p-5 rounded-xl border border-gray-200 bg-gray-50/50">
                             <div className="flex items-start justify-between mb-2">
                                 <h4 className="font-bold text-gray-900 text-lg">{proj.name}</h4>
@@ -917,7 +917,7 @@ export default function LearningRoadmap() {
                             </div>
                         </div>
                     ))}
-                     {currentPhase.projects.length === 0 && <p className="text-gray-500 italic">No projects listed for this phase.</p>}
+                     {(!currentPhase.projects || currentPhase.projects.length === 0) && <p className="text-gray-500 italic">No projects listed for this phase.</p>}
                 </div>
               </div>
 
