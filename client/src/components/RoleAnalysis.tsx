@@ -35,6 +35,38 @@ export default function RoleAnalysis() {
   /* New Tab State */
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview'>('skills');
   const [isDownloading, setIsDownloading] = useState(false);
+  
+  // Collapse state for day in life
+  const [expandedDayItems, setExpandedDayItems] = useState<number[]>([]);
+  // Use sets for other collections as indices might change if sorting happens later, but index is fine for now
+  const [expandedSkills, setExpandedSkills] = useState<Set<number>>(new Set());
+  const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set());
+
+  const toggleDayItem = (index: number) => {
+      setExpandedDayItems(prev => 
+          prev.includes(index) 
+          ? prev.filter(i => i !== index) 
+          : [...prev, index]
+      );
+  };
+
+  const toggleSkill = (index: number) => {
+      setExpandedSkills(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(index)) newSet.delete(index);
+          else newSet.add(index);
+          return newSet;
+      });
+  };
+
+  const toggleTool = (index: number) => {
+      setExpandedTools(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(index)) newSet.delete(index);
+          else newSet.add(index);
+          return newSet;
+      });
+  };
 
   // Helper to convert AI analysis to Role Data structure with SAFE DEFAULTS
   const getAiRoleData = useCallback((analysis: any, roleName: string) => {
@@ -402,37 +434,54 @@ export default function RoleAnalysis() {
                 {/* Hard Skills (Existing Logic) */}
                 <div>
                    <h3 className="text-lg font-bold text-gray-900 mb-3">Technical Skills</h3>
-                   <div className="space-y-4">
-                     {roleData.skills.length > 0 ? roleData.skills.map((skill: any, index: number) => (
-                       <div key={index} className="flex flex-col gap-3 p-4 rounded-xl border border-gray-200 bg-white hover:border-indigo-300 transition-all shadow-sm group">
-                         <div className="flex items-start gap-4">
+                   <p className="text-sm text-gray-500 mb-4">Click to see why each skill matters.</p>
+                   <div className="space-y-3">
+                     {roleData.skills.length > 0 ? roleData.skills.map((skill: any, index: number) => {
+                       const isExpanded = expandedSkills.has(index);
+                       return (
+                       <div key={index} 
+                            onClick={() => toggleSkill(index)}
+                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all shadow-sm cursor-pointer group ${isExpanded ? 'bg-indigo-50/30 border-indigo-200' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
+                       >
+                         <div className="flex items-center gap-4">
                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${skill.priority?.includes('High') ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'}`}>
                                <Award className="w-5 h-5" />
                              </div>
                              <div className="flex-1">
-                               <div className="flex items-center justify-between mb-1">
+                               <div className="flex items-center justify-between">
                                  <h3 className="font-bold text-lg text-gray-900">{skill.name}</h3>
-                                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${getPriorityColor(skill.priority || 'Medium Priority')}`}>
-                                   {skill.priority || 'Essential'}
-                                 </span>
+                                 <div className="flex items-center gap-2">
+                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${getPriorityColor(skill.priority || 'Medium Priority')}`}>
+                                      {skill.priority || 'Essential'}
+                                    </span>
+                                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                  </div>
                                </div>
-                               {skill.reason && (
-                                  <div className="mb-2 pl-3 border-l-2 border-indigo-200">
-                                     <p className="text-sm text-gray-700 leading-relaxed"><span className="font-bold text-indigo-700">Why it matters:</span> {skill.reason}</p>
+                             </div>
+                         </div>
+                         
+                         {/* Expanded Content */}
+                         <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                             <div className="overflow-hidden">
+                                  <div className="pt-3 border-t border-gray-100 mt-1">
+                                    {skill.reason && (
+                                       <div className="mb-3 pl-3 border-l-2 border-indigo-200">
+                                          <p className="text-sm text-gray-700 leading-relaxed"><span className="font-bold text-indigo-700 block mb-1">Why it matters:</span> {skill.reason}</p>
+                                       </div>
+                                    )}
+                                    {skill.practical_application && (
+                                       <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                                          <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 uppercase tracking-wide mb-1">
+                                             <Code className="w-3.5 h-3.5" /> Practical Application
+                                          </div>
+                                          <p className="text-sm text-gray-800">{skill.practical_application}</p>
+                                       </div>
+                                    )}
                                   </div>
-                               )}
-                               {skill.practical_application && (
-                                  <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                                     <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 uppercase tracking-wide mb-1">
-                                        <Code className="w-3.5 h-3.5" /> Practical Application
-                                     </div>
-                                     <p className="text-sm text-gray-800">{skill.practical_application}</p>
-                                  </div>
-                               )}
                              </div>
                          </div>
                        </div>
-                     )) : <p>No skills data.</p>}
+                     )}) : <p>No skills data.</p>}
                    </div>
                 </div>
              </div>
@@ -442,24 +491,43 @@ export default function RoleAnalysis() {
            {activeTab === 'daylife' && (
               <div>
                  <h2 className="text-xl font-bold text-gray-900 mb-2">A Day in the Life</h2>
-                 <p className="text-gray-500 mb-6">What you can expect on a typical day in this role.</p>
+                 <p className="text-gray-500 mb-6">What you can expect on a typical day in this role. Click on an item to see details.</p>
 
                  <div className="space-y-0 relative border-l-2 border-indigo-100 ml-3 md:ml-6">
                     {roleData.day_in_the_life && roleData.day_in_the_life.length > 0 ? (
-                       roleData.day_in_the_life.map((item: any, i: number) => (
+                       roleData.day_in_the_life.map((item: any, i: number) => {
+                          const isExpanded = expandedDayItems.includes(i);
+                          
+                          return (
                           <div key={i} className="mb-8 ml-6 relative">
                              {/* Timeline Dot */}
-                             <div className="absolute -left-[31px] bg-indigo-600 w-4 h-4 rounded-full border-4 border-white shadow-sm"></div>
+                             <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 border-white shadow-sm transition-colors ${isExpanded ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
                              
-                             <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-md transition-shadow">
-                                <span className="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 font-bold text-xs rounded mb-2">
-                                   {item.time}
-                                </span>
-                                <h3 className="text-lg font-bold text-gray-900 mb-1">{item.activity}</h3>
-                                <p className="text-gray-600">{item.description}</p>
+                             <div 
+                                className={`group p-4 bg-white rounded-xl border transition-all cursor-pointer ${isExpanded ? 'border-indigo-200 shadow-md' : 'border-gray-200 hover:border-indigo-300'}`}
+                                onClick={() => toggleDayItem(i)}
+                             >
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className={`inline-block px-2 py-1 font-bold text-xs rounded ${isExpanded ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+                                       {item.time}
+                                    </span>
+                                    <button className="text-xs text-indigo-600 font-medium hover:underline focus:outline-none">
+                                        {isExpanded ? 'Show Less' : 'Show Details'}
+                                    </button>
+                                </div>
+                                
+                                <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-indigo-900' : 'text-gray-900'}`}>{item.activity}</h3>
+                                
+                                <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-3 border-t border-indigo-50 pt-3' : 'grid-rows-[0fr] opacity-0'}`}>
+                                    <div className="overflow-hidden">
+                                        <p className="text-gray-600 leading-relaxed text-sm">
+                                            {item.description}
+                                        </p>
+                                    </div>
+                                </div>
                              </div>
                           </div>
-                       ))
+                       )})
                     ) : (
                        <div className="ml-6 text-gray-500 italic">Day in the life data not available.</div>
                     )}
@@ -516,40 +584,51 @@ export default function RoleAnalysis() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
                 {roleData.tools.length > 0 ? (
-                    roleData.tools.map((tool: any, index: number) => (
-                  <div
-                    key={index}
-                    className="p-5 bg-white rounded-xl border border-gray-200 hover:shadow-md hover:border-indigo-200 transition-all flex flex-col h-full"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-bold text-base text-gray-900">{tool.name}</h3>
-                        <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">
-                            {tool.category || 'General Tool'}
-                        </span>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-bold ${getDifficultyColor(tool.difficulty || 'Medium')}`}
+                    roleData.tools.map((tool: any, index: number) => {
+                     const isExpanded = expandedTools.has(index);
+                     return (
+                      <div
+                        key={index}
+                        onClick={() => toggleTool(index)}
+                        className={`p-5 rounded-xl border transition-all cursor-pointer flex flex-col h-full ${isExpanded ? 'bg-white border-indigo-300 shadow-md ring-1 ring-indigo-100' : 'bg-white border-gray-200 hover:border-indigo-200 hover:shadow-sm'}`}
                       >
-                        {tool.difficulty || 'Medium'}
-                      </span>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 mb-4 flex-grow">
-                        {tool.description}
-                    </p>
-
-                    {/* Usage Context - The "When/How" */}
-                    {tool.usage_context && (
-                        <div className="mt-auto pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500 leading-relaxed">
-                                <span className="font-bold text-gray-700 block mb-0.5">Usage in this role:</span>
-                                {tool.usage_context}
-                            </p>
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-bold text-base text-gray-900">{tool.name}</h3>
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                                {tool.category || 'General Tool'}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                              <span
+                                className={`px-2 py-1 rounded text-xs font-bold ${getDifficultyColor(tool.difficulty || 'Medium')}`}
+                              >
+                                {tool.difficulty || 'Medium'}
+                              </span>
+                              <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            </div>
                         </div>
-                    )}
-                  </div>
-                ))
+                        
+                        {/* Expanded Area */}
+                         <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
+                              <div className="overflow-hidden">
+                                <p className="text-sm text-gray-600 mb-4 pt-2 border-t border-gray-50">
+                                    {tool.description}
+                                </p>
+
+                                {/* Usage Context - The "When/How" */}
+                                {tool.usage_context && (
+                                    <div className="pt-3 border-t border-gray-100 bg-gray-50/50 p-2 rounded">
+                                        <p className="text-xs text-gray-500 leading-relaxed">
+                                            <span className="font-bold text-gray-700 block mb-0.5">Usage in this role:</span>
+                                            {tool.usage_context}
+                                        </p>
+                                    </div>
+                                )}
+                              </div>
+                         </div>
+                      </div>
+                    )})
                 ) : (
                     <div className="col-span-2 text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                         <p className="text-gray-500">No tools data available.</p>
