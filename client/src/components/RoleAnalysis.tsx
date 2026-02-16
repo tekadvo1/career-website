@@ -16,7 +16,8 @@ import {
   ExternalLink,
   User, 
   Globe,
-  ArrowRight
+  ArrowRight,
+  GitBranch
 } from 'lucide-react';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
@@ -34,7 +35,7 @@ export default function RoleAnalysis() {
   const resumeFileName = location.state?.resumeFileName || null;
   const aiAnalysis = location.state?.analysis;
   /* New Tab State */
-  const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview'>('skills');
+  const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
   const [isDownloading, setIsDownloading] = useState(false);
   
   // Collapse state for day in life
@@ -355,7 +356,15 @@ export default function RoleAnalysis() {
 
         {/* Start Scrollable Tabs Container */}
         <div className="bg-white rounded-lg shadow-sm p-1.5 mb-4 overflow-x-auto no-scrollbar">
-            <div className="flex md:grid md:grid-cols-6 gap-1.5 min-w-max md:min-w-0">
+            <div className="flex md:grid md:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
+              <button
+                onClick={() => setActiveTab('workflow')}
+                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                  activeTab === 'workflow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <GitBranch className="w-4 h-4" /> Workflow
+              </button>
               <button
                 onClick={() => setActiveTab('skills')}
                 className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
@@ -798,6 +807,52 @@ export default function RoleAnalysis() {
               </div>
             </div>
           )}
+
+           {/* WORKFLOW TAB (NEW) */}
+           {activeTab === 'workflow' && (
+             <div>
+               <h2 className="text-xl font-bold text-gray-900 mb-2">Role Workflow & Lifecycle</h2>
+               <p className="text-gray-500 mb-6">A high-level overview of how projects are executed in this role.</p>
+
+               <div className="space-y-6">
+                 {roleData.workflow && roleData.workflow.length > 0 ? (
+                   <>
+                     <div className="relative border-l-2 border-indigo-100 ml-3 space-y-8 py-2">
+                       {roleData.workflow.slice(0, 3).map((step: any, index: number) => (
+                         <div key={index} className="ml-6 relative">
+                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm"></div>
+                           <h3 className="font-bold text-lg text-gray-900 mb-1">{step.stage}</h3>
+                           <p className="text-sm text-gray-600">{step.description}</p>
+                         </div>
+                       ))}
+                     </div>
+                     
+                     {roleData.workflow.length > 3 && (
+                        <p className="text-center text-sm text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
+                     )}
+
+                     <button
+                       onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
+                       className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4"
+                     >
+                       <GitBranch className="w-5 h-5" />
+                       View Full Workflow & Lifecycle Details
+                     </button>
+                   </>
+                 ) : (
+                   <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                      <p className="text-gray-500 mb-4">Detailed workflow data is being generated.</p>
+                      <button
+                       onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
+                       className="px-6 py-2 bg-white border border-gray-300 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                     >
+                       Check Full View
+                     </button>
+                   </div>
+                 )}
+               </div>
+             </div>
+           )}
         </div>
 
         {/* Action Buttons */}
