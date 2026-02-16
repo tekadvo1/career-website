@@ -281,6 +281,99 @@ router.post('/analyze', async (req, res) => {
   }
 });
 
+// POST /api/role/workflow-custom - Generate a CUSTOM workflow based on user tools
+router.post('/workflow-custom', async (req, res) => {
+  const { role, customTools } = req.body;
+
+  if (!role || !customTools) {
+    return res.status(400).json({ error: 'Role and custom tools are required' });
+  }
+
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    console.log(`Generating Custom Workflow for: ${role} with tools: ${customTools}`);
+    
+    // We only need the workflow part, so prompt specifically for that
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert technical career coach. You need to REWRITE a professional workflow for a "${role}" but specifically using the user's preferred tools/stack.`
+          },
+          {
+            role: 'user',
+            content: `
+            Role: ${role}
+            User's Preferred Tools/Stack: ${customTools}
+
+            Task: Generate a detailed, step-by-step professional workflow/lifecycle for this role that strictly incorporates the user's preferred tools. 
+            - If they said "Azure" instead of "AWS", use Azure services (e.g. Azure DevOps, AKS).
+            - If they said "Java", use Java tools (e.g. Maven, Spring Boot).
+            - Maintain a complete end-to-end lifecycle (Planning -> Dev -> Testing -> Deployment).
+            - Provide 4-6 detailed stages.
+
+            Return the response in this JSON format:
+            {
+               "workflow": [
+                  {
+                    "stage": "Stage Name",
+                    "description": "Description of this stage",
+                    "tools_used": ["Tool A", "Tool B"],
+                    "activities": ["Activity 1", "Activity 2"]
+                  }
+               ],
+               "role": "${role} with ${customTools}"
+            }
+            Return ONLY valid JSON.
+            `
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse JSON
+    let workflowData;
+    try {
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : content;
+      workflowData = JSON.parse(jsonText);
+    } catch (e) {
+       // Fallback parse
+       const startIndex = content.indexOf('{');
+       const endIndex = content.lastIndexOf('}');
+       if (startIndex !== -1 && endIndex !== -1) {
+          workflowData = JSON.parse(content.substring(startIndex, endIndex + 1));
+       }
+    }
+
+    if (!workflowData || !workflowData.workflow) {
+        throw new Error("Failed to generate workflow structure");
+    }
+
+    res.json({
+      success: true,
+      data: workflowData
+    });
+
+  } catch (error) {
+    console.error('Custom workflow error:', error);
+    res.status(500).json({ error: 'Failed to generate custom workflow' });
+  }
+});
+
 
 // GET /api/role/progress - Get completed topics for a role
 router.get('/progress', async (req, res) => {
