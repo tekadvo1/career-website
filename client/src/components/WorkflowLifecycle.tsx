@@ -381,10 +381,10 @@ export default function WorkflowLifecycle() {
                                     <ul className="space-y-2">
                                         {stepDetails.checklist?.map((item: string, i: number) => (
                                             <li key={i} className="text-sm text-indigo-900 flex items-start gap-2">
-                                                <div className="mt-0.5 w-4 h-4 border-2 border-indigo-300 rounded flex items-center justify-center bg-white flex-shrink-0">
-                                                    
+                                                <div className="mt-0.5 w-4 h-4 border-2 border-indigo-300 rounded flex items-center justify-center bg-white flex-shrink-0 text-indigo-500">
+                                                    <CheckCircle className="w-3 h-3" />
                                                 </div>
-                                                {item}
+                                                <span className="flex-1">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
