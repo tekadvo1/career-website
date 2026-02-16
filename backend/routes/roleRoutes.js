@@ -207,6 +207,10 @@ router.post('/analyze', async (req, res) => {
             4. **Conditional**: If the role does not require programming languages, return an empty array [] for "languages".
             5. **Day in the Life**: BE REALISTIC. 
             6. **Salary Insights**: Provide separate entry/senior ranges.
+            7. **Workflow & Lifecycle (CRITICAL)**: This must be HIGHLY TECHNICAL and SPECIFIC. 
+               - If the role is "Full Stack Developer", the workflow MUST cover: Database Design (SQL/NoSQL) -> Backend API Development (Node/Python) -> Frontend Connection (React/Vue) -> Testing -> Deployment (CI/CD, AWS/Vercel).
+               - Mention SPECIFIC tools in the 'tools_used' array for each stage (e.g. 'MySQL', 'Express.js', 'Postman', 'GitHub Actions').
+               - Explain HOW components connect in the 'description'. Do not be generic.
             
             Return ONLY valid JSON.
             `
