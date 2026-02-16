@@ -24,6 +24,12 @@ export default function WorkflowLifecycle() {
   const { role, analysis } = location.state || {};
   const [isDownloading, setIsDownloading] = useState(false);
   const [activeStage, setActiveStage] = useState<number | null>(null);
+  
+  // Custom Workflow State
+  const [customTools, setCustomTools] = useState('');
+  const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowStage[]>(analysis?.workflow || []);
+  const [isRegenerating, setIsRegenerating] = useState(false);
+  const [displayRole, setDisplayRole] = useState(role);
 
   // Fallback if no analysis passed
   if (!role || !analysis) {
@@ -40,7 +46,31 @@ export default function WorkflowLifecycle() {
      );
   }
 
-  const workflow: WorkflowStage[] = analysis.workflow || [];
+  const handleRegenerateWorkflow = async () => {
+      if (!customTools.trim()) return;
+      
+      setIsRegenerating(true);
+      try {
+          const response = await fetch('/api/role/workflow-custom', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role, customTools })
+          });
+          
+          const result = await response.json();
+          if (result.success && result.data && result.data.workflow) {
+              setCurrentWorkflow(result.data.workflow);
+              if (result.data.role) setDisplayRole(result.data.role);
+          } else {
+              alert('Failed to generate custom workflow. Please try again.');
+          }
+      } catch (error) {
+          console.error("Custom workflow error:", error);
+          alert('Error connecting to server.');
+      } finally {
+          setIsRegenerating(false);
+      }
+  };
 
   const handleDownloadPDF = async () => {
       const element = document.getElementById('workflow-content');
@@ -88,7 +118,7 @@ export default function WorkflowLifecycle() {
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                         <GitBranch className="w-5 h-5 text-indigo-600" />
-                        {role} Lifecycle
+                        {displayRole} Lifecycle
                     </h1>
                     <p className="text-xs text-gray-500">End-to-end workflow visualization</p>
                 </div>
@@ -106,11 +136,40 @@ export default function WorkflowLifecycle() {
       <div className="max-w-4xl mx-auto p-6 md:p-10">
         
         {/* Intro */}
-        <div className="mb-10 text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-4">Professional Workflow & Lifecycle</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                A comprehensive breakdown of how a <span className="text-indigo-600 font-bold">{role}</span> approaches projects from inception to delivery.
+        <div className="mb-8 text-center">
+            <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Professional Workflow & Lifecycle</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+                A comprehensive breakdown of how a <span className="text-indigo-600 font-bold">{displayRole}</span> approaches projects from inception to delivery.
             </p>
+
+            {/* Customization Input */}
+            <div className="max-w-xl mx-auto bg-white p-2 rounded-xl shadow-md border border-gray-200 flex gap-2">
+                <input 
+                    type="text" 
+                    placeholder="Customize Stack: e.g. 'Use AWS, Node.js, React' or 'Change AWS to Azure'"
+                    className="flex-1 px-4 py-2 border-none outline-none text-sm text-gray-700 placeholder-gray-400 bg-transparent"
+                    value={customTools}
+                    onChange={(e) => setCustomTools(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleRegenerateWorkflow()}
+                />
+                <button 
+                    onClick={handleRegenerateWorkflow}
+                    disabled={isRegenerating || !customTools.trim()}
+                    className={`px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2 ${isRegenerating ? 'opacity-75 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
+                >
+                    {isRegenerating ? (
+                        <>
+                         <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                         Generating...
+                        </>
+                    ) : (
+                        <>
+                        <Wrench className="w-3.5 h-3.5" />
+                        Update Workflow
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
 
         {/* Timeline */}
@@ -120,8 +179,8 @@ export default function WorkflowLifecycle() {
             <div className="absolute left-[27px] top-0 bottom-0 w-0.5 bg-gray-200 md:hidden"></div>
 
             <div className="space-y-12">
-                {workflow.length > 0 ? (
-                    workflow.map((step, index) => {
+                {currentWorkflow.length > 0 ? (
+                    currentWorkflow.map((step, index) => {
                         const isEven = index % 2 === 0;
                         const isHovered = activeStage === index;
                         
