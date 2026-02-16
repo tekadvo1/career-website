@@ -206,6 +206,7 @@ export default function Onboarding() {
                         setRole(suggestion);
                         setShowSuggestions(false);
                       }}
+                      onMouseDown={(e) => e.preventDefault()}
                     >
                       {suggestion}
                       <span className="opacity-0 group-hover:opacity-100 text-indigo-400 text-xs">Select</span>
