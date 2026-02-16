@@ -280,12 +280,7 @@ export default function Onboarding() {
                   file ? 'Analyze Resume & Find Matches' : 'Find Matches for Role'
                 )}
               </button>
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all"
-              >
-                Skip
-              </button>
+
             </div>
           </div>
 
