@@ -95,6 +95,7 @@ export default function RoleAnalysis() {
       languages: analysis.languages || [],
       frameworks: analysis.frameworks || [],
       resources: analysis.resources || [],
+      workflow: analysis.workflow || [],
     };
   }, []);
 
@@ -126,7 +127,10 @@ export default function RoleAnalysis() {
           const parsed = JSON.parse(saved);
           // Only use if less than 1 hour old and matches current role (if filtered) or just generic valid
           // We check if the saved role matches the requested role if one was requested
-          if (parsed.role === role && (new Date().getTime() - parsed.timestamp < 3600000)) {
+          // We also check if the cached data has the new 'workflow' structure. If not, we want to re-fetch.
+          const hasWorkflow = parsed.analysis && parsed.analysis.workflow && parsed.analysis.workflow.length > 0;
+          
+          if (parsed.role === role && (new Date().getTime() - parsed.timestamp < 3600000) && hasWorkflow) {
              console.log("Using analysis from local storage");
              setRoleDataState(getAiRoleData(parsed.analysis, parsed.role));
              setIsLoading(false);
