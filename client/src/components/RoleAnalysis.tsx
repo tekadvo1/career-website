@@ -15,7 +15,8 @@ import {
   Award, 
   ExternalLink,
   User, 
-  Globe 
+  Globe,
+  ArrowRight
 } from 'lucide-react';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
