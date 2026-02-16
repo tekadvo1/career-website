@@ -717,7 +717,8 @@ export default function RoleAnalysis() {
 
               <div className="space-y-4">
                 {roleData.resources.length > 0 ? (
-                    roleData.resources.map((resource: any, index: number) => {
+                    <>
+                    {roleData.resources.slice(0, 3).map((resource: any, index: number) => {
                   const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(resource.name + ' ' + (resource.provider || '') + ' course')}`;
                   const finalUrl = (resource.url && resource.url.startsWith('http')) ? resource.url : searchUrl;
 
@@ -779,7 +780,15 @@ export default function RoleAnalysis() {
                     </div>
                   </a>
                   );
-                })
+                })}
+                
+                <button
+                    onClick={() => navigate('/resources', { state: { role } })}
+                    className="w-full py-3 mt-4 bg-gray-50 border border-gray-200 text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                >
+                    See More Resources <ArrowRight className="w-4 h-4" />
+                </button>
+                </>
                 ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
                         <p className="text-gray-500">No specific resources found.</p>
@@ -799,13 +808,7 @@ export default function RoleAnalysis() {
             Continue to Personalized Roadmap
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => navigate('/resources', { state: { role } })}
-            className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Browse All Resources
-          </button>
+
           <button
             onClick={() => navigate('/dashboard')}
             className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm transition-colors"
