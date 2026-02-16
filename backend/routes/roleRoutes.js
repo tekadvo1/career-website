@@ -160,6 +160,15 @@ router.post('/analyze', async (req, res) => {
                 }
               ],
 
+              "workflow": [
+                  {
+                    "stage": "Stage Name (e.g. Planning / Database Design)",
+                    "description": "What happens in this stage?",
+                    "tools_used": ["Tool A", "Tool B"],
+                    "activities": ["Activity 1", "Activity 2"]
+                  }
+              ],
+
               "roadmap": [
                 {
                   "phase": "Phase Name (e.g., Foundations)",
