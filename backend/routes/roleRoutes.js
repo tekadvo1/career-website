@@ -375,6 +375,102 @@ router.post('/workflow-custom', async (req, res) => {
 });
 
 
+
+
+
+// POST /api/role/workflow-step-details - Generate detailed implementation guide for a step
+router.post('/workflow-step-details', async (req, res) => {
+  const { role, stage, tools } = req.body;
+
+  if (!role || !stage) {
+    return res.status(400).json({ error: 'Role and stage are required' });
+  }
+
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    console.log(`Generating Step Details for: ${role} - ${stage}`);
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a senior developer mentor. Provide technical implementation details for a specific workflow stage.`
+          },
+          {
+            role: 'user',
+            content: `
+            Role: ${role}
+            Stage: ${stage}
+            Tools Used: ${tools ? tools.join(', ') : 'Standard tools'}
+
+            Task: Provide a technical deep-dive for this specific stage.
+            1. **Code Snippet**: A relevant code example (e.g., config file, API route, SQL query). 
+            2. **Best Practices**: 3-4 bullet points of critical do's/don'ts.
+            3. **Checklist**: 3-4 items to verify before moving to the next stage.
+
+            Return the response in this JSON format:
+            {
+               "code_snippet": {
+                  "language": "javascript/python/sql/yaml",
+                  "code": "..."
+               },
+               "best_practices": ["Practice 1", "Practice 2"],
+               "checklist": ["Item 1", "Item 2"]
+            }
+            Return ONLY valid JSON.
+            `
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse JSON
+    let stepData;
+    try {
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : content;
+      stepData = JSON.parse(jsonText);
+    } catch (e) {
+       stepData = null;
+    }
+
+    if (!stepData) {
+        throw new Error("Failed to generate step details");
+    }
+
+    res.json({
+      success: true,
+      data: stepData
+    });
+
+  } catch (error) {
+    console.error('Step details error:', error);
+    res.status(500).json({ error: 'Failed to generate step details' });
+  }
+});
+
+// POST /api/role/save-workflow - Save a custom workflow
+router.post('/save-workflow', async (req, res) => {
+    const { userId, role, workflow } = req.body;
+    // Implementation for DB save would go here
+    // For now, we'll just mock success
+    res.json({ success: true, message: "Workflow saved successfully" });
+});
+
+
 // GET /api/role/progress - Get completed topics for a role
 router.get('/progress', async (req, res) => {
     const { role, userId } = req.query;
