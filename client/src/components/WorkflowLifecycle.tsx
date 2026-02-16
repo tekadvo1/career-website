@@ -6,7 +6,10 @@ import {
   Clock, 
   Wrench, 
   Layers, 
-  Download
+  Download,
+  Code,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -30,6 +33,11 @@ export default function WorkflowLifecycle() {
   const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowStage[]>(analysis?.workflow || []);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [displayRole, setDisplayRole] = useState(role);
+  
+  // Step Details Modal State
+  const [selectedStep, setSelectedStep] = useState<WorkflowStage | null>(null);
+  const [stepDetails, setStepDetails] = useState<any>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
   // Fallback if no analysis passed
   if (!role || !analysis) {
@@ -69,6 +77,36 @@ export default function WorkflowLifecycle() {
           alert('Error connecting to server.');
       } finally {
           setIsRegenerating(false);
+      }
+  };
+
+  const handleViewStepDetails = async (step: WorkflowStage) => {
+      setSelectedStep(step);
+      setStepDetails(null);
+      setIsLoadingDetails(true);
+      
+      try {
+          const response = await fetch('/api/role/workflow-step-details', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  role: displayRole, 
+                  stage: step.stage, 
+                  tools: step.tools_used 
+              })
+          });
+          
+          const result = await response.json();
+          if (result.success && result.data) {
+              setStepDetails(result.data);
+          } else {
+              setStepDetails({ error: "Could not load details." });
+          }
+      } catch (error) {
+          console.error("Step details error:", error);
+          setStepDetails({ error: "Connection failed." });
+      } finally {
+          setIsLoadingDetails(false);
       }
   };
 
@@ -242,6 +280,13 @@ export default function WorkflowLifecycle() {
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    <button 
+                                        onClick={() => handleViewStepDetails(step)}
+                                        className="w-full mt-4 py-2 border border-indigo-200 text-indigo-700 font-semibold rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                                    >
+                                        <Code className="w-4 h-4" /> Deep Dive & Code
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -265,6 +310,96 @@ export default function WorkflowLifecycle() {
         </div>
 
       </div>
+
+      {/* Deep Dive Modal */}
+      {selectedStep && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedStep(null)}>
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                {/* Modal Header */}
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-900">{selectedStep.stage}</h3>
+                        <p className="text-sm text-gray-500">Technical Deep Dive</p>
+                    </div>
+                    <button 
+                        onClick={() => setSelectedStep(null)}
+                        className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                
+                {/* Modal Content */}
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    {isLoadingDetails ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-3">
+                            <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                            <p className="text-gray-500 text-sm font-medium">Generating technical details...</p>
+                        </div>
+                    ) : stepDetails ? (
+                        <div className="space-y-6">
+                            {/* Code Snippet */}
+                            {stepDetails.code_snippet && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Code className="w-5 h-5 text-indigo-600" />
+                                        <h4 className="font-bold text-gray-900">Implementation Example</h4>
+                                    </div>
+                                    <div className="bg-gray-900 rounded-xl p-4 overflow-x-auto relative group">
+                                        <div className="absolute top-2 right-2 px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded uppercase font-mono">
+                                            {stepDetails.code_snippet.language}
+                                        </div>
+                                        <pre className="text-gray-100 font-mono text-sm leading-relaxed">
+                                            <code>{stepDetails.code_snippet.code}</code>
+                                        </pre>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Two Column Layout */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Best Practices */}
+                                <div className="bg-green-50 rounded-xl p-5 border border-green-100">
+                                    <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                        <CheckCircle className="w-4 h-4" /> Best Practices
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {stepDetails.best_practices?.map((practice: string, i: number) => (
+                                            <li key={i} className="text-sm text-green-900 flex items-start gap-2">
+                                                <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                                {practice}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Checklist */}
+                                <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
+                                    <h4 className="font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                                        <Layers className="w-4 h-4" /> Validation Checklist
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {stepDetails.checklist?.map((item: string, i: number) => (
+                                            <li key={i} className="text-sm text-indigo-900 flex items-start gap-2">
+                                                <div className="mt-0.5 w-4 h-4 border-2 border-indigo-300 rounded flex items-center justify-center bg-white flex-shrink-0">
+                                                    
+                                                </div>
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-gray-500">
+                            Failed to load details.
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
