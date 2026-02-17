@@ -9,7 +9,6 @@ import {
   Code,
   BookOpen,
   ArrowRight,
-  BrainCircuit,
   Trophy,
   Bot,
   ChevronDown,
@@ -415,7 +414,6 @@ export default function LearningRoadmap() {
       }
   };
 
-  const activeRoadmap = roadmap; 
   const totalPhases = roadmap.length; 
   
   const handlePhaseChange = (idx: number) => {
