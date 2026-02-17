@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrainCircuit, Trophy, X } from 'lucide-react';
 
 interface QuizQuestion {
@@ -51,7 +51,7 @@ export default function QuizModal({ isOpen, onClose, phaseName, topics, role }: 
                     role: "system",
                     message: `Generate 3 multiple choice quiz questions for the topic "${phaseName}". 
                     Return strictly valid JSON array of objects with keys: id (number), question (string), options (array of 4 strings), correctAnswer (index number 0-3), explanation (string).`,
-                    context: `Topics: ${topics.join(', ')}`
+                    context: `Role: ${role}, Topics: ${topics.join(', ')}`
                 })
             });
             

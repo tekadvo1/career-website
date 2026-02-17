@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, X, Sparkles, MessageSquare } from 'lucide-react';
 
 interface ChatMessage {
