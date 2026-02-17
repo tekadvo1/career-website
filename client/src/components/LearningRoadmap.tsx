@@ -619,39 +619,75 @@ export default function LearningRoadmap() {
                               <Code className="w-3.5 h-3.5" />
                               <h3 className="font-bold text-sm">Skills to Learn</h3>
                           </div>
-                          <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden divide-y divide-gray-50 flex flex-col">
-                              {(isTopicsExpanded ? (currentPhase.topics || []) : (currentPhase.topics || []).slice(0, 3)).map((topic, i) => {
-                                  const topicName = typeof topic === 'string' ? topic : topic.name;
-                                  const isCompleted = completedTopics.has(topicName);
-                                  return (
-                                      <div 
-                                        key={i} 
-                                        onClick={() => toggleTopicCompletion(topicName)}
-                                        className={`p-2.5 flex items-start gap-2.5 transition-colors cursor-pointer group ${
-                                            isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-                                        }`}
-                                      >
-                                          <div className={`mt-0.5 flex-shrink-0 transition-all duration-300 ${
-                                                  isCompleted ? 'text-blue-600 scale-100' : 'text-gray-300 group-hover:text-blue-400'
-                                              }`}
+                          <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden flex flex-col transition-all duration-300">
+                              <div className="divide-y divide-gray-50">
+                                  {(isTopicsExpanded ? (currentPhase.topics || []) : (currentPhase.topics || []).slice(0, 3)).map((topic, i) => {
+                                      const topicName = typeof topic === 'string' ? topic : topic.name;
+                                      const topicDesc = typeof topic === 'string' ? null : topic.description;
+                                      const subtopics = typeof topic === 'string' ? [] : topic.subtopics;
+                                      const isCompleted = completedTopics.has(topicName);
+                                      
+                                      return (
+                                          <div 
+                                            key={i} 
+                                            onClick={() => toggleTopicCompletion(topicName)}
+                                            className={`p-2.5 transition-colors cursor-pointer group ${
+                                                isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
+                                            }`}
                                           >
-                                              <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'fill-blue-100' : ''}`} /> 
+                                              <div className="flex items-start gap-2.5">
+                                                  <div className={`mt-0.5 flex-shrink-0 transition-all duration-300 ${
+                                                          isCompleted ? 'text-blue-600 scale-100' : 'text-gray-300 group-hover:text-blue-400'
+                                                      }`}
+                                                  >
+                                                      <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'fill-blue-100' : ''}`} /> 
+                                                  </div>
+                                                  <div className="flex-1">
+                                                      <p className={`font-medium text-xs transition-all ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}> 
+                                                          {topicName}
+                                                      </p>
+                                                      
+                                                      {/* DETAILS VIEW (Only shown when expanded) */}
+                                                      {isTopicsExpanded && (
+                                                          <div className="mt-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
+                                                              {topicDesc && (
+                                                                  <p className="text-[10px] text-gray-500 mb-1.5 leading-relaxed">{topicDesc}</p>
+                                                              )}
+                                                              {subtopics && subtopics.length > 0 && (
+                                                                  <ul className="grid grid-cols-2 gap-1 pl-1">
+                                                                      {subtopics.map((sub, idx) => (
+                                                                          <li key={idx} className="text-[9px] text-gray-400 flex items-center gap-1">
+                                                                              <span className="w-1 h-1 rounded-full bg-blue-200"></span>
+                                                                              {sub}
+                                                                          </li>
+                                                                      ))}
+                                                                  </ul>
+                                                              )}
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              </div>
                                           </div>
-                                          <div className="flex-1">
-                                              <p className={`font-medium text-xs transition-all ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}> 
-                                                  {topicName}
-                                              </p>
-                                          </div>
-                                      </div>
-                                  );
-                              })}
+                                      );
+                                  })}
+                              </div>
                               
-                              {(currentPhase.topics || []).length > 3 && (
+                              {/* Show Button if more than 3 items OR if we are collapsed (to allow showing details) */}
+                              {((currentPhase.topics || []).length > 3 || (currentPhase.topics || []).length > 0) && (
                                   <button 
                                       onClick={() => setIsTopicsExpanded(!isTopicsExpanded)}
-                                      className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50"
+                                      className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50 flex items-center justify-center gap-1"
                                   >
-                                      {isTopicsExpanded ? "Show Less" : `Show ${(currentPhase.topics || []).length - 3} More Skills`}
+                                      {isTopicsExpanded ? (
+                                          <>Show Less <ChevronUp className="w-3 h-3" /></>
+                                      ) : (
+                                          <>
+                                            {(currentPhase.topics || []).length > 3 
+                                                ? `Show ${(currentPhase.topics || []).length - 3} More & Details` 
+                                                : "Show Details"} 
+                                            <ChevronDown className="w-3 h-3" />
+                                          </>
+                                      )}
                                   </button>
                               )}
                           </div>
