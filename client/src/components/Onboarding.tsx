@@ -278,7 +278,7 @@ export default function Onboarding() {
                     Analyzing...
                   </>
                 ) : (
-                  file ? 'Analyze Resume & Find Matches' : 'Find Matches for Role'
+                  file ? 'Analyze Resume & Build Plan' : 'Build My Career Plan'
                 )}
               </button>
 

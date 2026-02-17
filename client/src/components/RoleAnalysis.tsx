@@ -311,12 +311,7 @@ export default function RoleAnalysis() {
                     </>
                   )}
                 </button>
-                <button 
-                  onClick={() => navigate('/roadmap', { state: { role, analysis: roleData } })}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium shadow-md w-full md:w-auto"
-                >
-                  View Roadmap <ChevronRight className="w-4 h-4" />
-                </button>
+            {/* Button Removed */}
             </div>
           </div>
 
@@ -860,20 +855,12 @@ export default function RoleAnalysis() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-4">
+        <div className="flex justify-end mt-4">
           <button
             onClick={() => navigate('/roadmap', { state: { role } })}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm flex items-center gap-1.5 transition-colors"
+            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            Continue to Personalized Roadmap
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 bg-white border-2 border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-semibold text-sm transition-colors"
-          >
-            Skip to Dashboard
+            Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
