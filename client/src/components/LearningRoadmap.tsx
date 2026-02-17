@@ -224,6 +224,7 @@ export default function LearningRoadmap() {
   const [role, setRole] = useState(location.state?.role || "Software Engineer");
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
+  const [isTopicsExpanded, setIsTopicsExpanded] = useState(false); // New state to track topic expansion
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -415,6 +416,11 @@ export default function LearningRoadmap() {
   const activeRoadmap = roadmap; 
   const currentPhase = activeRoadmap[selectedPhaseIndex] || activeRoadmap[0];
   const totalPhases = roadmap.length; 
+  
+  const handlePhaseChange = (idx: number) => {
+      setSelectedPhaseIndex(idx);
+      setIsTopicsExpanded(false); // Reset expansion when changing phases
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     const d = difficulty?.toLowerCase() || '';
@@ -550,7 +556,7 @@ export default function LearningRoadmap() {
                                   <div className="absolute left-[15px] top-6 bottom-0 w-px bg-gray-100 z-0 group-hover:bg-gray-200 transition-colors"></div>
                               )}
                               <button
-                                  onClick={() => setSelectedPhaseIndex(idx)}
+                                  onClick={() => handlePhaseChange(idx)}
                                   className={`relative z-10 w-full text-left p-2 flex items-start gap-2 hover:bg-gray-50 transition-all border-l-2 ${
                                       selectedPhaseIndex === idx 
                                       ? 'border-indigo-600 bg-indigo-50/40' 
@@ -613,8 +619,8 @@ export default function LearningRoadmap() {
                               <Code className="w-3.5 h-3.5" />
                               <h3 className="font-bold text-sm">Skills to Learn</h3>
                           </div>
-                          <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden divide-y divide-gray-50">
-                              {(currentPhase.topics || []).map((topic, i) => {
+                          <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden divide-y divide-gray-50 flex flex-col">
+                              {(isTopicsExpanded ? (currentPhase.topics || []) : (currentPhase.topics || []).slice(0, 3)).map((topic, i) => {
                                   const topicName = typeof topic === 'string' ? topic : topic.name;
                                   const isCompleted = completedTopics.has(topicName);
                                   return (
@@ -639,6 +645,15 @@ export default function LearningRoadmap() {
                                       </div>
                                   );
                               })}
+                              
+                              {(currentPhase.topics || []).length > 3 && (
+                                  <button 
+                                      onClick={() => setIsTopicsExpanded(!isTopicsExpanded)}
+                                      className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50"
+                                  >
+                                      {isTopicsExpanded ? "Show Less" : `Show ${(currentPhase.topics || []).length - 3} More Skills`}
+                                  </button>
+                              )}
                           </div>
                       </div>
 
