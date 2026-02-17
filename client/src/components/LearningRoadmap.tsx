@@ -339,6 +339,16 @@ export default function LearningRoadmap() {
       localStorage.setItem(`roadmap_progress_${role}`, JSON.stringify(Array.from(completedTopics)));
   }, [completedTopics, role]);
 
+    const handleResetRoadmap = () => {
+        if (window.confirm("This will replace your current view with the full comprehensive roadmap curriculum. Continue?")) {
+            setRoadmap(DEFAULT_ROADMAP);
+            localStorage.removeItem('lastRoleAnalysis');
+            localStorage.removeItem(`roadmap_progress_${role}`);
+            setCompletedTopics(new Set());
+            setSelectedPhaseIndex(0);
+        }
+    };
+
   const handleDownloadPDF = async () => {
       const element = document.getElementById('roadmap-content');
       if (!element) return;
@@ -460,6 +470,12 @@ export default function LearningRoadmap() {
                  </div>
                  
                  <div className="flex items-center gap-3">
+                     <button 
+                        onClick={handleResetRoadmap}
+                        className="px-4 py-2 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors underline"
+                     >
+                         Reset View
+                     </button>
                      <button 
                         onClick={handleDownloadPDF}
                         disabled={isDownloading}
