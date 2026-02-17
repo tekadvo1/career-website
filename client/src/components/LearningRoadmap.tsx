@@ -82,6 +82,88 @@ interface QuizQuestion {
     explanation: string;
 }
 
+const DEFAULT_ROADMAP: RoadmapPhase[] = [
+    {
+        phase: "Fundamentals",
+        duration: "4 weeks",
+        difficulty: "Beginner",
+        category: "Beginner",
+        description: "Building the core foundation and understanding basic concepts.",
+        topics: [
+            {
+                name: "Core Concepts",
+                description: "Understanding the absolute basics of the field.",
+                subtopics: ["Syntax", "Variables", "Control Structures"],
+                topic_resources: [
+                    { name: "MDN Web Docs", url: "https://developer.mozilla.org", type: "Documentation", is_free: true }
+                ]
+            },
+            {
+                name: "Development Environment",
+                description: "Setting up your workspace for productivity.",
+                subtopics: ["VS Code", "Git", "Terminal"],
+                topic_resources: []
+            }
+        ],
+        skills_covered: ["Basic Logic", "Environment Setup"],
+        step_by_step_guide: ["Install Node.js", "Set up a GitHub account"],
+        resources: [
+             { name: "CS50 Introduction to Computer Science", url: "https://pll.harvard.edu/course/cs50-introduction-computer-science", type: "Course", is_free: true }
+        ],
+        projects: [
+            { name: "Personal Portfolio", description: "Build a static site.", difficulty: "Beginner" }
+        ]
+    },
+    {
+        phase: "Advanced Concepts",
+        duration: "6 weeks",
+        difficulty: "Intermediate",
+        category: "Intermediate",
+        description: "Deepening your knowledge with complex patterns and tools.",
+        topics: [
+            {
+                name: "Data Structures",
+                description: "Efficiently storing and retrieving data.",
+                subtopics: ["Arrays", "Linked Lists", "Trees"],
+                topic_resources: []
+            },
+             {
+                name: "API Integration",
+                description: "Connecting frontend to backend services.",
+                subtopics: ["REST", "Fetch API", "Async/Await"],
+                topic_resources: []
+            }
+        ],
+        skills_covered: ["API Design", "Data Management"],
+        step_by_step_guide: ["Build a REST API", "Connect a database"],
+        resources: [],
+        projects: [
+             { name: "Task Management App", description: "Full CRUD application.", difficulty: "Intermediate" }
+        ]
+    },
+    {
+        phase: "Mastery & Architecture",
+        duration: "8 weeks",
+        difficulty: "Advanced",
+        category: "Advanced",
+        description: "System design, scalability, and leading teams.",
+        topics: [
+            {
+                name: "System Design",
+                description: "Designing scalable distributed systems.",
+                subtopics: ["Load Balancing", "Caching", "Microservices"],
+                topic_resources: []
+            }
+        ],
+        skills_covered: ["System Architecture", "Performance Optimization"],
+        step_by_step_guide: ["Design a system like Twitter", "Optimize detailed queries"],
+        resources: [],
+        projects: [
+             { name: "Cloud-Native Microservice", description: "Deploying scalable services.", difficulty: "Advanced" }
+        ]
+    }
+];
+
 export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -244,17 +326,17 @@ export default function LearningRoadmap() {
                  timestamp: new Date().getTime()
                }));
              } else {
-               console.warn("API returned data but no roadmap array");
-               // Fallback: Use empty or dummy roadmap to prevent crash
-               setRoadmap([]); 
-             }
-           } else {
-             // If fetch fails, we might just be empty
-             setRoadmap([]);
-           }
-         } catch (err) {
-           console.error("Failed to fetch roadmap", err);
-           setRoadmap([]);
+                console.warn("API returned data but no roadmap array, using default.");
+                setRoadmap(DEFAULT_ROADMAP); 
+              }
+            } else {
+              // If fetch fails, we might just be empty
+              console.warn("API fetch failed, using default roadmap.");
+              setRoadmap(DEFAULT_ROADMAP);
+            }
+          } catch (err) {
+            console.error("Failed to fetch roadmap", err);
+            setRoadmap(DEFAULT_ROADMAP);
          } finally {
            setIsLoading(false);
          }
@@ -444,12 +526,21 @@ export default function LearningRoadmap() {
   // Filter phases based on selected category
   const filteredPhases = roadmap.filter(phase => {
       if (selectedCategory === 'All') return true;
-      if (!phase.category) return true; // Show all if no category (backward compatibility)
-      return phase.category.toLowerCase() === selectedCategory.toLowerCase();
+      
+      const normalizedCategory = selectedCategory.toLowerCase();
+      // Check difficulty first since the tabs are difficulty levels
+      if (phase.difficulty && phase.difficulty.toLowerCase().includes(normalizedCategory)) {
+          return true;
+      }
+      // Check category as fallback
+      if (phase.category && phase.category.toLowerCase() === normalizedCategory) {
+          return true;
+      }
+      return false;
   });
 
-  // If filtered phases exist, use them. Otherwise fallback to unfiltered (or handle empty state)
-  const activeRoadmap = filteredPhases.length > 0 ? filteredPhases : roadmap;
+  // If filtered phases exist, use them. Otherwise empty (handled in UI)
+  const activeRoadmap = filteredPhases;
   const currentPhase = activeRoadmap[selectedPhaseIndex] || activeRoadmap[0];
   const totalPhases = roadmap.length; // Keep total phases count accurate to global count
 
@@ -695,6 +786,8 @@ export default function LearningRoadmap() {
           {/* Right Content - Phase Details */}
           <div className="lg:col-span-8">
             <div className="bg-white rounded-xl shadow-lg p-6 min-h-[500px]">
+              {currentPhase ? (
+                <>
               <div className="mb-6 pb-6 border-b border-gray-100">
                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-2">
@@ -939,6 +1032,14 @@ export default function LearningRoadmap() {
                   <div className="absolute bottom-0 left-0 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl -ml-10 -mb-10 transition-transform group-hover:scale-125 duration-700"></div>
               </div>
 
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-gray-400">
+                    <Target className="w-12 h-12 mb-4 opacity-20" />
+                    <p className="text-lg font-medium">No phases found for {selectedCategory}</p>
+                    <p className="text-sm">Try selecting a different difficulty level.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
