@@ -416,7 +416,6 @@ export default function LearningRoadmap() {
   };
 
   const activeRoadmap = roadmap; 
-  const currentPhase = activeRoadmap[selectedPhaseIndex] || activeRoadmap[0];
   const totalPhases = roadmap.length; 
   
   const handlePhaseChange = (idx: number) => {
@@ -542,256 +541,190 @@ export default function LearningRoadmap() {
          </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-4"> {/* Reduced py-6/gap-6 to py-4/gap-4 */}
+      <div className="max-w-4xl mx-auto px-4 py-8 relative"> 
           
-          {/* LEFT SIDEBAR - TIMELINE */}
-          <div className="lg:col-span-3">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden sticky top-28"> 
-                  <div className="p-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2"> 
-                      <Sparkles className="w-3 h-3 text-indigo-500" />
-                      <h3 className="font-bold text-gray-800 text-[10px] uppercase tracking-wide">Roadmap Phases</h3>
-                  </div>
-                  <div className="max-h-[calc(100vh-180px)] overflow-y-auto custom-scrollbar">
-                      {roadmap.map((phase, idx) => (
-                          <div key={idx} className="relative group">
-                              {idx !== roadmap.length - 1 && (
-                                  <div className="absolute left-[15px] top-6 bottom-0 w-px bg-gray-100 z-0 group-hover:bg-gray-200 transition-colors"></div>
-                              )}
-                              <button
-                                  onClick={() => handlePhaseChange(idx)}
-                                  className={`relative z-10 w-full text-left p-2 flex items-start gap-2 hover:bg-gray-50 transition-all border-l-2 ${
-                                      selectedPhaseIndex === idx 
-                                      ? 'border-indigo-600 bg-indigo-50/40' 
-                                      : 'border-transparent'
-                                  }`}
+          {/* CENTRAL TIMELINE LINE */}
+          <div className="absolute left-8 md:left-1/2 top-8 bottom-0 w-0.5 bg-gray-200 -translate-x-1/2 hidden md:block"></div>
+          <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 md:hidden"></div>
+
+          <div className="space-y-8">
+              {roadmap.map((phase, idx) => {
+                  const isExpanded = selectedPhaseIndex === idx;
+                  const isEven = idx % 2 === 0;
+
+                  return (
+                      <div key={idx} className={`relative flex md:items-center gap-8 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                          
+                          {/* TIMELINE DOT */}
+                          <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 flex items-center justify-center bg-indigo-600">
+                             <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                          </div>
+
+                          {/* SPACER for Desktop Alternating Layout */}
+                          <div className="hidden md:block flex-1"></div>
+
+                          {/* PHASE CARD */}
+                          <div className={`flex-1 w-full ml-8 md:ml-0 transition-all duration-500 ${isExpanded ? 'scale-[1.01]' : 'hover:scale-[1.01]'}`}>
+                              <div 
+                                onClick={() => handlePhaseChange(isExpanded ? -1 : idx)}
+                                className={`bg-white rounded-xl border shadow-sm cursor-pointer overflow-hidden transition-all ${
+                                    isExpanded ? 'border-indigo-600 shadow-md ring-1 ring-indigo-50' : 'border-gray-200 hover:border-gray-300'
+                                }`}
                               >
-                                  <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
-                                      selectedPhaseIndex === idx 
-                                      ? 'border-indigo-600 bg-white shadow-sm scale-105' 
-                                      : 'border-gray-300 bg-white group-hover:border-gray-400'
-                                  }`}>
-                                      {selectedPhaseIndex === idx && <div className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></div>}
-                                  </div>
-                                  <div>
-                                      <div className="flex flex-wrap items-center gap-1 mb-0.5">
-                                          <span className={`text-[8px] font-bold px-1 py-0.5 rounded border uppercase tracking-wider ${getDifficultyColor(phase.difficulty)}`}>
-                                              {phase.difficulty}
-                                          </span>
+                                  {/* CARD HEADER */}
+                                  <div className="p-4 border-b border-gray-50 flex items-start gap-3">
+                                      <div className={`p-2 rounded-lg shrink-0 ${getDifficultyColor(phase.difficulty).replace('border', 'bg-opacity-10')}`}>
+                                          <Target className="w-5 h-5" />
                                       </div>
-                                      <h4 className={`font-bold text-[11px] mb-0 leading-tight ${selectedPhaseIndex === idx ? 'text-indigo-900' : 'text-gray-900'}`}>{phase.phase}</h4>
-                                      <p className="text-[9px] text-gray-500 font-medium">{phase.duration}</p>
+                                      <div className="flex-1">
+                                          <div className="flex items-center justify-between gap-2">
+                                              <div className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${getDifficultyColor(phase.difficulty)}`}>
+                                                  {phase.difficulty}
+                                              </div>
+                                              <span className="text-[10px] items-center gap-1 text-gray-400 hidden sm:flex">
+                                                  <Calendar className="w-3 h-3" /> {phase.duration}
+                                              </span>
+                                          </div>
+                                          <h3 className="font-bold text-gray-900 text-lg mt-1">{phase.phase}</h3>
+                                          <p className="text-xs text-gray-500 line-clamp-2 mt-1">{phase.description}</p>
+                                      </div>
+                                      <div className={`self-center transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+                                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                                      </div>
                                   </div>
-                              </button>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-          </div>
 
-          {/* MAIN CONTENT AREA */}
-          <div className="lg:col-span-9 space-y-4"> {/* Reduced space-y-6 to space-y-4 */}
-              {currentPhase && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      
-                      {/* Phase Header - ULTRA COMPACT */}
-                      <div className="bg-white p-4 rounded-lg border border-gray-100 shadow-sm relative overflow-hidden"> 
-                          <div className="absolute top-0 right-0 p-3 opacity-5">
-                              <Target className="w-20 h-20" /> 
-                          </div>
-                          <div className="relative z-10">
-                              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold mb-2 border ${getDifficultyColor(currentPhase.difficulty)}`}>
-                                  {currentPhase.difficulty}
-                              </div>
-                              <h2 className="text-xl font-extrabold text-gray-900 mb-1">{currentPhase.phase}</h2> 
-                              <div className="flex items-center gap-2 text-gray-500 text-[10px] mb-2">
-                                  <div className="flex items-center gap-1 bg-gray-100 px-1.5 py-0.5 rounded">
-                                     <Calendar className="w-2.5 h-2.5" />
-                                     <span className="font-medium">{currentPhase.duration}</span>
-                                  </div>
-                              </div>
-                              <p className="text-gray-600 leading-relaxed text-xs max-w-3xl"> 
-                                  {currentPhase.description}
-                              </p>
-                          </div>
-                      </div>
-
-                      {/* SECTION 1: SKILLS/TOPICS (BLUE) - ULTRA COMPACT */}
-                      <div>
-                          <div className="flex items-center gap-1.5 text-blue-700 mb-2 px-1">
-                              <Code className="w-3.5 h-3.5" />
-                              <h3 className="font-bold text-sm">Skills to Learn</h3>
-                          </div>
-                          <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden flex flex-col transition-all duration-300">
-                              <div className="divide-y divide-gray-50">
-                                  {(isTopicsExpanded ? (currentPhase.topics || []) : (currentPhase.topics || []).slice(0, 3)).map((topic, i) => {
-                                      const topicName = typeof topic === 'string' ? topic : topic.name;
-                                      const topicDesc = typeof topic === 'string' ? null : topic.description;
-                                      const subtopics = typeof topic === 'string' ? [] : topic.subtopics;
-                                      const isCompleted = completedTopics.has(topicName);
-                                      
-                                      return (
-                                          <div 
-                                            key={i} 
-                                            onClick={() => toggleTopicCompletion(topicName)}
-                                            className={`p-2.5 transition-colors cursor-pointer group ${
-                                                isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-                                            }`}
-                                          >
-                                              <div className="flex items-start gap-2.5">
-                                                  <div className={`mt-0.5 flex-shrink-0 transition-all duration-300 ${
-                                                          isCompleted ? 'text-blue-600 scale-100' : 'text-gray-300 group-hover:text-blue-400'
-                                                      }`}
-                                                  >
-                                                      <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'fill-blue-100' : ''}`} /> 
+                                  {/* EXPANDED CONTENT */}
+                                  <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                      <div className="overflow-hidden">
+                                          <div className="p-4 space-y-6 bg-gray-50/30">
+                                              
+                                              {/* 1. SKILLS SECTION */}
+                                              <div>
+                                                  <div className="flex items-center gap-1.5 text-blue-700 mb-2 px-1">
+                                                      <Code className="w-3.5 h-3.5" />
+                                                      <h4 className="font-bold text-sm">Key Skills</h4>
                                                   </div>
-                                                  <div className="flex-1">
-                                                      <p className={`font-medium text-xs transition-all ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}> 
-                                                          {topicName}
-                                                      </p>
-                                                      
-                                                      {/* DETAILS VIEW (Only shown when expanded) */}
-                                                      {isTopicsExpanded && (
-                                                          <div className="mt-1.5 animate-in fade-in slide-in-from-top-1 duration-300">
-                                                              {topicDesc && (
-                                                                  <p className="text-[10px] text-gray-500 mb-1.5 leading-relaxed">{topicDesc}</p>
-                                                              )}
-                                                              {subtopics && subtopics.length > 0 && (
-                                                                  <ul className="grid grid-cols-2 gap-1 pl-1">
-                                                                      {subtopics.map((sub, idx) => (
-                                                                          <li key={idx} className="text-[9px] text-gray-400 flex items-center gap-1">
-                                                                              <span className="w-1 h-1 rounded-full bg-blue-200"></span>
-                                                                              {sub}
-                                                                          </li>
-                                                                      ))}
-                                                                  </ul>
-                                                              )}
-                                                          </div>
+                                                  <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden flex flex-col">
+                                                      <div className="divide-y divide-gray-50">
+                                                          {(isTopicsExpanded ? (phase.topics || []) : (phase.topics || []).slice(0, 3)).map((topic, i) => {
+                                                              const topicName = typeof topic === 'string' ? topic : topic.name;
+                                                              const topicDesc = typeof topic === 'string' ? null : topic.description;
+                                                              const subtopics = typeof topic === 'string' ? [] : topic.subtopics;
+                                                              const isCompleted = completedTopics.has(topicName);
+                                                              
+                                                              return (
+                                                                  <div 
+                                                                    key={i} 
+                                                                    onClick={(e) => { e.stopPropagation(); toggleTopicCompletion(topicName); }}
+                                                                    className={`p-2.5 transition-colors cursor-pointer group ${
+                                                                        isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
+                                                                    }`}
+                                                                  >
+                                                                      <div className="flex items-start gap-2.5">
+                                                                          <div className={`mt-0.5 flex-shrink-0 ${isCompleted ? 'text-blue-600' : 'text-gray-300 group-hover:text-blue-400'}`}>
+                                                                              <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'fill-blue-100' : ''}`} /> 
+                                                                          </div>
+                                                                          <div className="flex-1">
+                                                                              <p className={`font-medium text-xs ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}>{topicName}</p>
+                                                                              {isTopicsExpanded && (
+                                                                                  <div className="mt-1.5 animate-in fade-in slide-in-from-top-1">
+                                                                                      {topicDesc && <p className="text-[10px] text-gray-500 mb-1.5">{topicDesc}</p>}
+                                                                                      {subtopics && subtopics.length > 0 && (
+                                                                                          <ul className="grid grid-cols-2 gap-1 pl-1">
+                                                                                              {subtopics.map((sub, idx) => (
+                                                                                                  <li key={idx} className="text-[9px] text-gray-400 flex items-center gap-1">
+                                                                                                      <span className="w-1 h-1 rounded-full bg-blue-200"></span>{sub}
+                                                                                                  </li>
+                                                                                              ))}
+                                                                                          </ul>
+                                                                                      )}
+                                                                                  </div>
+                                                                              )}
+                                                                          </div>
+                                                                      </div>
+                                                                  </div>
+                                                              );
+                                                          })}
+                                                      </div>
+                                                      {((phase.topics || []).length > 3 || (phase.topics || []).length > 0) && (
+                                                          <button 
+                                                              onClick={(e) => { e.stopPropagation(); setIsTopicsExpanded(!isTopicsExpanded); }}
+                                                              className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50 flex items-center justify-center gap-1"
+                                                          >
+                                                              {isTopicsExpanded ? <>Show Less <ChevronUp className="w-3 h-3" /></> : <>{(phase.topics || []).length > 3 ? `Show ${(phase.topics || []).length - 3} More` : "Details"} <ChevronDown className="w-3 h-3" /></>}
+                                                          </button>
                                                       )}
                                                   </div>
                                               </div>
+
+                                              {/* 2. MILESTONES SECTION */}
+                                              <div>
+                                                  <div className="flex items-center gap-1.5 text-purple-700 mb-2 px-1">
+                                                      <Trophy className="w-3.5 h-3.5" />
+                                                      <h4 className="font-bold text-sm">Milestones</h4>
+                                                  </div>
+                                                  <div className="space-y-2">
+                                                      {(phase.step_by_step_guide || []).map((step, i) => (
+                                                          <div key={i} className="flex items-center gap-2.5 p-2.5 bg-white border border-purple-100 rounded-lg shadow-sm">
+                                                              <span className="w-5 h-5 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-[10px] font-bold">{i+1}</span>
+                                                              <span className="text-gray-800 text-xs">{step}</span>
+                                                          </div>
+                                                      ))}
+                                                  </div>
+                                              </div>
+
+                                              {/* 3. PROJECTS SECTION */}
+                                              {phase.projects && phase.projects.length > 0 && (
+                                                  <div>
+                                                      <div className="flex items-center gap-1.5 text-green-700 mb-2 px-1">
+                                                          <BookOpen className="w-3.5 h-3.5" />
+                                                          <h4 className="font-bold text-sm">Projects</h4>
+                                                      </div>
+                                                      <div className="grid gap-2">
+                                                          {phase.projects.map((proj, i) => (
+                                                              <div key={i} className="group relative flex items-center justify-between p-3 bg-white border border-green-100 rounded-lg hover:shadow-md transition-all">
+                                                                  <div>
+                                                                      <p className="font-bold text-gray-900 text-xs">{proj.name}</p>
+                                                                      <p className="text-gray-500 text-[10px]">{proj.description}</p>
+                                                                  </div>
+                                                                  <button 
+                                                                      onClick={(e) => { e.stopPropagation(); openChatWithContext(`Help me with project: ${proj.name}`); }}
+                                                                      className="text-green-600 bg-green-50 p-1.5 rounded hover:bg-green-100"
+                                                                  >
+                                                                      <Bot className="w-3.5 h-3.5" />
+                                                                  </button>
+                                                              </div>
+                                                          ))}
+                                                      </div>
+                                                  </div>
+                                              )}
+
+                                              {/* AI HELP BUTTON */}
+                                              <button 
+                                                  onClick={(e) => { e.stopPropagation(); openChatWithContext(`I need help with ${phase.phase}`); }}
+                                                  className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+                                              >
+                                                  <Bot className="w-3.5 h-3.5" /> Ask AI about {phase.phase}
+                                              </button>
+
                                           </div>
-                                      );
-                                  })}
+                                      </div>
+                                  </div>
+
                               </div>
-                              
-                              {/* Show Button if more than 3 items OR if we are collapsed (to allow showing details) */}
-                              {((currentPhase.topics || []).length > 3 || (currentPhase.topics || []).length > 0) && (
-                                  <button 
-                                      onClick={() => setIsTopicsExpanded(!isTopicsExpanded)}
-                                      className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50 flex items-center justify-center gap-1"
-                                  >
-                                      {isTopicsExpanded ? (
-                                          <>Show Less <ChevronUp className="w-3 h-3" /></>
-                                      ) : (
-                                          <>
-                                            {(currentPhase.topics || []).length > 3 
-                                                ? `Show ${(currentPhase.topics || []).length - 3} More & Details` 
-                                                : "Show Details"} 
-                                            <ChevronDown className="w-3 h-3" />
-                                          </>
-                                      )}
-                                  </button>
-                              )}
                           </div>
                       </div>
-
-                      {/* SECTION 2: MILESTONES (PURPLE) - ULTRA COMPACT */}
-                      <div>
-                          <div className="flex items-center gap-1.5 text-purple-700 mb-2 px-1">
-                              <Trophy className="w-3.5 h-3.5" />
-                              <h3 className="font-bold text-sm">Milestones</h3>
-                          </div>
-                          <div className="space-y-2">
-                              {(currentPhase.step_by_step_guide || []).map((step, i) => (
-                                  <div key={i} className="flex items-center gap-2.5 p-2.5 bg-white border border-purple-100 rounded-lg shadow-sm text-purple-900 font-medium hover:shadow-md transition-shadow group">
-                                      <div className="w-6 h-6 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
-                                          <Trophy className="w-3 h-3 text-purple-600" />
-                                      </div>
-                                      <span className="text-gray-800 text-xs">{step}</span>
-                                  </div>
-                              ))}
-                              {(!currentPhase.step_by_step_guide || currentPhase.step_by_step_guide.length === 0) && (
-                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 italic text-center text-xs">
-                                      No specific milestones set for this phase.
-                                  </div>
-                              )}
-                          </div>
-                      </div>
-
-                      {/* SECTION 3: PRACTICE PROJECTS (GREEN) - ULTRA COMPACT */}
-                      <div>
-                          <div className="flex items-center gap-1.5 text-green-700 mb-2 px-1">
-                              <BookOpen className="w-3.5 h-3.5" />
-                              <h3 className="font-bold text-sm">Practice Projects</h3>
-                          </div>
-                          <div className="grid gap-2">
-                              {(currentPhase.projects || []).map((proj, i) => (
-                                  <div 
-                                    key={i}
-                                    className="group relative flex items-center justify-between p-3 bg-white border border-green-100 rounded-lg transition-all shadow-sm hover:shadow-md hover:border-green-200"
-                                  >
-                                      <div className="flex items-start gap-2.5">
-                                          <div className="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-[9px] flex-shrink-0 mt-0.5">
-                                              {i + 1}
-                                          </div>
-                                          <div>
-                                              <p className="font-bold text-gray-900 text-xs group-hover:text-green-800 transition-colors">{proj.name}</p>
-                                              <p className="text-gray-500 mt-0.5 text-[10px]">{proj.description}</p>
-                                          </div>
-                                      </div>
-                                      <button 
-                                         onClick={(e) => {
-                                             e.stopPropagation();
-                                             openChatWithContext(`Help me start the project: ${proj.name}. ${proj.description}`);
-                                         }}
-                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                         aria-label="Get Project Help"
-                                      />
-                                      <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
-                                  </div>
-                              ))}
-                               {(!currentPhase.projects || currentPhase.projects.length === 0) && (
-                                  <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 italic text-center text-xs">
-                                      No specific projects listed for this phase.
-                                  </div>
-                              )}
-                          </div>
-                          {currentPhase.projects && currentPhase.projects.length > 0 && (
-                            <div className="flex justify-center mt-2">
-                                <p className="text-[9px] text-orange-500 flex items-center gap-1 font-medium bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
-                                    <Sparkles className="w-2.5 h-2.5" /> Click any project to get an AI step-by-step guide
-                                </p>
-                            </div>
-                          )}
-                      </div>
-
-                      {/* QUIZ SECTION CTA - ULTRA COMPACT */}
-                      <div className="mt-4 p-4 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-3 relative overflow-hidden">
-                          <div className="relative z-10">
-                              <h4 className="font-bold text-sm mb-0.5">Ready to test your knowledge?</h4>
-                              <p className="text-indigo-100 opacity-90 text-xs">Take a quick quiz to verify your understanding.</p>
-                          </div>
-                          <button 
-                              onClick={() => setShowQuiz(true)}
-                              className="relative z-10 px-4 py-1.5 bg-white text-indigo-700 font-bold rounded hover:bg-gray-50 transition-all transform hover:scale-105 shadow-sm flex items-center gap-1.5 text-xs"
-                          >
-                              <BrainCircuit className="w-3.5 h-3.5" /> Start Quiz
-                          </button>
-
-                          {/* Decorative Background Circles */}
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-8 -mt-8 pointer-events-none"></div>
-                      </div>
-
-                  </div>
-              )}
+                  );
+              })}
           </div>
       </div>
 
+
       {/* FOOTER ACTION BAR - ULTRA COMPACT */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
-           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+           <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
                <button 
-                  onClick={() => openChatWithContext(`I need help understanding the current phase: ${currentPhase?.phase}`)}
+                  onClick={() => openChatWithContext(`I need help understanding phase: ${(roadmap[selectedPhaseIndex] || roadmap[0])?.phase}`)}
                   className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow transition-all flex items-center justify-center gap-1.5 text-xs"
                >
                    <Bot className="w-4 h-4" /> Get AI Learning Help
@@ -815,13 +748,15 @@ export default function LearningRoadmap() {
       </div>
 
       {/* SEPARATE FEATURE: Quiz Modal */}
-      <QuizModal 
-        isOpen={showQuiz}
-        onClose={() => setShowQuiz(false)}
-        phaseName={currentPhase?.phase}
-        topics={(currentPhase?.topics || []).map(t => typeof t === 'string' ? t : t.name)}
-        role={role}
-      />
+      {showQuiz && (
+            <QuizModal 
+              isOpen={showQuiz}
+              onClose={() => setShowQuiz(false)}
+              phaseName={(roadmap[selectedPhaseIndex] || roadmap[0])?.phase}
+              topics={((roadmap[selectedPhaseIndex] || roadmap[0])?.topics || []).map(t => typeof t === 'string' ? t : t.name)}
+              role={role}
+            />
+       )}
 
       {/* SEPARATE FEATURE: AI Chat Assistant */}
       <AIChatAssistant 
