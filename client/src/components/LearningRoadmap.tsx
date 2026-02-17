@@ -453,80 +453,80 @@ export default function LearningRoadmap() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-sans text-slate-800" id="roadmap-content">
-      {/* HEADER SECTION */}
+      {/* HEADER SECTION - COMPACT */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm transition-all duration-300">
-         <div className="max-w-7xl mx-auto px-4 py-4">
-             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+         <div className="max-w-7xl mx-auto px-4 py-3"> {/* Reduced py-4 to py-3 */}
+             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3"> {/* Reduced gap-4 to gap-3 */}
                  <div>
                      <div className="flex items-center gap-2 mb-1">
-                         <div className="p-1.5 bg-purple-600 rounded-lg text-white shadow-sm">
-                            <Sparkles className="w-3.5 h-3.5" />
+                         <div className="p-1 bg-purple-600 rounded-lg text-white shadow-sm">
+                            <Sparkles className="w-3 h-3" /> {/* Reduced icon size */}
                          </div>
-                         <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full uppercase tracking-wider border border-purple-100">
+                         <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full uppercase tracking-wider border border-purple-100">
                             Personalized Learning Path
                          </span>
                      </div>
-                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Your Learning Roadmap</h1>
+                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">Your Learning Roadmap</h1> {/* Reduced text-2xl to text-xl */}
                  </div>
                  
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-2">
                      <button 
                         onClick={handleResetRoadmap}
-                        className="px-4 py-2 text-xs font-medium text-gray-500 hover:text-red-600 transition-colors underline"
+                        className="px-3 py-1.5 text-[10px] font-medium text-gray-400 hover:text-red-500 transition-colors underline"
                      >
                          Reset View
                      </button>
                      <button 
                         onClick={handleDownloadPDF}
                         disabled={isDownloading}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                      >
-                         <Download className="w-4 h-4" /> 
+                         <Download className="w-3.5 h-3.5" /> 
                          {isDownloading ? 'Saving...' : 'Download PDF'}
                      </button>
                      <button 
                         onClick={() => openChatWithContext(`I need help with my ${role} roadmap`)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
                      >
-                         <Bot className="w-4 h-4" /> AI Assistant
+                         <Bot className="w-3.5 h-3.5" /> AI Assistant
                      </button>
                  </div>
              </div>
 
-             {/* DASHBOARD STATS */}
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                     <div className="w-12 h-12 bg-white text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                         <Calendar className="w-6 h-6" />
+             {/* DASHBOARD STATS - COMPACT */}
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4"> {/* Reduced gap-4 to gap-3 and mt-6 to mt-4 */}
+                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 flex items-center gap-3 hover:shadow-md transition-shadow"> {/* Reduced rounded-xl to rounded-lg, p-4 to p-3 */}
+                     <div className="w-10 h-10 bg-white text-blue-600 rounded-lg flex items-center justify-center shadow-sm"> {/* Reduced size w-12 h-12 to w-10 h-10 */}
+                         <Calendar className="w-5 h-5" />
                      </div>
                      <div>
-                         <p className="text-xs text-blue-600 font-bold uppercase tracking-wide">Total Duration</p>
-                         <p className="font-bold text-gray-900 text-lg">~{roadmap.length * 4} weeks</p>
+                         <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wide">Total Duration</p>
+                         <p className="font-bold text-gray-900 text-base">~{roadmap.length * 4} weeks</p> {/* Reduced text-lg to text-base */}
                      </div>
                  </div>
-                 <div className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                     <div className="w-12 h-12 bg-white text-green-600 rounded-xl flex items-center justify-center shadow-sm">
-                         <Target className="w-6 h-6" />
+                 <div className="bg-green-50 border border-green-100 rounded-lg p-3 flex items-center gap-3 hover:shadow-md transition-shadow">
+                     <div className="w-10 h-10 bg-white text-green-600 rounded-lg flex items-center justify-center shadow-sm">
+                         <Target className="w-5 h-5" />
                      </div>
                      <div>
-                         <p className="text-xs text-green-600 font-bold uppercase tracking-wide">Phases Completed</p>
-                         <p className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                         <p className="text-[10px] text-green-600 font-bold uppercase tracking-wide">Phases Completed</p>
+                         <p className="font-bold text-gray-900 text-base flex items-center gap-1.5">
                              {completedTopics.size > 0 ? (completedTopics.size / 5).toFixed(0) : '0'} 
-                             <span className="text-sm text-gray-400 font-normal">/ {totalPhases}</span>
+                             <span className="text-xs text-gray-400 font-normal">/ {totalPhases}</span>
                          </p>
                      </div>
                  </div>
-                 <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                     <div className="w-12 h-12 bg-white text-purple-600 rounded-xl flex items-center justify-center shadow-sm">
-                         <Trophy className="w-6 h-6" />
+                 <div className="bg-purple-50 border border-purple-100 rounded-lg p-3 flex items-center gap-3 hover:shadow-md transition-shadow">
+                     <div className="w-10 h-10 bg-white text-purple-600 rounded-lg flex items-center justify-center shadow-sm">
+                         <Trophy className="w-5 h-5" />
                      </div>
                      <div className="flex-1">
                          <div className="flex justify-between items-end mb-1">
-                            <p className="text-xs text-purple-600 font-bold uppercase tracking-wide">Overall Progress</p>
-                            <span className="text-sm font-bold text-purple-700">{progressPercent}%</span>
+                            <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wide">Overall Progress</p>
+                            <span className="text-xs font-bold text-purple-700">{progressPercent}%</span>
                          </div>
-                         <div className="w-full bg-purple-200 rounded-full h-2">
-                             <div className="bg-purple-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{width: `${progressPercent}%`}}></div>
+                         <div className="w-full bg-purple-200 rounded-full h-1.5"> {/* Reduced h-2 to h-1.5 */}
+                             <div className="bg-purple-600 h-1.5 rounded-full transition-all duration-1000 ease-out" style={{width: `${progressPercent}%`}}></div>
                          </div>
                      </div>
                  </div>
@@ -534,44 +534,44 @@ export default function LearningRoadmap() {
          </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6"> {/* Reduced py-8/gap-8 to py-6/gap-6 */}
           
           {/* LEFT SIDEBAR - TIMELINE */}
           <div className="lg:col-span-3">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-36">
-                  <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-indigo-500" />
-                      <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide">Roadmap Phases</h3>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-32"> {/* Increased sticky top offset slightly to match header height */}
+                  <div className="p-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2"> {/* Reduced p-4 to p-3 */}
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                      <h3 className="font-bold text-gray-800 text-xs uppercase tracking-wide">Roadmap Phases</h3>
                   </div>
-                  <div className="max-h-[calc(100vh-250px)] overflow-y-auto custom-scrollbar">
+                  <div className="max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
                       {roadmap.map((phase, idx) => (
                           <div key={idx} className="relative group">
                               {idx !== roadmap.length - 1 && (
-                                  <div className="absolute left-[22px] top-10 bottom-0 w-0.5 bg-gray-100 z-0 group-hover:bg-gray-200 transition-colors"></div>
+                                  <div className="absolute left-[19px] top-8 bottom-0 w-0.5 bg-gray-100 z-0 group-hover:bg-gray-200 transition-colors"></div>
                               )}
                               <button
                                   onClick={() => setSelectedPhaseIndex(idx)}
-                                  className={`relative z-10 w-full text-left p-4 flex items-start gap-3 hover:bg-gray-50 transition-all border-l-4 ${
+                                  className={`relative z-10 w-full text-left p-3 flex items-start gap-3 hover:bg-gray-50 transition-all border-l-4 ${
                                       selectedPhaseIndex === idx 
                                       ? 'border-indigo-600 bg-indigo-50/40' 
                                       : 'border-transparent'
                                   }`}
                               >
-                                  <div className={`w-6 h-6 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
+                                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-all ${
                                       selectedPhaseIndex === idx 
-                                      ? 'border-indigo-600 bg-white shadow-sm scale-110' 
+                                      ? 'border-indigo-600 bg-white shadow-sm scale-105' 
                                       : 'border-gray-300 bg-white group-hover:border-gray-400'
                                   }`}>
-                                      {selectedPhaseIndex === idx && <div className="w-2.5 h-2.5 bg-indigo-600 rounded-full"></div>}
+                                      {selectedPhaseIndex === idx && <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>}
                                   </div>
                                   <div>
-                                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${getDifficultyColor(phase.difficulty)}`}>
+                                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${getDifficultyColor(phase.difficulty)}`}>
                                               {phase.difficulty}
                                           </span>
                                       </div>
-                                      <h4 className={`font-bold text-sm mb-0.5 ${selectedPhaseIndex === idx ? 'text-indigo-900' : 'text-gray-900'}`}>{phase.phase}</h4>
-                                      <p className="text-xs text-gray-500 font-medium">{phase.duration}</p>
+                                      <h4 className={`font-bold text-xs mb-0.5 leading-tight ${selectedPhaseIndex === idx ? 'text-indigo-900' : 'text-gray-900'}`}>{phase.phase}</h4>
+                                      <p className="text-[10px] text-gray-500 font-medium">{phase.duration}</p>
                                   </div>
                               </button>
                           </div>
@@ -581,37 +581,37 @@ export default function LearningRoadmap() {
           </div>
 
           {/* MAIN CONTENT AREA */}
-          <div className="lg:col-span-9 space-y-8">
+          <div className="lg:col-span-9 space-y-6"> {/* Reduced space-y-8 to space-y-6 */}
               {currentPhase && (
-                  <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       
-                      {/* Phase Header */}
-                      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+                      {/* Phase Header - COMPACT */}
+                      <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden"> {/* Reduced p-6 to p-5, rounded-2xl to rounded-xl */}
                           <div className="absolute top-0 right-0 p-4 opacity-5">
-                              <Target className="w-32 h-32" />
+                              <Target className="w-24 h-24" /> {/* Reduced icon size */}
                           </div>
                           <div className="relative z-10">
-                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-4 border ${getDifficultyColor(currentPhase.difficulty)}`}>
+                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold mb-3 border ${getDifficultyColor(currentPhase.difficulty)}`}>
                                   {currentPhase.difficulty}
                               </div>
-                              <h2 className="text-3xl font-extrabold text-gray-900 mb-3">{currentPhase.phase}</h2>
-                              <div className="flex items-center gap-3 text-gray-500 text-sm mb-4">
+                              <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{currentPhase.phase}</h2> {/* Reduced text-3xl to text-2xl */}
+                              <div className="flex items-center gap-3 text-gray-500 text-xs mb-3">
                                   <div className="flex items-center gap-1.5 bg-gray-100 px-2 py-1 rounded">
-                                     <Calendar className="w-3.5 h-3.5" />
+                                     <Calendar className="w-3 h-3" />
                                      <span className="font-medium">{currentPhase.duration}</span>
                                   </div>
                               </div>
-                              <p className="text-gray-600 leading-relaxed text-lg max-w-3xl">
+                              <p className="text-gray-600 leading-relaxed text-sm max-w-3xl"> {/* Reduced text-lg to text-sm */}
                                   {currentPhase.description}
                               </p>
                           </div>
                       </div>
 
-                      {/* SECTION 1: SKILLS/TOPICS (BLUE) */}
+                      {/* SECTION 1: SKILLS/TOPICS (BLUE) - COMPACT */}
                       <div>
-                          <div className="flex items-center gap-2 text-blue-700 mb-4 px-1">
-                              <Code className="w-5 h-5" />
-                              <h3 className="font-bold text-lg">Skills to Learn</h3>
+                          <div className="flex items-center gap-2 text-blue-700 mb-3 px-1">
+                              <Code className="w-4 h-4" />
+                              <h3 className="font-bold text-base">Skills to Learn</h3>
                           </div>
                           <div className="bg-white border border-blue-100 rounded-xl shadow-sm overflow-hidden divide-y divide-gray-50">
                               {(currentPhase.topics || []).map((topic, i) => {
@@ -621,18 +621,18 @@ export default function LearningRoadmap() {
                                       <div 
                                         key={i} 
                                         onClick={() => toggleTopicCompletion(topicName)}
-                                        className={`p-4 flex items-start gap-3 transition-colors cursor-pointer group ${
+                                        className={`p-3 flex items-start gap-3 transition-colors cursor-pointer group ${
                                             isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
                                         }`}
                                       >
                                           <div className={`mt-0.5 flex-shrink-0 transition-all duration-300 ${
-                                                  isCompleted ? 'text-blue-600 scale-110' : 'text-gray-300 group-hover:text-blue-400'
+                                                  isCompleted ? 'text-blue-600 scale-100' : 'text-gray-300 group-hover:text-blue-400'
                                               }`}
                                           >
-                                              <CheckCircle2 className={`w-6 h-6 ${isCompleted ? 'fill-blue-100' : ''}`} />
+                                              <CheckCircle2 className={`w-5 h-5 ${isCompleted ? 'fill-blue-100' : ''}`} /> {/* Reduced icon size */}
                                           </div>
                                           <div className="flex-1">
-                                              <p className={`font-medium text-lg transition-all ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}>
+                                              <p className={`font-medium text-sm transition-all ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}> {/* Reduced text-lg to text-sm */}
                                                   {topicName}
                                               </p>
                                           </div>
@@ -642,48 +642,48 @@ export default function LearningRoadmap() {
                           </div>
                       </div>
 
-                      {/* SECTION 2: MILESTONES (PURPLE) */}
+                      {/* SECTION 2: MILESTONES (PURPLE) - COMPACT */}
                       <div>
-                          <div className="flex items-center gap-2 text-purple-700 mb-4 px-1">
-                              <Trophy className="w-5 h-5" />
-                              <h3 className="font-bold text-lg">Milestones</h3>
+                          <div className="flex items-center gap-2 text-purple-700 mb-3 px-1">
+                              <Trophy className="w-4 h-4" />
+                              <h3 className="font-bold text-base">Milestones</h3>
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-2.5">
                               {(currentPhase.step_by_step_guide || []).map((step, i) => (
-                                  <div key={i} className="flex items-center gap-4 p-4 bg-white border border-purple-100 rounded-xl shadow-sm text-purple-900 font-medium hover:shadow-md transition-shadow group">
-                                      <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
-                                          <Trophy className="w-5 h-5 text-purple-600" />
+                                  <div key={i} className="flex items-center gap-3 p-3 bg-white border border-purple-100 rounded-lg shadow-sm text-purple-900 font-medium hover:shadow-md transition-shadow group">
+                                      <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
+                                          <Trophy className="w-4 h-4 text-purple-600" />
                                       </div>
-                                      <span className="text-gray-800">{step}</span>
+                                      <span className="text-gray-800 text-sm">{step}</span>
                                   </div>
                               ))}
                               {(!currentPhase.step_by_step_guide || currentPhase.step_by_step_guide.length === 0) && (
-                                  <div className="p-6 bg-gray-50 border border-gray-100 rounded-xl text-gray-500 italic text-center">
+                                  <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 italic text-center text-sm">
                                       No specific milestones set for this phase.
                                   </div>
                               )}
                           </div>
                       </div>
 
-                      {/* SECTION 3: PRACTICE PROJECTS (GREEN) */}
+                      {/* SECTION 3: PRACTICE PROJECTS (GREEN) - COMPACT */}
                       <div>
-                          <div className="flex items-center gap-2 text-green-700 mb-4 px-1">
-                              <BookOpen className="w-5 h-5" />
-                              <h3 className="font-bold text-lg">Practice Projects</h3>
+                          <div className="flex items-center gap-2 text-green-700 mb-3 px-1">
+                              <BookOpen className="w-4 h-4" />
+                              <h3 className="font-bold text-base">Practice Projects</h3>
                           </div>
-                          <div className="grid gap-4">
+                          <div className="grid gap-3">
                               {(currentPhase.projects || []).map((proj, i) => (
                                   <div 
                                     key={i}
-                                    className="group relative flex items-center justify-between p-5 bg-white border border-green-100 rounded-xl transition-all shadow-sm hover:shadow-md hover:border-green-200"
+                                    className="group relative flex items-center justify-between p-4 bg-white border border-green-100 rounded-lg transition-all shadow-sm hover:shadow-md hover:border-green-200"
                                   >
-                                      <div className="flex items-start gap-4">
-                                          <div className="w-8 h-8 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-sm flex-shrink-0 mt-1">
+                                      <div className="flex items-start gap-3">
+                                          <div className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">
                                               {i + 1}
                                           </div>
                                           <div>
-                                              <p className="font-bold text-gray-900 text-lg group-hover:text-green-800 transition-colors">{proj.name}</p>
-                                              <p className="text-gray-500 mt-1">{proj.description}</p>
+                                              <p className="font-bold text-gray-900 text-sm group-hover:text-green-800 transition-colors">{proj.name}</p>
+                                              <p className="text-gray-500 mt-0.5 text-xs">{proj.description}</p>
                                           </div>
                                       </div>
                                       <button 
@@ -694,40 +694,39 @@ export default function LearningRoadmap() {
                                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                          aria-label="Get Project Help"
                                       />
-                                      <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
+                                      <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
                                   </div>
                               ))}
                                {(!currentPhase.projects || currentPhase.projects.length === 0) && (
-                                  <div className="p-6 bg-gray-50 border border-gray-100 rounded-xl text-gray-500 italic text-center">
+                                  <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg text-gray-500 italic text-center text-sm">
                                       No specific projects listed for this phase.
                                   </div>
                               )}
                           </div>
                           {currentPhase.projects && currentPhase.projects.length > 0 && (
-                            <div className="flex justify-center mt-3">
-                                <p className="text-xs text-orange-500 flex items-center gap-1.5 font-medium bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100">
-                                    <Sparkles className="w-3.5 h-3.5" /> Click any project to get an AI step-by-step guide
+                            <div className="flex justify-center mt-2.5">
+                                <p className="text-[10px] text-orange-500 flex items-center gap-1.5 font-medium bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100">
+                                    <Sparkles className="w-3 h-3" /> Click any project to get an AI step-by-step guide
                                 </p>
                             </div>
                           )}
                       </div>
 
-                      {/* QUIZ SECTION CTA */}
-                      <div className="mt-12 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+                      {/* QUIZ SECTION CTA - COMPACT */}
+                      <div className="mt-8 p-6 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 relative overflow-hidden">
                           <div className="relative z-10">
-                              <h4 className="font-bold text-2xl mb-2">Ready to test your knowledge?</h4>
-                              <p className="text-indigo-100 opacity-90">Take a quick quiz to verify your understanding of {currentPhase.phase} concepts.</p>
+                              <h4 className="font-bold text-lg mb-1">Ready to test your knowledge?</h4>
+                              <p className="text-indigo-100 opacity-90 text-sm">Take a quick quiz to verify your understanding of {currentPhase.phase} concepts.</p>
                           </div>
                           <button 
                               onClick={() => setShowQuiz(true)}
-                              className="relative z-10 px-8 py-4 bg-white text-indigo-700 font-bold rounded-xl hover:bg-gray-50 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                              className="relative z-10 px-6 py-2.5 bg-white text-indigo-700 font-bold rounded-lg hover:bg-gray-50 transition-all transform hover:scale-105 shadow-md flex items-center gap-2 text-sm"
                           >
-                              <BrainCircuit className="w-5 h-5" /> Start Phase Quiz
+                              <BrainCircuit className="w-4 h-4" /> Start Phase Quiz
                           </button>
 
                           {/* Decorative Background Circles */}
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-                          <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-10 -mb-10 pointer-events-none"></div>
+                          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none"></div>
                       </div>
 
                   </div>
@@ -735,28 +734,28 @@ export default function LearningRoadmap() {
           </div>
       </div>
 
-      {/* FOOTER ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
-           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* FOOTER ACTION BAR - COMPACT */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
+           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                <button 
                   onClick={() => openChatWithContext(`I need help understanding the current phase: ${currentPhase?.phase}`)}
-                  className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2 text-sm"
                >
-                   <Bot className="w-5 h-5" /> Get AI Learning Help
+                   <Bot className="w-4 h-4" /> Get AI Learning Help
                </button>
                
-               <div className="flex gap-3 w-full sm:w-auto">
+               <div className="flex gap-2 w-full sm:w-auto">
                    <button 
                       onClick={() => navigate('/resources')}
-                      className="flex-1 sm:flex-none px-5 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm"
                    >
-                       <BookOpen className="w-4 h-4" /> Browse Resources
+                       <BookOpen className="w-3.5 h-3.5" /> Browse Resources
                    </button>
                    <button 
                       onClick={() => navigate('/dashboard')}
-                      className="flex-1 sm:flex-none px-5 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2 text-sm"
                    >
-                       Continue to Dashboard <ArrowRight className="w-4 h-4" />
+                       Continue to Dashboard <ArrowRight className="w-3.5 h-3.5" />
                    </button>
                </div>
            </div>
