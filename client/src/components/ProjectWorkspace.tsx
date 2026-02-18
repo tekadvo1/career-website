@@ -16,7 +16,8 @@ import {
   Target,
   BarChart,
   Play,
-  FileText
+  FileText,
+  Bell
 } from 'lucide-react';
 import ChatAssistant from './roadmap/AIChatAssistant';
 import WeeklyReviewModal from './WeeklyReviewModal';
@@ -490,25 +491,45 @@ export default function ProjectWorkspace() {
                      </div>
 
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         {/* WEEKLY PROGRESS */}
+                         {/* YOUR SCHEDULE CARD (Replaces Weekly Velocity) */}
                          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
                              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                 <BarChart className="w-4 h-4" /> Weekly Velocity
+                                 <Calendar className="w-4 h-4" /> Your Schedule
                              </h3>
-                             <div className="space-y-4">
+                             <div className="space-y-6">
                                  <div>
-                                     <div className="flex justify-between text-sm mb-2">
-                                         <span className="text-gray-300">Tasks Completed</span>
-                                         <span className="font-bold text-white">{tasksCompletedToday} / {tasksTargetToday}</span>
-                                     </div>
-                                     <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-                                         <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${dailyProgress}%` }}></div>
+                                     <div className="text-xs text-gray-500 mb-1">Hours per day</div>
+                                     <div className="text-2xl font-bold text-white flex items-end gap-1">
+                                         {settings?.schedule?.dailyHours || 2}h
+                                         <span className="text-sm text-gray-500 font-normal mb-1">/ session</span>
                                      </div>
                                  </div>
-                                 <div className="p-3 bg-gray-800/50 rounded-xl border border-gray-800 flex items-center justify-between">
-                                     <span className="text-xs text-gray-400">Current Streak</span>
-                                     <div className="flex items-center gap-1.5 text-amber-500 font-bold">
-                                         <Zap className="w-4 h-4 fill-amber-500" /> 3 Days
+                                 
+                                 <div>
+                                     <div className="text-xs text-gray-500 mb-2">Working Days</div>
+                                     <div className="flex flex-wrap gap-1.5">
+                                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                                             const isActive = settings?.schedule?.selectedDays?.includes(day);
+                                             return (
+                                                 <span 
+                                                     key={day}
+                                                     className={`text-[10px] font-bold px-2 py-1 rounded-md border ${
+                                                         isActive 
+                                                         ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' 
+                                                         : 'bg-gray-800 text-gray-600 border-gray-800'
+                                                     }`}
+                                                 >
+                                                     {day}
+                                                 </span>
+                                             );
+                                         })}
+                                     </div>
+                                 </div>
+
+                                 <div className="pt-4 border-t border-gray-800">
+                                     <div className="flex items-center gap-2 text-xs text-gray-400">
+                                         <Bell className="w-3.5 h-3.5 text-indigo-500" />
+                                         Browser notifications on
                                      </div>
                                  </div>
                              </div>
@@ -528,7 +549,7 @@ export default function ProjectWorkspace() {
                                  </div>
                                  <div className="flex-1">
                                      <div className="bg-gray-800 rounded-xl rounded-tl-none p-4 text-sm text-gray-300 leading-relaxed mb-4">
-                                         "You have <strong>{currentTask?.duration || "45m"}</strong> scheduled for today. Completing this module will boost your <strong>Backend Systems</strong> skill by 12%. Ready to code?"
+                                         "You have <strong>{settings?.schedule?.dailyHours || 2}h</strong> scheduled for today. Completing this module will boost your <strong>Backend Systems</strong> skill by 12%. Ready to code?"
                                      </div>
                                      <div className="flex gap-2">
                                          <button 
