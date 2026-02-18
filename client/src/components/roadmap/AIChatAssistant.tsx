@@ -10,11 +10,11 @@ interface ChatMessage {
 interface AIChatAssistantProps {
     isOpen: boolean;
     onClose: () => void;
-    context: string;
+    context: any;
     role: string;
 }
 
-export default function AIChatAssistant({ isOpen, onClose, context, role }: AIChatAssistantProps) {
+export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbedded = false }: AIChatAssistantProps & { isEmbedded?: boolean }) {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
@@ -70,7 +70,78 @@ export default function AIChatAssistant({ isOpen, onClose, context, role }: AICh
         }
     };
 
-    if (!isOpen) return null;
+    if (!isOpen && !isEmbedded) return null;
+
+    if (isEmbedded) {
+        return (
+            <div className="flex flex-col h-full bg-gray-900 border-l border-gray-800">
+                <div className="p-4 border-b border-gray-800 bg-gray-900 flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <div className="bg-indigo-500/10 p-1.5 rounded-lg">
+                            <Bot className="w-4 h-4 text-indigo-400" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-sm text-white">AI Copilot</h3>
+                            <p className="text-[10px] text-gray-500">Context-aware assistant</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800">
+                        {context && (
+                            <div className="bg-indigo-900/20 border border-indigo-500/20 p-3 rounded-lg text-xs text-indigo-300 mb-4 flex items-start gap-2">
+                                <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-indigo-400" />
+                                <div className="space-y-1">
+                                    <p className="font-bold text-indigo-200">Current Scope:</p>
+                                    <p className="opacity-80 line-clamp-2">{context.currentTask || context}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {chatMessages.map(msg => (
+                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[90%] p-3 rounded-2xl text-sm leading-relaxed ${
+                                    msg.role === 'user' 
+                                    ? 'bg-indigo-600 text-white rounded-tr-none' 
+                                    : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-none'
+                                }`}>
+                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                                </div>
+                            </div>
+                        ))}
+                        {isChatLoading && (
+                             <div className="flex justify-start">
+                                <div className="bg-gray-800 border border-gray-700 p-3 rounded-2xl rounded-tl-none flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" />
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75" />
+                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150" />
+                                </div>
+                            </div>
+                        )}
+                </div>
+
+                <div className="p-3 border-t border-gray-800 bg-gray-900">
+                    <div className="flex gap-2 items-center bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500/40 focus-within:border-indigo-500 transition-all">
+                        <input 
+                            type="text" 
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
+                            placeholder="Ask Copilot..."
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-200 placeholder:text-gray-500"
+                        />
+                        <button 
+                            onClick={handleSendChat}
+                            disabled={!chatInput.trim()}
+                            className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">

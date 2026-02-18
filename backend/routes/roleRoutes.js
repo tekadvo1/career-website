@@ -777,4 +777,49 @@ router.post('/project-details', async (req, res) => {
     }
 });
 
+// POST /api/role/adaptive-schedule - Recalculate timeline based on missed days
+router.post('/adaptive-schedule', async (req, res) => {
+    try {
+        const { currentCompletionDate, lastActiveDate, weeklyHours, tasksRemaining } = req.body;
+        
+        // Simple Simulation Logic for "Adaptive AI"
+        // In reality, this would check DB for missed daily goals
+        const today = new Date();
+        const lastActive = lastActiveDate ? new Date(lastActiveDate) : new Date();
+        
+        // Calculate days inactive
+        const diffTime = Math.abs(today - lastActive);
+        const daysInactive = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        let adjustmentMessage = null;
+        let newCompletionDate = currentCompletionDate; 
+        let daysDelayed = 0;
+
+        // If inactive for more than 2 days, trigger adaptive scheduling
+        if (daysInactive > 2) {
+            daysDelayed = daysInactive;
+            
+            // Push completion date
+            const currentEnd = new Date(currentCompletionDate);
+            currentEnd.setDate(currentEnd.getDate() + daysDelayed);
+            newCompletionDate = currentEnd.toISOString();
+
+            adjustmentMessage = `Visualizing schedule... You missed ${daysInactive} days. We've adjusted your timeline by +${daysDelayed} days to keep you on track without burnout.`;
+        }
+
+        res.json({
+            success: true,
+            adjustmentNeeded: daysInactive > 2,
+            adjustmentMessage,
+            daysDelayed,
+            newCompletionDate,
+            daysInactive
+        });
+
+    } catch (error) {
+        console.error('Adaptive Schedule Error:', error);
+        res.status(500).json({ error: 'Failed to recalculate schedule' });
+    }
+});
+
 module.exports = router;

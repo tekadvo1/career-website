@@ -88,24 +88,45 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
                             {[
                                 { id: '3-5', label: '3-5 Hours', sub: 'Casual Pace' },
                                 { id: '5-8', label: '5-8 Hours', sub: 'Standard' },
-                                { id: '8+', label: '8+ Hours', sub: 'Fast Track' }
+                                { id: '8+', label: '8+ Hours', sub: 'Fast Track' },
+                                { id: 'custom', label: 'Custom', sub: 'Your Pace' }
                             ].map((opt) => (
                                 <button
                                     key={opt.id}
-                                    onClick={() => setTimeCommitment(opt.id)}
+                                    onClick={() => setTimeCommitment(opt.id === 'custom' ? '' : opt.id)}
                                     className={`p-3 rounded-xl border-2 text-left transition-all ${
-                                        timeCommitment === opt.id 
+                                        (timeCommitment === opt.id) || (opt.id === 'custom' && timeCommitment !== null && !['3-5', '5-8', '8+'].includes(timeCommitment)) 
                                         ? 'border-indigo-600 bg-indigo-50 shadow-md ring-1 ring-indigo-600'
                                         : 'border-gray-200 hover:border-indigo-300 hover:bg-gray-50'
                                     }`}
                                 >
-                                    <div className={`font-bold text-sm ${timeCommitment === opt.id ? 'text-indigo-700' : 'text-gray-900'}`}>
+                                    <div className={`font-bold text-sm ${
+                                         (timeCommitment === opt.id) || (opt.id === 'custom' && timeCommitment !== null && !['3-5', '5-8', '8+'].includes(timeCommitment)) 
+                                         ? 'text-indigo-700' : 'text-gray-900'
+                                    }`}>
                                         {opt.label}
                                     </div>
                                     <div className="text-xs text-gray-500 mt-0.5">{opt.sub}</div>
                                 </button>
                             ))}
                         </div>
+                        
+                        {/* Custom Input Field (Only shows if Custom is selected or active) */}
+                        {timeCommitment !== null && !['3-5', '5-8', '8+'].includes(timeCommitment) && (
+                            <div className="mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label className="block text-xs font-semibold text-gray-700 mb-1">Enter hours per week:</label>
+                                <input 
+                                    type="number" 
+                                    min="1" 
+                                    max="168"
+                                    placeholder="e.g. 10"
+                                    value={timeCommitment}
+                                    onChange={(e) => setTimeCommitment(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                                    autoFocus
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="bg-amber-50 rounded-lg p-3 border border-amber-100 flex items-start gap-3">
