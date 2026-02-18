@@ -42,7 +42,7 @@ interface Module {
 export default function ProjectWorkspace() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project, role, settings } = location.state || {}; // Expecting project object and role
+  const { project, role, settings, preLoadedCurriculum } = location.state || {}; // Expecting project object and role
   const [timeCommitment] = useState(settings?.timeCommitment || '5');
   
   // Calculate Timeline Stats
@@ -50,12 +50,15 @@ export default function ProjectWorkspace() {
   const totalProjectHours = project?.metrics?.timeEstimate ? parseInt(project.metrics.timeEstimate) : 40; 
   const estimatedWeeks = Math.ceil(totalProjectHours / weeklyHours);
   
-  const completionDate = new Date();
+  // Use user's start date if available, otherwise today
+  const startDate = settings?.schedule?.startDate ? new Date(settings.schedule.startDate) : new Date();
+  const completionDate = new Date(startDate);
   completionDate.setDate(completionDate.getDate() + (estimatedWeeks * 7));
   const formattedCompletionDate = completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  const [curriculum, setCurriculum] = useState<Module[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize curriculum from pre-loaded data if available
+  const [curriculum, setCurriculum] = useState<Module[]>(preLoadedCurriculum || []);
+  const [isLoading, setIsLoading] = useState(!preLoadedCurriculum);
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
@@ -72,6 +75,11 @@ export default function ProjectWorkspace() {
   useEffect(() => {
     if (!project) {
         navigate('/dashboard');
+        return;
+    }
+
+    if (preLoadedCurriculum) {
+        setIsLoading(false);
         return;
     }
 
@@ -100,8 +108,7 @@ export default function ProjectWorkspace() {
     };
 
     fetchCurriculum();
-    fetchCurriculum();
-  }, [project, role, navigate]);
+  }, [project, role, navigate, preLoadedCurriculum]);
 
   // Check for Adaptive Schedule Updates
   useEffect(() => {
