@@ -321,22 +321,22 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
             
             {/* HER0 SECTION */}
-            <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-8 rounded-t-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
-                    <button onClick={() => setSelectedProject(null)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-                        <X className="w-5 h-5 text-white" />
+            <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-6 rounded-t-2xl overflow-hidden">
+                <div className="absolute top-0 right-0 p-3">
+                    <button onClick={() => setSelectedProject(null)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                        <X className="w-4 h-4 text-white" />
                     </button>
                 </div>
                 
                 <div className="relative z-10">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                        <span className="px-3 py-1 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-xs font-bold">
+                    <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <span className="px-2.5 py-0.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">
                             {selectedProject.matchScore}% Match
                         </span>
-                        <span className="px-3 py-1 bg-white/10 text-white border border-white/20 rounded-full text-xs font-medium">
+                        <span className="px-2.5 py-0.5 bg-white/10 text-white border border-white/20 rounded-full text-[10px] font-medium">
                             {selectedRole}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${
                              selectedProject.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-200 border-green-500/30' :
                              selectedProject.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-200 border-amber-500/30' :
                              'bg-red-500/20 text-red-200 border-red-500/30'
@@ -345,25 +345,25 @@ export default function Dashboard() {
                         </span>
                     </div>
 
-                    <h2 className="text-3xl md:text-4xl font-bold mb-3 text-white">
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-white">
                         {selectedProject.title}
                     </h2>
-                    <p className="text-indigo-100 text-lg max-w-3xl mb-8 leading-relaxed">
+                    <p className="text-indigo-100 text-sm max-w-3xl mb-5 leading-relaxed">
                         {selectedProject.description}
                     </p>
 
                     {/* Career Impact Block */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-5 max-w-3xl">
-                        <div className="flex items-center gap-2 mb-3 text-indigo-300 font-bold uppercase text-xs tracking-wider">
-                            <Flame className="w-4 h-4" /> Career Impact
+                    <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-lg p-3 max-w-2xl">
+                        <div className="flex items-center gap-1.5 mb-2 text-indigo-300 font-bold uppercase text-[10px] tracking-wider">
+                            <Flame className="w-3 h-3" /> Career Impact
                         </div>
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid md:grid-cols-2 gap-2">
                             {selectedProject.careerImpact?.map((impact, i) => (
-                                <div key={i} className="flex items-start gap-3">
-                                    <div className="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0"></div>
-                                    <span className="text-sm text-gray-100">{impact}</span>
+                                <div key={i} className="flex items-start gap-2">
+                                    <div className="mt-1 w-1 h-1 rounded-full bg-indigo-400 flex-shrink-0"></div>
+                                    <span className="text-xs text-gray-100 leading-tight">{impact}</span>
                                 </div>
-                            )) || <span className="text-white/60 text-sm">Career impact analysis loading...</span>}
+                            )) || <span className="text-white/60 text-xs">Career impact analysis loading...</span>}
                         </div>
                     </div>
                 </div>
@@ -371,39 +371,39 @@ export default function Dashboard() {
 
             <div className="flex flex-col lg:flex-row">
                 {/* LEFT CONTENT COLUMN */}
-                <div className="flex-1 p-8 space-y-10 border-r border-gray-100">
+                <div className="flex-1 p-6 space-y-6">
                     
                     {/* Metrics Bar */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                            <div className="text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">Career Match</div>
-                            <div className="text-xl font-bold text-gray-900">{selectedProject.metrics?.matchIncrease || "+12%"}</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                            <div className="text-indigo-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Career Match</div>
+                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.matchIncrease || "+12%"}</div>
                         </div>
-                        <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
-                            <div className="text-amber-600 text-xs font-bold uppercase tracking-wider mb-1">XP Reward</div>
-                            <div className="text-xl font-bold text-gray-900">{selectedProject.metrics?.xp || 500} XP</div>
+                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                            <div className="text-amber-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">XP Reward</div>
+                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.xp || 500} XP</div>
                         </div>
-                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
-                            <div className="text-blue-600 text-xs font-bold uppercase tracking-wider mb-1">Est. Time</div>
-                            <div className="text-xl font-bold text-gray-900">{selectedProject.metrics?.timeEstimate || "15 Hours"}</div>
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                            <div className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Est. Time</div>
+                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.timeEstimate || "15 Hours"}</div>
                         </div>
-                         <div className="bg-green-50 rounded-xl p-4 border border-green-100">
-                            <div className="text-green-600 text-xs font-bold uppercase tracking-wider mb-1">Role Relevance</div>
-                            <div className="text-sm font-bold text-gray-900 pt-1 leading-tight">{selectedProject.metrics?.roleRelevance || "High Demand"}</div>
+                         <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                            <div className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Role Relevance</div>
+                            <div className="text-xs font-bold text-gray-900 pt-0.5 leading-tight">{selectedProject.metrics?.roleRelevance || "High Demand"}</div>
                         </div>
                     </div>
 
                     {/* Why Recommended */}
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                           <Target className="w-5 h-5 text-indigo-600" /> 
-                           Why This Project Is Recommended For You
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                           <Target className="w-4 h-4 text-indigo-600" /> 
+                           Why This Project?
                         </h3>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                              {selectedProject.whyRecommended.map((reason, index) => (
-                                <div key={index} className="flex items-start gap-3">
-                                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-gray-700">{reason}</span>
+                                <div key={index} className="flex items-start gap-2.5">
+                                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                                  <span className="text-gray-700 text-sm">{reason}</span>
                                 </div>
                               ))}
                         </div>
@@ -411,11 +411,11 @@ export default function Dashboard() {
 
                     {/* Skill Gain Estimates */}
                     <div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                           <TrendingUp className="w-5 h-5 text-indigo-600" />
-                           After Completion You'll Reach
+                        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                           <TrendingUp className="w-4 h-4 text-indigo-600" />
+                           Skill Progression
                         </h3>
-                        <div className="space-y-5">
+                        <div className="space-y-3">
                             {selectedProject.skillGainEstimates?.map((skill, i) => (
                                 <div key={i}>
                                     <div className="flex justify-between text-sm mb-1.5">
@@ -426,7 +426,7 @@ export default function Dashboard() {
                                             <span className="text-indigo-600 font-bold">{skill.after}%</span>
                                         </div>
                                     </div>
-                                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden relative">
+                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
                                         {/* Background Progress */}
                                         <div 
                                             className="absolute top-0 left-0 h-full bg-gray-300" 
@@ -471,41 +471,41 @@ export default function Dashboard() {
                 </div>
 
                 {/* RIGHT SIDEBAR COLUMN */}
-                <div className="lg:w-80 bg-gray-50/50 p-8 space-y-6">
+                <div className="lg:w-80 bg-gray-50/50 p-5 space-y-4 border-l border-gray-200">
                     
                     {/* Start Panel */}
-                    <div className="bg-white rounded-xl shadow-lg border border-indigo-100 p-6">
-                        <h3 className="text-indigo-600 font-bold text-lg mb-1 flex items-center gap-2">
-                            <Flame className="w-5 h-5 fill-indigo-100" /> Unlock Senior Readiness
+                    <div className="bg-white rounded-xl shadow-lg border border-indigo-100 p-5">
+                        <h3 className="text-indigo-600 font-bold text-base mb-1 flex items-center gap-2">
+                            <Flame className="w-4 h-4 fill-indigo-100" /> Unlock Senior Readiness
                         </h3>
-                        <p className="text-gray-500 text-sm mb-6">
+                        <p className="text-gray-500 text-xs mb-4">
                             Start this project and boost your hiring probability by {selectedProject.metrics?.matchIncrease}.
                         </p>
                         
-                        <div className="space-y-3">
+                        <div className="space-y-2.5">
                             <button 
                                 onClick={() => navigate('/project-workspace', { state: { project: selectedProject, role: selectedRole } })}
-                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 text-sm"
                             >
                                 Start Project <ChevronRight className="w-4 h-4" />
                             </button>
-                            <button className="w-full py-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-all">
+                            <button className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-all text-sm">
                                 Save for Later
                             </button>
                         </div>
                     </div>
 
                     {/* Recruiter Value Block */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-5">
-                         <div className="flex items-center gap-2 mb-3">
-                             <Briefcase className="w-4 h-4 text-gray-900" />
-                             <h4 className="font-bold text-gray-900 text-sm">Recruiter Value</h4>
+                    <div className="bg-white rounded-xl border border-gray-200 p-4">
+                         <div className="flex items-center gap-2 mb-2">
+                             <Briefcase className="w-3.5 h-3.5 text-gray-900" />
+                             <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wide">Recruiter Value</h4>
                          </div>
-                         <p className="text-xs text-gray-500 mb-3">What recruiters see after completion:</p>
-                         <ul className="space-y-2.5">
+                         <p className="text-[10px] text-gray-400 mb-2.5">What recruiters see after completion:</p>
+                         <ul className="space-y-2">
                             {selectedProject.recruiterAppeal?.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                                    <CheckCircle className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                                <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
+                                    <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
                                     {item}
                                 </li>
                             )) || <li className="text-xs text-gray-400">Loading recruiter data...</li>}
@@ -513,11 +513,11 @@ export default function Dashboard() {
                     </div>
 
                     {/* Tech Stack */}
-                     <div className="bg-white rounded-xl border border-gray-200 p-5">
-                        <h4 className="font-bold text-gray-900 text-sm mb-3">Tech Stack</h4>
-                        <div className="flex flex-wrap gap-1.5">
+                     <div className="bg-white rounded-xl border border-gray-200 p-4">
+                        <h4 className="font-bold text-gray-900 text-xs mb-2.5 uppercase tracking-wide">Tech Stack</h4>
+                        <div className="flex flex-wrap gap-1">
                             {selectedProject.languages.concat(selectedProject.tools).map((tech, i) => (
-                                <span key={i} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded border border-gray-200">
+                                <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-medium rounded border border-gray-200">
                                     {tech}
                                 </span>
                             ))}
