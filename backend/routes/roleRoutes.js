@@ -318,10 +318,10 @@ router.post('/projects', async (req, res) => {
             Role: ${role}
             Context: ${resumeContext}
 
-            Task: suggestive 6-8 comprehensive portfolio projects that would help someone get hired for this role.
+            Task: suggestive 4-6 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
             - Include a mix of difficulties (Beginner, Intermediate, Advanced).
             - Ensure at least 2 projects are marked as "trending" (using modern tech stacks).
-            - For each project, provide a "setupGuide" with real commands.
+            - FOCUS ON CAREER OUTCOMES. NOT just "learning".
             
             Return the response in this JSON format:
             {
@@ -329,14 +329,52 @@ router.post('/projects', async (req, res) => {
                   {
                     "id": "1",
                     "title": "Project Title",
-                    "description": "2-sentence description.",
+                    "description": "2-sentence purpose-driven description.",
                     "difficulty": "Beginner/Intermediate/Advanced",
                     "duration": "e.g. 2 weeks",
                     "matchScore": 85 (integer 0-100 based on relevance to role),
                     "tags": ["Tag1", "Tag2"],
                     "trending": true/false,
-                    "status": "active" (default to active for now),
-                    "whyRecommended": ["Reason 1", "Reason 2"],
+                    "status": "active",
+                    
+                    "whyRecommended": [
+                        "Closes specific skill gap [Skill Name]",
+                        "Required in senior [Role] interviews",
+                        "Builds on your existing [Skill] foundation"
+                    ],
+
+                    "careerImpact": [
+                        "Increases Senior [Role] match from 78% -> 92%",
+                        "Strengthens [Specific Architecture] skills",
+                        "Improves [Specific Domain] readiness"
+                    ],
+
+                    "metrics": {
+                        "matchIncrease": "+14%",
+                        "xp": 500,
+                        "timeEstimate": "15 Hours",
+                        "roleRelevance": "Used in 68% of Senior roles"
+                    },
+
+                    "skillGainEstimates": [
+                        { "skill": "Skill A", "before": 45, "after": 80 },
+                        { "skill": "Skill B", "before": 30, "after": 75 },
+                        { "skill": "Skill C", "before": 60, "after": 90 }
+                    ],
+
+                    "curriculumStats": {
+                        "modules": 5,
+                        "tasks": 12,
+                        "deployment": true,
+                        "codeReview": true
+                    },
+
+                    "recruiterAppeal": [
+                        "Real-time backend architecture",
+                        "Production-ready Docker setup",
+                        "Scalable database implementation"
+                    ],
+
                     "skillsToDevelop": ["Skill 1", "Skill 2"],
                     "tools": ["Tool 1", "Tool 2"],
                     "languages": ["Lang 1"],
@@ -351,7 +389,8 @@ router.post('/projects', async (req, res) => {
             `
           }
         ],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 4000
       })
     });
 
