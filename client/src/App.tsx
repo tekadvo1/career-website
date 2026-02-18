@@ -13,6 +13,7 @@ import ResourcesHub from './components/ResourcesHub';
 import AILearningAssistant from './components/AILearningAssistant';
 import Profile from './components/Profile';
 import WorkflowLifecycle from './components/WorkflowLifecycle';
+import ProjectWorkspace from './components/ProjectWorkspace';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="/ai-assistant" element={<AILearningAssistant />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/workflow-lifecycle" element={<WorkflowLifecycle />} />
+          <Route path="/project-workspace" element={<ProjectWorkspace />} />
         </Routes>
       </div>
     </BrowserRouter>

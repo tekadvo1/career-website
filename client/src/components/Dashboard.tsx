@@ -483,7 +483,10 @@ export default function Dashboard() {
                         </p>
                         
                         <div className="space-y-3">
-                            <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2">
+                            <button 
+                                onClick={() => navigate('/project-workspace', { state: { project: selectedProject, role: selectedRole } })}
+                                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2"
+                            >
                                 Start Project <ChevronRight className="w-4 h-4" />
                             </button>
                             <button className="w-full py-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-all">

@@ -668,4 +668,108 @@ router.post('/progress', async (req, res) => {
     }
 });
 
+// POST /api/role/project-details - Generate DETAILED curriculum for a specific project
+router.post('/project-details', async (req, res) => {
+    const { projectTitle, role, difficultly, techStack } = req.body;
+
+    if (!projectTitle || !role) {
+        return res.status(400).json({ error: 'Project Title and Role are required' });
+    }
+
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const apiKey = process.env.OPENAI_API_KEY;
+
+        console.log(`Generating Project Curriculum for: ${projectTitle} (${role})`);
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a Senior Technical Lead creating a project implementation guide.`
+                    },
+                    {
+                        role: 'user',
+                        content: `
+                        Project: ${projectTitle}
+                        Role Target: ${role}
+                        Difficulty: ${difficultly || 'Intermediate'}
+                        Tech Stack: ${techStack ? techStack.join(', ') : 'Standard Industry Stack'}
+
+                        Task: Create a completete, step-by-step implementation curriculum for this project.
+                        - Break it down into 4-6 Logical MODULES.
+                        - Each module should have 2-4 TASKS.
+                        - For each task, provide:
+                            - Title
+                            - Description (What strictly needs to be done)
+                            - "Why" (Context)
+                            - Code Snippet (or Command) relative to the task.
+                            - Verification Step (How to check if it works)
+
+                        Return the response in this JSON format:
+                        {
+                            "curriculum": [
+                                {
+                                    "id": "module-1",
+                                    "title": "Module 1: Setup & Init",
+                                    "tasks": [
+                                        {
+                                            "id": "task-1-1",
+                                            "title": "Initialize Repository",
+                                            "description": "Set up git and initial folder structure.",
+                                            "why": "Standard practice for version control.",
+                                            "codeSnippet": "git init\nnpm init -y",
+                                            "verification": "Run 'git status' to see initialized repo."
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                        Return ONLY valid JSON.
+                        `
+                    }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+
+        // Parse JSON
+        let curriculumData;
+        try {
+            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+            const jsonText = jsonMatch ? jsonMatch[1] : content;
+            curriculumData = JSON.parse(jsonText);
+        } catch (e) {
+            const startIndex = content.indexOf('{');
+            const endIndex = content.lastIndexOf('}');
+            if (startIndex !== -1 && endIndex !== -1) {
+                curriculumData = JSON.parse(content.substring(startIndex, endIndex + 1));
+            }
+        }
+
+        if (!curriculumData || !curriculumData.curriculum) {
+            throw new Error("Failed to generate curriculum structure");
+        }
+
+        res.json({
+            success: true,
+            data: curriculumData.curriculum
+        });
+
+    } catch (error) {
+        console.error('Project details error:', error);
+        res.status(500).json({ error: 'Failed to generate project curriculum' });
+    }
+});
+
 module.exports = router;
