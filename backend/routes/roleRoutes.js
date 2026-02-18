@@ -670,7 +670,7 @@ router.post('/progress', async (req, res) => {
 
 // POST /api/role/project-details - Generate DETAILED curriculum for a specific project
 router.post('/project-details', async (req, res) => {
-    const { projectTitle, role, difficultly, techStack } = req.body;
+    const { projectTitle, role, difficultly, techStack, timeCommitment } = req.body;
 
     if (!projectTitle || !role) {
         return res.status(400).json({ error: 'Project Title and Role are required' });
@@ -702,16 +702,19 @@ router.post('/project-details', async (req, res) => {
                         Role Target: ${role}
                         Difficulty: ${difficultly || 'Intermediate'}
                         Tech Stack: ${techStack ? techStack.join(', ') : 'Standard Industry Stack'}
+                        Weekly Time Commitment: ${timeCommitment || 'Flexible'} hours
 
-                        Task: Create a completete, step-by-step implementation curriculum for this project.
+                        Task: Create a complete, step-by-step implementation curriculum for this project, tailored to the user's time commitment.
                         - Break it down into 4-6 Logical MODULES.
                         - Each module should have 2-4 TASKS.
+                        - Each module MUST have an "estimatedHours" field based on the difficulty and user's pace.
                         - For each task, provide:
                             - Title
                             - Description (What strictly needs to be done)
                             - "Why" (Context)
                             - Code Snippet (or Command) relative to the task.
                             - Verification Step (How to check if it works)
+                            - Estimated Duration (e.g. "45 mins")
 
                         Return the response in this JSON format:
                         {
@@ -719,6 +722,7 @@ router.post('/project-details', async (req, res) => {
                                 {
                                     "id": "module-1",
                                     "title": "Module 1: Setup & Init",
+                                    "estimatedHours": "2 hours",
                                     "tasks": [
                                         {
                                             "id": "task-1-1",
@@ -726,7 +730,8 @@ router.post('/project-details', async (req, res) => {
                                             "description": "Set up git and initial folder structure.",
                                             "why": "Standard practice for version control.",
                                             "codeSnippet": "git init\nnpm init -y",
-                                            "verification": "Run 'git status' to see initialized repo."
+                                            "verification": "Run 'git status' to see initialized repo.",
+                                            "duration": "15 mins"
                                         }
                                     ]
                                 }

@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import ProjectSetupModal from './ProjectSetupModal';
 import { 
   Search, 
   TrendingUp,
@@ -72,6 +73,7 @@ export default function Dashboard() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   // Fetch projects from API
   useEffect(() => {
@@ -318,10 +320,10 @@ export default function Dashboard() {
       {/* REDESIGNED PROJECT MODAL */}
       {selectedProject && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
+          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
             
             {/* HER0 SECTION */}
-            <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-6 rounded-t-2xl overflow-hidden">
+            <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-5 rounded-t-2xl overflow-hidden">
                 <div className="absolute top-0 right-0 p-3">
                     <button onClick={() => setSelectedProject(null)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
                         <X className="w-4 h-4 text-white" />
@@ -345,10 +347,10 @@ export default function Dashboard() {
                         </span>
                     </div>
 
-                    <h2 className="text-2xl md:text-3xl font-bold mb-2 text-white">
+                    <h2 className="text-xl md:text-2xl font-bold mb-2 text-white">
                         {selectedProject.title}
                     </h2>
-                    <p className="text-indigo-100 text-sm max-w-3xl mb-5 leading-relaxed">
+                    <p className="text-indigo-100 text-sm max-w-3xl mb-3 leading-relaxed">
                         {selectedProject.description}
                     </p>
 
@@ -371,23 +373,23 @@ export default function Dashboard() {
 
             <div className="flex flex-col lg:flex-row">
                 {/* LEFT CONTENT COLUMN */}
-                <div className="flex-1 p-6 space-y-6">
+                <div className="flex-1 p-5 space-y-4">
                     
                     {/* Metrics Bar */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+                        <div className="bg-indigo-50 rounded-lg p-2.5 border border-indigo-100">
                             <div className="text-indigo-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Career Match</div>
-                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.matchIncrease || "+12%"}</div>
+                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.matchIncrease || "+12%"}</div>
                         </div>
-                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
+                        <div className="bg-amber-50 rounded-lg p-2.5 border border-amber-100">
                             <div className="text-amber-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">XP Reward</div>
-                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.xp || 500} XP</div>
+                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.xp || 500} XP</div>
                         </div>
-                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                        <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
                             <div className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Est. Time</div>
-                            <div className="text-lg font-bold text-gray-900">{selectedProject.metrics?.timeEstimate || "15 Hours"}</div>
+                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.timeEstimate || "15 Hours"}</div>
                         </div>
-                         <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                         <div className="bg-green-50 rounded-lg p-2.5 border border-green-100">
                             <div className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Role Relevance</div>
                             <div className="text-xs font-bold text-gray-900 pt-0.5 leading-tight">{selectedProject.metrics?.roleRelevance || "High Demand"}</div>
                         </div>
@@ -444,7 +446,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Curriculum Preview */}
-                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
                             <Layers className="w-4 h-4" /> Curriculum Preview
                         </h3>
@@ -471,10 +473,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* RIGHT SIDEBAR COLUMN */}
-                <div className="lg:w-80 bg-gray-50/50 p-5 space-y-4 border-l border-gray-200">
+                <div className="lg:w-72 bg-gray-50/50 p-4 space-y-3 border-l border-gray-200">
                     
                     {/* Start Panel */}
-                    <div className="bg-white rounded-xl shadow-lg border border-indigo-100 p-5">
+                    <div className="bg-white rounded-xl shadow-lg border border-indigo-100 p-4">
                         <h3 className="text-indigo-600 font-bold text-base mb-1 flex items-center gap-2">
                             <Flame className="w-4 h-4 fill-indigo-100" /> Unlock Senior Readiness
                         </h3>
@@ -484,8 +486,8 @@ export default function Dashboard() {
                         
                         <div className="space-y-2.5">
                             <button 
-                                onClick={() => navigate('/project-workspace', { state: { project: selectedProject, role: selectedRole } })}
-                                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 text-sm"
+                                onClick={() => setShowSetupModal(true)}
+                                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 text-xs"
                             >
                                 Start Project <ChevronRight className="w-4 h-4" />
                             </button>
@@ -496,7 +498,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Recruiter Value Block */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <div className="bg-white rounded-xl border border-gray-200 p-3">
                          <div className="flex items-center gap-2 mb-2">
                              <Briefcase className="w-3.5 h-3.5 text-gray-900" />
                              <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wide">Recruiter Value</h4>
@@ -513,7 +515,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Tech Stack */}
-                     <div className="bg-white rounded-xl border border-gray-200 p-4">
+                     <div className="bg-white rounded-xl border border-gray-200 p-3">
                         <h4 className="font-bold text-gray-900 text-xs mb-2.5 uppercase tracking-wide">Tech Stack</h4>
                         <div className="flex flex-wrap gap-1">
                             {selectedProject.languages.concat(selectedProject.tools).map((tech, i) => (
@@ -530,6 +532,16 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      {/* SETUP MODAL */}
+      {selectedProject && (
+        <ProjectSetupModal 
+            isOpen={showSetupModal} 
+            onClose={() => setShowSetupModal(false)}
+            project={selectedProject}
+            role={selectedRole}
+        />
+      )}
+
     </div>
   );
 }

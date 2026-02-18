@@ -11,6 +11,7 @@ import {
   X,
   ChevronRight
 } from 'lucide-react';
+import ChatAssistant from './roadmap/AIChatAssistant';
 
 interface Task {
   id: string;
@@ -19,18 +20,21 @@ interface Task {
   why: string;
   codeSnippet: string;
   verification: string;
+  duration?: string;
 }
 
 interface Module {
   id: string;
   title: string;
+  estimatedHours?: string;
   tasks: Task[];
 }
 
 export default function ProjectWorkspace() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project, role } = location.state || {}; // Expecting project object and role
+  const { project, role, settings } = location.state || {}; // Expecting project object and role
+  const [timeCommitment] = useState(settings?.timeCommitment || 'Flexible');
 
   const [curriculum, setCurriculum] = useState<Module[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,11 +60,15 @@ export default function ProjectWorkspace() {
                     projectTitle: project.title,
                     role: role,
                     difficultly: project.difficulty,
-                    techStack: project.tools
+                    techStack: project.tools,
+                    timeCommitment: timeCommitment
                 })
             });
             const data = await response.json();
             if (data.success) {
+                // Transform backend data to match new structure if needed, or use directly
+                // For now, assuming data is already in Module[] format
+                // If not, we might need to map it.
                 setCurriculum(data.data);
             }
         } catch (error) {
@@ -150,6 +158,7 @@ export default function ProjectWorkspace() {
                     <div key={module.id}>
                         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
                            {module.title}
+                           {module.estimatedHours && <span className="ml-2 text-[10px] bg-gray-800 text-gray-500 py-0.5 px-1.5 rounded">{module.estimatedHours}</span>}
                         </h3>
                         <div className="space-y-1">
                             {module.tasks.map((task, tIndex) => {
@@ -213,7 +222,12 @@ export default function ProjectWorkspace() {
 
                 <div className="flex items-center gap-4">
                     <div className="hidden md:flex flex-col items-end mr-4">
-                        <div className="text-xs text-gray-400 mb-1">Progress</div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20">
+                                {timeCommitment === '8+' ? 'Fast Track' : timeCommitment === '5-8' ? 'Standard Pace' : 'Casual Pace'}
+                            </span>
+                            <span className="text-xs text-gray-400">Progress</span>
+                        </div>
                         <div className="w-32 h-1.5 bg-gray-800 rounded-full overflow-hidden">
                             <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
                         </div>
@@ -241,6 +255,7 @@ export default function ProjectWorkspace() {
                                         {currentModule?.title}
                                     </span>
                                     <span>Task {currentTaskIndex + 1} of {currentModule?.tasks.length}</span>
+                                    {currentTask.duration && <span className="text-gray-500">• {currentTask.duration}</span>}
                                 </div>
                                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
                                     {currentTask.title}
@@ -343,22 +358,17 @@ export default function ProjectWorkspace() {
         </main>
 
         {/* AI ASSISTANT PANEL */}
-        {showAssistant && (
-           <aside className="fixed inset-y-0 right-0 w-96 bg-gray-900 border-l border-gray-800 shadow-2xl z-40 transform transition-transform duration-300 flex flex-col">
-               <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                   <h2 className="font-bold text-white flex items-center gap-2">
-                       <MessageSquare className="w-4 h-4 text-indigo-500" />
-                       Project Assistant
-                   </h2>
-                   <button onClick={() => setShowAssistant(false)} className="p-1 text-gray-400 hover:text-white">
-                       <X className="w-5 h-5" />
-                   </button>
-               </div>
-               <div className="flex-1 p-6 flex items-center justify-center text-gray-500 text-sm text-center">
-                   <p>AI Chat functionality coming soon.<br/>Use this to debug specific steps.</p>
-               </div>
-           </aside>
-        )}
+        <ChatAssistant 
+            isOpen={showAssistant}
+            onClose={() => setShowAssistant(false)}
+            role={role}
+            context={{
+                type: 'project',
+                projectTitle: project?.title,
+                currentTask: currentTask?.title,
+                taskDescription: currentTask?.description
+            } as any}
+        />
 
     </div>
   );
