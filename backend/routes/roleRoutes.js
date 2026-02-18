@@ -214,43 +214,43 @@ router.post('/analyze', async (req, res) => {
             
             Return ONLY valid JSON.
             `
-        }
-      ],
-      temperature: 0.5,
-      max_tokens: 15000
-    })
-  });
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 15000
+      })
+    });
 
-  if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API Error:', errorData);
-      throw new Error('Failed to fetch from OpenAI');
-  }
-
-  const data = await response.json();
-  const analysisText = data.choices[0].message.content;
-
-  // Parse JSON
-  let analysisData;
-  try {
-    const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
-    const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
-    analysisData = JSON.parse(jsonText);
-  } catch (e) {
-    console.error('Failed to parse AI response:', e);
-    // If exact parsing fails, try to find the first '{' and last '}'
-    const startIndex = analysisText.indexOf('{');
-    const endIndex = analysisText.lastIndexOf('}');
-    if (startIndex !== -1 && endIndex !== -1) {
-       try {
-          analysisData = JSON.parse(analysisText.substring(startIndex, endIndex + 1));
-       } catch (e2) {
-          throw new Error('Invalid JSON response from AI');
-       }
-    } else {
-       throw new Error('Invalid JSON response from AI');
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('OpenAI API Error:', errorData);
+        throw new Error('Failed to fetch from OpenAI');
     }
-  }
+
+    const data = await response.json();
+    const analysisText = data.choices[0].message.content;
+
+    // Parse JSON
+    let analysisData;
+    try {
+      const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
+      analysisData = JSON.parse(jsonText);
+    } catch (e) {
+      console.error('Failed to parse AI response:', e);
+      // If exact parsing fails, try to find the first '{' and last '}'
+      const startIndex = analysisText.indexOf('{');
+      const endIndex = analysisText.lastIndexOf('}');
+      if (startIndex !== -1 && endIndex !== -1) {
+         try {
+            analysisData = JSON.parse(analysisText.substring(startIndex, endIndex + 1));
+         } catch (e2) {
+            throw new Error('Invalid JSON response from AI');
+         }
+      } else {
+         throw new Error('Invalid JSON response from AI');
+      }
+    }
 
     // 3. Store in Database (Persistence)
     // If we have a userId, store it linked to them.
@@ -280,6 +280,113 @@ router.post('/analyze', async (req, res) => {
     res.status(500).json({ error: 'Failed to analyze role' });
   }
 });
+
+// POST /api/role/projects - Generate detailed projects for a role
+router.post('/projects', async (req, res) => {
+  const { role, resumeData } = req.body; // resumeData is optional text/summary from resume
+
+  if (!role) {
+    return res.status(400).json({ error: 'Role is required' });
+  }
+
+  try {
+    const fetch = (await import('node-fetch')).default;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    console.log(`Generating Projects for: ${role}`);
+    
+    const resumeContext = resumeData 
+       ? `The user has the following background coming from their resume: ${resumeData.substring(0, 500)}...`
+       : "The user is starting fresh or has not provided a specific resume.";
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a technical mentor designing portfolio projects.`
+          },
+          {
+            role: 'user',
+            content: `
+            Role: ${role}
+            Context: ${resumeContext}
+
+            Task: suggestive 6-8 comprehensive portfolio projects that would help someone get hired for this role.
+            - Include a mix of difficulties (Beginner, Intermediate, Advanced).
+            - Ensure at least 2 projects are marked as "trending" (using modern tech stacks).
+            - For each project, provide a "setupGuide" with real commands.
+            
+            Return the response in this JSON format:
+            {
+               "projects": [
+                  {
+                    "id": "1",
+                    "title": "Project Title",
+                    "description": "2-sentence description.",
+                    "difficulty": "Beginner/Intermediate/Advanced",
+                    "duration": "e.g. 2 weeks",
+                    "matchScore": 85 (integer 0-100 based on relevance to role),
+                    "tags": ["Tag1", "Tag2"],
+                    "trending": true/false,
+                    "status": "active" (default to active for now),
+                    "whyRecommended": ["Reason 1", "Reason 2"],
+                    "skillsToDevelop": ["Skill 1", "Skill 2"],
+                    "tools": ["Tool 1", "Tool 2"],
+                    "languages": ["Lang 1"],
+                    "setupGuide": {
+                       "title": "Quick Start",
+                       "steps": ["git clone...", "npm install..."]
+                    }
+                  }
+               ]
+            }
+            Return ONLY valid JSON.
+            `
+          }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse JSON logic identical to above
+    let projectData;
+    try {
+      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : content;
+      projectData = JSON.parse(jsonText);
+    } catch (e) {
+       const startIndex = content.indexOf('{');
+       const endIndex = content.lastIndexOf('}');
+       if (startIndex !== -1 && endIndex !== -1) {
+          projectData = JSON.parse(content.substring(startIndex, endIndex + 1));
+       }
+    }
+
+    if (!projectData || !projectData.projects) {
+        throw new Error("Failed to generate project structure");
+    }
+
+    res.json({
+      success: true,
+      data: projectData.projects
+    });
+
+  } catch (error) {
+    console.error('Project generation error:', error);
+    res.status(500).json({ error: 'Failed to generate projects' });
+  }
+});
+
 
 // POST /api/role/workflow-custom - Generate a CUSTOM workflow based on user tools
 router.post('/workflow-custom', async (req, res) => {

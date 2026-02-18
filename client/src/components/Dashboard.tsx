@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { 
-  User,
+
   Search, 
   TrendingUp,
   Flame,
@@ -9,8 +9,14 @@ import {
   X,
   Lightbulb,
   Code,
-  Wrench,
-  BookOpen
+
+  BookOpen,
+  Layout,
+  Folder,
+  Target,
+  FileText,
+  BarChart,
+  LogOut
 } from 'lucide-react';
 
 interface Project {
@@ -30,240 +36,8 @@ interface Project {
     title: string;
     steps: string[];
   };
+  status?: 'active' | 'completed' | 'saved' | 'none';
 }
-
-// Mock AI-generated projects based on role
-const generateProjects = (): Project[] => {
-  const allProjects: Project[] = [
-    {
-      id: "1",
-      title: "Real-time Chat Application",
-      description: "Build a full-stack real-time chat application with user authentication, message history, and typing indicators.",
-      difficulty: "Intermediate",
-      duration: "2-3 weeks",
-      matchScore: 97,
-      tags: ["Real-time", "Full-stack", "WebSocket"],
-      trending: true,
-      whyRecommended: [
-        "Perfect for learning modern web development patterns",
-        "Highly relevant for full-stack developer roles",
-        "Teaches real-time data synchronization",
-        "Great portfolio piece for job applications"
-      ],
-      skillsToDevelop: [
-        "WebSocket implementation",
-        "User authentication & authorization",
-        "Database design & optimization",
-        "State management",
-        "Real-time UI updates"
-      ],
-      tools: ["VS Code", "Postman", "MongoDB Compass", "Chrome DevTools"],
-      languages: ["JavaScript", "TypeScript", "HTML", "CSS"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/chat-app.git",
-          "Install dependencies: npm install",
-          "Set up MongoDB database (local or Atlas)",
-          "Create .env file with DATABASE_URL and JWT_SECRET",
-          "Run development server: npm run dev",
-          "Open http://localhost:3000 in your browser",
-          "Register a new account and start chatting!"
-        ]
-      }
-    },
-    {
-      id: "2",
-      title: "E-commerce Dashboard with Analytics",
-      description: "Create an admin dashboard for e-commerce with sales analytics, inventory management, and data visualization.",
-      difficulty: "Advanced",
-      duration: "3-4 weeks",
-      matchScore: 95,
-      tags: ["Dashboard", "Analytics", "Data Viz"],
-      trending: true,
-      whyRecommended: [
-        "Essential for product manager and analyst roles",
-        "Learn data visualization best practices",
-        "Understand business metrics and KPIs",
-        "Build complex UI components"
-      ],
-      skillsToDevelop: [
-        "Data visualization with charts",
-        "Dashboard design patterns",
-        "API integration",
-        "Performance optimization",
-        "Responsive design"
-      ],
-      tools: ["Figma", "VS Code", "Recharts", "Postman"],
-      languages: ["JavaScript", "TypeScript", "SQL"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/dashboard.git",
-          "Install dependencies: npm install",
-          "Configure API endpoints in config.js",
-          "Set up PostgreSQL database",
-          "Run migrations: npm run migrate",
-          "Seed sample data: npm run seed",
-          "Start the app: npm start",
-          "Login with demo credentials (admin@example.com / demo123)"
-        ]
-      }
-    },
-    {
-      id: "3",
-      title: "Task Management App with Drag & Drop",
-      description: "Build a Kanban-style task management application with drag-and-drop functionality, filters, and team collaboration.",
-      difficulty: "Intermediate",
-      duration: "2 weeks",
-      matchScore: 92,
-      tags: ["Productivity", "Drag & Drop", "Collaboration"],
-      trending: true,
-      whyRecommended: [
-        "Learn drag-and-drop interaction patterns",
-        "Perfect for understanding project management tools",
-        "Great for UI/UX skill development",
-        "Highly used in professional environments"
-      ],
-      skillsToDevelop: [
-        "Drag and drop functionality",
-        "Complex state management",
-        "Team collaboration features",
-        "Filtering and sorting algorithms",
-        "Optimistic UI updates"
-      ],
-      tools: ["VS Code", "React DevTools", "Redux DevTools"],
-      languages: ["JavaScript", "TypeScript", "CSS"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/task-manager.git",
-          "Install dependencies: npm install",
-          "Install React DnD: npm install react-dnd react-dnd-html5-backend",
-          "Copy .env.example to .env",
-          "Run the development server: npm run dev",
-          "Create your first board and add tasks",
-          "Try dragging tasks between columns!"
-        ]
-      }
-    },
-    {
-      id: "7",
-      title: "Personal Todo List App",
-      description: "Build your first web application - a simple todo list with add, edit, delete, and mark complete functionality.",
-      difficulty: "Beginner",
-      duration: "3-5 days",
-      matchScore: 88,
-      tags: ["Beginner", "Full-stack", "CRUD"],
-      trending: true,
-      whyRecommended: [
-        "Perfect first project for beginners",
-        "Learn fundamental CRUD operations",
-        "Understand basic state management",
-        "Build confidence with simple features"
-      ],
-      skillsToDevelop: [
-        "HTML structure and semantics",
-        "CSS styling and layout",
-        "JavaScript DOM manipulation",
-        "Local storage usage",
-        "Event handling"
-      ],
-      tools: ["VS Code", "Chrome DevTools"],
-      languages: ["JavaScript", "HTML", "CSS"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/todo-app.git",
-          "Open index.html in your browser",
-          "No installation needed - pure vanilla JavaScript!",
-          "Start adding your first todos",
-          "Try editing and deleting tasks",
-          "Your data is saved in browser storage"
-        ]
-      }
-    },
-    {
-      id: "8",
-      title: "Weather App with API Integration",
-      description: "Create a weather application that fetches real-time weather data from a public API and displays it beautifully.",
-      difficulty: "Beginner",
-      duration: "4-6 days",
-      matchScore: 86,
-      tags: ["Beginner", "API", "Frontend"],
-      trending: true,
-      whyRecommended: [
-        "Learn how to work with APIs",
-        "Perfect introduction to async JavaScript",
-        "Understand HTTP requests",
-        "Practice working with JSON data"
-      ],
-      skillsToDevelop: [
-        "Fetch API usage",
-        "Async/await patterns",
-        "API key management",
-        "Error handling",
-        "Responsive design"
-      ],
-      tools: ["VS Code", "Postman", "Chrome DevTools"],
-      languages: ["JavaScript", "HTML", "CSS"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/weather-app.git",
-          "Get free API key from OpenWeatherMap.org",
-          "Create config.js and add: const API_KEY = 'your_key_here'",
-          "Open index.html in browser",
-          "Enter a city name and click search",
-          "See live weather data displayed!"
-        ]
-      }
-    },
-    {
-      id: "11",
-      title: "Interactive Quiz Application",
-      description: "Build a multiple-choice quiz app with score tracking, timer, and result summary. Perfect for learning JavaScript basics.",
-      difficulty: "Beginner",
-      duration: "4-5 days",
-      matchScore: 85,
-      tags: ["Beginner", "Interactive", "Game"],
-      trending: true,
-      whyRecommended: [
-        "Learn conditional logic",
-        "Practice array manipulation",
-        "Understand timers and intervals",
-        "Create engaging user experiences"
-      ],
-      skillsToDevelop: [
-        "Array methods",
-        "Conditional statements",
-        "Timer implementation",
-        "Score calculation",
-        "DOM updates"
-      ],
-      tools: ["VS Code", "Chrome DevTools"],
-      languages: ["JavaScript", "HTML", "CSS"],
-      setupGuide: {
-        title: "Setup Instructions",
-        steps: [
-          "Clone the repository: git clone https://github.com/example/quiz-app.git",
-          "Open index.html in browser",
-          "Click 'Start Quiz' to begin",
-          "Answer questions before time runs out",
-          "See your score at the end",
-          "Try customizing questions in questions.js"
-        ]
-      }
-    }
-  ];
-
-  // Sort by match score and trending
-  return allProjects.sort((a, b) => {
-    if (a.trending && !b.trending) return -1;
-    if (!a.trending && b.trending) return 1;
-    return b.matchScore - a.matchScore;
-  });
-};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -275,365 +49,418 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
 
+  // Fetch projects from API
   useEffect(() => {
-    // Simulate AI processing
-    const timer = setTimeout(() => {
-      const generatedProjects = generateProjects();
-      setProjects(generatedProjects);
-      setIsLoading(false);
-    }, 2000);
+    const fetchProjects = async () => {
+      setIsLoading(true);
+      try {
+        const analysis = location.state?.analysis;
+        
+        // Construct context from analysis data if available
+        let resumeData = "";
+        if (analysis) {
+            const skills = analysis.skills?.map((s: any) => s.name).join(', ') || "";
+            const tools = analysis.tools?.map((t: any) => t.name).join(', ') || "";
+            resumeData = `
+                Target Role: ${selectedRole}
+                Skills: ${skills}
+                Tools: ${tools}
+                Experience Level: ${analysis.experienceLevel || "Beginner"}
+                Focus: Generate projects that help build these specific skills.
+            `;
+        }
 
-    return () => clearTimeout(timer);
-  }, [selectedRole]);
+        const response = await fetch('/api/role/projects', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                role: selectedRole,
+                resumeData: resumeData 
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch projects');
+        }
+
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+            setProjects(data.data);
+        } else {
+            console.error("Invalid project data format", data);
+            setProjects([]);
+        }
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+        setProjects([]); 
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [selectedRole, location.state]);
 
   const filteredProjects = projects.filter(project => {
+    // 1. Search Filter
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
+    project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // 2. Difficulty Filter
     const matchesDifficulty = difficultyFilter === "all" || 
       project.difficulty.toLowerCase() === difficultyFilter.toLowerCase();
     
-    return matchesSearch && matchesDifficulty;
+    // 3. Tab Filter
+    let matchesTab = true;
+    if (activeTab === 'recommended') {
+        matchesTab = true; 
+    } else if (activeTab === 'active') {
+        matchesTab = project.status === 'active';
+    } else if (activeTab === 'completed') {
+        matchesTab = project.status === 'completed';
+    } else if (activeTab === 'saved') {
+        matchesTab = project.status === 'saved';
+    }
+
+    return matchesSearch && matchesDifficulty && matchesTab;
   });
 
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                Trending Projects for You
-              </h1>
-              <p className="text-slate-600 text-sm mt-1">
-                AI-curated projects to boost your skills as a {selectedRole}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Difficulty Filter Buttons */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setDifficultyFilter("all")}
-                  className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                    difficultyFilter === "all"
-                      ? "bg-indigo-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setDifficultyFilter("beginner")}
-                  className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                    difficultyFilter === "beginner"
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  Beginner
-                </button>
-                <button
-                  onClick={() => setDifficultyFilter("intermediate")}
-                  className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                    difficultyFilter === "intermediate"
-                      ? "bg-amber-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  Intermediate
-                </button>
-                <button
-                  onClick={() => setDifficultyFilter("advanced")}
-                  className={`px-3 py-1.5 rounded-lg font-medium text-sm transition-all ${
-                    difficultyFilter === "advanced"
-                      ? "bg-red-600 text-white shadow-md"
-                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
-                >
-                  Advanced
-                </button>
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      
+      {/* SIDEBAR */}
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex">
+          <div className="p-6">
+              <div className="flex items-center gap-2 mb-8">
+                  <div className="bg-indigo-600 p-1.5 rounded-lg">
+                      <Code className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-bold text-lg text-gray-900">Career OS</span>
               </div>
-
-              {/* Profile Icon */}
-              <button 
-                onClick={() => navigate('/profile')}
-                className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white hover:shadow-lg transition-shadow"
-                title="View Profile"
-              >
-                <User className="w-5 h-5" />
-              </button>
-            </div>
+              
+              <nav className="space-y-1">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Layout className="w-4 h-4" /> Workspace
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors">
+                      <Folder className="w-4 h-4" /> Projects
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Target className="w-4 h-4" /> Missions
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      <FileText className="w-4 h-4" /> JD Analyzer
+                  </button>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      <BarChart className="w-4 h-4" /> Progress
+                  </button>
+                  <button onClick={() => navigate('/resources')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                      <BookOpen className="w-4 h-4" /> Resources
+                  </button>
+              </nav>
           </div>
-
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search projects by name, skills, or tags..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-sm"
-            />
+          
+          <div className="mt-auto p-4 border-t border-gray-100">
+              <div className="flex items-center gap-3 px-2 py-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                      {selectedRole.substring(0,2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
+                      <p className="text-xs text-gray-500 truncate">{selectedRole}</p>
+                  </div>
+                  <LogOut className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
+              </div>
           </div>
-        </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Info Banner */}
-        {selectedRole && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-5 flex items-start gap-2">
-            <TrendingUp className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-indigo-900 font-medium text-sm">
-                Personalized recommendations active
-              </p>
-              <p className="text-indigo-700 text-xs mt-0.5">
-                Based on your role: {selectedRole}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="text-center py-20">
-            <div className="inline-flex items-center gap-3 px-6 py-4 bg-white rounded-lg shadow-lg">
-              <div className="w-5 h-5 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-base text-slate-700 font-medium">
-                AI is finding the best projects for you...
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Results Count */}
-            <div className="mb-4">
-              <p className="text-slate-600 text-sm">
-                Found <span className="font-semibold text-slate-900">{filteredProjects.length}</span> trending projects
-              </p>
-            </div>
-
-            {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {filteredProjects.map((project) => (
-                <div
-                  key={project.id}
-                  onClick={() => setSelectedProject(project)}
-                  className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-xl hover:border-indigo-300 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <h2 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {project.title}
-                    </h2>
-                    {project.trending && (
-                      <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                        <Flame className="w-3 h-3" />
-                        Trending
-                      </div>
-                    )}
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
+            
+            <div className="flex items-center gap-4">
+                 {/* Search Bar */}
+                 <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search projects..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
                   </div>
-
-                  <p className="text-slate-600 text-sm mb-3 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  <div className="flex items-center gap-3 mb-3 text-xs text-slate-600">
-                    <span className="font-medium text-indigo-600">{project.difficulty}</span>
-                    <span>•</span>
-                    <span>{project.duration}</span>
-                    <span>•</span>
-                    <span className="font-semibold text-green-600">{project.matchScore}% Match</span>
+                  
+                  {/* Difficulty Filter */}
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                      {['All', 'Beginner', 'Intermediate', 'Advanced'].map(diff => (
+                          <button
+                            key={diff}
+                            onClick={() => setDifficultyFilter(diff.toLowerCase())}
+                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                                difficultyFilter === diff.toLowerCase() 
+                                ? 'bg-white text-gray-900 shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                          >
+                            {diff}
+                          </button>
+                      ))}
                   </div>
-
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {project.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                    <div className="text-xs text-slate-500">
-                      {project.languages.length} languages • {project.tools.length} tools
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              ))}
             </div>
+        </header>
 
-            {filteredProjects.length === 0 && (
-              <div className="text-center py-20">
-                <p className="text-slate-600">
-                  No projects found matching your search.
-                </p>
+        {/* Tab Navigation */}
+        <div className="bg-white border-b border-gray-200 px-6">
+            <div className="flex gap-6">
+                {[
+                    { id: 'recommended', label: 'Trending' },
+                    { id: 'active', label: `Active (${projects.filter(p => p.status === 'active').length})` },
+                    { id: 'completed', label: `Completed (${projects.filter(p => p.status === 'completed').length})` },
+                    { id: 'saved', label: `Saved (${projects.filter(p => p.status === 'saved').length})` }
+                ].map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${
+                            activeTab === tab.id
+                            ? 'border-indigo-600 text-indigo-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* Scrollable Project List */}
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            {selectedRole && (
+              <div className="mb-6 flex items-center gap-2 text-sm text-gray-500">
+                <TrendingUp className="w-4 h-4 text-indigo-600" />
+                Showing projects for <span className="font-semibold text-gray-900">{selectedRole}</span>
               </div>
             )}
-          </>
-        )}
+
+            {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                </div>
+            ) : filteredProjects.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredProjects.map((project) => (
+                        <div
+                          key={project.id}
+                          onClick={() => setSelectedProject(project)}
+                          className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+                        >
+                          <div className="p-5 flex-1">
+                              <div className="flex justify-between items-start mb-3">
+                                  <div className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                                      project.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
+                                      project.difficulty === 'Intermediate' ? 'bg-amber-100 text-amber-700' :
+                                      'bg-red-100 text-red-700'
+                                  }`}>
+                                      {project.difficulty}
+                                  </div>
+                                  {project.trending && (
+                                      <Flame className="w-4 h-4 text-orange-500 fill-orange-100" />
+                                  )}
+                              </div>
+                              
+                              <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                                  {project.title}
+                              </h3>
+                              <p className="text-gray-500 text-sm line-clamp-3 mb-4">
+                                  {project.description}
+                              </p>
+                              
+                              <div className="flex flex-wrap gap-1.5 mb-4">
+                                  {project.tags.slice(0, 3).map(tag => (
+                                      <span key={tag} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium border border-gray-200">
+                                          {tag}
+                                      </span>
+                                  ))}
+                              </div>
+                          </div>
+                          
+                          <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-gray-50/50 rounded-b-xl">
+                              <span>{project.duration}</span>
+                              <span className="flex items-center gap-1 font-medium text-green-600">
+                                  {project.matchScore}% Match
+                              </span>
+                          </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
+                    <p className="text-gray-500">No projects found for this filter.</p>
+                </div>
+            )}
+        </main>
       </div>
 
       {/* Project Detail Modal */}
       {selectedProject && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-slate-200 p-5 flex items-start justify-between">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-start justify-between z-10">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-xl font-bold text-slate-900">
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">
                     {selectedProject.title}
                   </h2>
                   {selectedProject.trending && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                    <div className="flex items-center gap-1 px-2.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold uppercase tracking-wide">
                       <Flame className="w-3 h-3" />
                       Trending
                     </div>
                   )}
                 </div>
-                <p className="text-slate-600 text-sm">{selectedProject.description}</p>
-                <div className="flex items-center gap-3 mt-2 text-xs">
-                  <span className="font-medium text-indigo-600">{selectedProject.difficulty}</span>
-                  <span>•</span>
-                  <span className="text-slate-600">{selectedProject.duration}</span>
-                  <span>•</span>
-                  <span className="font-semibold text-green-600">{selectedProject.matchScore}% Match</span>
-                </div>
+                <p className="text-gray-600">{selectedProject.description}</p>
               </div>
               <button
                 onClick={() => setSelectedProject(null)}
-                className="ml-4 text-slate-400 hover:text-slate-600"
+                className="ml-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-5 space-y-5">
-              {/* Why Recommended */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Lightbulb className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900">Why This Project?</h3>
-                </div>
-                <ul className="space-y-1.5">
-                  {selectedProject.whyRecommended.map((reason, index) => (
-                    <li key={index} className="flex items-start gap-2 text-slate-700 text-sm">
-                      <ChevronRight className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
-                      {reason}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Skills to Develop */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-green-600" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900">Skills You'll Develop</h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedProject.skillsToDevelop.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-200"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Tools & Languages */}
-              <div className="grid md:grid-cols-2 gap-5">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <Wrench className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">Tools Required</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    {selectedProject.tools.map((tool, index) => (
-                      <div
-                        key={index}
-                        className="px-3 py-1.5 bg-blue-50 text-blue-900 rounded-lg text-xs"
-                      >
-                        {tool}
+            <div className="p-8 space-y-8">
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                  {/* Left Column: Details */}
+                  <div className="md:col-span-2 space-y-8">
+                      {/* Why Recommended */}
+                      <div className="bg-indigo-50/50 rounded-xl p-6 border border-indigo-100">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Lightbulb className="w-5 h-5 text-indigo-600" />
+                          <h3 className="text-lg font-bold text-gray-900">Why This Project?</h3>
+                        </div>
+                        <ul className="space-y-3">
+                          {selectedProject.whyRecommended.map((reason, index) => (
+                            <li key={index} className="flex items-start gap-3 text-gray-700 text-sm">
+                              <div className="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0"></div>
+                              {reason}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <Code className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">Languages</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    {selectedProject.languages.map((language, index) => (
-                      <div
-                        key={index}
-                        className="px-3 py-1.5 bg-indigo-50 text-indigo-900 rounded-lg text-xs"
-                      >
-                        {language}
+                      
+                      {/* Setup Guide */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <BookOpen className="w-5 h-5 text-gray-900" />
+                          <h3 className="text-lg font-bold text-gray-900">{selectedProject.setupGuide.title}</h3>
+                        </div>
+                        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                          <div className="space-y-4">
+                            {selectedProject.setupGuide.steps.map((step, index) => (
+                              <div key={index} className="flex gap-4">
+                                <span className="flex-shrink-0 w-6 h-6 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                                  {index + 1}
+                                </span>
+                                <span className="text-gray-700 text-sm pt-0.5 leading-relaxed">{step}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                    ))}
                   </div>
-                </div>
-              </div>
 
-              {/* Setup Guide */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-amber-600" />
+                  {/* Right Column: Meta */}
+                  <div className="space-y-6">
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                          <h4 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Project Stats</h4>
+                          <div className="space-y-4">
+                              <div>
+                                  <div className="text-xs text-gray-500 mb-1">Difficulty</div>
+                                  <div className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                                      selectedProject.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
+                                      selectedProject.difficulty === 'Intermediate' ? 'bg-amber-100 text-amber-700' :
+                                      'bg-red-100 text-red-700'
+                                  }`}>
+                                      {selectedProject.difficulty}
+                                  </div>
+                              </div>
+                              <div>
+                                  <div className="text-xs text-gray-500 mb-1">Estimated Duration</div>
+                                  <div className="font-semibold text-gray-900 text-sm">{selectedProject.duration}</div>
+                              </div>
+                              <div>
+                                  <div className="text-xs text-gray-500 mb-1">Skills You'll Learn</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                      {selectedProject.skillsToDevelop.slice(0, 4).map((skill, i) => (
+                                          <span key={i} className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-medium border border-green-100">
+                                              {skill}
+                                          </span>
+                                      ))}
+                                      {selectedProject.skillsToDevelop.length > 4 && (
+                                          <span className="text-[10px] text-gray-400 px-1 py-0.5">+more</span>
+                                      )}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                          <h4 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide">Tech Stack</h4>
+                          <div className="space-y-4">
+                              <div>
+                                  <div className="text-xs text-gray-500 mb-1">Languages</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                      {selectedProject.languages.map((lang, i) => (
+                                          <span key={i} className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[10px] font-medium border border-indigo-100">
+                                              {lang}
+                                          </span>
+                                      ))}
+                                  </div>
+                              </div>
+                              <div>
+                                  <div className="text-xs text-gray-500 mb-1">Tools</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                      {selectedProject.tools.map((tool, i) => (
+                                          <span key={i} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium border border-blue-100">
+                                              {tool}
+                                          </span>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
                   </div>
-                  <h3 className="text-base font-bold text-slate-900">{selectedProject.setupGuide.title}</h3>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                  <ol className="space-y-2">
-                    {selectedProject.setupGuide.steps.map((step, index) => (
-                      <li key={index} className="flex gap-2">
-                        <span className="flex-shrink-0 w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                          {index + 1}
-                        </span>
-                        <span className="text-slate-700 text-xs pt-0.5">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 pt-3">
-                <button 
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold text-sm transition-colors"
-                >
-                  Start This Project
-                </button>
+              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
                 <button
-                  className="px-4 py-2.5 border-2 border-slate-300 hover:bg-slate-50 rounded-lg font-semibold text-sm transition-colors"
+                  className="px-6 py-3 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-bold text-sm transition-colors"
                   onClick={() => setSelectedProject(null)}
                 >
                   Close
+                </button>
+                <button 
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
+                  onClick={() => {
+                      // Logic to start project
+                      alert(`Starting ${selectedProject.title}!`);
+                  }}
+                >
+                  Start Project <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>

@@ -857,7 +857,7 @@ export default function RoleAnalysis() {
         {/* Action Buttons */}
         <div className="flex justify-end mt-4">
           <button
-            onClick={() => navigate('/roadmap', { state: { role } })}
+            onClick={() => navigate('/dashboard', { state: { role, analysis: roleData } })}
             className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
           >
             Continue <ChevronRight className="w-4 h-4" />
