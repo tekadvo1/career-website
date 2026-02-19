@@ -302,9 +302,12 @@ router.post('/projects', async (req, res) => {
        : "The user is starting fresh or has not provided a specific resume.";
 
     let systemPrompt = `You are a technical mentor designing portfolio projects.`;
-    let userTask = `Task: Suggest 4-6 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
-            - Include a mix of difficulties (Beginner, Intermediate, Advanced).
-            - Ensure at least 2 projects are marked as "trending" (using modern tech stacks).
+    let userTask = `Task: Suggest 15 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
+            - YOU MUST PROVIDE EXACTLY: 
+                - 5 Beginner Projects
+                - 5 Intermediate Projects
+                - 5 Advanced Projects
+            - Ensure at least 3-4 projects are marked as "trending" (using modern tech stacks).
             - FOCUS ON CAREER OUTCOMES. NOT just "learning".`;
 
     if (type === 'trending') {
@@ -413,7 +416,7 @@ router.post('/projects', async (req, res) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 4000
+        max_tokens: 15000
       })
     });
 
