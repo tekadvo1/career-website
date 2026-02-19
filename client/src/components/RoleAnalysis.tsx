@@ -149,7 +149,8 @@ export default function RoleAnalysis() {
           body: JSON.stringify({ 
             role: role, 
             userId: user.id || null, // Pass userId if logged in
-            experienceLevel: 'Beginner' // Default or get from user profile
+            experienceLevel: location.state?.experienceLevel || 'Beginner', 
+            country: location.state?.country || 'USA'
           }) 
         });
 

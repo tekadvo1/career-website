@@ -105,54 +105,22 @@ export default function Onboarding() {
         setIsAnalyzing(false);
       }
     } else {
-      // Show loading state and fetch AI analysis for the role
-      setIsAnalyzing(true);
+      // Navigate immediately and let RoleAnalysis handle the fetching
       
-      try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const userId = user.id;
-
-        const response = await fetch('/api/role/analyze', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ role, userId, experienceLevel, country }), // Include country
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch role analysis');
+      // We don't mark onboarding complete here because RoleAnalysis API will do it (if we passed userId)
+      // Wait, RoleAnalysis API handles it, but we need to pass userId later?
+      // RoleAnalysis extracts user from localStorage anyway.
+      
+      navigate('/role-analysis', {
+        state: {
+          role: role || 'General Career Path',
+          experienceLevel,
+          country,
+          hasResume: false,
+          resumeFileName: null,
+          analysis: null // Explicitly null to trigger fetch in RoleAnalysis
         }
-
-        const data = await response.json();
-
-        // Update local user state
-        if (userId) {
-            const updatedUser = { ...user, onboarding_completed: true };
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-        }
-        
-        navigate('/role-analysis', {
-          state: {
-            role: role || 'General Career Path',
-            hasResume: false,
-            resumeFileName: null,
-            analysis: data.data // Pass the full AI analysis
-          }
-        });
-      } catch (error) {
-        console.error('Error fetching role analysis:', error);
-        // Fallback to basic navigation if API fails
-        navigate('/role-analysis', {
-          state: {
-            role: role || 'General Career Path',
-            hasResume: false,
-            resumeFileName: null
-          }
-        });
-      } finally {
-        setIsAnalyzing(false);
-      }
+      });
     }
   };
 
