@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, 
@@ -151,22 +151,46 @@ export default function ProjectWorkspace() {
   }, [completionDate, weeklyHours]); 
   */
 
+  const [xp, setXp] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null); // Ref for scroll container
+
+  // Scroll to top when task changes
+  useEffect(() => {
+      if (scrollRef.current) {
+          scrollRef.current.scrollTop = 0;
+      }
+  }, [currentTaskIndex, currentModuleIndex]);
+
   const toggleTaskCompletion = (taskId: string) => {
       const newCompleted = new Set(completedTasks);
-      if (newCompleted.has(taskId)) {
-          newCompleted.delete(taskId);
-      } else {
+      const isCompleting = !newCompleted.has(taskId);
+      
+      if (isCompleting) {
           newCompleted.add(taskId);
+          setXp(prev => prev + 50); // Add 50 XP
+          // Optional: Add sound effect or confetti here in future
+      } else {
+          newCompleted.delete(taskId);
+          setXp(prev => Math.max(0, prev - 50)); // Remove 50 XP
       }
       setCompletedTasks(newCompleted);
   };
 
+  const isLastTask = 
+    curriculum.length > 0 &&
+    currentModuleIndex === curriculum.length - 1 &&
+    currentTaskIndex === curriculum[currentModuleIndex].tasks.length - 1;
+
   const handleNextTask = () => {
       if (!curriculum.length) return;
+      
       const currentModule = curriculum[currentModuleIndex];
+      // Check if we can move to next task in current module
       if (currentTaskIndex < currentModule.tasks.length - 1) {
           setCurrentTaskIndex(prev => prev + 1);
-      } else if (currentModuleIndex < curriculum.length - 1) {
+      } 
+      // Check if we can move to next module
+      else if (currentModuleIndex < curriculum.length - 1) {
           setCurrentModuleIndex(prev => prev + 1);
           setCurrentTaskIndex(0);
       }
@@ -302,13 +326,19 @@ export default function ProjectWorkspace() {
                                 {project?.title} - Execution Mode
                             </h1>
                         </div>
+                        <div className="flex items-center gap-3 px-2">
+                             <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
+                                <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+                                <span className="text-xs font-bold text-indigo-300">{xp} XP</span>
+                             </div>
+                        </div>
                     </header>
 
                     {/* SPLIT VIEW CONTAINER */}
                     <div className="flex-1 flex overflow-hidden">
                         
                         {/* LEFT: Task Content */}
-                        <div className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
+                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
                             <div className="max-w-4xl mx-auto">
                                 {currentTask ? (
                                     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -382,7 +412,7 @@ export default function ProjectWorkspace() {
                                                 >
                                                     {completedTasks.has(currentTask.id) ? (
                                                         <>
-                                                        <CheckCircle className="w-4 h-4" /> Completed
+                                                        <CheckCircle className="w-4 h-4" /> Completed (+50 XP)
                                                         </>
                                                     ) : (
                                                         <>
@@ -392,7 +422,8 @@ export default function ProjectWorkspace() {
                                                 </button>
                                                 <button 
                                                     onClick={handleNextTask}
-                                                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-indigo-900/20 transition-all"
+                                                    disabled={isLastTask}
+                                                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-indigo-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     Next Step <ChevronRight className="w-4 h-4" />
                                                 </button>
@@ -442,6 +473,10 @@ export default function ProjectWorkspace() {
                                   <Calendar className="w-4 h-4 text-indigo-500" /> 
                                   Target: {formattedCompletionDate}
                               </span>
+                               <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full ml-2">
+                                    <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
+                                    <span className="text-xs font-bold text-indigo-300">{xp} XP</span>
+                               </div>
                           </div>
                       </div>
                       <div className="hidden md:flex flex-col items-end gap-2">
