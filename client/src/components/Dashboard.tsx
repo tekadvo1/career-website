@@ -256,19 +256,61 @@ export default function Dashboard() {
               </div>
               
               <nav className="space-y-1">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors">
+                  <button 
+                      onClick={() => {
+                          const activeProject = userProjects.find(p => p.status === 'active');
+                          if (activeProject) {
+                              navigate('/project-workspace', { 
+                                  state: { 
+                                      project: activeProject, 
+                                      role: selectedRole
+                                  } 
+                              });
+                          } else {
+                              alert("You don't have an active mission yet. Start a project to enter the workspace!");
+                              setActiveTab('recommended');
+                          }
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
                       <Layout className="w-4 h-4" /> Workspace
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                      onClick={() => {
+                          setActiveTab('recommended');
+                          setSearchTerm('');
+                          setDifficultyFilter('all');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors"
+                  >
                       <Folder className="w-4 h-4" /> Projects
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                      onClick={() => {
+                          const activeProject = userProjects.find(p => p.status === 'active');
+                          if (activeProject) {
+                              navigate('/project-workspace', { 
+                                  state: { 
+                                      project: activeProject, 
+                                      role: selectedRole
+                                  } 
+                              });
+                          } else {
+                              alert("No active missions found. Select a project to start your mission!");
+                              setActiveTab('recommended');
+                          }
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
                       <Target className="w-4 h-4" /> Missions
                   </button>
                   <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
                       <FileText className="w-4 h-4" /> JD Analyzer
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button 
+                      onClick={() => setActiveTab('completed')}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
                       <BarChart className="w-4 h-4" /> Progress
                   </button>
                   <button onClick={() => navigate('/resources')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
