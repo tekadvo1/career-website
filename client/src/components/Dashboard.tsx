@@ -41,6 +41,7 @@ interface Project {
     steps: string[];
   };
   status?: 'active' | 'completed' | 'saved' | 'none';
+  last_updated?: string; // Added field
   // New Fields
   careerImpact?: string[];
   metrics?: {
@@ -61,6 +62,8 @@ interface Project {
     codeReview: boolean;
   };
   recruiterAppeal?: string[];
+  progress_data?: any;
+  project_data?: any;
 }
 
 export default function Dashboard() {
@@ -162,6 +165,7 @@ export default function Dashboard() {
                            title: p.title,
                            description: p.description,
                            status: p.status,
+                           last_updated: p.last_updated,
                            progress_data: progressData, // Store complete progress
                            project_data: projectData, // Store complete data
                            metrics: {
@@ -358,6 +362,83 @@ export default function Dashboard() {
                   </button>
             </div>
         </header>
+
+        {/* TODAY'S MISSION (Real-time from Active Project) */}
+        {userProjects.length > 0 && userProjects[0].status === 'active' && (
+            <div className="px-6 pb-6 pt-2">
+                <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-xl border border-indigo-500/20 group">
+                    {/* Background Effects */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
+
+                    <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-indigo-500/20 flex items-center gap-1.5">
+                                    <Target className="w-3 h-3" /> Today's Mission
+                                </span>
+                                <span className="text-indigo-200 text-xs font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                                    {userProjects[0].title}
+                                </span>
+                            </div>
+                            
+                            {(() => {
+                                const proj = userProjects[0];
+                                const currentModuleIdx = proj.progress_data?.currentModuleIndex || 0;
+                                const currentTaskIdx = proj.progress_data?.currentTaskIndex || 0;
+                                const curriculum = proj.project_data?.curriculum || [];
+                                const currentModule = curriculum[currentModuleIdx];
+                                const currentTask = currentModule?.tasks[currentTaskIdx];
+
+                                return (
+                                    <>
+                                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
+                                            {currentTask?.title || "Continue Your Project"}
+                                        </h2>
+                                        <p className="text-indigo-100/80 max-w-2xl text-sm leading-relaxed mb-6 line-clamp-2">
+                                            {currentTask?.description || "Ready to make some progress? Jump back in!"}
+                                        </p>
+                                        
+                                        <div className="flex flex-wrap gap-4">
+                                            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5 backdrop-blur-sm">
+                                                <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                                <span className="text-xs font-bold text-gray-200">50 XP Reward</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5 backdrop-blur-sm">
+                                                <Clock className="w-4 h-4 text-blue-400" />
+                                                <span className="text-xs font-bold text-gray-200">
+                                                    {currentTask?.duration || "30m"} Est. Time
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+
+                        <div className="w-full md:w-auto flex flex-col gap-3">
+                            <button 
+                                onClick={() => navigate('/project-workspace', { 
+                                    state: { 
+                                        project: userProjects[0], 
+                                        role: selectedRole
+                                    } 
+                                })}
+                                className="w-full md:w-auto px-8 py-4 bg-white text-indigo-950 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-900/20 group-hover:scale-105 duration-300"
+                            >
+                                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                     <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-indigo-600 border-b-[5px] border-b-transparent ml-1"></div>
+                                </div>
+                                <span>Start Mission</span>
+                            </button>
+                            <p className="text-center text-[10px] text-indigo-300/60 font-medium">
+                                Last updated: {new Date(userProjects[0].last_updated || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Tabs */}
         <div className="bg-white border-b border-gray-200 px-6">
