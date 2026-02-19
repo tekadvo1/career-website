@@ -92,83 +92,48 @@ export default function Dashboard() {
       return [];
   };
 
-  const [projects, setProjects] = useState<Project[]>(getCachedProjects);
+  const [recommendedProjects, setRecommendedProjects] = useState<Project[]>(getCachedProjects);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(() => getCachedProjects().length === 0);
   const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
-  
-  // existing state...
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
   const [showSetupModal, setShowSetupModal] = useState(false);
 
-  // Fetch projects from API with Caching
+  // Fetch Recommended Projects
   useEffect(() => {
     const fetchProjects = async () => {
-      // 1. Check Cache First
-      const cacheKey = `dashboard_projects_v2_${selectedRole}`;
-      const cached = localStorage.getItem(cacheKey);
-      
-      if (cached) {
-          try {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                  setProjects(parsed);
-                  setIsLoading(false);
-                  console.log("Loaded projects from cache");
-                  // Optional: Background refresh could go here if needed
-                  return;
-              }
-          } catch (e) {
-              console.error("Cache parse error", e);
-              localStorage.removeItem(cacheKey);
-          }
-      }
+      // Logic for recommended projects cache check is handled by initial state
+      // We only fetch if cache was empty
+      if (recommendedProjects.length > 0) return;
 
       setIsLoading(true);
       try {
         const analysis = location.state?.analysis;
-        
         let resumeData = "";
         if (analysis) {
             const skills = analysis.skills?.map((s: any) => s.name).join(', ') || "";
             const tools = analysis.tools?.map((t: any) => t.name).join(', ') || "";
-            resumeData = `
-                Target Role: ${selectedRole}
-                Skills: ${skills}
-                Tools: ${tools}
-                Experience Level: ${analysis.experienceLevel || "Beginner"}
-                Focus: Generate projects that help build these specific skills.
-            `;
+            resumeData = `Target Role: ${selectedRole}, Skills: ${skills}, Tools: ${tools}`;
         }
 
         const response = await fetch('/api/role/projects', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                role: selectedRole,
-                resumeData: resumeData 
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: selectedRole, resumeData: resumeData }),
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch projects');
-        }
+        if (!response.ok) throw new Error('Failed to fetch projects');
 
         const data = await response.json();
         if (data.success && Array.isArray(data.data)) {
-            setProjects(data.data);
-            localStorage.setItem(cacheKey, JSON.stringify(data.data));
-        } else {
-            console.error("Invalid project data format", data);
-            setProjects([]);
+            setRecommendedProjects(data.data);
+            localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(data.data));
         }
       } catch (error) {
         console.error("Error fetching projects:", error);
-        setProjects([]); 
       } finally {
         setIsLoading(false);
       }
@@ -177,30 +142,59 @@ export default function Dashboard() {
     fetchProjects();
   }, [selectedRole, location.state]);
 
+  // Fetch User Active Projects (Real-time DB)
+  useEffect(() => {
+      const fetchUserProjects = async () => {
+          const user = JSON.parse(localStorage.getItem('user') || '{}');
+          if (!user.id) return;
+
+          try {
+              const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
+              const data = await res.json();
+              if (data.success) {
+                   const mappedProjects = data.projects.map((p: any) => {
+                       const projectData = typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data;
+                       const progressData = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
+                       
+                       return {
+                           ...projectData,
+                           id: p.id,
+                           title: p.title,
+                           description: p.description,
+                           status: p.status,
+                           progress_data: progressData, // Store complete progress
+                           project_data: projectData, // Store complete data
+                           metrics: {
+                               ...projectData.metrics,
+                               xp: progressData.xp || 0
+                           }
+                       };
+                   });
+                   setUserProjects(mappedProjects);
+              }
+          } catch (e) {
+              console.error("Failed to fetch user projects", e);
+          }
+      };
+
+      fetchUserProjects();
+  }, [selectedRole, activeTab]); // Refresh when tab changes to ensure up-to-date
+
   const handleGenerateTrending = async () => {
       setIsGeneratingTrending(true);
       try {
           const response = await fetch('/api/role/projects', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                  role: selectedRole,
-                  type: 'trending' // Request trending project
-              })
+              body: JSON.stringify({ role: selectedRole, type: 'trending' })
           });
 
           const data = await response.json();
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
               const newProject = data.data[0];
-              
-              // Add to projects list (Trendiest first)
-              const updatedProjects = [newProject, ...projects];
-              setProjects(updatedProjects);
-              
-              // Update Cache
+              const updatedProjects = [newProject, ...recommendedProjects];
+              setRecommendedProjects(updatedProjects);
               localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updatedProjects));
-
-              // Open Details View
               setSelectedProject(newProject);
               setShowSetupModal(false); 
           } else {
@@ -214,20 +208,22 @@ export default function Dashboard() {
       }
   };
 
-  const filteredProjects = projects.filter(project => {
+  // Determine which list to filter
+  const sourceList = activeTab === 'recommended' ? recommendedProjects : userProjects;
+
+  const filteredProjects = sourceList.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
 
     const matchesDifficulty = difficultyFilter === "all" || 
-      project.difficulty.toLowerCase() === difficultyFilter.toLowerCase();
+      project.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
     
     let matchesTab = true;
-    if (activeTab === 'recommended') matchesTab = true; 
-    else if (activeTab === 'active') matchesTab = project.status === 'active';
+    if (activeTab === 'active') matchesTab = project.status === 'active';
     else if (activeTab === 'completed') matchesTab = project.status === 'completed';
-    else if (activeTab === 'saved') matchesTab = project.status === 'saved';
-
+    // saved logic could be implemented similarly
+    
     return matchesSearch && matchesDifficulty && matchesTab;
   });
 
@@ -368,9 +364,9 @@ export default function Dashboard() {
             <div className="flex gap-6">
                 {[
                     { id: 'recommended', label: 'For You' },
-                    { id: 'active', label: `Active (${projects.filter(p => p.status === 'active').length})` },
-                    { id: 'completed', label: `Completed (${projects.filter(p => p.status === 'completed').length})` },
-                    { id: 'saved', label: `Saved (${projects.filter(p => p.status === 'saved').length})` }
+                    { id: 'active', label: `Active (${userProjects.filter(p => p.status === 'active').length})` },
+                    { id: 'completed', label: `Completed (${userProjects.filter(p => p.status === 'completed').length})` },
+                    { id: 'saved', label: `Saved (${userProjects.filter(p => p.status === 'saved').length})` }
                 ].map((tab) => (
                     <button
                         key={tab.id}
@@ -398,7 +394,18 @@ export default function Dashboard() {
                     {filteredProjects.map((project) => (
                         <div
                           key={project.id}
-                          onClick={() => setSelectedProject(project)}
+                          onClick={() => {
+                              if (['active', 'completed'].includes(project.status || '')) {
+                                  navigate('/project-workspace', { 
+                                      state: { 
+                                          project, 
+                                          role: selectedRole
+                                      } 
+                                  });
+                              } else {
+                                  setSelectedProject(project);
+                              }
+                          }}
                           className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
                         >
                           <div className="p-5 flex-1">

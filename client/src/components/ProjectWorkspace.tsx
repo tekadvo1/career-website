@@ -71,85 +71,70 @@ export default function ProjectWorkspace() {
   const [adaptiveMessage, setAdaptiveMessage] = useState<string | null>(null);
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
 
+  const [projectId, setProjectId] = useState<string | null>(project?.projectId || null); // Check if passed ID is from DB
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // Load Initial State
   useEffect(() => {
     if (!project) {
         navigate('/dashboard');
         return;
     }
 
-    if (preLoadedCurriculum) {
-        setIsLoading(false);
-        return;
-    }
-
-    const fetchCurriculum = async () => {
-        try {
-            const response = await fetch('/api/role/project-details', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projectTitle: project.title,
-                    role: role,
-                    difficultly: project.difficulty,
-                    techStack: project.tools,
-                    timeCommitment: timeCommitment
-                })
-            });
-            const data = await response.json();
-            if (data.success) {
-                setCurriculum(data.data);
+    const initProject = async () => {
+        // 1. New Project (PreLoaded Curriculum Present)
+        if (preLoadedCurriculum && !projectId) {
+            try {
+                const res = await fetch('/api/role/start-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        project: project,
+                        role: role,
+                        curriculum: preLoadedCurriculum
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setProjectId(data.projectId);
+                    setCurriculum(preLoadedCurriculum);
+                }
+            } catch (e) {
+                console.error("Failed to start project in DB", e);
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Failed to load curriculum", error);
-        } finally {
-            setIsLoading(false);
+        } 
+        // 2. Existing Project (Resuming)
+        else if (project.progress_data) {
+             // We are resuming from Dashboard (Active Project)
+             try {
+                const prog = typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data;
+                const projData = typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data;
+                
+                setProjectId(project.id);
+                setCurriculum(projData.curriculum || []);
+                setCompletedTasks(new Set(prog.completedTasks || []));
+                setXp(prog.xp || 0);
+                setCurrentModuleIndex(prog.currentModuleIndex || 0);
+                setCurrentTaskIndex(prog.currentTaskIndex || 0);
+             } catch(e) {
+                 console.error("Error parsing project data", e);
+             } finally {
+                setIsLoading(false);
+             }
+        }
+        else {
+            // Fallback: Fetching fresh if strict ID passed but no data?
+            // (Existing logic for fallback fetch if needed)
+             setIsLoading(false);
         }
     };
 
-    fetchCurriculum();
+    initProject();
   }, [project, role, navigate, preLoadedCurriculum]);
 
-  // Check for Adaptive Schedule Updates
-  /* 
-  // User requested removal of this notification simulation as it was intrusive.
-  useEffect(() => {
-    const checkSchedule = async () => {
-         // Simulate "Last Active" date (e.g. 3 days ago for testing)
-        // In real app, this comes from user profile/activity log
-        const lastActive = new Date();
-        lastActive.setDate(lastActive.getDate() - 3); 
-
-        try {
-            const response = await fetch('/api/role/adaptive-schedule', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                     currentCompletionDate: completionDate.toISOString(),
-                     lastActiveDate: lastActive.toISOString(),
-                     weeklyHours,
-                     tasksRemaining: 10 // Placeholder
-                })
-            });
-            const data = await response.json();
-            
-            if (data.success && data.adjustmentNeeded) {
-                setAdaptiveMessage(data.adjustmentMessage);
-                setAdjustedCompletionDate(data.newCompletionDate);
-                setDaysDelayed(data.daysDelayed);
-                
-                // Auto-dismiss toast after 8 seconds
-                setTimeout(() => setAdaptiveMessage(null), 8000);
-            }
-        } catch (error) {
-            console.error("Adaptive Check Failed", error);
-        }
-    };
-    
-    // Slight delay to simulate system "thinking" on load
-    const timer = setTimeout(checkSchedule, 1500);
-    return () => clearTimeout(timer);
-  }, [completionDate, weeklyHours]); 
-  */
 
   const [xp, setXp] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null); // Ref for scroll container
@@ -161,19 +146,43 @@ export default function ProjectWorkspace() {
       }
   }, [currentTaskIndex, currentModuleIndex]);
 
-  const toggleTaskCompletion = (taskId: string) => {
+  const toggleTaskCompletion = async (taskId: string) => {
       const newCompleted = new Set(completedTasks);
       const isCompleting = !newCompleted.has(taskId);
-      
+      let newXp = xp;
+
       if (isCompleting) {
           newCompleted.add(taskId);
-          setXp(prev => prev + 50); // Add 50 XP
-          // Optional: Add sound effect or confetti here in future
+          newXp += 50; 
       } else {
           newCompleted.delete(taskId);
-          setXp(prev => Math.max(0, prev - 50)); // Remove 50 XP
+          newXp = Math.max(0, newXp - 50);
       }
+      
       setCompletedTasks(newCompleted);
+      setXp(newXp);
+
+      // Persist to DB
+      if (projectId && user.id) {
+          try {
+              await fetch('/api/role/update-project-progress', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId: user.id,
+                      projectId: projectId,
+                      progress: {
+                          completedTasks: Array.from(newCompleted),
+                          xp: newXp,
+                          currentModuleIndex,
+                          currentTaskIndex
+                      }
+                  })
+              });
+          } catch (e) {
+              console.error("Failed to save progress", e);
+          }
+      }
   };
 
   const isLastTask = 

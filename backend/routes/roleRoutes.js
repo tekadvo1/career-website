@@ -848,4 +848,94 @@ router.post('/adaptive-schedule', async (req, res) => {
     }
 });
 
+
+// POST /api/role/start-project - Saves a project to user_projects
+router.post('/start-project', async (req, res) => {
+    const { userId, project, role, curriculum } = req.body;
+
+    if (!userId || !project) {
+        return res.status(400).json({ error: 'User ID and Project are required' });
+    }
+
+    try {
+        // Check if project already started
+        const existing = await pool.query(
+            "SELECT id FROM user_projects WHERE user_id = $1 AND title = $2",
+            [userId, project.title]
+        );
+
+        if (existing.rows.length > 0) {
+            return res.json({ success: true, projectId: existing.rows[0].id, message: 'Project already started' });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data)
+             VALUES ($1, $2, $3, $4, 'active', $5, $6)
+             RETURNING id`,
+            [
+                userId, 
+                project.title, 
+                project.description,
+                role,
+                JSON.stringify({ ...project, curriculum }), // Store full project + curriculum
+                JSON.stringify({ completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 })
+            ]
+        );
+
+        res.json({ success: true, projectId: result.rows[0].id });
+    } catch (err) {
+        console.error('Error starting project:', err);
+        res.status(500).json({ error: 'Failed to start project' });
+    }
+});
+
+// POST /api/role/update-project-progress - Updates progress_data
+router.post('/update-project-progress', async (req, res) => {
+    const { userId, projectId, progress } = req.body;
+
+    if (!userId || !projectId || !progress) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    try {
+        await pool.query(
+            `UPDATE user_projects 
+             SET progress_data = $1, last_updated = NOW()
+             WHERE id = $2 AND user_id = $3`,
+            [JSON.stringify(progress), projectId, userId]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error updating project progress:', err);
+        res.status(500).json({ error: 'Failed to update progress' });
+    }
+});
+
+// GET /api/role/my-projects - Get active projects for a user
+router.get('/my-projects', async (req, res) => {
+    const { userId, role } = req.query;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    try {
+        let query = "SELECT * FROM user_projects WHERE user_id = $1";
+        const params = [userId];
+
+        if (role) {
+            query += " AND role = $2";
+            params.push(role);
+        }
+
+        query += " ORDER BY last_updated DESC";
+
+        const result = await pool.query(query, params);
+        res.json({ success: true, projects: result.rows });
+    } catch (err) {
+        console.error('Error fetching user projects:', err);
+        res.status(500).json({ error: 'Failed to fetch projects' });
+    }
+});
+
 module.exports = router;

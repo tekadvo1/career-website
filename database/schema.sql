@@ -93,3 +93,17 @@ CREATE TABLE IF NOT EXISTS quiz_results (
     total_questions INTEGER NOT NULL,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- NEW: User Projects Table for detailed execution tracking
+CREATE TABLE IF NOT EXISTS user_projects (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  role VARCHAR(100), -- The role context (e.g. "Software Engineer")
+  status VARCHAR(50) DEFAULT 'active', -- active, completed, paused
+  project_data JSONB NOT NULL, -- Stores the full project details and curriculum
+  progress_data JSONB DEFAULT '{}', -- Stores { completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 }
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
