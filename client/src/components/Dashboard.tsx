@@ -65,7 +65,14 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedRole = location.state?.role || "Software Engineer";
+  const selectedRole = location.state?.role || (() => {
+    try {
+      const saved = localStorage.getItem('lastRoleAnalysis');
+      return saved ? JSON.parse(saved).role : "Software Engineer";
+    } catch (e) {
+      return "Software Engineer";
+    }
+  })();
   
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
