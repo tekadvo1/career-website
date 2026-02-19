@@ -33,6 +33,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
     browser: true,
     email: true
   });
+  const [os, setOs] = useState('Windows');
 
   // Generated Data
   const [curriculum, setCurriculum] = useState<any[]>([]); // To store generated modules
@@ -102,7 +103,8 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
             role,
             settings: {
                 timeCommitment: `${weeklyHours} hours/week`,
-                schedule: { dailyHours, selectedDays, startDate }
+                schedule: { dailyHours, selectedDays, startDate },
+                os: os // Pass selected OS
             },
             preLoadedCurriculum: curriculum // Pass the generated plan to avoid re-fetching
         } 
@@ -223,6 +225,27 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
                                  <span className="text-sm text-gray-700">Email reminders</span>
                              </label>
                          </div>
+                    </div>
+
+                    {/* OS Selection */}
+                    <div className="space-y-3">
+                        <label className="font-semibold text-gray-900">Operating System</label>
+                        <div className="flex gap-3">
+                            {['Windows', 'Mac', 'Linux'].map((system) => (
+                                <button
+                                    key={system}
+                                    onClick={() => setOs(system)}
+                                    className={`flex-1 py-2.5 rounded-xl border font-medium text-sm transition-all ${
+                                        os === system 
+                                        ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {system}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-gray-500">We'll customize terminal commands for your OS.</p>
                     </div>
 
                     {/* Quick Summary Box */}

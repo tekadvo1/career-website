@@ -65,6 +65,7 @@ export default function ProjectWorkspace() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [viewMode, setViewMode] = useState<'dashboard' | 'execution'>('dashboard');
+  const [initialAiQuery, setInitialAiQuery] = useState('');
   
   // Adaptive State
   const [adaptiveMessage, setAdaptiveMessage] = useState<string | null>(null);
@@ -111,6 +112,8 @@ export default function ProjectWorkspace() {
   }, [project, role, navigate, preLoadedCurriculum]);
 
   // Check for Adaptive Schedule Updates
+  /* 
+  // User requested removal of this notification simulation as it was intrusive.
   useEffect(() => {
     const checkSchedule = async () => {
          // Simulate "Last Active" date (e.g. 3 days ago for testing)
@@ -147,7 +150,8 @@ export default function ProjectWorkspace() {
     // Slight delay to simulate system "thinking" on load
     const timer = setTimeout(checkSchedule, 1500);
     return () => clearTimeout(timer);
-  }, [completionDate, weeklyHours]);
+  }, [completionDate, weeklyHours]); 
+  */
 
   const toggleTaskCompletion = (taskId: string) => {
       const newCompleted = new Set(completedTasks);
@@ -177,6 +181,18 @@ export default function ProjectWorkspace() {
           setCurrentModuleIndex(prev => prev - 1);
           setCurrentTaskIndex(curriculum[currentModuleIndex - 1].tasks.length - 1);
       }
+  };
+
+  const handleExplainTask = () => {
+      setInitialAiQuery(`Explain the task "${currentTask?.title}" and why it's important.`);
+      setShowAssistant(true);
+      setViewMode('execution');
+  };
+
+  const handleGenerateCode = () => {
+      setInitialAiQuery(`Generate starter code for the task: "${currentTask?.title}" using ${project?.tools?.join(', ') || 'standard tools'}. My OS is ${settings?.os || 'Windows'}.`);
+      setShowAssistant(true);
+      setViewMode('execution');
   };
 
   if (isLoading) {
@@ -396,11 +412,13 @@ export default function ProjectWorkspace() {
                                 onClose={() => {}} 
                                 isEmbedded={true}
                                 role={role}
+                                initialQuery={initialAiQuery} // Pass initial query here
                                 context={{
                                     type: 'project',
                                     projectTitle: project?.title,
                                     currentTask: currentTask?.title,
-                                    taskDescription: currentTask?.description
+                                    taskDescription: currentTask?.description,
+                                    userOS: settings?.os || 'Windows'
                                 } as any}
                             />
                         </div>
@@ -550,15 +568,15 @@ export default function ProjectWorkspace() {
                                      </div>
                                      <div className="flex gap-2">
                                          <button 
-                                             onClick={() => {
-                                                 setShowAssistant(true);
-                                                 setViewMode('execution');
-                                             }}
+                                             onClick={handleExplainTask}
                                              className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium text-white transition-colors border border-gray-700"
                                          >
                                              Explain Task
                                          </button>
-                                         <button className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium text-white transition-colors border border-gray-700">
+                                         <button 
+                                            onClick={handleGenerateCode}
+                                            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium text-white transition-colors border border-gray-700"
+                                         >
                                              Generate Starter Code
                                          </button>
                                      </div>
@@ -590,11 +608,13 @@ export default function ProjectWorkspace() {
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
             role={role}
+            initialQuery={initialAiQuery}
             context={{
                 type: 'project',
                 projectTitle: project?.title,
                 currentTask: currentTask?.title,
-                taskDescription: currentTask?.description
+                taskDescription: currentTask?.description,
+                userOS: settings?.os || 'Windows'
             } as any}
         />
 

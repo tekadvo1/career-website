@@ -12,26 +12,34 @@ interface AIChatAssistantProps {
     onClose: () => void;
     context: any;
     role: string;
+    initialQuery?: string;
 }
 
-export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbedded = false }: AIChatAssistantProps & { isEmbedded?: boolean }) {
+export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbedded = false, initialQuery }: AIChatAssistantProps & { isEmbedded?: boolean }) {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
+    const [hasSentInitial, setHasSentInitial] = useState(false);
 
-    // Context changes
+    // Initial greeting or query handling
     useEffect(() => {
-        if (isOpen && context) {
-            setChatMessages([
-                { id: '1', role: 'assistant', content: `Hi! I see you have a question about: "${context}".\n\nHow can I help you understand this better?` }
-            ]);
+        if (isOpen && context && !hasSentInitial) {
+            if (initialQuery) {
+                handleSendChat(initialQuery);
+                setHasSentInitial(true);
+            } else if (chatMessages.length === 0) {
+                 setChatMessages([
+                    { id: '1', role: 'assistant', content: `Hi! I see you have a question about: "${context.currentTask || 'this project'}".\n\nHow can I help you understand this better?` }
+                ]);
+            }
         }
-    }, [context, isOpen]);
+    }, [context, isOpen, initialQuery, hasSentInitial]);
 
-    const handleSendChat = async () => {
-        if (!chatInput.trim()) return;
+    const handleSendChat = async (manualMessage?: string) => {
+        const messageToSend = manualMessage || chatInput;
+        if (!messageToSend.trim()) return;
         
-        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: chatInput };
+        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: messageToSend };
         setChatMessages(prev => [...prev, userMsg]);
         setChatInput('');
         setIsChatLoading(true);
@@ -131,7 +139,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbe
                             className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-200 placeholder:text-gray-500"
                         />
                         <button 
-                            onClick={handleSendChat}
+                            onClick={() => handleSendChat()}
                             disabled={!chatInput.trim()}
                             className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
@@ -206,7 +214,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbe
                             autoFocus
                         />
                         <button 
-                            onClick={handleSendChat}
+                            onClick={() => handleSendChat()}
                             disabled={!chatInput.trim()}
                             className="p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
