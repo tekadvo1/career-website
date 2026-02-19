@@ -285,7 +285,7 @@ router.post('/analyze', async (req, res) => {
 
 // POST /api/role/projects - Generate detailed projects for a role
 router.post('/projects', async (req, res) => {
-  const { role, resumeData } = req.body; // resumeData is optional text/summary from resume
+  const { role, resumeData, type } = req.body; // type can be 'trending'
 
   if (!role) {
     return res.status(400).json({ error: 'Role is required' });
@@ -295,11 +295,36 @@ router.post('/projects', async (req, res) => {
     const fetch = (await import('node-fetch')).default;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    console.log(`Generating Projects for: ${role}`);
+    console.log(`Generating Projects for: ${role} [Type: ${type || 'standard'}]`);
     
     const resumeContext = resumeData 
        ? `The user has the following background coming from their resume: ${resumeData.substring(0, 500)}...`
        : "The user is starting fresh or has not provided a specific resume.";
+
+    let systemPrompt = `You are a technical mentor designing portfolio projects.`;
+    let userTask = `Task: Suggest 4-6 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
+            - Include a mix of difficulties (Beginner, Intermediate, Advanced).
+            - Ensure at least 2 projects are marked as "trending" (using modern tech stacks).
+            - FOCUS ON CAREER OUTCOMES. NOT just "learning".`;
+
+    if (type === 'trending') {
+        systemPrompt = `You are a Tech Trend Forecaster and Senior Architect. 
+        ACT AS IF YOU ARE PROCESSING REAL-TIME WEB SEARCH DATA for late 2024/2025 technology trends.
+        Identify the single most VIRAL or HIGH-DEMAND project type currently spiking in recruiter interest for this role.`;
+        
+        userTask = `
+            Task: Generate ONE (1) bleeding-edge, "Trending" portfolio project that uses the absolute latest stack (e.g., Next.js 14/15, AI Agents, Vector DBs, Rust, etc. relevant to the role).
+            
+            This project must look and feel like it was ripped from the "Top Trending" on GitHub or Product Hunt this week.
+            
+            CRITICAL:
+            - Use a modern naming convention (e.g. "AI-Powered Financial Analyst Agent", "Distributed Edge Compute Network").
+            - The "whyRecommended" section must reference "Current Market spikes in demand for [Tech]".
+            - The "recruiterAppeal" must mention "2025-ready skills".
+            
+            Return the response in the standard JSON format with a single project in the 'projects' array.
+        `;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -312,18 +337,14 @@ router.post('/projects', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: `You are a technical mentor designing portfolio projects.`
+            content: systemPrompt
           },
           {
             role: 'user',
             content: `
             Role: ${role}
             Context: ${resumeContext}
-
-            Task: suggestive 4-6 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
-            - Include a mix of difficulties (Beginner, Intermediate, Advanced).
-            - Ensure at least 2 projects are marked as "trending" (using modern tech stacks).
-            - FOCUS ON CAREER OUTCOMES. NOT just "learning".
+            ${userTask}
             
             Return the response in this JSON format:
             {
@@ -336,7 +357,7 @@ router.post('/projects', async (req, res) => {
                     "duration": "e.g. 2 weeks",
                     "matchScore": 85 (integer 0-100 based on relevance to role),
                     "tags": ["Tag1", "Tag2"],
-                    "trending": true/false,
+                    "trending": true,
                     "status": "active",
                     
                     "whyRecommended": [

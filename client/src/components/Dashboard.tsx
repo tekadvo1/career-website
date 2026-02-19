@@ -68,6 +68,7 @@ export default function Dashboard() {
   const selectedRole = location.state?.role || "Software Engineer";
   
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -75,9 +76,29 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
   const [showSetupModal, setShowSetupModal] = useState(false);
 
-  // Fetch projects from API
+  // Fetch projects from API with Caching
   useEffect(() => {
     const fetchProjects = async () => {
+      // 1. Check Cache First
+      const cacheKey = `dashboard_projects_${selectedRole}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached) {
+          try {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                  setProjects(parsed);
+                  setIsLoading(false);
+                  console.log("Loaded projects from cache");
+                  // Optional: Background refresh could go here if needed
+                  return;
+              }
+          } catch (e) {
+              console.error("Cache parse error", e);
+              localStorage.removeItem(cacheKey);
+          }
+      }
+
       setIsLoading(true);
       try {
         const analysis = location.state?.analysis;
@@ -113,6 +134,7 @@ export default function Dashboard() {
         const data = await response.json();
         if (data.success && Array.isArray(data.data)) {
             setProjects(data.data);
+            localStorage.setItem(cacheKey, JSON.stringify(data.data));
         } else {
             console.error("Invalid project data format", data);
             setProjects([]);
@@ -127,6 +149,43 @@ export default function Dashboard() {
 
     fetchProjects();
   }, [selectedRole, location.state]);
+
+  const handleGenerateTrending = async () => {
+      setIsGeneratingTrending(true);
+      try {
+          const response = await fetch('/api/role/projects', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  role: selectedRole,
+                  type: 'trending' // Request trending project
+              })
+          });
+
+          const data = await response.json();
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+              const newProject = data.data[0];
+              
+              // Add to projects list (Trendiest first)
+              const updatedProjects = [newProject, ...projects];
+              setProjects(updatedProjects);
+              
+              // Update Cache
+              localStorage.setItem(`dashboard_projects_${selectedRole}`, JSON.stringify(updatedProjects));
+
+              // Open Details View
+              setSelectedProject(newProject);
+              setShowSetupModal(false); 
+          } else {
+              alert("Could not generate a trending project at this time.");
+          }
+      } catch (error) {
+          console.error("Trending generation failed", error);
+          alert("Failed to generate trending project.");
+      } finally {
+          setIsGeneratingTrending(false);
+      }
+  };
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -228,6 +287,25 @@ export default function Dashboard() {
                           </button>
                       ))}
                   </div>
+                  
+                  {/* GENERATE TRENDING BUTTON */}
+                  <button 
+                    onClick={handleGenerateTrending}
+                    disabled={isGeneratingTrending}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-md shadow-indigo-600/20 transition-all disabled:opacity-70 disabled:cursor-wait"
+                  >
+                     {isGeneratingTrending ? (
+                         <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Scanning Trends...
+                         </>
+                     ) : (
+                         <>
+                            <TrendingUp className="w-4 h-4" />
+                            Find New Trending Projects
+                         </>
+                     )}
+                  </button>
             </div>
         </header>
 
@@ -235,7 +313,7 @@ export default function Dashboard() {
         <div className="bg-white border-b border-gray-200 px-6">
             <div className="flex gap-6">
                 {[
-                    { id: 'recommended', label: 'Trending' },
+                    { id: 'recommended', label: 'For You' },
                     { id: 'active', label: `Active (${projects.filter(p => p.status === 'active').length})` },
                     { id: 'completed', label: `Completed (${projects.filter(p => p.status === 'completed').length})` },
                     { id: 'saved', label: `Saved (${projects.filter(p => p.status === 'saved').length})` }
