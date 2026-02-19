@@ -211,6 +211,17 @@ export default function Dashboard() {
     return matchesSearch && matchesDifficulty && matchesTab;
   });
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // Optional: Keep cache for better UX on return? No, clear for security.
+    localStorage.removeItem('lastRoleAnalysis');
+    navigate('/signin');
+  };
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const userName = user.username || "User";
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
       
@@ -225,10 +236,10 @@ export default function Dashboard() {
               </div>
               
               <nav className="space-y-1">
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors">
                       <Layout className="w-4 h-4" /> Workspace
                   </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
                       <Folder className="w-4 h-4" /> Projects
                   </button>
                   <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
@@ -249,13 +260,13 @@ export default function Dashboard() {
           <div className="mt-auto p-4 border-t border-gray-100">
               <div className="flex items-center gap-3 px-2 py-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                      {selectedRole.substring(0,2).toUpperCase()}
+                      {userName.substring(0,2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">John Doe</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
                       <p className="text-xs text-gray-500 truncate">{selectedRole}</p>
                   </div>
-                  <LogOut className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
+                  <LogOut onClick={handleLogout} className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
               </div>
           </div>
       </div>
