@@ -107,3 +107,22 @@ CREATE TABLE IF NOT EXISTS user_projects (
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- CACHING TABLES FOR SPEED
+CREATE TABLE IF NOT EXISTS cached_recommendations (
+  id SERIAL PRIMARY KEY,
+  role VARCHAR(255) NOT NULL,
+  type VARCHAR(50) DEFAULT 'standard', -- 'standard' or 'trending'
+  projects_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(role, type)
+);
+
+CREATE TABLE IF NOT EXISTS cached_curriculums (
+  id SERIAL PRIMARY KEY,
+  project_title VARCHAR(255) NOT NULL,
+  role VARCHAR(255),
+  curriculum_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(project_title, role)
+);

@@ -13,37 +13,35 @@ router.post('/analyze', async (req, res) => {
   try {
     const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()} - ${country.toLowerCase()})`;
     
-    // 1. Check for existing analysis for this USER
-    if (userId) {
-      const userCache = await pool.query(
-        "SELECT analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) = $2 LIMIT 1",
-        [userId, normalizedRole]
-      );
+    // 1. Check for existing analysis (GLOBAL CACHE)
+    // We strictly match the normalized role title which includes generic role + level + country
+    const cacheResult = await pool.query(
+      "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
+      [normalizedRole]
+    );
 
-      if (userCache.rows.length > 0) {
-        const cachedData = userCache.rows[0].analysis_data;
-        
-        let isModernStructure = false;
-        if (cachedData.roadmap && Array.isArray(cachedData.roadmap) && cachedData.roadmap.length > 0) {
-            const firstPhase = cachedData.roadmap[0];
-            if (firstPhase.topics && Array.isArray(firstPhase.topics) && firstPhase.topics.length > 0) {
-                // Check if the first topic is an object, not a string
-                if (typeof firstPhase.topics[0] === 'object') {
-                    isModernStructure = true;
-                }
-            }
-        }
-
-        if (isModernStructure) {
-          console.log(`Returning detailed cache for user ${userId}: ${normalizedRole}`);
-          return res.json({
-            success: true,
-            data: cachedData,
-            source: 'database'
-          });
-        }
-        console.log(`Cache found but using old structure, regenerating for: ${normalizedRole}`);
+    if (cacheResult.rows.length > 0) {
+      const cachedData = cacheResult.rows[0].analysis_data;
+      
+      let isModernStructure = false;
+      if (cachedData.roadmap && Array.isArray(cachedData.roadmap) && cachedData.roadmap.length > 0) {
+          const firstPhase = cachedData.roadmap[0];
+          if (firstPhase.topics && Array.isArray(firstPhase.topics) && firstPhase.topics.length > 0) {
+              if (typeof firstPhase.topics[0] === 'object') {
+                  isModernStructure = true;
+              }
+          }
       }
+
+      if (isModernStructure) {
+        console.log(`Returning GLOBAL cached analysis for: ${normalizedRole}`);
+        return res.json({
+          success: true,
+          data: cachedData,
+          source: 'cache_global'
+        });
+      }
+      console.log(`Cache found but using old structure, regenerating for: ${normalizedRole}`);
     }
 
     // 2. If no user cache, call OpenAI
@@ -286,16 +284,32 @@ router.post('/analyze', async (req, res) => {
 // POST /api/role/projects - Generate detailed projects for a role
 router.post('/projects', async (req, res) => {
   const { role, resumeData, type } = req.body; // type can be 'trending'
+  const projectType = type || 'standard';
 
   if (!role) {
     return res.status(400).json({ error: 'Role is required' });
   }
 
   try {
+    // 1. Check Cache
+    const cacheResult = await pool.query(
+        "SELECT projects_data FROM cached_recommendations WHERE role = $1 AND type = $2",
+        [role, projectType]
+    );
+
+    if (cacheResult.rows.length > 0) {
+        console.log(`Using cached projects for ${role} (${projectType})`);
+        return res.json({
+            success: true,
+            data: cacheResult.rows[0].projects_data,
+            source: 'cache'
+        });
+    }
+
     const fetch = (await import('node-fetch')).default;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    console.log(`Generating Projects for: ${role} [Type: ${type || 'standard'}]`);
+    console.log(`Generating Projects for: ${role} [Type: ${projectType}]`);
     
     const resumeContext = resumeData 
        ? `The user has the following background coming from their resume: ${resumeData.substring(0, 500)}...`
@@ -310,7 +324,7 @@ router.post('/projects', async (req, res) => {
             - Ensure at least 3-4 projects are marked as "trending" (using modern tech stacks).
             - FOCUS ON CAREER OUTCOMES. NOT just "learning".`;
 
-    if (type === 'trending') {
+    if (projectType === 'trending') {
         systemPrompt = `You are a Tech Trend Forecaster and Senior Architect. 
         ACT AS IF YOU ARE PROCESSING REAL-TIME WEB SEARCH DATA for late 2024/2025 technology trends.
         Identify the single most VIRAL or HIGH-DEMAND project type currently spiking in recruiter interest for this role.`;
@@ -439,6 +453,18 @@ router.post('/projects', async (req, res) => {
 
     if (!projectData || !projectData.projects) {
         throw new Error("Failed to generate project structure");
+    }
+
+    // Cache Results
+    try {
+        await pool.query(
+            `INSERT INTO cached_recommendations (role, type, projects_data)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (role, type) DO UPDATE SET projects_data = $3`,
+            [role, projectType, JSON.stringify(projectData.projects)]
+        );
+    } catch (cacheError) {
+        console.error("Failed to cache projects", cacheError);
     }
 
     res.json({
@@ -703,6 +729,21 @@ router.post('/project-details', async (req, res) => {
     }
 
     try {
+        // 1. Check Cache
+        const cacheResult = await pool.query(
+            "SELECT curriculum_data FROM cached_curriculums WHERE project_title = $1 AND role = $2",
+            [projectTitle, role]
+        );
+
+        if (cacheResult.rows.length > 0) {
+            console.log(`Using cached curriculum for ${projectTitle}`);
+            return res.json({
+                success: true,
+                data: cacheResult.rows[0].curriculum_data,
+                source: 'cache'
+            });
+        }
+
         const fetch = (await import('node-fetch')).default;
         const apiKey = process.env.OPENAI_API_KEY;
 
@@ -792,14 +833,26 @@ router.post('/project-details', async (req, res) => {
             throw new Error("Failed to generate curriculum structure");
         }
 
+        // Cache Results
+        try {
+            await pool.query(
+                `INSERT INTO cached_curriculums (project_title, role, curriculum_data)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (project_title, role) DO UPDATE SET curriculum_data = $3`,
+                [projectTitle, role, JSON.stringify(curriculumData.curriculum)]
+            );
+        } catch (cacheError) {
+            console.error("Failed to cache curriculum", cacheError);
+        }
+
         res.json({
             success: true,
             data: curriculumData.curriculum
         });
 
     } catch (error) {
-        console.error('Project details error:', error);
-        res.status(500).json({ error: 'Failed to generate project curriculum' });
+        console.error('Project curriculum generation error:', error);
+        res.status(500).json({ error: 'Failed to generate curriculum' });
     }
 });
 
