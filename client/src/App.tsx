@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
 import VerifyEmail from './components/VerifyEmail';
@@ -15,13 +15,43 @@ import Profile from './components/Profile';
 import WorkflowLifecycle from './components/WorkflowLifecycle';
 import ProjectWorkspace from './components/ProjectWorkspace';
 
+// Helper component to redirect authenticated users
+const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  
+  if (token && userStr) {
+    try {
+      const user = JSON.parse(userStr);
+      if (user.onboarding_completed) {
+        return <Navigate to="/dashboard" replace />;
+      } else {
+        return <Navigate to="/onboarding" replace />;
+      }
+    } catch (e) {
+      // If parsing fails, allow access to public route (and maybe clear bad storage)
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+  }
+  return children;
+};
+
 function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-100">
         <Routes>
-          <Route path="/" element={<SignUp />} />
-          <Route path="/signin" element={<SignIn />} />
+          <Route path="/" element={
+            <RedirectIfLoggedIn>
+              <SignUp />
+            </RedirectIfLoggedIn>
+          } />
+          <Route path="/signin" element={
+            <RedirectIfLoggedIn>
+              <SignIn />
+            </RedirectIfLoggedIn>
+          } />
           <Route path="/verify" element={<VerifyEmail />} />
           <Route path="/google-callback" element={<GoogleCallback />} />
           <Route path="/dashboard" element={<Dashboard />} />
