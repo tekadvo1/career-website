@@ -14,7 +14,6 @@ import {
   Calendar,
   Zap,
   Target,
-  BarChart,
   Play,
   FileText,
   Bell
@@ -197,9 +196,7 @@ export default function ProjectWorkspace() {
   const progressPercentage = Math.round((completedTasks.size / totalTasks) * 100);
   
   // Dashboard Logic
-  const tasksCompletedToday = 0; // Placeholder logic
-  const tasksTargetToday = 2; // Derived from schedule
-  const dailyProgress = (tasksCompletedToday / tasksTargetToday) * 100;
+
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-200 overflow-hidden font-sans">
