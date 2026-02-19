@@ -41,7 +41,12 @@ export default function SignIn() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
       console.log('User logged in:', data);
-      navigate('/onboarding');
+      
+      if (data.user.onboarding_completed) {
+        navigate('/dashboard');
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

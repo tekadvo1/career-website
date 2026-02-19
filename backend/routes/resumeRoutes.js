@@ -4,6 +4,8 @@ const multer = require('multer');
 const mammoth = require('mammoth');
 let pdfParse = require('pdf-parse');
 
+const pool = require('../config/db');
+
 // Debug PDF Parse Import
 console.log('PDF Parse Import Type:', typeof pdfParse);
 if (typeof pdfParse === 'object') {
@@ -40,6 +42,15 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const { userId } = req.body;
+    if (userId) {
+       try {
+         await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
+       } catch (e) {
+         console.error("Failed to update onboarding status", e);
+       }
     }
 
     let resumeText = '';

@@ -117,7 +117,8 @@ const loginUser = async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        email: user.email
+        email: user.email,
+        onboarding_completed: user.onboarding_completed || false
       }
     });
 
@@ -136,7 +137,7 @@ const googleCallback = (req, res) => {
 
   // Redirect to frontend with token
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  res.redirect(`${frontendUrl}/google-callback?token=${token}`);
+  res.redirect(`${frontendUrl}/google-callback?token=${token}&onboarding_completed=${req.user.onboarding_completed}`);
 };
 
 const crypto = require('crypto');

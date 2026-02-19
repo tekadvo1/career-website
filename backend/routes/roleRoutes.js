@@ -263,6 +263,8 @@ router.post('/analyze', async (req, res) => {
           "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
           [userId, normalizedRole, analysisData]
         );
+        // Mark onboarding complete
+        await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
         console.log(`Saved analysis to database for user ${userId}, role: ${normalizedRole}`);
       } catch (dbError) {
         console.error('Database save failed:', dbError.message);

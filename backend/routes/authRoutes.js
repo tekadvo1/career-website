@@ -42,4 +42,16 @@ router.get(
   googleCallback
 );
 
+const { protect } = require('../middleware/authMiddleware');
+
+// @route   GET /api/auth/me
+// @desc    Get current logged in user
+// @access  Private
+router.get('/me', protect, (req, res) => {
+  res.json({
+    status: 'success',
+    user: req.user
+  });
+});
+
 module.exports = router;

@@ -6,15 +6,38 @@ export default function GoogleCallback() {
   const token = searchParams.get('token');
   const navigate = useNavigate();
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-      setTimeout(() => {
-        navigate('/onboarding');
-      }, 1000);
-    } else {
-      console.error('No token found');
-      navigate('/signin');
-    }
+    const fetchUser = async () => {
+      if (token) {
+        localStorage.setItem('token', token);
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          
+          if (data.status === 'success') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            if (data.user.onboarding_completed) {
+               navigate('/dashboard');
+            } else {
+               navigate('/onboarding');
+            }
+          } else {
+            // Fallback if API fails
+            navigate('/onboarding');
+          }
+        } catch (e) {
+          console.error('Failed to fetch user details:', e);
+          navigate('/onboarding');
+        }
+      } else {
+        console.error('No token found');
+        navigate('/signin');
+      }
+    };
+    
+    fetchUser();
   }, [token, navigate]);
 
   return (

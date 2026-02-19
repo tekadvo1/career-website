@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X } from 'lucide-react';
 
@@ -12,6 +12,13 @@ export default function Onboarding() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user && user.onboarding_completed) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -57,8 +64,12 @@ export default function Onboarding() {
 
     if (file) {
       setIsAnalyzing(true);
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user.id;
+
       const formData = new FormData();
       formData.append('resume', file);
+      if (userId) formData.append('userId', userId);
 
       try {
         const response = await fetch('/api/resume/analyze', {
@@ -72,6 +83,12 @@ export default function Onboarding() {
         }
 
         const data = await response.json();
+        
+        // Update local user state
+        if (userId) {
+            const updatedUser = { ...user, onboarding_completed: true };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
         
         navigate('/role-analysis', {
           state: {
@@ -108,6 +125,12 @@ export default function Onboarding() {
         }
 
         const data = await response.json();
+
+        // Update local user state
+        if (userId) {
+            const updatedUser = { ...user, onboarding_completed: true };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
         
         navigate('/role-analysis', {
           state: {
