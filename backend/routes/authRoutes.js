@@ -54,4 +54,19 @@ router.get('/me', protect, (req, res) => {
   });
 });
 
+const pool = require('../config/db');
+
+// @route   POST /api/auth/complete-onboarding
+// @desc    Mark onboarding as complete
+// @access  Private
+router.post('/complete-onboarding', protect, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET onboarding_completed = TRUE WHERE id = $1', [req.user.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error completing onboarding:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -185,6 +185,41 @@ export default function RoleAnalysis() {
     fetchData();
   }, [aiAnalysis, role, getAiRoleData, hasResume, resumeFileName]);
 
+  // Effect to mark onboarding as complete once data is loaded (NEW)
+  useEffect(() => {
+    const markOnboardingComplete = async () => {
+      if (isLoading || !roleDataState) return;
+
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (userStr && token) {
+        const user = JSON.parse(userStr);
+        if (!user.onboarding_completed) {
+          try {
+             const res = await fetch('/api/auth/complete-onboarding', {
+               method: 'POST',
+               headers: {
+                 'Authorization': `Bearer ${token}`,
+                 'Content-Type': 'application/json'
+               }
+             });
+             
+             if (res.ok) {
+               console.log("Marked onboarding as complete.");
+               user.onboarding_completed = true;
+               localStorage.setItem('user', JSON.stringify(user));
+             }
+          } catch (e) {
+             console.error("Failed to mark onboarding complete silently", e);
+          }
+        }
+      }
+    };
+    
+    markOnboardingComplete();
+  }, [isLoading, roleDataState]);
+
   const handleDownloadPDF = async () => {
     const element = document.getElementById('role-analysis-content');
     if (!element) return;
