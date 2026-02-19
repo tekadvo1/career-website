@@ -69,8 +69,6 @@ export default function ProjectWorkspace() {
   
   // Adaptive State
   const [adaptiveMessage, setAdaptiveMessage] = useState<string | null>(null);
-  const [adjustedCompletionDate, setAdjustedCompletionDate] = useState<string | null>(null);
-  const [daysDelayed, setDaysDelayed] = useState(0);
   const [showWeeklyReview, setShowWeeklyReview] = useState(false);
 
   useEffect(() => {
@@ -440,10 +438,9 @@ export default function ProjectWorkspace() {
                          <h1 className="text-2xl font-bold text-white tracking-tight">{project?.title}</h1>
                           <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
                               <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-indigo-500" /> {weeklyHours}h / week</span>
-                              <span className={`flex items-center gap-1.5 transition-colors ${daysDelayed > 0 ? 'text-amber-400 font-bold' : ''}`}>
-                                  <Calendar className={`w-4 h-4 ${daysDelayed > 0 ? 'text-amber-500' : 'text-indigo-500'}`} /> 
-                                  Target: {adjustedCompletionDate ? new Date(adjustedCompletionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : formattedCompletionDate}
-                                  {daysDelayed > 0 && <span className="text-[10px] bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded text-amber-500">+{daysDelayed} days</span>}
+                              <span className="flex items-center gap-1.5 transition-colors">
+                                  <Calendar className="w-4 h-4 text-indigo-500" /> 
+                                  Target: {formattedCompletionDate}
                               </span>
                           </div>
                       </div>
