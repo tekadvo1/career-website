@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
@@ -16,7 +17,7 @@ import WorkflowLifecycle from './components/WorkflowLifecycle';
 import ProjectWorkspace from './components/ProjectWorkspace';
 
 // Helper component to redirect authenticated users
-const RedirectIfLoggedIn = ({ children }: { children: JSX.Element }) => {
+const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
   
