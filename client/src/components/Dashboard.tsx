@@ -19,7 +19,8 @@ import {
   Clock,
   Briefcase,
   CheckCircle,
-  Layers
+  Layers,
+  RotateCcw
 } from 'lucide-react';
 
 interface Project {
@@ -87,7 +88,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchProjects = async () => {
       // 1. Check Cache First
-      const cacheKey = `dashboard_projects_${selectedRole}`;
+      const cacheKey = `dashboard_projects_v2_${selectedRole}`;
       const cached = localStorage.getItem(cacheKey);
       
       if (cached) {
@@ -178,7 +179,7 @@ export default function Dashboard() {
               setProjects(updatedProjects);
               
               // Update Cache
-              localStorage.setItem(`dashboard_projects_${selectedRole}`, JSON.stringify(updatedProjects));
+              localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updatedProjects));
 
               // Open Details View
               setSelectedProject(newProject);
@@ -278,7 +279,7 @@ export default function Dashboard() {
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
             <div className="flex items-center gap-4">
-                 <div className="relative w-64">
+                  <div className="relative w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
@@ -289,6 +290,19 @@ export default function Dashboard() {
                     />
                   </div>
                   
+                   {/* Refresh Button */}
+                   <button 
+                    onClick={() => {
+                        const cacheKey = `dashboard_projects_v2_${selectedRole}`;
+                        localStorage.removeItem(cacheKey);
+                        window.location.reload();
+                    }}
+                    className="p-2 border border-gray-200 hover:bg-gray-50 rounded-lg text-gray-500 transition-colors"
+                    title="Refresh Recommendations"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+
                   {/* Difficulty Filter */}
                   <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
                       {['All', 'Beginner', 'Intermediate', 'Advanced'].map(diff => (
@@ -308,7 +322,10 @@ export default function Dashboard() {
                   
                   {/* GENERATE TRENDING BUTTON */}
                   <button 
-                    onClick={handleGenerateTrending}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleGenerateTrending();
+                    }}
                     disabled={isGeneratingTrending}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-600/20 transition-all disabled:opacity-70 disabled:cursor-wait"
                   >
@@ -416,7 +433,7 @@ export default function Dashboard() {
       {/* REDESIGNED PROJECT MODAL */}
       {selectedProject && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
+          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
             
             {/* HER0 SECTION */}
             <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-5 rounded-t-2xl overflow-hidden">
@@ -443,10 +460,10 @@ export default function Dashboard() {
                         </span>
                     </div>
 
-                    <h2 className="text-xl md:text-2xl font-bold mb-2 text-white">
+                    <h2 className="text-lg md:text-xl font-bold mb-2 text-white">
                         {selectedProject.title}
                     </h2>
-                    <p className="text-indigo-100 text-sm max-w-3xl mb-3 leading-relaxed">
+                    <p className="text-indigo-100 text-xs max-w-3xl mb-3 leading-relaxed">
                         {selectedProject.description}
                     </p>
 
