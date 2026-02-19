@@ -75,9 +75,28 @@ export default function Dashboard() {
     }
   })();
   
-  const [isLoading, setIsLoading] = useState(true);
+  // Helper to synchronously get cached projects
+  const getCachedProjects = () => {
+      try {
+          const cacheKey = `dashboard_projects_v2_${selectedRole}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                  return parsed;
+              }
+          }
+      } catch (e) {
+          console.error("Cache parse error", e);
+      }
+      return [];
+  };
+
+  const [projects, setProjects] = useState<Project[]>(getCachedProjects);
+  const [isLoading, setIsLoading] = useState(() => getCachedProjects().length === 0);
   const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
+  
+  // existing state...
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
