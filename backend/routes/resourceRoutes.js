@@ -21,9 +21,24 @@ const seedResourcesIfEmpty = async () => {
         rating DECIMAL(3, 1),
         topics TEXT[],
         language VARCHAR(50) DEFAULT 'English',
+        skills_covered TEXT[],
+        tools_used TEXT[],
+        practical_use TEXT,
+        project_ideas TEXT[],
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+
+    // Add new columns if they don't exist (for existing tables)
+    await pool.query(`
+      DO $$ BEGIN
+        ALTER TABLE resources ADD COLUMN IF NOT EXISTS skills_covered TEXT[];
+        ALTER TABLE resources ADD COLUMN IF NOT EXISTS tools_used TEXT[];
+        ALTER TABLE resources ADD COLUMN IF NOT EXISTS practical_use TEXT;
+        ALTER TABLE resources ADD COLUMN IF NOT EXISTS project_ideas TEXT[];
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
     `);
 
     const countResult = await pool.query('SELECT COUNT(*) FROM resources');
@@ -37,7 +52,7 @@ const seedResourcesIfEmpty = async () => {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return;
 
-    const topics = ["JavaScript", "React", "Python", "Data Structure", "Machine Learning", "System Design"];
+    const topics = ["JavaScript", "React", "Python", "Data Structures & Algorithms", "Machine Learning", "System Design", "Node.js", "TypeScript", "Web Development"];
     
     // Generate resources for each topic in parallel
     const promises = topics.map(async (topic) => {
@@ -50,22 +65,32 @@ const seedResourcesIfEmpty = async () => {
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
                 messages: [
-                    { role: 'system', content: 'You are a curator of technical learning resources.' },
-                    { role: 'user', content: `Generate 3 high-quality learning resources (1 course, 1 video, 1 documentation) for "${topic}". 
+                    { role: 'system', content: 'You are an expert learning resource curator with real-time web search access. Find the best, most current resources available online.' },
+                    { role: 'user', content: `Search the web and find 5 real, high-quality learning resources for "${topic}" that are available in 2024/2025.
+                      
+                      Include a MIX of: 1 Udemy course, 1 YouTube video/playlist, 1 free documentation/tutorial, 1 Coursera/edX course, 1 interactive platform.
+                      Include BOTH free AND paid resources.
+                      
+                      For EACH resource, provide detailed metadata about what skills it teaches, what tools are used, how it helps in real projects, and project ideas.
+                      
                       Return ONLY a JSON array:
                       [{
-                        "title": "Title",
-                        "description": "Desc",
-                        "resource_type": "course/video/documentation",
+                        "title": "Exact Real Course/Resource Title",
+                        "description": "2-3 sentence description of what you'll learn and why it's valuable",
+                        "resource_type": "course/video/documentation/interactive/youtube",
                         "category": "${topic}",
-                        "url": "https://example.com",
-                        "platform": "Platform Name",
-                        "duration": "e.g. 10h",
-                        "level": "Beginner/Intermediate",
-                        "free": true,
-                        "rating": 4.8,
-                        "topics": ["${topic}"],
-                        "language": "English"
+                        "url": "https://actual-url.com",
+                        "platform": "Udemy/YouTube/Coursera/MDN/freeCodeCamp/etc",
+                        "duration": "e.g. 52 hours / 3 months",
+                        "level": "Beginner/Intermediate/Advanced",
+                        "free": true/false,
+                        "rating": 4.7,
+                        "topics": ["topic1", "topic2", "topic3"],
+                        "language": "English",
+                        "skills_covered": ["Skill 1", "Skill 2", "Skill 3"],
+                        "tools_used": ["Tool 1", "Tool 2"],
+                        "practical_use": "How this helps in real-world work and projects",
+                        "project_ideas": ["Project 1 you can build", "Project 2 you can build"]
                       }]` 
                     }
                 ],
@@ -85,10 +110,10 @@ const seedResourcesIfEmpty = async () => {
 
     for (const r of resources) {
         await pool.query(`
-            INSERT INTO resources (title, description, resource_type, category, url, platform, duration, level, free, rating, topics, language)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO resources (title, description, resource_type, category, url, platform, duration, level, free, rating, topics, language, skills_covered, tools_used, practical_use, project_ideas)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             ON CONFLICT (url) DO NOTHING
-        `, [r.title, r.description, r.resource_type, r.category, r.url, r.platform, r.duration, r.level, r.free, r.rating, r.topics, r.language]);
+        `, [r.title, r.description, r.resource_type, r.category, r.url, r.platform, r.duration, r.level, r.free, r.rating, r.topics, r.language, r.skills_covered, r.tools_used, r.practical_use, r.project_ideas]);
     }
     console.log(`Seeded ${resources.length} resources.`);
 
@@ -160,8 +185,8 @@ router.post('/search', async (req, res) => {
               {
                 "id": "generated_1",
                 "title": "Resource Title",
-                "description": "Brief description highlighting why it's recommended",
-                "resource_type": "course/video/documentation/book/interactive",
+                "description": "2-3 sentence description highlighting why it's recommended",
+                "resource_type": "course/video/documentation/book/interactive/youtube",
                 "category": "Topic Category",
                 "url": "Actual URL",
                 "platform": "Platform Name",
@@ -170,7 +195,11 @@ router.post('/search', async (req, res) => {
                 "free": boolean,
                 "rating": 4.8,
                 "topics": ["topic1", "topic2"],
-                "language": "${filters?.language !== 'all' ? filters.language : 'English'}"
+                "language": "${filters?.language !== 'all' ? filters.language : 'English'}",
+                "skills_covered": ["Skill 1", "Skill 2", "Skill 3"],
+                "tools_used": ["Tool 1", "Tool 2"],
+                "practical_use": "How this helps in real-world work, interviews, and projects",
+                "project_ideas": ["Project idea 1", "Project idea 2"]
               }
             ]
             Prioritize freshness, quality, and language match.`
@@ -196,10 +225,10 @@ router.post('/search', async (req, res) => {
     for (const r of resources) {
          try {
              const saved = await pool.query(`
-                INSERT INTO resources (title, description, resource_type, category, url, platform, duration, level, free, rating, topics, language)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                ON CONFLICT (url) DO UPDATE SET title=$1 RETURNING id
-             `, [r.title, r.description, r.resource_type || r.type, r.category, r.url, r.platform, r.duration, r.level, r.free, r.rating, r.topics, r.language]);
+                INSERT INTO resources (title, description, resource_type, category, url, platform, duration, level, free, rating, topics, language, skills_covered, tools_used, practical_use, project_ideas)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                ON CONFLICT (url) DO UPDATE SET title=$1, skills_covered=$13, tools_used=$14, practical_use=$15, project_ideas=$16 RETURNING id
+             `, [r.title, r.description, r.resource_type || r.type, r.category, r.url, r.platform, r.duration, r.level, r.free, r.rating, r.topics, r.language, r.skills_covered, r.tools_used, r.practical_use, r.project_ideas]);
              
              labeledResources.push({ ...r, id: saved.rows[0]?.id || `ai_${Date.now()}` });
          } catch(e) {
