@@ -80,7 +80,15 @@ export default function ResourcesHub() {
       const response = await fetch('/api/resources/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery, role: userRole })
+        body: JSON.stringify({ 
+          query: searchQuery, 
+          role: userRole,
+          filters: {
+            type: selectedType,
+            level: selectedLevel,
+            language: selectedLanguage
+          }
+        })
       });
       const data = await response.json();
       if (data.success) {
@@ -228,8 +236,15 @@ export default function ResourcesHub() {
     );
 
     const matchesLevel = selectedLevel === "all" || resource.level === selectedLevel;
-    const matchesType = selectedType === "all" || resource.type === selectedType;
-    const matchesLanguage = selectedLanguage === "all" || resource.language === selectedLanguage;
+    
+    // Check type OR platform for flexible filtering
+    const matchesType = selectedType === "all" || 
+                        resource.type === selectedType || 
+                        resource.platform?.toLowerCase().includes(selectedType.toLowerCase());
+
+    const matchesLanguage = selectedLanguage === "all" || 
+                            resource.language?.toLowerCase() === selectedLanguage.toLowerCase();
+                            
     const matchesFree = !showFreeOnly || resource.free;
 
     return matchesSearch && matchesLevel && matchesType && matchesLanguage && matchesFree;
@@ -403,6 +418,8 @@ export default function ResourcesHub() {
                 <option value="documentation">Docs</option>
                 <option value="interactive">Interactive</option>
                 <option value="youtube">YouTube</option>
+                <option value="udemy">Udemy</option>
+                <option value="coursera">Coursera</option>
               </select>
             </div>
 
@@ -432,6 +449,13 @@ export default function ResourcesHub() {
                 <option value="Hindi">Hindi</option>
                 <option value="Telugu">Telugu</option>
                 <option value="Tamil">Tamil</option>
+                <option value="Kannada">Kannada</option>
+                <option value="Malayalam">Malayalam</option>
+                <option value="Spanish">Spanish</option>
+                <option value="French">French</option>
+                <option value="German">German</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Japanese">Japanese</option>
               </select>
             </div>
 

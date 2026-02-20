@@ -112,7 +112,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/resources/search - AI-powered resource search
 router.post('/search', async (req, res) => {
-  const { query, role } = req.body;
+  const { query, role, filters } = req.body;
 
   if (!query) {
     return res.status(400).json({ error: 'Search query is required' });
@@ -143,11 +143,17 @@ router.post('/search', async (req, res) => {
             role: 'user',
             content: `Perform a comprehensive web search for the latest and most highly-rated learning resources (courses, videos, documentation, books) for: "${query}". 
             Context: User is a "${role || 'Learner'}".
+            Filters:
+            - Type/Platform: ${filters?.type !== 'all' ? filters.type : 'Any (Courses, Videos, Docs)'}
+            - Level: ${filters?.level !== 'all' ? filters.level : 'Any'}
+            - Language: ${filters?.language !== 'all' ? filters.language : 'English'}
             
             Focus on finding resources that are:
             1. Up-to-date (released or updated in 2024/2025).
             2. Highly rated by the community.
             3. From reputable platforms (e.g., Coursera, Udemy, YouTube, Official Docs).
+            4. STRICTLY MATCHING the requested language (${filters?.language !== 'all' ? filters.language : 'English'}).
+            5. STRICTLY MATCHING the requested type/platform if specified (e.g. if 'Udemy', allow only Udemy).
             
             Return ONLY a valid JSON array with this structure:
             [
@@ -164,10 +170,10 @@ router.post('/search', async (req, res) => {
                 "free": boolean,
                 "rating": 4.8,
                 "topics": ["topic1", "topic2"],
-                "language": "English"
+                "language": "${filters?.language !== 'all' ? filters.language : 'English'}"
               }
             ]
-            Prioritize freshness and quality.`
+            Prioritize freshness, quality, and language match.`
           }
         ],
         temperature: 0.7
