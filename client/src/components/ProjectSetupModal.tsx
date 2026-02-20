@@ -82,10 +82,66 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
         } else {
             // Fallback if API fails (simulated data)
              setCurriculum([
-                { id: 1, title: 'Architecture Planning', estimatedHours: '3 hours' },
-                { id: 2, title: 'Development Environment Setup', estimatedHours: '4 hours' },
-                { id: 3, title: 'Database Design', estimatedHours: '6 hours' },
-                { id: 4, title: 'API Implementation', estimatedHours: '12 hours' }
+                { 
+                    id: 1, 
+                    title: 'Architecture Planning', 
+                    estimatedHours: '3 hours',
+                    tasks: [
+                        {
+                            id: 't1-1',
+                            title: 'Define Project Structure',
+                            description: 'Create the initial folder structure and configuration files.',
+                            why: 'A solid structure ensures scalability.',
+                            codeSnippet: 'mkdir src\nmkdir src/components\nmkdir src/api',
+                            verification: 'Check if folders exist.'
+                        }
+                    ]
+                },
+                { 
+                    id: 2, 
+                    title: 'Development Environment Setup', 
+                    estimatedHours: '4 hours',
+                    tasks: [
+                        {
+                            id: 't2-1',
+                            title: 'Install Dependencies',
+                            description: 'Install necessary packages.',
+                            why: 'Required for development.',
+                            codeSnippet: 'npm install react react-dom',
+                            verification: 'Check node_modules.'
+                        }
+                    ]
+                },
+                { 
+                    id: 3, 
+                    title: 'Database Design', 
+                    estimatedHours: '6 hours',
+                    tasks: [
+                         {
+                            id: 't3-1',
+                            title: 'Design Schema',
+                            description: 'Draft the database schema.',
+                            why: 'Data integrity is key.',
+                            codeSnippet: 'CREATE TABLE users...',
+                            verification: 'Review schema file.'
+                        }
+                    ]
+                },
+                { 
+                    id: 4, 
+                    title: 'API Implementation', 
+                    estimatedHours: '12 hours',
+                    tasks: [
+                        {
+                            id: 't4-1',
+                            title: 'Create User Endpoint',
+                            description: 'Implement GET /users.',
+                            why: 'Allow user retrieval.',
+                            codeSnippet: 'app.get("/users", ...)',
+                            verification: 'Test with Postman.'
+                        }
+                    ]
+                }
             ]);
             setStep(2);
         }

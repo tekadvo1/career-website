@@ -62,7 +62,7 @@ export default function ProjectWorkspace() {
   const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
   const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [viewMode, setViewMode] = useState<'dashboard' | 'execution'>('dashboard');
   const [initialAiQuery, setInitialAiQuery] = useState('');
@@ -238,7 +238,7 @@ export default function ProjectWorkspace() {
   }
 
   const currentModule = curriculum[currentModuleIndex];
-  const currentTask = currentModule?.tasks[currentTaskIndex];
+  const currentTask = currentModule?.tasks?.[currentTaskIndex];
   const totalTasks = curriculum.reduce((acc, mod) => acc + mod.tasks.length, 0);
   const progressPercentage = Math.round((completedTasks.size / totalTasks) * 100);
   
@@ -439,7 +439,23 @@ export default function ProjectWorkspace() {
                                             </div>
                                         </div>
                                     </div>
-                                ) : null}
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-12 text-center h-full">
+                                            <div className="bg-gray-800 p-4 rounded-full mb-4">
+                                                <Target className="w-8 h-8 text-gray-500" />
+                                            </div>
+                                            <h3 className="text-xl font-bold text-gray-300 mb-2">No Task Selected</h3>
+                                            <p className="text-gray-500 max-w-sm mb-6">
+                                                Select a module from the sidebar to view its tasks, or ensure your curriculum is properly loaded.
+                                            </p>
+                                            <button 
+                                                onClick={() => setViewMode('dashboard')}
+                                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm font-medium transition-colors"
+                                            >
+                                                Back to Dashboard
+                                            </button>
+                                        </div>
+                                    )}
                             </div>
                         </div>
 
