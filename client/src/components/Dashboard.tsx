@@ -104,6 +104,8 @@ export default function Dashboard() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
   const [showSetupModal, setShowSetupModal] = useState(false);
+  const fromMission = location.state?.fromMission;
+  const highlightProject = location.state?.highlightProject;
 
   // Fetch Recommended Projects
   useEffect(() => {
@@ -496,6 +498,30 @@ export default function Dashboard() {
 
         {/* Project List */}
         <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+             {/* Mission Context Banner */}
+             {fromMission && (
+               <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                   <Target className="w-5 h-5 text-white" />
+                 </div>
+                 <div className="flex-1">
+                   <h3 className="text-sm font-bold text-indigo-900">Mission in Progress</h3>
+                   <p className="text-xs text-indigo-600">
+                     {highlightProject
+                       ? <>Select <strong>"{highlightProject}"</strong> below to start your mission, or pick any project that matches your goals.</>  
+                       : 'Pick a project below to complete your mission and earn XP!'
+                     }
+                   </p>
+                 </div>
+                 <button
+                   onClick={() => navigate('/missions', { state: { role: selectedRole } })}
+                   className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors flex-shrink-0"
+                 >
+                   Back to Missions
+                 </button>
+               </div>
+             )}
+
              {isLoading ? (
                 <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -517,7 +543,11 @@ export default function Dashboard() {
                                   setSelectedProject(project);
                               }
                           }}
-                          className="bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full"
+                          className={`bg-white rounded-xl border hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full ${
+                            highlightProject && project.title === highlightProject
+                              ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-lg shadow-indigo-100'
+                              : 'border-gray-200 hover:border-indigo-300'
+                          }`}
                         >
                           <div className="p-5 flex-1">
                               <div className="flex justify-between items-start mb-3">

@@ -21,7 +21,9 @@ import {
   TrendingUp,
   Play,
   Plus,
-  Loader2
+  Loader2,
+  ExternalLink,
+  Rocket
 } from 'lucide-react';
 
 interface Mission {
@@ -50,6 +52,22 @@ interface Reward {
   available: boolean;
 }
 
+interface SuggestedProject {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  duration: string;
+  matchScore: number;
+  tags: string[];
+  tools: string[];
+  metrics?: {
+    xp: number;
+    matchIncrease: string;
+    timeEstimate: string;
+  };
+}
+
 export default function Missions() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -67,6 +85,8 @@ export default function Missions() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [startingMission, setStartingMission] = useState<number | null>(null);
+  const [suggestedProjects, setSuggestedProjects] = useState<SuggestedProject[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
 
   // Fetch missions from backend
   useEffect(() => {
@@ -100,6 +120,45 @@ export default function Missions() {
 
     fetchData();
   }, [role, user.id]);
+
+  // Fetch suggested projects when a mission is selected
+  useEffect(() => {
+    if (!selectedMission) return;
+    if (!['project', 'learning'].includes(selectedMission.category)) return;
+
+    const fetchProjects = async () => {
+      setLoadingProjects(true);
+      try {
+        // Try cache first
+        const cacheKey = `dashboard_projects_v2_${role}`;
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSuggestedProjects(parsed.slice(0, 3));
+            setLoadingProjects(false);
+            return;
+          }
+        }
+        // Fetch from API
+        const res = await fetch('/api/role/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role })
+        });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setSuggestedProjects(data.data.slice(0, 3));
+        }
+      } catch (e) {
+        console.error('Failed to fetch suggested projects:', e);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+  }, [selectedMission, role]);
 
   const filteredMissions = missions.filter(m =>
     categoryFilter === 'all' || m.category === categoryFilter
@@ -673,6 +732,76 @@ export default function Missions() {
                   <Trophy className="w-8 h-8 text-amber-400/40" />
                 </div>
               </div>
+
+              {/* Suggested Projects — for project/learning missions */}
+              {['project', 'learning'].includes(selectedMission.category) && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Rocket className="w-3.5 h-3.5 text-indigo-400" /> Suggested Projects to Start
+                  </h3>
+                  {loadingProjects ? (
+                    <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Loading AI project suggestions...
+                    </div>
+                  ) : suggestedProjects.length > 0 ? (
+                    <div className="space-y-2">
+                      {suggestedProjects.map((project, i) => (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            // Start mission + navigate to dashboard with project highlighted
+                            if (user.id) {
+                              fetch('/api/missions/start', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userId: user.id, missionId: selectedMission.id })
+                              });
+                            }
+                            setSelectedMission(null);
+                            navigate('/dashboard', {
+                              state: {
+                                role,
+                                fromMission: selectedMission.id,
+                                highlightProject: project.title
+                              }
+                            });
+                          }}
+                          className="bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-indigo-500/30 rounded-lg p-3 cursor-pointer transition-all group/proj"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-white group-hover/proj:text-indigo-300 transition-colors truncate">
+                                {project.title}
+                              </h4>
+                              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{project.description}</p>
+                            </div>
+                            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover/proj:text-indigo-400 flex-shrink-0 mt-1 ml-2" />
+                          </div>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                              project.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-400'
+                                : project.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-400'
+                                : 'bg-red-500/20 text-red-400'
+                            }`}>{project.difficulty}</span>
+                            <span className="text-[10px] text-slate-500">{project.metrics?.timeEstimate || project.duration}</span>
+                            <span className="text-[10px] text-amber-400 font-bold">{project.metrics?.xp || 500} XP</span>
+                            <span className="text-[10px] text-emerald-400 font-semibold ml-auto">{project.matchScore}% Match</span>
+                          </div>
+                          {project.tools && project.tools.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {project.tools.slice(0, 4).map((tool, j) => (
+                                <span key={j} className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-300 rounded text-[9px] font-medium">{tool}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">No projects found. Start the mission to browse projects.</p>
+                  )}
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex gap-3">
