@@ -179,29 +179,6 @@ export default function Missions() {
     navigate(route, { state: { role, fromMission: mission.id } });
   };
 
-  const _handleCompleteMission = async (missionId: number) => {
-    if (!user.id) return;
-
-    try {
-      const res = await fetch('/api/missions/complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, missionId })
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        setTotalXp(data.totalXp);
-        setMissions(prev => prev.map(m =>
-          m.id === missionId ? { ...m, status: 'completed', xp_earned: data.xpEarned } : m
-        ));
-        setCompletedCount(prev => prev + 1);
-      }
-    } catch (e) {
-      console.error('Failed to complete mission:', e);
-    }
-  };
-
   const handleRedeemReward = async (rewardId: number) => {
     if (!user.id) return;
 
