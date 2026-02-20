@@ -106,12 +106,16 @@ export default function ProjectWorkspace() {
                 setIsLoading(false);
             }
         } 
-        // 2. Existing Project (Resuming)
-        else if (project.progress_data) {
+        // 2. Existing Project (Resuming) — check project_data OR progress_data
+        else if (project.project_data || project.progress_data) {
              // We are resuming from Dashboard (Active Project)
              try {
-                const prog = typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data;
-                const projData = typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data;
+                const prog = project.progress_data 
+                  ? (typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data)
+                  : {};
+                const projData = project.project_data
+                  ? (typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data)
+                  : {};
                 
                 setProjectId(project.id);
                 setCurriculum(projData.curriculum || []);
@@ -125,10 +129,35 @@ export default function ProjectWorkspace() {
                 setIsLoading(false);
              }
         }
+        // 3. Fallback: Fetch project from API using project ID
+        else if (project.id) {
+            try {
+                const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${role || ''}`);
+                const data = await res.json();
+                if (data.success && data.projects) {
+                    const found = data.projects.find((p: any) => p.id === project.id || p.id === parseInt(project.id));
+                    if (found) {
+                        const projData = typeof found.project_data === 'string' ? JSON.parse(found.project_data) : found.project_data;
+                        const prog = found.progress_data 
+                          ? (typeof found.progress_data === 'string' ? JSON.parse(found.progress_data) : found.progress_data)
+                          : {};
+                        
+                        setProjectId(found.id);
+                        setCurriculum(projData?.curriculum || []);
+                        setCompletedTasks(new Set(prog?.completedTasks || []));
+                        setXp(prog?.xp || 0);
+                        setCurrentModuleIndex(prog?.currentModuleIndex || 0);
+                        setCurrentTaskIndex(prog?.currentTaskIndex || 0);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch project from API", e);
+            } finally {
+                setIsLoading(false);
+            }
+        }
         else {
-            // Fallback: Fetching fresh if strict ID passed but no data?
-            // (Existing logic for fallback fetch if needed)
-             setIsLoading(false);
+            setIsLoading(false);
         }
     };
 
