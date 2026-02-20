@@ -267,8 +267,7 @@ export default function Dashboard() {
                                   } 
                               });
                           } else {
-                              alert("You don't have an active mission yet. Start a project to enter the workspace!");
-                              setActiveTab('recommended');
+                              navigate('/missions', { state: { role: selectedRole } });
                           }
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
@@ -287,18 +286,7 @@ export default function Dashboard() {
                   </button>
                   <button 
                       onClick={() => {
-                          const activeProject = userProjects.find(p => p.status === 'active');
-                          if (activeProject) {
-                              navigate('/project-workspace', { 
-                                  state: { 
-                                      project: activeProject, 
-                                      role: selectedRole
-                                  } 
-                              });
-                          } else {
-                              alert("No active missions found. Select a project to start your mission!");
-                              setActiveTab('recommended');
-                          }
+                          navigate('/missions', { state: { role: selectedRole } });
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
                   >
