@@ -126,3 +126,24 @@ CREATE TABLE IF NOT EXISTS cached_curriculums (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(project_title, role)
 );
+
+
+-- Resources table for storing curated and AI-generated resources
+CREATE TABLE IF NOT EXISTS resources (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  resource_type VARCHAR(50) NOT NULL, -- using 'resource_type' to avoid SQL keyword 'type'
+  category VARCHAR(100),
+  url TEXT NOT NULL,
+  platform VARCHAR(100),
+  duration VARCHAR(100),
+  level VARCHAR(50), -- Beginner, Intermediate, Advanced
+  free BOOLEAN DEFAULT TRUE,
+  rating DECIMAL(3, 1),
+  topics TEXT[], -- Array of strings
+  language VARCHAR(50) DEFAULT 'English',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(url) -- Prevent duplicate resources
+);

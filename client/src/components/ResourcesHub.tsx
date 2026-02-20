@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Search,
@@ -32,245 +32,6 @@ interface Resource {
   language: "English" | "Hindi" | "Telugu" | "Tamil" | "Kannada" | "Spanish";
 }
 
-const resourcesDatabase: Resource[] = [
-  // Programming Fundamentals
-  {
-    id: "1",
-    title: "CS50's Introduction to Computer Science",
-    description: "Harvard's introduction to computer science and programming",
-    type: "course",
-    category: "Programming Fundamentals",
-    url: "https://cs50.harvard.edu/x/",
-    platform: "Harvard (edX)",
-    duration: "12 weeks",
-    level: "Beginner",
-    free: true,
-    rating: 4.9,
-    topics: ["C", "Python", "SQL", "Algorithms", "Data Structures"],
-    language: "English"
-  },
-  {
-    id: "2",
-    title: "The Odin Project",
-    description: "Free full-stack web development curriculum",
-    type: "interactive",
-    category: "Web Development",
-    url: "https://www.theodinproject.com/",
-    platform: "The Odin Project",
-    duration: "Self-paced",
-    level: "Beginner",
-    free: true,
-    rating: 4.8,
-    topics: ["HTML", "CSS", "JavaScript", "React", "Node.js"],
-    language: "English"
-  },
-  {
-    id: "3",
-    title: "freeCodeCamp",
-    description: "Learn to code with free courses and certifications",
-    type: "interactive",
-    category: "Web Development",
-    url: "https://www.freecodecamp.org/",
-    platform: "freeCodeCamp",
-    duration: "Self-paced",
-    level: "Beginner",
-    free: true,
-    rating: 4.7,
-    topics: ["HTML", "CSS", "JavaScript", "React", "APIs"],
-    language: "English"
-  },
-
-  // JavaScript
-  {
-    id: "4",
-    title: "JavaScript.info - The Modern JavaScript Tutorial",
-    description: "Comprehensive JavaScript tutorial from basics to advanced",
-    type: "documentation",
-    category: "JavaScript",
-    url: "https://javascript.info/",
-    platform: "JavaScript.info",
-    duration: "Self-paced",
-    level: "Beginner",
-    free: true,
-    rating: 4.9,
-    topics: ["JavaScript", "ES6+", "Async", "DOM"],
-    language: "English"
-  },
-  {
-    id: "4a",
-    title: "The Complete JavaScript Course 2024",
-    description: "Master JavaScript with the most complete course! Projects, challenges, quizzes, ES6+, OOP, AJAX, Webpack",
-    type: "course",
-    category: "JavaScript",
-    url: "https://www.udemy.com/course/the-complete-javascript-course/",
-    platform: "Udemy",
-    duration: "69 hours",
-    level: "Beginner",
-    free: false,
-    rating: 4.7,
-    topics: ["JavaScript", "ES6+", "Async/Await", "DOM", "OOP"],
-    language: "English"
-  },
-  {
-    id: "5",
-    title: "You Don't Know JS (book series)",
-    description: "Deep dive into JavaScript core concepts",
-    type: "book",
-    category: "JavaScript",
-    url: "https://github.com/getify/You-Dont-Know-JS",
-    platform: "GitHub",
-    duration: "Self-paced",
-    level: "Intermediate",
-    free: true,
-    rating: 4.8,
-    topics: ["JavaScript", "Closures", "Scope", "Prototypes"],
-    language: "English"
-  },
-
-  // React
-  {
-    id: "6",
-    title: "React Official Documentation",
-    description: "Official React docs with interactive tutorials",
-    type: "documentation",
-    category: "React",
-    url: "https://react.dev/",
-    platform: "React Team",
-    duration: "Reference",
-    level: "Beginner",
-    free: true,
-    rating: 4.9,
-    topics: ["React", "Hooks", "Components", "State"],
-    language: "English"
-  },
-  {
-    id: "6a",
-    title: "React - The Complete Guide 2024",
-    description: "Dive in and learn React.js from scratch! Learn React, Hooks, Redux, React Router, Next.js, Best Practices and more!",
-    type: "course",
-    category: "React",
-    url: "https://www.udemy.com/course/react-the-complete-guide-incl-redux/",
-    platform: "Udemy",
-    duration: "68 hours",
-    level: "Beginner",
-    free: false,
-    rating: 4.6,
-    topics: ["React", "Hooks", "Redux", "Next.js", "TypeScript"],
-    language: "English"
-  },
-
-  // Data Structures & Algorithms
-  {
-    id: "8",
-    title: "LeetCode",
-    description: "Practice coding problems and prepare for technical interviews",
-    type: "interactive",
-    category: "Algorithms",
-    url: "https://leetcode.com/",
-    platform: "LeetCode",
-    duration: "Ongoing",
-    level: "Beginner",
-    free: true,
-    rating: 4.6,
-    topics: ["Algorithms", "Data Structures", "Problem Solving"],
-    language: "English"
-  },
-  {
-    id: "9",
-    title: "NeetCode",
-    description: "Curated list of coding problems with video explanations",
-    type: "video",
-    category: "Algorithms",
-    url: "https://neetcode.io/",
-    platform: "NeetCode",
-    duration: "Self-paced",
-    level: "Intermediate",
-    free: true,
-    rating: 4.8,
-    topics: ["Algorithms", "Data Structures", "Interview Prep"],
-    language: "English"
-  },
-
-  // System Design
-  {
-    id: "10",
-    title: "System Design Primer",
-    description: "Learn how to design large-scale systems",
-    type: "documentation",
-    category: "System Design",
-    url: "https://github.com/donnemartin/system-design-primer",
-    platform: "GitHub",
-    duration: "Self-paced",
-    level: "Advanced",
-    free: true,
-    rating: 4.8,
-    topics: ["System Design", "Scalability", "Architecture"],
-    language: "English"
-  },
-
-  // YouTube Channels
-  {
-    id: "20",
-    title: "Traversy Media",
-    description: "Web development tutorials and crash courses",
-    type: "youtube",
-    category: "Web Development",
-    url: "https://www.youtube.com/@TraversyMedia",
-    platform: "YouTube",
-    duration: "Various",
-    level: "Beginner",
-    free: true,
-    rating: 4.8,
-    topics: ["Web Development", "JavaScript", "React", "Node.js"],
-    language: "English"
-  },
-  {
-    id: "yt1",
-    title: "Programming with Mosh",
-    description: "Learn programming and software development",
-    type: "youtube",
-    category: "Programming Fundamentals",
-    url: "https://www.youtube.com/@programmingwithmosh",
-    platform: "YouTube",
-    duration: "Various",
-    level: "Beginner",
-    free: true,
-    rating: 4.9,
-    topics: ["Python", "JavaScript", "C#", "Programming"],
-    language: "English"
-  },
-  {
-    id: "yt2",
-    title: "freeCodeCamp.org",
-    description: "Free full-length programming courses",
-    type: "youtube",
-    category: "Web Development",
-    url: "https://www.youtube.com/@freecodecamp",
-    platform: "YouTube",
-    duration: "Various",
-    level: "Beginner",
-    free: true,
-    rating: 4.9,
-    topics: ["Web Development", "Python", "JavaScript", "Data Science"],
-    language: "English"
-  },
-  {
-    id: "yt4",
-    title: "Code with Harry - Hindi",
-    description: "Programming tutorials in Hindi for beginners",
-    type: "youtube",
-    category: "Programming Fundamentals",
-    url: "https://www.youtube.com/@CodeWithHarry",
-    platform: "YouTube",
-    duration: "Various",
-    level: "Beginner",
-    free: true,
-    rating: 4.7,
-    topics: ["Python", "JavaScript", "Web Development", "DSA"],
-    language: "Hindi"
-  },
-];
-
 export default function ResourcesHub() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -285,6 +46,31 @@ export default function ResourcesHub() {
   const [isCreatingCourse, setIsCreatingCourse] = useState(false);
   const [courseData, setCourseData] = useState<any>(null);
   const [showCourseModal, setShowCourseModal] = useState(false);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch resources on mount
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const response = await fetch('/api/resources');
+        const data = await response.json();
+        if (data.success) {
+          // Map backend 'resource_type' to frontend 'type'
+          const mappedResources = data.resources.map((r: any) => ({
+            ...r,
+            type: r.resource_type || r.type
+          }));
+          setResources(mappedResources);
+        }
+      } catch (error) {
+        console.error("Failed to fetch resources", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchResources();
+  }, []);
 
   const handleAiSearch = async () => {
     if (!searchQuery) return;
@@ -298,7 +84,11 @@ export default function ResourcesHub() {
       });
       const data = await response.json();
       if (data.success) {
-        setAiResources(data.resources);
+         const mappedResources = data.resources.map((r: any) => ({
+            ...r,
+            type: r.resource_type || r.type
+          }));
+        setAiResources(mappedResources);
       }
     } catch (error) {
       console.error("AI Search failed", error);
@@ -403,23 +193,25 @@ export default function ResourcesHub() {
     let score = 0;
     
     // Check if resource topics match relevant skills
-    resource.topics.forEach(topic => {
-      if (relevantSkills.some(skill => 
-        topic.toLowerCase().includes(skill.toLowerCase()) || 
-        skill.toLowerCase().includes(topic.toLowerCase())
-      )) {
-        score += 10;
-      }
-    });
+    if (resource.topics) {
+        resource.topics.forEach(topic => {
+          if (relevantSkills.some(skill => 
+            topic.toLowerCase().includes(skill.toLowerCase()) || 
+            skill.toLowerCase().includes(topic.toLowerCase())
+          )) {
+            score += 10;
+          }
+        });
+    }
 
     // Boost highly rated resources
-    score += resource.rating * 2;
+    score += (resource.rating || 0) * 2;
 
     return score;
   };
 
   // Get personalized resources sorted by relevance
-  const personalizedResources = resourcesDatabase
+  const personalizedResources = resources
     .map(resource => ({
       ...resource,
       relevanceScore: getRelevanceScore(resource)
@@ -684,6 +476,14 @@ export default function ResourcesHub() {
         {viewMode === 'browse' ? (
         <>
         {/* Resources Grid */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center p-12">
+            <Sparkles className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
+            <h3 className="text-lg font-semibold text-slate-700">Curating resources for you...</h3>
+            <p className="text-slate-500 text-sm">Our AI is finding the best learning materials.</p>
+          </div>
+        ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map((resource) => (
             <div key={resource.id} className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-shadow flex flex-col">
@@ -776,6 +576,8 @@ export default function ResourcesHub() {
             <h3 className="text-xl font-semibold text-slate-900 mb-2">No resources found</h3>
             <p className="text-slate-600">Try adjusting your filters or search query</p>
           </div>
+        )}
+        </>
         )}
         </>
         ) : (
