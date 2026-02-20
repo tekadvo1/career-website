@@ -260,17 +260,9 @@ export default function Dashboard() {
               <nav className="space-y-1">
                   <button 
                       onClick={() => {
-                          const activeProject = userProjects.find(p => p.status === 'active');
-                          if (activeProject) {
-                              navigate('/project-workspace', { 
-                                  state: { 
-                                      project: activeProject, 
-                                      role: selectedRole
-                                  } 
-                              });
-                          } else {
-                              navigate('/missions', { state: { role: selectedRole } });
-                          }
+                          navigate('/missions', { 
+                              state: { role: selectedRole, tab: 'workspace' } 
+                          });
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
                   >

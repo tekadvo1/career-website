@@ -22,8 +22,9 @@ import {
   Play,
   Plus,
   Loader2,
-  ExternalLink,
-  Rocket
+  Rocket,
+  Layout,
+  ArrowRight
 } from 'lucide-react';
 
 interface Mission {
@@ -61,20 +62,31 @@ interface SuggestedProject {
   matchScore: number;
   tags: string[];
   tools: string[];
+  languages: string[];
+  whyRecommended: string[];
+  skillsToDevelop: string[];
+  setupGuide: { title: string; steps: string[] };
   metrics?: {
     xp: number;
     matchIncrease: string;
     timeEstimate: string;
+    roleRelevance: string;
   };
+  careerImpact?: string[];
+  skillGainEstimates?: { skill: string; before: number; after: number }[];
+  curriculumStats?: { modules: number; tasks: number; deployment: boolean; codeReview: boolean };
+  recruiterAppeal?: string[];
+  trending?: boolean;
 }
 
 export default function Missions() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = location.state?.role || localStorage.getItem('selectedRole') || 'Software Engineer';
+  const initialTab = location.state?.tab || 'missions';
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const [activeTab, setActiveTab] = useState<'missions' | 'rewards' | 'how_it_works'>('missions');
+  const [activeTab, setActiveTab] = useState<'missions' | 'workspace' | 'rewards' | 'how_it_works'>(initialTab);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [missions, setMissions] = useState<Mission[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -85,7 +97,9 @@ export default function Missions() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [startingMission, setStartingMission] = useState<number | null>(null);
-  const [suggestedProjects, setSuggestedProjects] = useState<SuggestedProject[]>([]);
+
+  // Workspace state
+  const [dashboardProjects, setDashboardProjects] = useState<SuggestedProject[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   // Fetch missions from backend
@@ -121,10 +135,9 @@ export default function Missions() {
     fetchData();
   }, [role, user.id]);
 
-  // Fetch suggested projects when a mission is selected
+  // Fetch projects for workspace tab
   useEffect(() => {
-    if (!selectedMission) return;
-    if (!['project', 'learning'].includes(selectedMission.category)) return;
+    if (activeTab !== 'workspace') return;
 
     const fetchProjects = async () => {
       setLoadingProjects(true);
@@ -135,7 +148,7 @@ export default function Missions() {
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setSuggestedProjects(parsed.slice(0, 3));
+            setDashboardProjects(parsed);
             setLoadingProjects(false);
             return;
           }
@@ -148,21 +161,23 @@ export default function Missions() {
         });
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
-          setSuggestedProjects(data.data.slice(0, 3));
+          setDashboardProjects(data.data);
         }
       } catch (e) {
-        console.error('Failed to fetch suggested projects:', e);
+        console.error('Failed to fetch projects:', e);
       } finally {
         setLoadingProjects(false);
       }
     };
 
     fetchProjects();
-  }, [selectedMission, role]);
+  }, [activeTab, role]);
 
   const filteredMissions = missions.filter(m =>
     categoryFilter === 'all' || m.category === categoryFilter
   );
+
+  const inProgressMissions = missions.filter(m => m.status === 'in_progress');
 
   const totalAvailableXP = missions
     .filter(m => m.status !== 'completed')
@@ -208,6 +223,7 @@ export default function Missions() {
     }
   };
 
+  // Start mission → stays on page, marks as in_progress
   const handleStartMission = async (mission: Mission) => {
     if (!user.id) {
       navigate('/signin');
@@ -227,15 +243,15 @@ export default function Missions() {
       setMissions(prev => prev.map(m =>
         m.id === mission.id ? { ...m, status: 'in_progress' } : m
       ));
+
+      // Close modal and switch to workspace tab
+      setSelectedMission(null);
+      setActiveTab('workspace');
     } catch (e) {
       console.error('Failed to start mission:', e);
     } finally {
       setStartingMission(null);
     }
-
-    // Navigate to the mission's action route
-    const route = mission.action_route || '/dashboard';
-    navigate(route, { state: { role, fromMission: mission.id } });
   };
 
   const handleRedeemReward = async (rewardId: number) => {
@@ -279,6 +295,16 @@ export default function Missions() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Navigate to workspace for a specific project
+  const handleOpenWorkspace = (project: SuggestedProject) => {
+    navigate('/project-workspace', {
+      state: {
+        project: project,
+        role: role
+      }
+    });
   };
 
   if (isLoading) {
@@ -370,7 +396,8 @@ export default function Missions() {
           {/* Tabs */}
           <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-fit">
             {[
-              { id: 'missions', label: 'Missions', icon: <Target className="w-4 h-4" /> },
+              { id: 'missions', label: 'Missions', icon: <Target className="w-4 h-4" />, badge: missions.filter(m => m.status === 'available').length },
+              { id: 'workspace', label: 'Workspace', icon: <Layout className="w-4 h-4" />, badge: inProgressMissions.length },
               { id: 'rewards', label: 'Rewards Store', icon: <Gift className="w-4 h-4" /> },
               { id: 'how_it_works', label: 'How It Works', icon: <BookOpen className="w-4 h-4" /> }
             ].map(tab => (
@@ -383,6 +410,11 @@ export default function Missions() {
                   }`}
               >
                 {tab.icon} {tab.label}
+                {tab.badge !== undefined && tab.badge > 0 && (
+                  <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-white/10 text-white'}`}>
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -392,7 +424,7 @@ export default function Missions() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
 
-        {/* MISSIONS TAB */}
+        {/* ═══════════ MISSIONS TAB ═══════════ */}
         {activeTab === 'missions' && (
           <>
             {/* Category filters */}
@@ -431,7 +463,7 @@ export default function Missions() {
                     }`}
                 >
                   {/* AI Badge */}
-                  {mission.ai_powered && (
+                  {mission.ai_powered && mission.status !== 'in_progress' && (
                     <div className="absolute top-3 right-3">
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 border border-violet-500/30 rounded-full text-[10px] font-bold text-violet-300">
                         <Sparkles className="w-3 h-3" /> AI Powered
@@ -531,7 +563,188 @@ export default function Missions() {
           </>
         )}
 
-        {/* REWARDS TAB */}
+        {/* ═══════════ WORKSPACE TAB ═══════════ */}
+        {activeTab === 'workspace' && (
+          <div>
+            {/* In-Progress Missions */}
+            {inProgressMissions.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                    <Rocket className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Active Missions</h2>
+                    <p className="text-xs text-slate-400">Missions you've started — select one to continue in workspace</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                  {inProgressMissions.map(mission => (
+                    <div
+                      key={mission.id}
+                      className="bg-gradient-to-br from-indigo-950/50 to-purple-950/30 border border-indigo-500/20 rounded-xl p-5 hover:border-indigo-400/40 transition-all group"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getCategoryColor(mission.category)}`}>
+                          {getCategoryIcon(mission.category)}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-white text-sm">{mission.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getDifficultyColor(mission.difficulty)}`}>
+                              {mission.difficulty}
+                            </span>
+                            <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {mission.estimated_time}
+                            </span>
+                            <span className="flex items-center gap-1 text-amber-400 text-[10px] font-bold ml-auto">
+                              <Zap className="w-3 h-3" /> +{mission.xp_reward} XP
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-400 mb-3 line-clamp-2">{mission.description}</p>
+
+                      {/* Steps progress */}
+                      <div className="space-y-1 mb-4">
+                        {(mission.steps || []).map((step, i) => (
+                          <div key={i} className="flex items-center gap-2 text-[11px]">
+                            <div className="w-3 h-3 rounded-full border border-slate-600 flex-shrink-0" />
+                            <span className="text-slate-400 truncate">{step}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                        <span className="flex items-center gap-1 text-[10px] text-indigo-300 font-bold animate-pulse">
+                          <Play className="w-3 h-3" /> In Progress
+                        </span>
+                        <span className="text-[10px] text-slate-500">Select a project below to start working →</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No in-progress missions */}
+            {inProgressMissions.length === 0 && (
+              <div className="text-center py-16 bg-white/[0.02] rounded-2xl border border-white/5 mb-10">
+                <div className="w-16 h-16 bg-indigo-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Target className="w-8 h-8 text-indigo-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2">No Active Missions Yet</h3>
+                <p className="text-slate-400 text-sm mb-5 max-w-md mx-auto">
+                  Go to the <strong className="text-indigo-400">Missions</strong> tab to browse and start a mission.
+                  Once started, it will appear here with projects to work on.
+                </p>
+                <button
+                  onClick={() => setActiveTab('missions')}
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-sm transition-colors inline-flex items-center gap-2"
+                >
+                  <Target className="w-4 h-4" /> Browse Missions
+                </button>
+              </div>
+            )}
+
+            {/* Available Projects to Work On */}
+            <div>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Layout className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Projects — Start Working</h2>
+                  <p className="text-xs text-slate-400">Select a project to open the workspace and start building</p>
+                </div>
+              </div>
+
+              {loadingProjects ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-6 h-6 text-indigo-400 animate-spin mr-3" />
+                  <span className="text-slate-400">Loading AI-recommended projects...</span>
+                </div>
+              ) : dashboardProjects.length > 0 ? (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {dashboardProjects.map((project, i) => (
+                    <div
+                      key={i}
+                      onClick={() => handleOpenWorkspace(project)}
+                      className="bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] hover:border-emerald-500/30 rounded-xl overflow-hidden cursor-pointer transition-all group/card"
+                    >
+                      <div className="p-5">
+                        {/* Header */}
+                        <div className="flex justify-between items-start mb-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            project.difficulty === 'Beginner' ? 'bg-emerald-500/20 text-emerald-400' :
+                            project.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-red-500/20 text-red-400'
+                          }`}>
+                            {project.difficulty}
+                          </span>
+                          {project.trending && <Flame className="w-4 h-4 text-orange-400" />}
+                        </div>
+
+                        <h3 className="font-bold text-white text-sm mb-2 group-hover/card:text-emerald-300 transition-colors line-clamp-1">
+                          {project.title}
+                        </h3>
+                        <p className="text-[11px] text-slate-400 line-clamp-2 mb-4">{project.description}</p>
+
+                        {/* Project stats */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
+                            <Zap className="w-3 h-3" /> {project.metrics?.xp || 500} XP
+                          </span>
+                          <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {project.metrics?.timeEstimate || project.duration}
+                          </span>
+                          <span className="text-[10px] text-emerald-400 font-semibold ml-auto">
+                            {project.matchScore}% Match
+                          </span>
+                        </div>
+
+                        {/* Tech tags */}
+                        {project.tools && project.tools.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {project.tools.slice(0, 4).map((tool, j) => (
+                              <span key={j} className="px-1.5 py-0.5 bg-white/5 text-slate-400 rounded text-[9px] font-medium border border-white/5">
+                                {tool}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer CTA */}
+                      <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          {project.metrics?.matchIncrease || '+10%'} Career Boost
+                        </span>
+                        <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold group-hover/card:text-emerald-300">
+                          Open Workspace <ArrowRight className="w-3 h-3 group-hover/card:translate-x-1 transition-transform" />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-white/[0.02] rounded-xl border border-white/5">
+                  <p className="text-slate-400 text-sm">No projects loaded yet. Visit the Dashboard to generate AI project recommendations.</p>
+                  <button
+                    onClick={() => navigate('/dashboard', { state: { role } })}
+                    className="mt-4 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    Go to Dashboard
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ REWARDS TAB ═══════════ */}
         {activeTab === 'rewards' && (
           <div>
             <div className="mb-6">
@@ -590,7 +803,7 @@ export default function Missions() {
           </div>
         )}
 
-        {/* HOW IT WORKS TAB */}
+        {/* ═══════════ HOW IT WORKS TAB ═══════════ */}
         {activeTab === 'how_it_works' && (
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
@@ -603,37 +816,44 @@ export default function Missions() {
                 {
                   step: 1,
                   icon: <Target className="w-6 h-6" />,
-                  title: 'Pick a Mission',
-                  description: 'AI generates personalized missions based on your role. Each mission has clear steps, XP rewards, and connects to real learning activities on the platform.',
+                  title: 'Browse & Start a Mission',
+                  description: 'Go to the Missions tab. AI generates personalized missions based on your role. Each mission has clear steps, XP rewards, and difficulty level. Click "Start Mission" on any that interests you.',
                   color: 'from-blue-500 to-indigo-500'
                 },
                 {
                   step: 2,
-                  icon: <Sparkles className="w-6 h-6" />,
-                  title: 'AI Helps You Complete It',
-                  description: 'Many missions are AI-powered. ChatGPT with web search helps you learn faster, generate code, build projects, and review your work in real-time.',
+                  icon: <Layout className="w-6 h-6" />,
+                  title: 'Open the Workspace',
+                  description: 'After starting a mission, go to the Workspace tab. You\'ll see your active missions and available projects. Select a project to open the full workspace with tasks to complete.',
                   color: 'from-violet-500 to-purple-500'
                 },
                 {
                   step: 3,
-                  icon: <Zap className="w-6 h-6" />,
-                  title: 'Earn XP Points',
-                  description: 'Complete missions to earn XP. Easy = 150-250 XP, Medium = 300-500 XP, Hard = 750+ XP, Epic = 1500+ XP. Your XP is saved in the database permanently.',
-                  color: 'from-amber-500 to-orange-500'
-                },
-                {
-                  step: 4,
-                  icon: <Gift className="w-6 h-6" />,
-                  title: 'Redeem Rewards',
-                  description: 'Spend XP in the Rewards Store! Get certifications for LinkedIn, promo codes for Udemy & Coursera, exclusive badges, and AI-powered career tools.',
+                  icon: <Sparkles className="w-6 h-6" />,
+                  title: 'Work Through Tasks',
+                  description: 'The workspace shows you a task list step by step. AI assists you with code snippets, explanations, and guidance. Complete each task at your own pace.',
                   color: 'from-emerald-500 to-teal-500'
                 },
                 {
+                  step: 4,
+                  icon: <Zap className="w-6 h-6" />,
+                  title: 'Earn XP Points',
+                  description: 'Complete missions to earn XP. Easy = 150-250 XP, Medium = 300-500 XP, Hard = 750+ XP, Epic = 1500+ XP. Your XP is saved permanently in the database.',
+                  color: 'from-amber-500 to-orange-500'
+                },
+                {
                   step: 5,
+                  icon: <Gift className="w-6 h-6" />,
+                  title: 'Redeem Rewards',
+                  description: 'Spend XP in the Rewards Store! Get certifications for LinkedIn, promo codes for Udemy & Coursera, exclusive badges, and AI-powered career tools.',
+                  color: 'from-rose-500 to-pink-500'
+                },
+                {
+                  step: 6,
                   icon: <Crown className="w-6 h-6" />,
                   title: 'Level Up Your Career',
                   description: 'With real projects, certifications, and skills — you\'re ready for interviews, promotions, and your dream role. Your portfolio speaks for itself.',
-                  color: 'from-rose-500 to-pink-500'
+                  color: 'from-indigo-500 to-violet-500'
                 }
               ].map((item) => (
                 <div key={item.step} className="flex gap-5 items-start">
@@ -672,7 +892,7 @@ export default function Missions() {
         )}
       </div>
 
-      {/* Mission Detail Modal */}
+      {/* ═══════════ MISSION DETAIL MODAL ═══════════ */}
       {selectedMission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedMission(null)}>
           <div
@@ -733,97 +953,32 @@ export default function Missions() {
                 </div>
               </div>
 
-              {/* Suggested Projects — for project/learning missions */}
-              {['project', 'learning'].includes(selectedMission.category) && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                    <Rocket className="w-3.5 h-3.5 text-indigo-400" /> Suggested Projects to Start
-                  </h3>
-                  {loadingProjects ? (
-                    <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Loading AI project suggestions...
-                    </div>
-                  ) : suggestedProjects.length > 0 ? (
-                    <div className="space-y-2">
-                      {suggestedProjects.map((project, i) => (
-                        <div
-                          key={i}
-                          onClick={() => {
-                            // Start mission + navigate to dashboard with project highlighted
-                            if (user.id) {
-                              fetch('/api/missions/start', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ userId: user.id, missionId: selectedMission.id })
-                              });
-                            }
-                            setSelectedMission(null);
-                            navigate('/dashboard', {
-                              state: {
-                                role,
-                                fromMission: selectedMission.id,
-                                highlightProject: project.title
-                              }
-                            });
-                          }}
-                          className="bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-indigo-500/30 rounded-lg p-3 cursor-pointer transition-all group/proj"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <h4 className="text-sm font-bold text-white group-hover/proj:text-indigo-300 transition-colors truncate">
-                                {project.title}
-                              </h4>
-                              <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">{project.description}</p>
-                            </div>
-                            <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover/proj:text-indigo-400 flex-shrink-0 mt-1 ml-2" />
-                          </div>
-                          <div className="flex items-center gap-3 mt-2">
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                              project.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-400'
-                                : project.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-400'
-                                : 'bg-red-500/20 text-red-400'
-                            }`}>{project.difficulty}</span>
-                            <span className="text-[10px] text-slate-500">{project.metrics?.timeEstimate || project.duration}</span>
-                            <span className="text-[10px] text-amber-400 font-bold">{project.metrics?.xp || 500} XP</span>
-                            <span className="text-[10px] text-emerald-400 font-semibold ml-auto">{project.matchScore}% Match</span>
-                          </div>
-                          {project.tools && project.tools.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {project.tools.slice(0, 4).map((tool, j) => (
-                                <span key={j} className="px-1.5 py-0.5 bg-indigo-500/10 text-indigo-300 rounded text-[9px] font-medium">{tool}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">No projects found. Start the mission to browse projects.</p>
-                  )}
-                </div>
-              )}
-
               {/* Action Buttons */}
               <div className="flex gap-3">
                 {selectedMission.status === 'completed' ? (
                   <div className="flex-1 px-6 py-3 bg-emerald-600/20 text-emerald-400 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border border-emerald-500/20">
                     <CheckCircle className="w-4 h-4" /> Mission Completed!
                   </div>
-                ) : (
+                ) : selectedMission.status === 'in_progress' ? (
                   <button
                     onClick={() => {
-                      handleStartMission(selectedMission);
                       setSelectedMission(null);
+                      setActiveTab('workspace');
                     }}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/25"
+                  >
+                    <Layout className="w-4 h-4" /> Go to Workspace
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleStartMission(selectedMission)}
                     disabled={startingMission === selectedMission.id}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50"
                   >
                     {startingMission === selectedMission.id ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Starting...</>
-                    ) : selectedMission.status === 'in_progress' ? (
-                      <><Play className="w-4 h-4" /> Continue Mission</>
                     ) : (
-                      <><Play className="w-4 h-4" /> Start Mission</>
+                      <><Rocket className="w-4 h-4" /> Start Mission</>
                     )}
                   </button>
                 )}
