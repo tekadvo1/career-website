@@ -1,14 +1,16 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import ProjectSetupModal from './ProjectSetupModal';
+import ProjectSetupModal  from './ProjectSetupModal';
+import ProjectDetailModal from './ProjectDetailModal';
 import Sidebar from './Sidebar';
 import {
-  Search, TrendingUp, Flame, ChevronRight, X,
-  Target, Zap, Clock, Briefcase, CheckCircle,
-  Layers, RotateCcw, Wifi, Sparkles, Wrench,
-  Code, BookOpen, Lightbulb
+  Search, TrendingUp, Flame, ChevronRight,
+  Target, Zap, Clock, CheckCircle,
+  Layers, RotateCcw, Wifi, Sparkles, Radio,
+  Activity, Users,
 } from 'lucide-react';
 
+/* ─── Project type ─────────────────────────────────────────────────────────── */
 interface Project {
   id: string;
   title: string;
@@ -34,9 +36,19 @@ interface Project {
   project_data?: any;
 }
 
+/* ─── Real-time snapshot from SSE ─────────────────────────────────────────── */
+interface DashSnapshot {
+  projects: Project[];
+  totalXP: number;
+  activeCount: number;
+  completedCount: number;
+  savedCount: number;
+  timestamp: string;
+}
+
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate     = useNavigate();
+  const location     = useLocation();
 
   const selectedRole = location.state?.role || (() => {
     try {
@@ -45,29 +57,32 @@ export default function Dashboard() {
     } catch { return 'Software Engineer'; }
   })();
 
+  /* ---------- cache helpers ------------------------------------------------- */
   const getCachedProjects = () => {
     try {
-      const cached = localStorage.getItem(`dashboard_projects_v2_${selectedRole}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
+      const c = localStorage.getItem(`dashboard_projects_v2_${selectedRole}`);
+      if (c) { const p = JSON.parse(c); if (Array.isArray(p) && p.length > 0) return p; }
     } catch { /* ignore */ }
     return [];
   };
 
+  /* ---------- state --------------------------------------------------------- */
   const [recommendedProjects, setRecommendedProjects] = useState<Project[]>(getCachedProjects);
-  const [userProjects, setUserProjects]               = useState<Project[]>([]);
-  const [isLoading, setIsLoading]                     = useState(() => getCachedProjects().length === 0);
-  const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
-  const [searchTerm, setSearchTerm]                   = useState('');
-  const [selectedProject, setSelectedProject]         = useState<Project | null>(null);
-  const [difficultyFilter, setDifficultyFilter]       = useState('all');
-  const [activeTab, setActiveTab]                     = useState<'recommended'|'active'|'completed'|'saved'>('recommended');
-  const [showSetupModal, setShowSetupModal]           = useState(false);
-  const [lastRefreshed, setLastRefreshed]             = useState(new Date());
-  const [toast, setToast]                             = useState<{msg: string; ok: boolean}|null>(null);
-  const pollRef                                       = useRef<ReturnType<typeof setInterval>|null>(null);
+  const [userProjects,  setUserProjects]  = useState<Project[]>([]);
+  const [rtStats,       setRtStats]       = useState({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0 });
+  const [isLive,        setIsLive]        = useState(false);
+  const [isLoading,     setIsLoading]     = useState(() => getCachedProjects().length === 0);
+  const [isTrendLoading, setIsTrendLoading] = useState(false);
+  const [searchTerm,    setSearchTerm]    = useState('');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'>('recommended');
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [lastSync, setLastSync] = useState(new Date());
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [connectedUsers, setConnectedUsers] = useState(0);
+
+  const sseRef  = useRef<EventSource | null>(null);
   const fromMission    = location.state?.fromMission;
   const highlightProject = location.state?.highlightProject;
 
@@ -76,7 +91,79 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // ── Fetch recommended projects (AI/cache) ─────────────────────────────────
+  /* ── map raw DB rows → Project shape ─────────────────────────────────────── */
+  const mapDbProject = (p: any): Project => {
+    const pd = typeof p.project_data  === 'string' ? JSON.parse(p.project_data)  : (p.project_data  || {});
+    const pr = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : (p.progress_data || {});
+    return {
+      ...pd,
+      id: String(p.id),
+      title: p.title,
+      description: p.description,
+      status: p.status,
+      last_updated: p.last_updated,
+      progress_data: pr,
+      project_data: pd,
+      metrics: { ...pd?.metrics, xp: pr?.xp || 0 },
+    };
+  };
+
+  /* ── Apply SSE snapshot ───────────────────────────────────────────────────── */
+  const applySnapshot = useCallback((snap: DashSnapshot) => {
+    const mapped = snap.projects.map(mapDbProject);
+    setUserProjects(mapped);
+    setRtStats({
+      totalXP:        snap.totalXP,
+      activeCount:    snap.activeCount,
+      completedCount: snap.completedCount,
+      savedCount:     snap.savedCount,
+    });
+    setLastSync(new Date());
+  }, []);
+
+  /* ── SSE connection ───────────────────────────────────────────────────────── */
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.id) return;
+
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    sseRef.current = es;
+
+    es.addEventListener('snapshot', (e: MessageEvent) => {
+      try { applySnapshot(JSON.parse(e.data)); setIsLive(true); } catch { /* ignore */ }
+    });
+
+    es.addEventListener('project_update', (_e: MessageEvent) => {
+      try {
+        // A project was started/updated elsewhere — re-fetch the full snapshot
+        fetch(`/api/realtime/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        });
+        showToast('📡 Project update received — dashboard synced!');
+      } catch { /* ignore */ }
+    });
+
+    es.onerror = () => setIsLive(false);
+    es.onopen  = () => setIsLive(true);
+
+    // Also fetch live connection stats periodically
+    const statsPoll = setInterval(async () => {
+      try {
+        const r = await fetch('/api/realtime/stats');
+        const d = await r.json();
+        setConnectedUsers(d.connectedUsers ?? 0);
+      } catch { /* ignore */ }
+    }, 30000);
+
+    return () => {
+      es.close();
+      clearInterval(statsPoll);
+    };
+  }, [applySnapshot]);
+
+  /* ── Fetch AI-recommended projects (OpenAI / cache) ─────────────────────── */
   useEffect(() => {
     if (recommendedProjects.length > 0) return;
     const load = async () => {
@@ -106,43 +193,9 @@ export default function Dashboard() {
     load();
   }, [selectedRole]);
 
-  // ── Fetch user projects from DB ────────────────────────────────────────────
-  const fetchUserProjects = useCallback(async (silent = false) => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!user.id) return;
-    try {
-      const res  = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
-      const data = await res.json();
-      if (data.success) {
-        const mapped = data.projects.map((p: any) => {
-          const pd = typeof p.project_data  === 'string' ? JSON.parse(p.project_data)  : p.project_data;
-          const pr = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
-          return { ...pd, id: p.id, title: p.title, description: p.description, status: p.status,
-            last_updated: p.last_updated, progress_data: pr, project_data: pd,
-            metrics: { ...pd?.metrics, xp: pr?.xp || 0 } };
-        });
-        setUserProjects(mapped);
-        if (!silent) setLastRefreshed(new Date());
-      }
-    } catch { /* ignore */ }
-  }, [selectedRole]);
-
-  useEffect(() => { fetchUserProjects(); }, [fetchUserProjects, activeTab]);
-
-  useEffect(() => {
-    pollRef.current = setInterval(() => { fetchUserProjects(true); setLastRefreshed(new Date()); }, 30000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchUserProjects]);
-
-  useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') { fetchUserProjects(true); setLastRefreshed(new Date()); } };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [fetchUserProjects]);
-
-  // ── Find Trending ──────────────────────────────────────────────────────────
+  /* ── Find Trending (OpenAI) ──────────────────────────────────────────────── */
   const handleGenerateTrending = async () => {
-    setIsGeneratingTrending(true);
+    setIsTrendLoading(true);
     try {
       const res  = await fetch('/api/role/projects', {
         method: 'POST',
@@ -160,10 +213,10 @@ export default function Dashboard() {
         showToast(`🔥 Trending: "${p.title}" added!`);
       } else { showToast('No trending project found right now.', false); }
     } catch { showToast('AI scan failed. Try again.', false); }
-    finally   { setIsGeneratingTrending(false); }
+    finally   { setIsTrendLoading(false); }
   };
 
-  // ── Filtering ──────────────────────────────────────────────────────────────
+  /* ── Filtering ───────────────────────────────────────────────────────────── */
   const sourceList = activeTab === 'recommended' ? recommendedProjects : userProjects;
   const filteredProjects = sourceList.filter(p => {
     const q = searchTerm.toLowerCase();
@@ -171,15 +224,16 @@ export default function Dashboard() {
       (p.tags && p.tags.some(t => t.toLowerCase().includes(q)));
     const matchDiff = difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter;
     let matchTab = true;
-    if (activeTab === 'active')     matchTab = p.status === 'active';
-    if (activeTab === 'completed')  matchTab = p.status === 'completed';
-    if (activeTab === 'saved')      matchTab = p.status === 'saved';
+    if (activeTab === 'active')    matchTab = p.status === 'active';
+    if (activeTab === 'completed') matchTab = p.status === 'completed';
+    if (activeTab === 'saved')     matchTab = p.status === 'saved';
     return matchSearch && matchDiff && matchTab;
   });
 
-  const totalXP       = userProjects.reduce((s, p) => s + (p.metrics?.xp || 0), 0);
-  const activeCount   = userProjects.filter(p => p.status === 'active').length;
-  const completedCount= userProjects.filter(p => p.status === 'completed').length;
+  /* local stats fallback when SSE not yet connected */
+  const totalXP        = rtStats.totalXP || userProjects.reduce((s, p) => s + (p.metrics?.xp || 0), 0);
+  const activeCount    = rtStats.activeCount    || userProjects.filter(p => p.status === 'active').length;
+  const completedCount = rtStats.completedCount || userProjects.filter(p => p.status === 'completed').length;
 
   const diffStyle = (d?: string) => {
     if (d === 'Beginner')     return { bar: 'from-emerald-400 to-teal-500',  badge: 'bg-emerald-100 text-emerald-700', btn: 'bg-emerald-600 text-white' };
@@ -187,7 +241,23 @@ export default function Dashboard() {
     return                           { bar: 'from-rose-500   to-red-600',    badge: 'bg-red-100    text-red-700',     btn: 'bg-red-600     text-white' };
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  /* ── handle clicking a card ──────────────────────────────────────────────── */
+  const handleCardClick = (project: Project) => {
+    setSelectedProject(project);
+  };
+
+  /* ── handle "Start This Project" / "Continue" CTA in modal ──────────────── */
+  const handleStartProject = (project: Project) => {
+    setSelectedProject(null);
+    if (['active', 'completed'].includes(project.status || '')) {
+      navigate('/project-workspace', { state: { project, role: selectedRole } });
+    } else {
+      setSelectedProject(project); // keep it open
+      setShowSetupModal(true);
+    }
+  };
+
+  /* ─────────────────────────────────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar activePage="dashboard" />
@@ -204,30 +274,38 @@ export default function Dashboard() {
       <div className="bg-white border-b border-slate-200">
         <div className="px-6 py-5">
           <div className="flex items-center justify-between mb-4">
-            {/* Left: title + live badge */}
+            {/* Left */}
             <div className="flex items-center gap-4">
-              <div className="w-10" /> {/* hamburger space */}
+              <div className="w-10" />
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                     Project Dashboard
                   </h1>
-                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
-                    <Wifi className="w-2.5 h-2.5" /> LIVE
+                  {/* Live SSE indicator */}
+                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${isLive ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                    {isLive
+                      ? <><Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE</>
+                      : <><Wifi className="w-2.5 h-2.5" /> Connecting…</>}
                   </span>
                 </div>
                 <p className="text-slate-500 text-sm">
                   AI-curated for <span className="font-semibold text-indigo-600">{selectedRole}</span>
-                  <span className="text-slate-400 ml-2">· synced {lastRefreshed.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+                  <span className="text-slate-400 ml-2">· synced {lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  {connectedUsers > 1 && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-slate-400">
+                      <Users className="w-3 h-3" />{connectedUsers} online
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
 
-            {/* Right: actions */}
+            {/* Right */}
             <div className="flex items-center gap-2">
               {/* Difficulty pills */}
               <div className="hidden md:flex items-center gap-1">
-                {['All','Beginner','Intermediate','Advanced'].map(d => {
+                {['All', 'Beginner', 'Intermediate', 'Advanced'].map(d => {
                   const active = difficultyFilter === d.toLowerCase();
                   const ds = diffStyle(d === 'All' ? undefined : d);
                   return (
@@ -246,19 +324,19 @@ export default function Dashboard() {
               </button>
 
               {/* Find Trending */}
-              <button onClick={handleGenerateTrending} disabled={isGeneratingTrending}
+              <button onClick={handleGenerateTrending} disabled={isTrendLoading}
                 className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-500/20 transition-all disabled:opacity-70">
-                {isGeneratingTrending
-                  ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Scanning...</>
+                {isTrendLoading
+                  ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Scanning…</>
                   : <><TrendingUp className="w-3.5 h-3.5" /> Find Trending</>}
               </button>
             </div>
           </div>
 
-          {/* Full-width Search */}
+          {/* Search */}
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="text" placeholder="Search projects by name, skills, or tags..."
+            <input type="text" placeholder="Search projects by name, skills, or tags…"
               value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-colors" />
           </div>
@@ -267,10 +345,11 @@ export default function Dashboard() {
         {/* Stats bar */}
         <div className="px-6 py-2 border-t border-slate-100 flex items-center gap-6 overflow-x-auto">
           {[
-            { icon: <Layers className="w-3.5 h-3.5 text-indigo-600" />, bg: 'bg-indigo-50', label: 'AI Projects', val: recommendedProjects.length, cls: 'text-slate-900' },
-            { icon: <Target className="w-3.5 h-3.5 text-blue-600" />,   bg: 'bg-blue-50',   label: 'Active',       val: activeCount,            cls: 'text-slate-900' },
-            { icon: <CheckCircle className="w-3.5 h-3.5 text-green-600" />, bg: 'bg-green-50', label: 'Completed', val: completedCount,         cls: 'text-slate-900' },
-            { icon: <Zap className="w-3.5 h-3.5 text-amber-600" />,    bg: 'bg-amber-50',   label: 'Total XP',     val: totalXP.toLocaleString(), cls: 'text-amber-600 font-bold' },
+            { icon: <Layers    className="w-3.5 h-3.5 text-indigo-600" />, bg: 'bg-indigo-50', label: 'AI Projects', val: recommendedProjects.length, cls: 'text-slate-900' },
+            { icon: <Target    className="w-3.5 h-3.5 text-blue-600"   />, bg: 'bg-blue-50',   label: 'Active',      val: activeCount,               cls: 'text-slate-900' },
+            { icon: <CheckCircle className="w-3.5 h-3.5 text-green-600" />, bg: 'bg-green-50', label: 'Completed',   val: completedCount,            cls: 'text-slate-900' },
+            { icon: <Zap       className="w-3.5 h-3.5 text-amber-600"  />, bg: 'bg-amber-50',  label: 'Total XP',    val: totalXP.toLocaleString(),  cls: 'text-amber-600 font-bold' },
+            { icon: <Activity  className="w-3.5 h-3.5 text-purple-600" />, bg: 'bg-purple-50', label: 'Live Users',  val: connectedUsers || '–',     cls: 'text-purple-600' },
           ].map((s, i) => (
             <div key={i} className="flex items-center gap-2 flex-shrink-0">
               <div className={`w-6 h-6 rounded-md ${s.bg} flex items-center justify-center`}>{s.icon}</div>
@@ -278,18 +357,18 @@ export default function Dashboard() {
                 <div className="text-[10px] text-slate-400 leading-none">{s.label}</div>
                 <div className={`text-sm font-bold ${s.cls}`}>{s.val}</div>
               </div>
-              {i < 3 && <div className="w-px h-6 bg-slate-100 ml-2 flex-shrink-0" />}
+              {i < 4 && <div className="w-px h-6 bg-slate-100 ml-2 flex-shrink-0" />}
             </div>
           ))}
         </div>
       </div>
 
       {/* ── MAIN ── */}
-      <div className="flex flex-col min-h-[calc(100vh-140px)]">
+      <div className="flex flex-col min-h-[calc(100vh-145px)]">
 
         {/* Today's Mission Banner */}
         {userProjects.length > 0 && userProjects[0].status === 'active' && (() => {
-          const proj = userProjects[0];
+          const proj   = userProjects[0];
           const modIdx  = proj.progress_data?.currentModuleIndex || 0;
           const taskIdx = proj.progress_data?.currentTaskIndex   || 0;
           const task    = proj.project_data?.curriculum?.[modIdx]?.tasks?.[taskIdx];
@@ -326,7 +405,7 @@ export default function Dashboard() {
                       </div>
                       Start Mission
                     </button>
-                    <p className="text-[10px] text-indigo-400/60">Updated {new Date(proj.last_updated || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</p>
+                    <p className="text-[10px] text-indigo-400/60">Updated {new Date(proj.last_updated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
               </div>
@@ -338,15 +417,17 @@ export default function Dashboard() {
         <div className="bg-white border-b border-slate-200 px-6">
           <div className="flex gap-6">
             {[
-              { id: 'recommended', label: 'For You', count: null },
-              { id: 'active',      label: 'Active',     count: activeCount },
-              { id: 'completed',   label: 'Completed',  count: completedCount },
-              { id: 'saved',       label: 'Saved',      count: userProjects.filter(p=>p.status==='saved').length },
+              { id: 'recommended', label: 'For You',   count: null },
+              { id: 'active',      label: 'Active',    count: activeCount },
+              { id: 'completed',   label: 'Completed', count: completedCount },
+              { id: 'saved',       label: 'Saved',     count: userProjects.filter(p => p.status === 'saved').length },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                 className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
                 {tab.label}
-                {tab.count !== null && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>}
+                {tab.count !== null && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>
+                )}
               </button>
             ))}
           </div>
@@ -374,7 +455,7 @@ export default function Dashboard() {
           {isLoading ? (
             /* Skeleton */
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[1,2,3,4].map(i => (
+              {[1, 2, 3, 4].map(i => (
                 <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse">
                   <div className="h-1.5 bg-gradient-to-r from-indigo-200 to-purple-200" />
                   <div className="p-6 space-y-3">
@@ -391,16 +472,25 @@ export default function Dashboard() {
             <>
               <p className="text-slate-500 text-sm mb-4">
                 Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
-                {activeTab === 'recommended' && <span className="ml-1 text-indigo-600 font-medium">· AI‑personalised for you</span>}
+                {activeTab === 'recommended' && <span className="ml-1 text-indigo-600 font-medium">· AI-personalised for you</span>}
+                {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-green-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {filteredProjects.map(project => {
                   const ds = diffStyle(project.difficulty);
-                  const isUserProj = ['active','completed'].includes(project.status || '');
+                  const isUserProj = ['active', 'completed'].includes(project.status || '');
+                  const completedTasks = project.progress_data?.completedTasks?.length ?? 0;
+                  const totalTasks = project.curriculumStats?.tasks ?? 0;
+                  const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                   return (
-                    <div key={project.id} onClick={() => isUserProj ? navigate('/project-workspace',{state:{project,role:selectedRole}}) : setSelectedProject(project)}
+                    <div
+                      key={project.id}
+                      onClick={() => handleCardClick(project)}
                       className={`bg-white rounded-2xl border overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex flex-col ${highlightProject && project.title === highlightProject ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-lg' : 'border-slate-100 hover:border-indigo-200'}`}>
+
+                      {/* colour top bar */}
                       <div className={`h-1.5 bg-gradient-to-r ${ds.bar}`} />
+
                       <div className="p-5 flex-1">
                         {/* Title row */}
                         <div className="flex items-start justify-between mb-3 gap-2">
@@ -423,19 +513,31 @@ export default function Dashboard() {
 
                         {/* Meta */}
                         <div className="flex items-center gap-3 mb-3 text-sm text-slate-500">
-                          <span className={`font-semibold ${ds.badge.split(' ')[1]}`}>{project.difficulty}</span>
+                          <span className={`font-semibold text-xs px-2 py-0.5 rounded-md ${ds.badge}`}>{project.difficulty}</span>
                           <span>·</span>
                           <span>{project.metrics?.timeEstimate || project.duration}</span>
                           <span>·</span>
                           <span className="font-bold text-green-600">{project.matchScore}% Match</span>
                         </div>
 
-                        <p className="text-slate-500 text-sm line-clamp-2 mb-4">{project.description}</p>
+                        <p className="text-slate-500 text-sm line-clamp-2 mb-3">{project.description}</p>
+
+                        {/* Progress bar for active */}
+                        {project.status === 'active' && totalTasks > 0 && (
+                          <div className="mb-3">
+                            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                              <span>Progress</span><span>{pct}%</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        )}
 
                         {/* Tags */}
                         {project.tags && project.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1.5">
-                            {project.tags.slice(0,4).map(tag => (
+                            {project.tags.slice(0, 4).map(tag => (
                               <span key={tag} className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">{tag}</span>
                             ))}
                           </div>
@@ -446,9 +548,13 @@ export default function Dashboard() {
                       <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
                         <div className="flex items-center gap-3 text-xs text-slate-500">
                           <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-amber-500" />{project.metrics?.xp || 500} XP</span>
-                          <span className="font-semibold text-indigo-600">{project.metrics?.matchIncrease || '+10%'} boost</span>
+                          {project.metrics?.matchIncrease && (
+                            <span className="font-semibold text-indigo-600">{project.metrics.matchIncrease} boost</span>
+                          )}
                         </div>
-                        <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+                        <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-semibold group-hover:gap-2 transition-all">
+                          View Details <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
                   );
@@ -465,187 +571,24 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* ── PROJECT MODAL ── */}
-      {selectedProject && (
-        <div className="fixed inset-0 bg-black/60 flex items-start justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl my-8">
-            {/* Hero */}
-            <div className="relative bg-gradient-to-r from-slate-900 to-indigo-900 text-white p-6 rounded-t-2xl overflow-hidden">
-              <div className="absolute top-3 right-3">
-                <button onClick={() => setSelectedProject(null)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-                  <X className="w-4 h-4 text-white" />
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="px-2.5 py-0.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-[10px] font-bold uppercase">{selectedProject.matchScore}% Match</span>
-                <span className="px-2.5 py-0.5 bg-white/10 text-white border border-white/20 rounded-full text-[10px] font-medium">{selectedRole}</span>
-                {selectedProject.trending && <span className="flex items-center gap-1 px-2.5 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded-full text-[10px] font-bold"><Flame className="w-2.5 h-2.5" /> Trending</span>}
-              </div>
-              <h2 className="text-xl font-bold mb-2">{selectedProject.title}</h2>
-              <p className="text-indigo-100/80 text-sm mb-4">{selectedProject.description}</p>
-              {selectedProject.careerImpact && (
-                <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 mb-2 text-indigo-300 font-bold text-[10px] uppercase tracking-wider"><Flame className="w-3 h-3" /> Career Impact</div>
-                  <div className="grid md:grid-cols-2 gap-1.5">
-                    {selectedProject.careerImpact.map((item, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-gray-100">{item}</div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col lg:flex-row">
-              {/* Left */}
-              <div className="flex-1 p-5 space-y-5">
-                {/* Metrics row */}
-                {selectedProject.metrics && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                      { label: 'Career Match', val: selectedProject.metrics.matchIncrease, cls: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
-                      { label: 'XP Reward',    val: `${selectedProject.metrics.xp} XP`,   cls: 'bg-amber-50  border-amber-100  text-amber-600'  },
-                      { label: 'Est. Time',    val: selectedProject.metrics.timeEstimate,  cls: 'bg-blue-50   border-blue-100   text-blue-600'   },
-                      { label: 'Relevance',    val: selectedProject.metrics.roleRelevance, cls: 'bg-green-50  border-green-100  text-green-600'  },
-                    ].map(m => (
-                      <div key={m.label} className={`rounded-xl p-3 border ${m.cls}`}>
-                        <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-70">{m.label}</div>
-                        <div className="text-sm font-bold text-gray-900">{m.val}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Why recommended */}
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                    <Lightbulb className="w-4 h-4 text-indigo-600" /> Why This Project?
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {selectedProject.whyRecommended?.map((r, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                        <ChevronRight className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />{r}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Skills to develop */}
-                {selectedProject.skillsToDevelop && (
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                      <TrendingUp className="w-4 h-4 text-indigo-600" /> Skills You'll Develop
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProject.skillsToDevelop.map((s, i) => (
-                        <span key={i} className="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-200">{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tools & Languages */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2 uppercase tracking-wide"><Wrench className="w-3.5 h-3.5 text-indigo-600" /> Tools</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedProject.tools?.map((t, i) => <span key={i} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs border border-blue-100">{t}</span>)}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2 uppercase tracking-wide"><Code className="w-3.5 h-3.5 text-indigo-600" /> Languages</h3>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedProject.languages?.map((l, i) => <span key={i} className="px-2 py-1 bg-indigo-50 text-indigo-800 rounded text-xs border border-indigo-100">{l}</span>)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Setup Guide */}
-                {selectedProject.setupGuide && (
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                      <BookOpen className="w-4 h-4 text-amber-600" /> {selectedProject.setupGuide.title || 'Setup Guide'}
-                    </h3>
-                    <ol className="space-y-2">
-                      {selectedProject.setupGuide.steps?.map((step, i) => (
-                        <li key={i} className="flex gap-3">
-                          <span className="flex-shrink-0 w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold">{i+1}</span>
-                          <span className="text-sm text-slate-700">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-
-                {/* Skill Gain */}
-                {selectedProject.skillGainEstimates && selectedProject.skillGainEstimates.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                      <TrendingUp className="w-4 h-4 text-indigo-600" /> Skill Progression
-                    </h3>
-                    <div className="space-y-2.5">
-                      {selectedProject.skillGainEstimates.map((sk, i) => (
-                        <div key={i}>
-                          <div className="flex justify-between text-xs mb-1">
-                            <span className="font-semibold text-slate-700">{sk.skill}</span>
-                            <span className="text-slate-400">{sk.before}% → <span className="text-indigo-600 font-bold">{sk.after}%</span></span>
-                          </div>
-                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-indigo-500 rounded-full" style={{width:`${sk.after}%`}} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Right sidebar */}
-              <div className="lg:w-64 bg-slate-50/70 p-4 space-y-3 border-l border-slate-100 rounded-br-2xl">
-                {/* Start panel */}
-                <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4">
-                  <h3 className="text-indigo-600 font-bold text-sm mb-1 flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Unlock Senior Readiness</h3>
-                  <p className="text-slate-500 text-xs mb-3">Boost your hiring probability by {selectedProject.metrics?.matchIncrease}.</p>
-                  <button onClick={() => setShowSetupModal(true)}
-                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 mb-2">
-                    Start Project <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                  <button className="w-full py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg font-medium text-xs transition-all">
-                    Save for Later
-                  </button>
-                </div>
-
-                {/* Recruiter appeal */}
-                {selectedProject.recruiterAppeal && (
-                  <div className="bg-white rounded-xl border border-slate-100 p-3">
-                    <h4 className="font-bold text-slate-900 text-xs mb-2 flex items-center gap-1.5 uppercase tracking-wide"><Briefcase className="w-3 h-3" /> Recruiter Value</h4>
-                    <ul className="space-y-1.5">
-                      {selectedProject.recruiterAppeal.map((item, i) => (
-                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
-                          <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />{item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Tech stack */}
-                <div className="bg-white rounded-xl border border-slate-100 p-3">
-                  <h4 className="font-bold text-slate-900 text-xs mb-2 uppercase tracking-wide">Tech Stack</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {[...(selectedProject.languages||[]), ...(selectedProject.tools||[])].map((t, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-medium rounded border border-slate-200">{t}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* ── Project Detail Modal ── */}
+      {selectedProject && !showSetupModal && (
+        <ProjectDetailModal
+          project={selectedProject}
+          role={selectedRole}
+          onClose={() => setSelectedProject(null)}
+          onStart={handleStartProject}
+        />
       )}
 
-      {/* Setup Modal */}
-      {selectedProject && (
-        <ProjectSetupModal isOpen={showSetupModal} onClose={() => setShowSetupModal(false)} project={selectedProject} role={selectedRole} />
+      {/* ── Setup / Start Modal ── */}
+      {selectedProject && showSetupModal && (
+        <ProjectSetupModal
+          isOpen={showSetupModal}
+          onClose={() => { setShowSetupModal(false); setSelectedProject(null); }}
+          project={selectedProject}
+          role={selectedRole}
+        />
       )}
     </div>
   );

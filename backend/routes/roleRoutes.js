@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const realtimeRoutes = require('./realtimeRoutes');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
@@ -936,6 +937,9 @@ router.post('/start-project', async (req, res) => {
         );
 
         res.json({ success: true, projectId: result.rows[0].id });
+
+        // ── Real-time broadcast ──────────────────────────────────────────────
+        try { realtimeRoutes.broadcast(String(userId), 'project_update', { projectId: result.rows[0].id, action: 'started' }); } catch (_) {}
     } catch (err) {
         console.error('Error starting project:', err);
         res.status(500).json({ error: 'Failed to start project' });
@@ -958,6 +962,9 @@ router.post('/update-project-progress', async (req, res) => {
             [JSON.stringify(progress), projectId, userId]
         );
         res.json({ success: true });
+
+        // ── Real-time broadcast ──────────────────────────────────────────────
+        try { realtimeRoutes.broadcast(String(userId), 'project_update', { projectId, action: 'progress_updated' }); } catch (_) {}
     } catch (err) {
         console.error('Error updating project progress:', err);
         res.status(500).json({ error: 'Failed to update progress' });
