@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  X, Clock, Calendar, Bell, Mail, Check,
+  X, Calendar, Bell, Mail, Check,
   ChevronRight, BarChart3,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
