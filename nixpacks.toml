@@ -1,0 +1,25 @@
+[phases.setup]
+nixPkgs = ['nodejs_20']
+
+[phases.install]
+cmds = [
+  "npm install --ignore-scripts",
+  "cd client && npm install",
+  "cd backend && npm install"
+]
+cacheDirectories = [
+  "node_modules",
+  "client/node_modules",
+  "backend/node_modules"
+]
+
+[phases.build]
+cmds = [
+  "cd client && npm run build"
+]
+cacheDirectories = [
+  "client/node_modules/.cache"
+]
+
+[start]
+cmd = "node backend/server.js"

@@ -6,7 +6,6 @@
     "install-client": "cd client && npm install",
     "install-server": "cd backend && npm install",
     "build-client": "cd client && npm run build",
-    "postinstall": "npm run install-client && npm run install-server",
     "build": "npm run build-client",
     "start": "node backend/server.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
