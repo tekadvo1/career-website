@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import ProjectSetupModal from './ProjectSetupModal';
 import Sidebar from './Sidebar';
 import { 
@@ -14,7 +14,9 @@ import {
   Briefcase,
   CheckCircle,
   Layers,
-  RotateCcw
+  RotateCcw,
+  Wifi,
+  Sparkles
 } from 'lucide-react';
 
 interface Project {
@@ -98,8 +100,16 @@ export default function Dashboard() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
   const [showSetupModal, setShowSetupModal] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fromMission = location.state?.fromMission;
   const highlightProject = location.state?.highlightProject;
+
+  const showToast = (message: string, type: 'success' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // Fetch Recommended Projects
   useEffect(() => {
@@ -141,44 +151,62 @@ export default function Dashboard() {
     fetchProjects();
   }, [selectedRole, location.state]);
 
-  // Fetch User Active Projects (Real-time DB)
-  useEffect(() => {
-      const fetchUserProjects = async () => {
-          const user = JSON.parse(localStorage.getItem('user') || '{}');
-          if (!user.id) return;
+  // Fetch User Projects - wrapped in useCallback for reuse
+  const fetchUserProjects = useCallback(async (silent = false) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (!user.id) return;
+      try {
+          const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
+          const data = await res.json();
+          if (data.success) {
+               const mappedProjects = data.projects.map((p: any) => {
+                   const projectData = typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data;
+                   const progressData = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
+                   return {
+                       ...projectData,
+                       id: p.id,
+                       title: p.title,
+                       description: p.description,
+                       status: p.status,
+                       last_updated: p.last_updated,
+                       progress_data: progressData,
+                       project_data: projectData,
+                       metrics: { ...projectData.metrics, xp: progressData.xp || 0 }
+                   };
+               });
+               setUserProjects(mappedProjects);
+               if (!silent) setLastRefreshed(new Date());
+          }
+      } catch (e) {
+          console.error("Failed to fetch user projects", e);
+      }
+  }, [selectedRole]);
 
-          try {
-              const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
-              const data = await res.json();
-              if (data.success) {
-                   const mappedProjects = data.projects.map((p: any) => {
-                       const projectData = typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data;
-                       const progressData = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
-                       
-                       return {
-                           ...projectData,
-                           id: p.id,
-                           title: p.title,
-                           description: p.description,
-                           status: p.status,
-                           last_updated: p.last_updated,
-                           progress_data: progressData, // Store complete progress
-                           project_data: projectData, // Store complete data
-                           metrics: {
-                               ...projectData.metrics,
-                               xp: progressData.xp || 0
-                           }
-                       };
-                   });
-                   setUserProjects(mappedProjects);
-              }
-          } catch (e) {
-              console.error("Failed to fetch user projects", e);
+  // Initial fetch + tab-change refresh
+  useEffect(() => {
+      fetchUserProjects();
+  }, [fetchUserProjects, activeTab]);
+
+  // Real-time polling: refresh every 30 seconds
+  useEffect(() => {
+      pollIntervalRef.current = setInterval(() => {
+          fetchUserProjects(true); // silent refresh
+          setLastRefreshed(new Date());
+      }, 30000);
+      return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); };
+  }, [fetchUserProjects]);
+
+  // Auto-refresh when user returns to the tab
+  useEffect(() => {
+      const handleVisibility = () => {
+          if (document.visibilityState === 'visible') {
+              fetchUserProjects(true);
+              setLastRefreshed(new Date());
           }
       };
-
-      fetchUserProjects();
-  }, [selectedRole, activeTab]); // Refresh when tab changes to ensure up-to-date
+      document.addEventListener('visibilitychange', handleVisibility);
+      return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [fetchUserProjects]);
 
   const handleGenerateTrending = async () => {
       setIsGeneratingTrending(true);
@@ -191,18 +219,19 @@ export default function Dashboard() {
 
           const data = await response.json();
           if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-              const newProject = data.data[0];
+              const newProject = { ...data.data[0], trending: true };
               const updatedProjects = [newProject, ...recommendedProjects];
               setRecommendedProjects(updatedProjects);
               localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updatedProjects));
+              setActiveTab('recommended');
               setSelectedProject(newProject);
-              setShowSetupModal(false); 
+              showToast(`🔥 Trending: "${newProject.title}" added!`);
           } else {
-              alert("Could not generate a trending project at this time.");
+              showToast('Could not find a trending project right now.', 'info');
           }
       } catch (error) {
           console.error("Trending generation failed", error);
-          alert("Failed to generate trending project.");
+          showToast('AI trending scan failed. Try again.', 'info');
       } finally {
           setIsGeneratingTrending(false);
       }
@@ -236,6 +265,16 @@ export default function Dashboard() {
       {/* MAIN CONTENT */}
       <div className="flex flex-col min-h-screen">
         
+        {/* Toast Notification */}
+        {toast && (
+            <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${
+                toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'
+            }`}>
+                {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                {toast.message}
+            </div>
+        )}
+
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
             {/* Left: spacer for the hamburger menu (fixed top-left) */}
@@ -243,7 +282,13 @@ export default function Dashboard() {
               <div className="w-10" /> {/* reserve space for hamburger btn */}
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
-                <p className="text-xs text-gray-500">AI-curated projects for <span className="font-semibold text-indigo-600">{selectedRole}</span></p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-500">AI-curated for <span className="font-semibold text-indigo-600">{selectedRole}</span></p>
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">
+                    <Wifi className="w-2.5 h-2.5" /> LIVE
+                  </span>
+                  <span className="text-[10px] text-gray-400">· Updated {lastRefreshed.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
               </div>
             </div>
 
