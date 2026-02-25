@@ -75,9 +75,9 @@ export default function Dashboard() {
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const [searchTerm,    setSearchTerm]    = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [setupProject,    setSetupProject]    = useState<Project | null>(null); // independent state for setup modal
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'>('recommended');
-  const [showSetupModal, setShowSetupModal] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [connectedUsers, setConnectedUsers] = useState(0);
@@ -253,8 +253,9 @@ export default function Dashboard() {
       setSelectedProject(null);
       navigate('/project-workspace', { state: { project, role: selectedRole } });
     } else {
-      // New project → keep selectedProject set, just flip to setup modal
-      setShowSetupModal(true);
+      // New project: close detail modal, open setup modal independently
+      setSelectedProject(null);
+      setSetupProject(project);
     }
   };
 
@@ -573,7 +574,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Project Detail Modal ── */}
-      {selectedProject && !showSetupModal && (
+      {selectedProject && (
         <ProjectDetailModal
           project={selectedProject}
           role={selectedRole}
@@ -582,12 +583,12 @@ export default function Dashboard() {
         />
       )}
 
-      {/* ── Setup / Start Modal ── */}
-      {selectedProject && showSetupModal && (
+      {/* ── Setup Modal — completely independent state ── */}
+      {setupProject && (
         <ProjectSetupModal
-          isOpen={showSetupModal}
-          onClose={() => { setShowSetupModal(false); setSelectedProject(null); }}
-          project={selectedProject}
+          isOpen={true}
+          onClose={() => setSetupProject(null)}
+          project={setupProject}
           role={selectedRole}
         />
       )}
