@@ -1,20 +1,14 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import ProjectSetupModal from './ProjectSetupModal';
+import Sidebar from './Sidebar';
 import { 
   Search, 
   TrendingUp,
   Flame,
   ChevronRight,
   X,
-  Code,
-  BookOpen,
-  Layout,
-  Folder,
   Target,
-  FileText,
-  BarChart,
-  LogOut,
   Zap,
   Clock,
   Briefcase,
@@ -233,96 +227,28 @@ export default function Dashboard() {
     return matchesSearch && matchesDifficulty && matchesTab;
   });
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    // Optional: Keep cache for better UX on return? No, clear for security.
-    localStorage.removeItem('lastRoleAnalysis');
-    navigate('/signin');
-  };
-
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const userName = user.username || "User";
-
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      
-      {/* SIDEBAR */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col hidden md:flex">
-          <div className="p-6">
-              <div className="flex items-center gap-2 mb-8">
-                  <div className="bg-indigo-600 p-1.5 rounded-lg">
-                      <Code className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="font-bold text-lg text-gray-900">Career OS</span>
-              </div>
-              
-              <nav className="space-y-1">
-                  <button 
-                      onClick={() => {
-                          navigate('/missions', { 
-                              state: { role: selectedRole, tab: 'workspace' } 
-                          });
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                      <Layout className="w-4 h-4" /> Workspace
-                  </button>
-                  <button 
-                      onClick={() => {
-                          setActiveTab('recommended');
-                          setSearchTerm('');
-                          setDifficultyFilter('all');
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg transition-colors"
-                  >
-                      <Folder className="w-4 h-4" /> Projects
-                  </button>
-                  <button 
-                      onClick={() => {
-                          navigate('/missions', { state: { role: selectedRole } });
-                      }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                      <Target className="w-4 h-4" /> Missions
-                  </button>
-                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-                      <FileText className="w-4 h-4" /> JD Analyzer
-                  </button>
-                  <button 
-                      onClick={() => setActiveTab('completed')}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                      <BarChart className="w-4 h-4" /> Progress
-                  </button>
-                  <button onClick={() => navigate('/resources')} className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
-                      <BookOpen className="w-4 h-4" /> Resources
-                  </button>
-              </nav>
-          </div>
-          
-          <div className="mt-auto p-4 border-t border-gray-100">
-              <div className="flex items-center gap-3 px-2 py-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                      {userName.substring(0,2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
-                      <p className="text-xs text-gray-500 truncate">{selectedRole}</p>
-                  </div>
-                  <LogOut onClick={handleLogout} className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" />
-              </div>
-          </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+
+      {/* NEW SLIDE-IN SIDEBAR */}
+      <Sidebar activePage="dashboard" />
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col min-h-screen">
         
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
-            <div className="flex items-center gap-4">
-                  <div className="relative w-64">
+            {/* Left: spacer for the hamburger menu (fixed top-left) */}
+            <div className="flex items-center gap-3">
+              <div className="w-10" /> {/* reserve space for hamburger btn */}
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
+                <p className="text-xs text-gray-500">AI-curated projects for <span className="font-semibold text-indigo-600">{selectedRole}</span></p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+                  <div className="relative w-56">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
@@ -332,9 +258,9 @@ export default function Dashboard() {
                       className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
-                  
-                   {/* Refresh Button */}
-                   <button 
+
+                  {/* Refresh Button */}
+                  <button 
                     onClick={() => {
                         const cacheKey = `dashboard_projects_v2_${selectedRole}`;
                         localStorage.removeItem(cacheKey);
@@ -347,7 +273,7 @@ export default function Dashboard() {
                   </button>
 
                   {/* Difficulty Filter */}
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
+                  <div className="hidden md:flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
                       {['All', 'Beginner', 'Intermediate', 'Advanced'].map(diff => (
                           <button
                             key={diff}
@@ -362,7 +288,7 @@ export default function Dashboard() {
                           </button>
                       ))}
                   </div>
-                  
+
                   {/* GENERATE TRENDING BUTTON */}
                   <button 
                     onClick={(e) => {
@@ -380,7 +306,7 @@ export default function Dashboard() {
                      ) : (
                          <>
                             <TrendingUp className="w-3.5 h-3.5" />
-                            Find New Trending Projects
+                            Find Trending
                          </>
                      )}
                   </button>
@@ -589,7 +515,7 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* REDESIGNED PROJECT MODAL */}
+      {/* PROJECT MODAL */}
       {selectedProject && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">

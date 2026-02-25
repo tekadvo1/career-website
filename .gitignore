@@ -11,3 +11,6 @@ yarn-error.log
 .vscode
 *.log
 secret/
+
+# Reference design folder — do NOT push
+website project (1)/

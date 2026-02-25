@@ -147,3 +147,16 @@ CREATE TABLE IF NOT EXISTS resources (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(url) -- Prevent duplicate resources
 );
+
+-- User Achievements Table
+-- Tracks which achievements each user has earned
+CREATE TABLE IF NOT EXISTS user_achievements (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  achievement_id VARCHAR(100) NOT NULL, -- e.g. 'first_steps', 'week_warrior'
+  earned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, achievement_id) -- Each achievement can only be earned once per user
+);
+
+-- Index for fast lookups
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
