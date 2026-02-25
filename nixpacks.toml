@@ -7,15 +7,10 @@ cmds = [
   "cd client && npm install",
   "cd backend && npm install"
 ]
-cacheDirectories = [
-  "node_modules",
-  "client/node_modules",
-  "backend/node_modules"
-]
 
 [phases.build]
 cmds = [
-  "cd client && NODE_OPTIONS=--max-old-space-size=4096 CI=false npm run build"
+  "cd client && NODE_OPTIONS=--max-old-space-size=4096 npm run build"
 ]
 
 [start]
