@@ -248,11 +248,12 @@ export default function Dashboard() {
 
   /* ── handle "Start This Project" / "Continue" CTA in modal ──────────────── */
   const handleStartProject = (project: Project) => {
-    setSelectedProject(null);
     if (['active', 'completed'].includes(project.status || '')) {
+      // Already started → go straight to workspace
+      setSelectedProject(null);
       navigate('/project-workspace', { state: { project, role: selectedRole } });
     } else {
-      setSelectedProject(project); // keep it open
+      // New project → keep selectedProject set, just flip to setup modal
       setShowSetupModal(true);
     }
   };
