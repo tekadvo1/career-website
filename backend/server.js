@@ -1,4 +1,12 @@
-require('dotenv').config(); // Restart server trigger
+require('dotenv').config();
+
+// Catch uncaught errors so the server doesn't die silently
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message, err.stack);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+});
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -111,14 +119,20 @@ const updateSchema = async () => {
 };
 updateSchema();
 
-app.get('/api/health', async (req, res) => {
+// Simple health check - always returns 200 when server is running
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Deep health check with DB - use this for monitoring, not deployment healthcheck
+app.get('/api/health/db', async (req, res) => {
   try {
     const client = await pool.connect();
     const result = await client.query('SELECT NOW()');
     client.release();
     res.json({ status: 'ok', time: result.rows[0].now });
   } catch (err) {
-    console.error(err);
+    console.error('DB health check failed:', err.message);
     res.status(500).json({ status: 'error', message: 'Database connection failed' });
   }
 });
@@ -133,6 +147,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
+  console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`DATABASE_URL set: ${!!process.env.DATABASE_URL}`);
 });
