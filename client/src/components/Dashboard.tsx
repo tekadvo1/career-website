@@ -2,21 +2,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import ProjectSetupModal from './ProjectSetupModal';
 import Sidebar from './Sidebar';
-import { 
-  Search, 
-  TrendingUp,
-  Flame,
-  ChevronRight,
-  X,
-  Target,
-  Zap,
-  Clock,
-  Briefcase,
-  CheckCircle,
-  Layers,
-  RotateCcw,
-  Wifi,
-  Sparkles
+import {
+  Search, TrendingUp, Flame, ChevronRight, X,
+  Target, Zap, Clock, Briefcase, CheckCircle,
+  Layers, RotateCcw, Wifi, Sparkles, Wrench,
+  Code, BookOpen, Lightbulb
 } from 'lucide-react';
 
 interface Project {
@@ -32,31 +22,13 @@ interface Project {
   skillsToDevelop: string[];
   tools: string[];
   languages: string[];
-  setupGuide: {
-    title: string;
-    steps: string[];
-  };
+  setupGuide: { title: string; steps: string[] };
   status?: 'active' | 'completed' | 'saved' | 'none';
-  last_updated?: string; // Added field
-  // New Fields
+  last_updated?: string;
   careerImpact?: string[];
-  metrics?: {
-    matchIncrease: string;
-    xp: number;
-    timeEstimate: string;
-    roleRelevance: string;
-  };
-  skillGainEstimates?: {
-    skill: string;
-    before: number;
-    after: number;
-  }[];
-  curriculumStats?: {
-    modules: number;
-    tasks: number;
-    deployment: boolean;
-    codeReview: boolean;
-  };
+  metrics?: { matchIncrease: string; xp: number; timeEstimate: string; roleRelevance: string };
+  skillGainEstimates?: { skill: string; before: number; after: number }[];
+  curriculumStats?: { modules: number; tasks: number; deployment: boolean; codeReview: boolean };
   recruiterAppeal?: string[];
   progress_data?: any;
   project_data?: any;
@@ -65,726 +37,616 @@ interface Project {
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+
   const selectedRole = location.state?.role || (() => {
     try {
       const saved = localStorage.getItem('lastRoleAnalysis');
-      return saved ? JSON.parse(saved).role : "Software Engineer";
-    } catch (e) {
-      return "Software Engineer";
-    }
+      return saved ? JSON.parse(saved).role : 'Software Engineer';
+    } catch { return 'Software Engineer'; }
   })();
-  
-  // Helper to synchronously get cached projects
+
   const getCachedProjects = () => {
-      try {
-          const cacheKey = `dashboard_projects_v2_${selectedRole}`;
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                  return parsed;
-              }
-          }
-      } catch (e) {
-          console.error("Cache parse error", e);
+    try {
+      const cached = localStorage.getItem(`dashboard_projects_v2_${selectedRole}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return [];
+    } catch { /* ignore */ }
+    return [];
   };
 
   const [recommendedProjects, setRecommendedProjects] = useState<Project[]>(getCachedProjects);
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(() => getCachedProjects().length === 0);
+  const [userProjects, setUserProjects]               = useState<Project[]>([]);
+  const [isLoading, setIsLoading]                     = useState(() => getCachedProjects().length === 0);
   const [isGeneratingTrending, setIsGeneratingTrending] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<'recommended' | 'active' | 'completed' | 'saved'>('recommended');
-  const [showSetupModal, setShowSetupModal] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const fromMission = location.state?.fromMission;
+  const [searchTerm, setSearchTerm]                   = useState('');
+  const [selectedProject, setSelectedProject]         = useState<Project | null>(null);
+  const [difficultyFilter, setDifficultyFilter]       = useState('all');
+  const [activeTab, setActiveTab]                     = useState<'recommended'|'active'|'completed'|'saved'>('recommended');
+  const [showSetupModal, setShowSetupModal]           = useState(false);
+  const [lastRefreshed, setLastRefreshed]             = useState(new Date());
+  const [toast, setToast]                             = useState<{msg: string; ok: boolean}|null>(null);
+  const pollRef                                       = useRef<ReturnType<typeof setInterval>|null>(null);
+  const fromMission    = location.state?.fromMission;
   const highlightProject = location.state?.highlightProject;
 
-  const showToast = (message: string, type: 'success' | 'info' = 'success') => {
-    setToast({ message, type });
+  const showToast = (msg: string, ok = true) => {
+    setToast({ msg, ok });
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch Recommended Projects
+  // ── Fetch recommended projects (AI/cache) ─────────────────────────────────
   useEffect(() => {
-    const fetchProjects = async () => {
-      // Logic for recommended projects cache check is handled by initial state
-      // We only fetch if cache was empty
-      if (recommendedProjects.length > 0) return;
-
+    if (recommendedProjects.length > 0) return;
+    const load = async () => {
       setIsLoading(true);
       try {
         const analysis = location.state?.analysis;
-        let resumeData = "";
+        let resumeData = '';
         if (analysis) {
-            const skills = analysis.skills?.map((s: any) => s.name).join(', ') || "";
-            const tools = analysis.tools?.map((t: any) => t.name).join(', ') || "";
-            resumeData = `Target Role: ${selectedRole}, Skills: ${skills}, Tools: ${tools}`;
+          const skills = analysis.skills?.map((s: any) => s.name).join(', ') || '';
+          const tools  = analysis.tools?.map((t: any) => t.name).join(', ') || '';
+          resumeData = `Target Role: ${selectedRole}, Skills: ${skills}, Tools: ${tools}`;
         }
-
-        const response = await fetch('/api/role/projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role: selectedRole, resumeData: resumeData }),
+        const res  = await fetch('/api/role/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: selectedRole, resumeData }),
         });
-
-        if (!response.ok) throw new Error('Failed to fetch projects');
-
-        const data = await response.json();
+        if (!res.ok) throw new Error('fetch failed');
+        const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
-            setRecommendedProjects(data.data);
-            localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(data.data));
+          setRecommendedProjects(data.data);
+          localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(data.data));
         }
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch { /* silently fail */ }
+      finally { setIsLoading(false); }
     };
-
-    fetchProjects();
-  }, [selectedRole, location.state]);
-
-  // Fetch User Projects - wrapped in useCallback for reuse
-  const fetchUserProjects = useCallback(async (silent = false) => {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (!user.id) return;
-      try {
-          const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
-          const data = await res.json();
-          if (data.success) {
-               const mappedProjects = data.projects.map((p: any) => {
-                   const projectData = typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data;
-                   const progressData = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
-                   return {
-                       ...projectData,
-                       id: p.id,
-                       title: p.title,
-                       description: p.description,
-                       status: p.status,
-                       last_updated: p.last_updated,
-                       progress_data: progressData,
-                       project_data: projectData,
-                       metrics: { ...projectData.metrics, xp: progressData.xp || 0 }
-                   };
-               });
-               setUserProjects(mappedProjects);
-               if (!silent) setLastRefreshed(new Date());
-          }
-      } catch (e) {
-          console.error("Failed to fetch user projects", e);
-      }
+    load();
   }, [selectedRole]);
 
-  // Initial fetch + tab-change refresh
-  useEffect(() => {
-      fetchUserProjects();
-  }, [fetchUserProjects, activeTab]);
-
-  // Real-time polling: refresh every 30 seconds
-  useEffect(() => {
-      pollIntervalRef.current = setInterval(() => {
-          fetchUserProjects(true); // silent refresh
-          setLastRefreshed(new Date());
-      }, 30000);
-      return () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); };
-  }, [fetchUserProjects]);
-
-  // Auto-refresh when user returns to the tab
-  useEffect(() => {
-      const handleVisibility = () => {
-          if (document.visibilityState === 'visible') {
-              fetchUserProjects(true);
-              setLastRefreshed(new Date());
-          }
-      };
-      document.addEventListener('visibilitychange', handleVisibility);
-      return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [fetchUserProjects]);
-
-  const handleGenerateTrending = async () => {
-      setIsGeneratingTrending(true);
-      try {
-          const response = await fetch('/api/role/projects', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ role: selectedRole, type: 'trending' })
-          });
-
-          const data = await response.json();
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-              const newProject = { ...data.data[0], trending: true };
-              const updatedProjects = [newProject, ...recommendedProjects];
-              setRecommendedProjects(updatedProjects);
-              localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updatedProjects));
-              setActiveTab('recommended');
-              setSelectedProject(newProject);
-              showToast(`🔥 Trending: "${newProject.title}" added!`);
-          } else {
-              showToast('Could not find a trending project right now.', 'info');
-          }
-      } catch (error) {
-          console.error("Trending generation failed", error);
-          showToast('AI trending scan failed. Try again.', 'info');
-      } finally {
-          setIsGeneratingTrending(false);
+  // ── Fetch user projects from DB ────────────────────────────────────────────
+  const fetchUserProjects = useCallback(async (silent = false) => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.id) return;
+    try {
+      const res  = await fetch(`/api/role/my-projects?userId=${user.id}&role=${selectedRole}`);
+      const data = await res.json();
+      if (data.success) {
+        const mapped = data.projects.map((p: any) => {
+          const pd = typeof p.project_data  === 'string' ? JSON.parse(p.project_data)  : p.project_data;
+          const pr = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data;
+          return { ...pd, id: p.id, title: p.title, description: p.description, status: p.status,
+            last_updated: p.last_updated, progress_data: pr, project_data: pd,
+            metrics: { ...pd?.metrics, xp: pr?.xp || 0 } };
+        });
+        setUserProjects(mapped);
+        if (!silent) setLastRefreshed(new Date());
       }
+    } catch { /* ignore */ }
+  }, [selectedRole]);
+
+  useEffect(() => { fetchUserProjects(); }, [fetchUserProjects, activeTab]);
+
+  useEffect(() => {
+    pollRef.current = setInterval(() => { fetchUserProjects(true); setLastRefreshed(new Date()); }, 30000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [fetchUserProjects]);
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') { fetchUserProjects(true); setLastRefreshed(new Date()); } };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [fetchUserProjects]);
+
+  // ── Find Trending ──────────────────────────────────────────────────────────
+  const handleGenerateTrending = async () => {
+    setIsGeneratingTrending(true);
+    try {
+      const res  = await fetch('/api/role/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: selectedRole, type: 'trending' }),
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        const p = { ...data.data[0], trending: true };
+        const updated = [p, ...recommendedProjects];
+        setRecommendedProjects(updated);
+        localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updated));
+        setActiveTab('recommended');
+        setSelectedProject(p);
+        showToast(`🔥 Trending: "${p.title}" added!`);
+      } else { showToast('No trending project found right now.', false); }
+    } catch { showToast('AI scan failed. Try again.', false); }
+    finally   { setIsGeneratingTrending(false); }
   };
 
-  // Determine which list to filter
+  // ── Filtering ──────────────────────────────────────────────────────────────
   const sourceList = activeTab === 'recommended' ? recommendedProjects : userProjects;
-
-  const filteredProjects = sourceList.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
-
-    const matchesDifficulty = difficultyFilter === "all" || 
-      project.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
-    
-    let matchesTab = true;
-    if (activeTab === 'active') matchesTab = project.status === 'active';
-    else if (activeTab === 'completed') matchesTab = project.status === 'completed';
-    // saved logic could be implemented similarly
-    
-    return matchesSearch && matchesDifficulty && matchesTab;
+  const filteredProjects = sourceList.filter(p => {
+    const q = searchTerm.toLowerCase();
+    const matchSearch = p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) ||
+      (p.tags && p.tags.some(t => t.toLowerCase().includes(q)));
+    const matchDiff = difficultyFilter === 'all' || p.difficulty?.toLowerCase() === difficultyFilter;
+    let matchTab = true;
+    if (activeTab === 'active')     matchTab = p.status === 'active';
+    if (activeTab === 'completed')  matchTab = p.status === 'completed';
+    if (activeTab === 'saved')      matchTab = p.status === 'saved';
+    return matchSearch && matchDiff && matchTab;
   });
 
-  return (
-    <div className="min-h-screen bg-gray-50">
+  const totalXP       = userProjects.reduce((s, p) => s + (p.metrics?.xp || 0), 0);
+  const activeCount   = userProjects.filter(p => p.status === 'active').length;
+  const completedCount= userProjects.filter(p => p.status === 'completed').length;
 
-      {/* NEW SLIDE-IN SIDEBAR */}
+  const diffStyle = (d?: string) => {
+    if (d === 'Beginner')     return { bar: 'from-emerald-400 to-teal-500',  badge: 'bg-emerald-100 text-emerald-700', btn: 'bg-emerald-600 text-white' };
+    if (d === 'Intermediate') return { bar: 'from-amber-400  to-orange-500', badge: 'bg-amber-100  text-amber-700',   btn: 'bg-amber-600   text-white' };
+    return                           { bar: 'from-rose-500   to-red-600',    badge: 'bg-red-100    text-red-700',     btn: 'bg-red-600     text-white' };
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar activePage="dashboard" />
 
-      {/* MAIN CONTENT */}
-      <div className="flex flex-col min-h-screen">
-        
-        {/* Toast Notification */}
-        {toast && (
-            <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${
-                toast.type === 'success' ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'
-            }`}>
-                {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                {toast.message}
-            </div>
-        )}
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${toast.ok ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
+          {toast.ok ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+          {toast.msg}
+        </div>
+      )}
 
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            {/* Left: spacer for the hamburger menu (fixed top-left) */}
-            <div className="flex items-center gap-3">
-              <div className="w-10" /> {/* reserve space for hamburger btn */}
+      {/* ── HEADER ── */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-between mb-4">
+            {/* Left: title + live badge */}
+            <div className="flex items-center gap-4">
+              <div className="w-10" /> {/* hamburger space */}
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Project Dashboard</h1>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs text-gray-500">AI-curated for <span className="font-semibold text-indigo-600">{selectedRole}</span></p>
-                  <span className="flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    Project Dashboard
+                  </h1>
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
                     <Wifi className="w-2.5 h-2.5" /> LIVE
                   </span>
-                  <span className="text-[10px] text-gray-400">· Updated {lastRefreshed.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                 </div>
+                <p className="text-slate-500 text-sm">
+                  AI-curated for <span className="font-semibold text-indigo-600">{selectedRole}</span>
+                  <span className="text-slate-400 ml-2">· synced {lastRefreshed.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-                  <div className="relative w-56">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search projects..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Refresh Button */}
-                  <button 
-                    onClick={() => {
-                        const cacheKey = `dashboard_projects_v2_${selectedRole}`;
-                        localStorage.removeItem(cacheKey);
-                        window.location.reload();
-                    }}
-                    className="p-2 border border-gray-200 hover:bg-gray-50 rounded-lg text-gray-500 transition-colors"
-                    title="Refresh Recommendations"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-
-                  {/* Difficulty Filter */}
-                  <div className="hidden md:flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
-                      {['All', 'Beginner', 'Intermediate', 'Advanced'].map(diff => (
-                          <button
-                            key={diff}
-                            onClick={() => setDifficultyFilter(diff.toLowerCase())}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                                difficultyFilter === diff.toLowerCase() 
-                                ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' 
-                                : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                          >
-                            {diff}
-                          </button>
-                      ))}
-                  </div>
-
-                  {/* GENERATE TRENDING BUTTON */}
-                  <button 
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        handleGenerateTrending();
-                    }}
-                    disabled={isGeneratingTrending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-600/20 transition-all disabled:opacity-70 disabled:cursor-wait"
-                  >
-                     {isGeneratingTrending ? (
-                         <>
-                            <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Scanning Trends...
-                         </>
-                     ) : (
-                         <>
-                            <TrendingUp className="w-3.5 h-3.5" />
-                            Find Trending
-                         </>
-                     )}
-                  </button>
-            </div>
-        </header>
-
-        {/* TODAY'S MISSION (Real-time from Active Project) */}
-        {userProjects.length > 0 && userProjects[0].status === 'active' && (
-            <div className="px-6 pb-6 pt-2">
-                <div className="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-xl border border-indigo-500/20 group">
-                    {/* Background Effects */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/20 transition-all duration-700"></div>
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-500/10 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="px-2.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-indigo-500/20 flex items-center gap-1.5">
-                                    <Target className="w-3 h-3" /> Today's Mission
-                                </span>
-                                <span className="text-indigo-200 text-xs font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10">
-                                    {userProjects[0].title}
-                                </span>
-                            </div>
-                            
-                            {(() => {
-                                const proj = userProjects[0];
-                                const currentModuleIdx = proj.progress_data?.currentModuleIndex || 0;
-                                const currentTaskIdx = proj.progress_data?.currentTaskIndex || 0;
-                                const curriculum = proj.project_data?.curriculum || [];
-                                const currentModule = curriculum[currentModuleIdx];
-                                const currentTask = currentModule?.tasks[currentTaskIdx];
-
-                                return (
-                                    <>
-                                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
-                                            {currentTask?.title || "Continue Your Project"}
-                                        </h2>
-                                        <p className="text-indigo-100/80 max-w-2xl text-sm leading-relaxed mb-6 line-clamp-2">
-                                            {currentTask?.description || "Ready to make some progress? Jump back in!"}
-                                        </p>
-                                        
-                                        <div className="flex flex-wrap gap-4">
-                                            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5 backdrop-blur-sm">
-                                                <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                                <span className="text-xs font-bold text-gray-200">50 XP Reward</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5 backdrop-blur-sm">
-                                                <Clock className="w-4 h-4 text-blue-400" />
-                                                <span className="text-xs font-bold text-gray-200">
-                                                    {currentTask?.duration || "30m"} Est. Time
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-
-                        <div className="w-full md:w-auto flex flex-col gap-3">
-                            <button 
-                                onClick={() => navigate('/project-workspace', { 
-                                    state: { 
-                                        project: userProjects[0], 
-                                        role: selectedRole
-                                    } 
-                                })}
-                                className="w-full md:w-auto px-8 py-4 bg-white text-indigo-950 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-900/20 group-hover:scale-105 duration-300"
-                            >
-                                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                                     <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-indigo-600 border-b-[5px] border-b-transparent ml-1"></div>
-                                </div>
-                                <span>Start Mission</span>
-                            </button>
-                            <p className="text-center text-[10px] text-indigo-300/60 font-medium">
-                                Last updated: {new Date(userProjects[0].last_updated || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {/* Tabs */}
-        <div className="bg-white border-b border-gray-200 px-6">
-            <div className="flex gap-6">
-                {[
-                    { id: 'recommended', label: 'For You' },
-                    { id: 'active', label: `Active (${userProjects.filter(p => p.status === 'active').length})` },
-                    { id: 'completed', label: `Completed (${userProjects.filter(p => p.status === 'completed').length})` },
-                    { id: 'saved', label: `Saved (${userProjects.filter(p => p.status === 'saved').length})` }
-                ].map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`py-4 text-sm font-medium border-b-2 transition-colors ${
-                            activeTab === tab.id
-                            ? 'border-indigo-600 text-indigo-600'
-                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        }`}
-                    >
-                        {tab.label}
+            {/* Right: actions */}
+            <div className="flex items-center gap-2">
+              {/* Difficulty pills */}
+              <div className="hidden md:flex items-center gap-1">
+                {['All','Beginner','Intermediate','Advanced'].map(d => {
+                  const active = difficultyFilter === d.toLowerCase();
+                  const ds = diffStyle(d === 'All' ? undefined : d);
+                  return (
+                    <button key={d} onClick={() => setDifficultyFilter(d.toLowerCase())}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${active ? (d === 'All' ? 'bg-indigo-600 text-white' : ds.btn) : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                      {d}
                     </button>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Refresh */}
+              <button onClick={() => { localStorage.removeItem(`dashboard_projects_v2_${selectedRole}`); window.location.reload(); }}
+                className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors" title="Refresh AI projects">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              {/* Find Trending */}
+              <button onClick={handleGenerateTrending} disabled={isGeneratingTrending}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg text-xs font-bold shadow-md shadow-indigo-500/20 transition-all disabled:opacity-70">
+                {isGeneratingTrending
+                  ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Scanning...</>
+                  : <><TrendingUp className="w-3.5 h-3.5" /> Find Trending</>}
+              </button>
             </div>
+          </div>
+
+          {/* Full-width Search */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input type="text" placeholder="Search projects by name, skills, or tags..."
+              value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50 focus:bg-white transition-colors" />
+          </div>
         </div>
 
-        {/* Project List */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-             {/* Mission Context Banner */}
-             {fromMission && (
-               <div className="mb-6 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-4">
-                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                   <Target className="w-5 h-5 text-white" />
-                 </div>
-                 <div className="flex-1">
-                   <h3 className="text-sm font-bold text-indigo-900">Mission in Progress</h3>
-                   <p className="text-xs text-indigo-600">
-                     {highlightProject
-                       ? <>Select <strong>"{highlightProject}"</strong> below to start your mission, or pick any project that matches your goals.</>  
-                       : 'Pick a project below to complete your mission and earn XP!'
-                     }
-                   </p>
-                 </div>
-                 <button
-                   onClick={() => navigate('/missions', { state: { role: selectedRole } })}
-                   className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors flex-shrink-0"
-                 >
-                   Back to Missions
-                 </button>
-               </div>
-             )}
+        {/* Stats bar */}
+        <div className="px-6 py-2 border-t border-slate-100 flex items-center gap-6 overflow-x-auto">
+          {[
+            { icon: <Layers className="w-3.5 h-3.5 text-indigo-600" />, bg: 'bg-indigo-50', label: 'AI Projects', val: recommendedProjects.length, cls: 'text-slate-900' },
+            { icon: <Target className="w-3.5 h-3.5 text-blue-600" />,   bg: 'bg-blue-50',   label: 'Active',       val: activeCount,            cls: 'text-slate-900' },
+            { icon: <CheckCircle className="w-3.5 h-3.5 text-green-600" />, bg: 'bg-green-50', label: 'Completed', val: completedCount,         cls: 'text-slate-900' },
+            { icon: <Zap className="w-3.5 h-3.5 text-amber-600" />,    bg: 'bg-amber-50',   label: 'Total XP',     val: totalXP.toLocaleString(), cls: 'text-amber-600 font-bold' },
+          ].map((s, i) => (
+            <div key={i} className="flex items-center gap-2 flex-shrink-0">
+              <div className={`w-6 h-6 rounded-md ${s.bg} flex items-center justify-center`}>{s.icon}</div>
+              <div>
+                <div className="text-[10px] text-slate-400 leading-none">{s.label}</div>
+                <div className={`text-sm font-bold ${s.cls}`}>{s.val}</div>
+              </div>
+              {i < 3 && <div className="w-px h-6 bg-slate-100 ml-2 flex-shrink-0" />}
+            </div>
+          ))}
+        </div>
+      </div>
 
-             {isLoading ? (
-                <div className="flex items-center justify-center h-64">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      {/* ── MAIN ── */}
+      <div className="flex flex-col min-h-[calc(100vh-140px)]">
+
+        {/* Today's Mission Banner */}
+        {userProjects.length > 0 && userProjects[0].status === 'active' && (() => {
+          const proj = userProjects[0];
+          const modIdx  = proj.progress_data?.currentModuleIndex || 0;
+          const taskIdx = proj.progress_data?.currentTaskIndex   || 0;
+          const task    = proj.project_data?.curriculum?.[modIdx]?.tasks?.[taskIdx];
+          return (
+            <div className="px-6 pt-4 pb-2">
+              <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-2xl p-5 relative overflow-hidden shadow-xl border border-indigo-500/20 group">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-indigo-400/20 transition-all duration-700" />
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-indigo-500 text-white text-[10px] font-bold rounded-full uppercase tracking-wider">
+                        <Target className="w-3 h-3" /> Today's Mission
+                      </span>
+                      <span className="text-indigo-300 text-xs font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10">{proj.title}</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-1">{task?.title || 'Continue Your Project'}</h2>
+                    <p className="text-indigo-200/80 text-sm line-clamp-1 mb-3">{task?.description || 'Ready to make progress? Jump back in!'}</p>
+                    <div className="flex gap-3">
+                      <div className="flex items-center gap-1.5 bg-black/20 px-2.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm">
+                        <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-bold text-gray-200">50 XP</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 bg-black/20 px-2.5 py-1 rounded-lg border border-white/5 backdrop-blur-sm">
+                        <Clock className="w-3.5 h-3.5 text-blue-400" />
+                        <span className="text-xs font-bold text-gray-200">{task?.duration || '30m'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <button onClick={() => navigate('/project-workspace', { state: { project: proj, role: selectedRole } })}
+                      className="px-6 py-3 bg-white text-indigo-900 rounded-xl font-bold flex items-center gap-2 hover:bg-indigo-50 transition-all shadow-xl group-hover:scale-105 duration-200 text-sm">
+                      <div className="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[7px] border-l-indigo-600 border-b-[4px] border-b-transparent ml-0.5" />
+                      </div>
+                      Start Mission
+                    </button>
+                    <p className="text-[10px] text-indigo-400/60">Updated {new Date(proj.last_updated || Date.now()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</p>
+                  </div>
                 </div>
-            ) : filteredProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProjects.map((project) => (
-                        <div
-                          key={project.id}
-                          onClick={() => {
-                              if (['active', 'completed'].includes(project.status || '')) {
-                                  navigate('/project-workspace', { 
-                                      state: { 
-                                          project, 
-                                          role: selectedRole
-                                      } 
-                                  });
-                              } else {
-                                  setSelectedProject(project);
-                              }
-                          }}
-                          className={`bg-white rounded-xl border hover:shadow-lg transition-all cursor-pointer group flex flex-col h-full ${
-                            highlightProject && project.title === highlightProject
-                              ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-lg shadow-indigo-100'
-                              : 'border-gray-200 hover:border-indigo-300'
-                          }`}
-                        >
-                          <div className="p-5 flex-1">
-                              <div className="flex justify-between items-start mb-3">
-                                  <div className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${
-                                      project.difficulty === 'Beginner' ? 'bg-green-100 text-green-700' :
-                                      project.difficulty === 'Intermediate' ? 'bg-amber-100 text-amber-700' :
-                                      'bg-red-100 text-red-700'
-                                  }`}>
-                                      {project.difficulty}
-                                  </div>
-                                  {project.trending && (
-                                      <Flame className="w-4 h-4 text-orange-500 fill-orange-100" />
-                                  )}
-                              </div>
-                              <h3 className="font-bold text-gray-900 text-lg mb-2 group-hover:text-indigo-600 transition-colors line-clamp-1">
-                                  {project.title}
-                              </h3>
-                              <p className="text-gray-500 text-sm line-clamp-3 mb-4">
-                                  {project.description}
-                              </p>
-                              {/* Quick Stats in Card */}
-                              <div className="flex gap-4 mb-4 text-xs text-gray-500">
-                                  <div className="flex items-center gap-1">
-                                    <Zap className="w-3 h-3 text-indigo-500" />
-                                    {project.metrics?.xp || 500} XP
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                     <Clock className="w-3 h-3 text-gray-400" />
-                                     {project.metrics?.timeEstimate || project.duration}
-                                  </div>
-                              </div>
-                          </div>
-                          <div className="p-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-gray-50/50 rounded-b-xl">
-                              <span className="font-semibold text-indigo-600">{project.metrics?.matchIncrease || "+10%"} Match Boost</span>
-                              <span className="flex items-center gap-1 font-medium text-green-600">
-                                  {project.matchScore}% Match
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Tabs */}
+        <div className="bg-white border-b border-slate-200 px-6">
+          <div className="flex gap-6">
+            {[
+              { id: 'recommended', label: 'For You', count: null },
+              { id: 'active',      label: 'Active',     count: activeCount },
+              { id: 'completed',   label: 'Completed',  count: completedCount },
+              { id: 'saved',       label: 'Saved',      count: userProjects.filter(p=>p.status==='saved').length },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                {tab.label}
+                {tab.count !== null && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Project Grid */}
+        <main className="flex-1 p-6">
+          {/* Mission context banner */}
+          {fromMission && (
+            <div className="mb-5 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 flex items-center gap-4">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                <Target className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-indigo-900">Mission in Progress</h3>
+                <p className="text-xs text-indigo-600">{highlightProject ? <>Select <strong>"{highlightProject}"</strong> below or pick any matching project.</> : 'Pick a project to earn XP!'}</p>
+              </div>
+              <button onClick={() => navigate('/missions', { state: { role: selectedRole } })}
+                className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors flex-shrink-0">
+                Back to Missions
+              </button>
+            </div>
+          )}
+
+          {isLoading ? (
+            /* Skeleton */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse">
+                  <div className="h-1.5 bg-gradient-to-r from-indigo-200 to-purple-200" />
+                  <div className="p-6 space-y-3">
+                    <div className="flex justify-between"><div className="h-4 bg-slate-200 rounded w-1/4" /><div className="h-4 bg-slate-100 rounded w-16" /></div>
+                    <div className="h-5 bg-slate-200 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-full" />
+                    <div className="h-3 bg-slate-100 rounded w-2/3" />
+                    <div className="flex gap-2 pt-1"><div className="h-6 bg-slate-100 rounded-full w-16" /><div className="h-6 bg-slate-100 rounded-full w-20" /></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProjects.length > 0 ? (
+            <>
+              <p className="text-slate-500 text-sm mb-4">
+                Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
+                {activeTab === 'recommended' && <span className="ml-1 text-indigo-600 font-medium">· AI‑personalised for you</span>}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {filteredProjects.map(project => {
+                  const ds = diffStyle(project.difficulty);
+                  const isUserProj = ['active','completed'].includes(project.status || '');
+                  return (
+                    <div key={project.id} onClick={() => isUserProj ? navigate('/project-workspace',{state:{project,role:selectedRole}}) : setSelectedProject(project)}
+                      className={`bg-white rounded-2xl border overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex flex-col ${highlightProject && project.title === highlightProject ? 'border-indigo-400 ring-2 ring-indigo-300 shadow-lg' : 'border-slate-100 hover:border-indigo-200'}`}>
+                      <div className={`h-1.5 bg-gradient-to-r ${ds.bar}`} />
+                      <div className="p-5 flex-1">
+                        {/* Title row */}
+                        <div className="flex items-start justify-between mb-3 gap-2">
+                          <h2 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug flex-1">
+                            {project.title}
+                          </h2>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                            {project.trending && (
+                              <span className="flex items-center gap-0.5 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-[10px] font-bold">
+                                <Flame className="w-2.5 h-2.5" /> Trending
                               </span>
+                            )}
+                            {isUserProj && (
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${project.status === 'active' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                {project.status === 'active' ? '▶ Active' : '✓ Done'}
+                              </span>
+                            )}
                           </div>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
-                    <p className="text-gray-500">No projects found for this filter.</p>
-                </div>
-            )}
+
+                        {/* Meta */}
+                        <div className="flex items-center gap-3 mb-3 text-sm text-slate-500">
+                          <span className={`font-semibold ${ds.badge.split(' ')[1]}`}>{project.difficulty}</span>
+                          <span>·</span>
+                          <span>{project.metrics?.timeEstimate || project.duration}</span>
+                          <span>·</span>
+                          <span className="font-bold text-green-600">{project.matchScore}% Match</span>
+                        </div>
+
+                        <p className="text-slate-500 text-sm line-clamp-2 mb-4">{project.description}</p>
+
+                        {/* Tags */}
+                        {project.tags && project.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {project.tags.slice(0,4).map(tag => (
+                              <span key={tag} className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Footer */}
+                      <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                          <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-amber-500" />{project.metrics?.xp || 500} XP</span>
+                          <span className="font-semibold text-indigo-600">{project.metrics?.matchIncrease || '+10%'} boost</span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+              <Layers className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+              <p className="text-slate-500 font-medium">No projects match your filter.</p>
+              <p className="text-slate-400 text-sm mt-1">Try adjusting the difficulty or search term.</p>
+            </div>
+          )}
         </main>
       </div>
 
-      {/* PROJECT MODAL */}
+      {/* ── PROJECT MODAL ── */}
       {selectedProject && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl animate-in zoom-in-95 duration-200 my-8">
-            
-            {/* HER0 SECTION */}
-            <div className="relative bg-gradient-to-r from-gray-900 to-indigo-900 text-white p-5 rounded-t-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 p-3">
-                    <button onClick={() => setSelectedProject(null)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
-                        <X className="w-4 h-4 text-white" />
-                    </button>
+        <div className="fixed inset-0 bg-black/60 flex items-start justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-2xl my-8">
+            {/* Hero */}
+            <div className="relative bg-gradient-to-r from-slate-900 to-indigo-900 text-white p-6 rounded-t-2xl overflow-hidden">
+              <div className="absolute top-3 right-3">
+                <button onClick={() => setSelectedProject(null)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                  <X className="w-4 h-4 text-white" />
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="px-2.5 py-0.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-[10px] font-bold uppercase">{selectedProject.matchScore}% Match</span>
+                <span className="px-2.5 py-0.5 bg-white/10 text-white border border-white/20 rounded-full text-[10px] font-medium">{selectedRole}</span>
+                {selectedProject.trending && <span className="flex items-center gap-1 px-2.5 py-0.5 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded-full text-[10px] font-bold"><Flame className="w-2.5 h-2.5" /> Trending</span>}
+              </div>
+              <h2 className="text-xl font-bold mb-2">{selectedProject.title}</h2>
+              <p className="text-indigo-100/80 text-sm mb-4">{selectedProject.description}</p>
+              {selectedProject.careerImpact && (
+                <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-2 text-indigo-300 font-bold text-[10px] uppercase tracking-wider"><Flame className="w-3 h-3" /> Career Impact</div>
+                  <div className="grid md:grid-cols-2 gap-1.5">
+                    {selectedProject.careerImpact.map((item, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-gray-100">{item}</div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="relative z-10">
-                    <div className="flex flex-wrap items-center gap-2 mb-3">
-                        <span className="px-2.5 py-0.5 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            {selectedProject.matchScore}% Match
-                        </span>
-                        <span className="px-2.5 py-0.5 bg-white/10 text-white border border-white/20 rounded-full text-[10px] font-medium">
-                            {selectedRole}
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium border ${
-                             selectedProject.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-200 border-green-500/30' :
-                             selectedProject.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-200 border-amber-500/30' :
-                             'bg-red-500/20 text-red-200 border-red-500/30'
-                        }`}>
-                            {selectedProject.difficulty}
-                        </span>
-                    </div>
-
-                    <h2 className="text-lg md:text-xl font-bold mb-2 text-white">
-                        {selectedProject.title}
-                    </h2>
-                    <p className="text-indigo-100 text-xs max-w-3xl mb-3 leading-relaxed">
-                        {selectedProject.description}
-                    </p>
-
-                    {/* Career Impact Block */}
-                    <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-lg p-3 max-w-2xl">
-                        <div className="flex items-center gap-1.5 mb-2 text-indigo-300 font-bold uppercase text-[10px] tracking-wider">
-                            <Flame className="w-3 h-3" /> Career Impact
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-2">
-                            {selectedProject.careerImpact?.map((impact, i) => (
-                                <div key={i} className="flex items-start gap-2">
-                                    <div className="mt-1 w-1 h-1 rounded-full bg-indigo-400 flex-shrink-0"></div>
-                                    <span className="text-xs text-gray-100 leading-tight">{impact}</span>
-                                </div>
-                            )) || <span className="text-white/60 text-xs">Career impact analysis loading...</span>}
-                        </div>
-                    </div>
-                </div>
+              )}
             </div>
 
             <div className="flex flex-col lg:flex-row">
-                {/* LEFT CONTENT COLUMN */}
-                <div className="flex-1 p-5 space-y-4">
-                    
-                    {/* Metrics Bar */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="bg-indigo-50 rounded-lg p-2.5 border border-indigo-100">
-                            <div className="text-indigo-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Career Match</div>
-                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.matchIncrease || "+12%"}</div>
-                        </div>
-                        <div className="bg-amber-50 rounded-lg p-2.5 border border-amber-100">
-                            <div className="text-amber-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">XP Reward</div>
-                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.xp || 500} XP</div>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-2.5 border border-blue-100">
-                            <div className="text-blue-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Est. Time</div>
-                            <div className="text-base font-bold text-gray-900">{selectedProject.metrics?.timeEstimate || "15 Hours"}</div>
-                        </div>
-                         <div className="bg-green-50 rounded-lg p-2.5 border border-green-100">
-                            <div className="text-green-600 text-[10px] font-bold uppercase tracking-wider mb-0.5">Role Relevance</div>
-                            <div className="text-xs font-bold text-gray-900 pt-0.5 leading-tight">{selectedProject.metrics?.roleRelevance || "High Demand"}</div>
-                        </div>
-                    </div>
+              {/* Left */}
+              <div className="flex-1 p-5 space-y-5">
+                {/* Metrics row */}
+                {selectedProject.metrics && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { label: 'Career Match', val: selectedProject.metrics.matchIncrease, cls: 'bg-indigo-50 border-indigo-100 text-indigo-600' },
+                      { label: 'XP Reward',    val: `${selectedProject.metrics.xp} XP`,   cls: 'bg-amber-50  border-amber-100  text-amber-600'  },
+                      { label: 'Est. Time',    val: selectedProject.metrics.timeEstimate,  cls: 'bg-blue-50   border-blue-100   text-blue-600'   },
+                      { label: 'Relevance',    val: selectedProject.metrics.roleRelevance, cls: 'bg-green-50  border-green-100  text-green-600'  },
+                    ].map(m => (
+                      <div key={m.label} className={`rounded-xl p-3 border ${m.cls}`}>
+                        <div className="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-70">{m.label}</div>
+                        <div className="text-sm font-bold text-gray-900">{m.val}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                    {/* Why Recommended */}
-                    <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                           <Target className="w-4 h-4 text-indigo-600" /> 
-                           Why This Project?
-                        </h3>
-                        <div className="space-y-2">
-                             {selectedProject.whyRecommended.map((reason, index) => (
-                                <div key={index} className="flex items-start gap-2.5">
-                                  <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                                  <span className="text-gray-700 text-sm">{reason}</span>
-                                </div>
-                              ))}
-                        </div>
-                    </div>
-
-                    {/* Skill Gain Estimates */}
-                    <div>
-                        <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2 uppercase tracking-wide">
-                           <TrendingUp className="w-4 h-4 text-indigo-600" />
-                           Skill Progression
-                        </h3>
-                        <div className="space-y-3">
-                            {selectedProject.skillGainEstimates?.map((skill, i) => (
-                                <div key={i}>
-                                    <div className="flex justify-between text-sm mb-1.5">
-                                        <span className="font-semibold text-gray-700">{skill.skill}</span>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-gray-400">{skill.before}%</span>
-                                            <ChevronRight className="w-3 h-3 text-gray-300" />
-                                            <span className="text-indigo-600 font-bold">{skill.after}%</span>
-                                        </div>
-                                    </div>
-                                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
-                                        {/* Background Progress */}
-                                        <div 
-                                            className="absolute top-0 left-0 h-full bg-gray-300" 
-                                            style={{ width: `${skill.before}%` }}
-                                        ></div>
-                                        {/* Gain Progress */}
-                                        <div 
-                                            className="absolute top-0 left-0 h-full bg-indigo-500 opacity-80" 
-                                            style={{ width: `${skill.after}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                            )) || <p className="text-sm text-gray-500">Skill analysis generating...</p>}
-                        </div>
-                    </div>
-
-                    {/* Curriculum Preview */}
-                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                        <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                            <Layers className="w-4 h-4" /> Curriculum Preview
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm">
-                                <span className="block text-gray-400 text-xs">Modules</span>
-                                <span className="font-bold text-gray-900">{selectedProject.curriculumStats?.modules || 5} Modules</span>
-                            </div>
-                            <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm">
-                                <span className="block text-gray-400 text-xs">Hands-on Tasks</span>
-                                <span className="font-bold text-gray-900">{selectedProject.curriculumStats?.tasks || 12} Tasks</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                            {selectedProject.curriculumStats?.deployment && (
-                                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Deployment Included</span>
-                            )}
-                            {selectedProject.curriculumStats?.codeReview && (
-                                <span className="flex items-center gap-1.5"><CheckCircle className="w-4 h-4 text-green-500" /> Code Review Checklist</span>
-                            )}
-                        </div>
-                    </div>
-
+                {/* Why recommended */}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                    <Lightbulb className="w-4 h-4 text-indigo-600" /> Why This Project?
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {selectedProject.whyRecommended?.map((r, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                        <ChevronRight className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />{r}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                {/* RIGHT SIDEBAR COLUMN */}
-                <div className="lg:w-72 bg-gray-50/50 p-4 space-y-3 border-l border-gray-200">
-                    
-                    {/* Start Panel */}
-                    <div className="bg-white rounded-xl shadow-lg border border-indigo-100 p-4">
-                        <h3 className="text-indigo-600 font-bold text-base mb-1 flex items-center gap-2">
-                            <Flame className="w-4 h-4 fill-indigo-100" /> Unlock Senior Readiness
-                        </h3>
-                        <p className="text-gray-500 text-xs mb-4">
-                            Start this project and boost your hiring probability by {selectedProject.metrics?.matchIncrease}.
-                        </p>
-                        
-                        <div className="space-y-2.5">
-                            <button 
-                                onClick={() => setShowSetupModal(true)}
-                                className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 text-xs"
-                            >
-                                Start Project <ChevronRight className="w-4 h-4" />
-                            </button>
-                            <button className="w-full py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-all text-sm">
-                                Save for Later
-                            </button>
-                        </div>
+                {/* Skills to develop */}
+                {selectedProject.skillsToDevelop && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                      <TrendingUp className="w-4 h-4 text-indigo-600" /> Skills You'll Develop
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProject.skillsToDevelop.map((s, i) => (
+                        <span key={i} className="px-3 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-medium border border-green-200">{s}</span>
+                      ))}
                     </div>
+                  </div>
+                )}
 
-                    {/* Recruiter Value Block */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-3">
-                         <div className="flex items-center gap-2 mb-2">
-                             <Briefcase className="w-3.5 h-3.5 text-gray-900" />
-                             <h4 className="font-bold text-gray-900 text-xs uppercase tracking-wide">Recruiter Value</h4>
-                         </div>
-                         <p className="text-[10px] text-gray-400 mb-2.5">What recruiters see after completion:</p>
-                         <ul className="space-y-2">
-                            {selectedProject.recruiterAppeal?.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2 text-xs text-gray-700">
-                                    <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
-                                    {item}
-                                </li>
-                            )) || <li className="text-xs text-gray-400">Loading recruiter data...</li>}
-                         </ul>
+                {/* Tools & Languages */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2 uppercase tracking-wide"><Wrench className="w-3.5 h-3.5 text-indigo-600" /> Tools</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedProject.tools?.map((t, i) => <span key={i} className="px-2 py-1 bg-blue-50 text-blue-800 rounded text-xs border border-blue-100">{t}</span>)}
                     </div>
-
-                    {/* Tech Stack */}
-                     <div className="bg-white rounded-xl border border-gray-200 p-3">
-                        <h4 className="font-bold text-gray-900 text-xs mb-2.5 uppercase tracking-wide">Tech Stack</h4>
-                        <div className="flex flex-wrap gap-1">
-                            {selectedProject.languages.concat(selectedProject.tools).map((tech, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-medium rounded border border-gray-200">
-                                    {tech}
-                                </span>
-                            ))}
-                        </div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-2 flex items-center gap-2 uppercase tracking-wide"><Code className="w-3.5 h-3.5 text-indigo-600" /> Languages</h3>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedProject.languages?.map((l, i) => <span key={i} className="px-2 py-1 bg-indigo-50 text-indigo-800 rounded text-xs border border-indigo-100">{l}</span>)}
                     </div>
-
+                  </div>
                 </div>
+
+                {/* Setup Guide */}
+                {selectedProject.setupGuide && (
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                      <BookOpen className="w-4 h-4 text-amber-600" /> {selectedProject.setupGuide.title || 'Setup Guide'}
+                    </h3>
+                    <ol className="space-y-2">
+                      {selectedProject.setupGuide.steps?.map((step, i) => (
+                        <li key={i} className="flex gap-3">
+                          <span className="flex-shrink-0 w-5 h-5 bg-indigo-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold">{i+1}</span>
+                          <span className="text-sm text-slate-700">{step}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Skill Gain */}
+                {selectedProject.skillGainEstimates && selectedProject.skillGainEstimates.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                      <TrendingUp className="w-4 h-4 text-indigo-600" /> Skill Progression
+                    </h3>
+                    <div className="space-y-2.5">
+                      {selectedProject.skillGainEstimates.map((sk, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="font-semibold text-slate-700">{sk.skill}</span>
+                            <span className="text-slate-400">{sk.before}% → <span className="text-indigo-600 font-bold">{sk.after}%</span></span>
+                          </div>
+                          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-indigo-500 rounded-full" style={{width:`${sk.after}%`}} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right sidebar */}
+              <div className="lg:w-64 bg-slate-50/70 p-4 space-y-3 border-l border-slate-100 rounded-br-2xl">
+                {/* Start panel */}
+                <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-4">
+                  <h3 className="text-indigo-600 font-bold text-sm mb-1 flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Unlock Senior Readiness</h3>
+                  <p className="text-slate-500 text-xs mb-3">Boost your hiring probability by {selectedProject.metrics?.matchIncrease}.</p>
+                  <button onClick={() => setShowSetupModal(true)}
+                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 mb-2">
+                    Start Project <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="w-full py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg font-medium text-xs transition-all">
+                    Save for Later
+                  </button>
+                </div>
+
+                {/* Recruiter appeal */}
+                {selectedProject.recruiterAppeal && (
+                  <div className="bg-white rounded-xl border border-slate-100 p-3">
+                    <h4 className="font-bold text-slate-900 text-xs mb-2 flex items-center gap-1.5 uppercase tracking-wide"><Briefcase className="w-3 h-3" /> Recruiter Value</h4>
+                    <ul className="space-y-1.5">
+                      {selectedProject.recruiterAppeal.map((item, i) => (
+                        <li key={i} className="flex items-start gap-1.5 text-xs text-slate-700">
+                          <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />{item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Tech stack */}
+                <div className="bg-white rounded-xl border border-slate-100 p-3">
+                  <h4 className="font-bold text-slate-900 text-xs mb-2 uppercase tracking-wide">Tech Stack</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {[...(selectedProject.languages||[]), ...(selectedProject.tools||[])].map((t, i) => (
+                      <span key={i} className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-medium rounded border border-slate-200">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-
           </div>
         </div>
       )}
-      {/* SETUP MODAL */}
-      {selectedProject && (
-        <ProjectSetupModal 
-            isOpen={showSetupModal} 
-            onClose={() => setShowSetupModal(false)}
-            project={selectedProject}
-            role={selectedRole}
-        />
-      )}
 
+      {/* Setup Modal */}
+      {selectedProject && (
+        <ProjectSetupModal isOpen={showSetupModal} onClose={() => setShowSetupModal(false)} project={selectedProject} role={selectedRole} />
+      )}
     </div>
   );
 }
