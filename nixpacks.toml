@@ -15,10 +15,7 @@ cacheDirectories = [
 
 [phases.build]
 cmds = [
-  "cd client && npm run build"
-]
-cacheDirectories = [
-  "client/node_modules/.cache"
+  "cd client && NODE_OPTIONS=--max-old-space-size=4096 CI=false npm run build"
 ]
 
 [start]
