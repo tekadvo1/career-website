@@ -246,17 +246,12 @@ export default function Dashboard() {
     setSelectedProject(project);
   };
 
-  /* ── handle "Start This Project" / "Continue" CTA in modal ──────────────── */
+  /* ── handle "Start This Project" CTA in ProjectDetailModal ──────────────── */
   const handleStartProject = (project: Project) => {
-    if (['active', 'completed'].includes(project.status || '')) {
-      // Already started → go straight to workspace
-      setSelectedProject(null);
-      navigate('/project-workspace', { state: { project, role: selectedRole } });
-    } else {
-      // New project: close detail modal, open setup modal independently
-      setSelectedProject(null);
-      setSetupProject(project);
-    }
+    // Always show the schedule setup first — user configures hours, days, OS
+    // then the AI plan generates, then they click Start to go to workspace
+    setSelectedProject(null);
+    setSetupProject(project);
   };
 
   /* ─────────────────────────────────────────────────────────────────────────── */
