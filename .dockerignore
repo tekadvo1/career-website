@@ -1,0 +1,31 @@
+# Dependencies - never copy these, they get installed inside Docker
+node_modules
+client/node_modules
+backend/node_modules
+
+# Build outputs
+client/dist
+client/build
+
+# Environment files - use Railway environment variables instead
+.env
+backend/.env
+**/.env
+
+# Git
+.git
+.gitignore
+
+# Dev tools
+.vscode
+.idea
+*.log
+npm-debug.log*
+
+# Large reference folders
+website project (1)/
+secret/
+
+# Docker itself
+Dockerfile
+.dockerignore
