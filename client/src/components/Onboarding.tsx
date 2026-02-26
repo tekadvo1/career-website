@@ -58,6 +58,25 @@ export default function Onboarding() {
   };
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (isAnalyzing) {
+      setProgress(0);
+      interval = setInterval(() => {
+        setProgress(p => {
+          if (p >= 95) return p;
+          const jump = Math.random() * 15;
+          return Math.min(95, p + jump);
+        });
+      }, 500);
+    } else {
+      setProgress(100);
+      setTimeout(() => setProgress(0), 1000); // reset after a delay when done
+    }
+    return () => clearInterval(interval);
+  }, [isAnalyzing]);
 
   const handleSubmit = async () => {
     if (!role && !file) {
@@ -129,14 +148,14 @@ export default function Onboarding() {
           <>
         {/* Header Section */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold mb-4">
+          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold mb-4">
             <Sparkles className="w-3 h-3 mr-1.5" />
             AI-Powered Matching
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
             Let's Find Your Perfect Match
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-slate-600 text-sm">
             Tell us what you're looking for or upload your resume for instant recommendations.
           </p>
         </div>
@@ -257,19 +276,26 @@ export default function Onboarding() {
               <button 
                 onClick={handleSubmit}
                 disabled={isAnalyzing}
-                className={`flex-1 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'opacity-75 cursor-not-allowed' : ''}`}
+                className={`relative flex-1 overflow-hidden px-5 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
               >
-                {isAnalyzing ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Analyzing...
-                  </>
-                ) : (
-                  file ? 'Analyze Resume & Build Plan' : 'Build My Career Plan'
+                {/* Progress bar background */}
+                {isAnalyzing && (
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-teal-500/50 transition-all duration-300 ease-out z-0" 
+                    style={{ width: `${progress}%` }} 
+                  />
                 )}
+                
+                <div className="relative z-10 flex items-center justify-center">
+                  {isAnalyzing ? (
+                    <>
+                      <Sparkles className="animate-pulse -ml-1 mr-2 h-4 w-4 text-white" />
+                      Analyzing... {Math.round(progress)}%
+                    </>
+                  ) : (
+                    file ? 'Analyze Resume & Build Plan' : 'Build My Career Plan'
+                  )}
+                </div>
               </button>
 
             </div>
@@ -277,15 +303,15 @@ export default function Onboarding() {
 
           {/* RIGHT SIDE: Upload Resume */}
           <div className="flex flex-col">
-            <h2 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
+            <h2 className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
               Upload your resume
             </h2>
             
             <div 
               className={`flex-1 min-h-[200px] border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isDragging 
-                  ? 'border-indigo-500 bg-indigo-50' 
-                  : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+                  ? 'border-emerald-500 bg-emerald-50' 
+                  : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -296,7 +322,7 @@ export default function Onboarding() {
                 type="file" 
                 ref={fileInputRef} 
                 className="hidden" 
-                accept=".pdf,.doc,.docx"
+                accept=".doc,.docx"
                 onChange={handleFileSelect}
               />
               
@@ -341,13 +367,13 @@ export default function Onboarding() {
         )}
 
         {step === 'choose-path' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full md:max-w-4xl max-w-2xl mx-auto flex flex-col items-center">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-teal-500 text-white text-sm font-semibold mb-6 shadow-sm">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold mb-6 shadow-sm">
                 <CheckCircle className="w-4 h-4 mr-2" />
                 Resume Analyzed Successfully
               </div>
-              <h1 className="text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
                 Choose Your Learning Path
               </h1>
               <p className="text-slate-600 text-base">

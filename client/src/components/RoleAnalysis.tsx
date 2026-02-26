@@ -17,7 +17,8 @@ import {
   User, 
   Globe,
   ArrowRight,
-  GitBranch
+  GitBranch,
+  Sparkles
 } from 'lucide-react';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
@@ -37,6 +38,7 @@ export default function RoleAnalysis() {
   /* New Tab State */
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   // Collapse state for day in life
   const [expandedDayItems, setExpandedDayItems] = useState<number[]>([]);
@@ -123,13 +125,10 @@ export default function RoleAnalysis() {
 
         // Try to recover from local storage
         const saved = localStorage.getItem('lastRoleAnalysis');
-        if (saved) {
+        // bypass storage if user explicitly chose a "learningPath"
+        if (saved && !location.state?.learningPath) {
           const parsed = JSON.parse(saved);
-          // Only use if less than 1 hour old and matches current role (if filtered) or just generic valid
-          // We check if the saved role matches the requested role if one was requested
-          // We also check if the cached data has the new 'workflow' structure. If not, we want to re-fetch.
           const hasWorkflow = parsed.analysis && parsed.analysis.workflow && parsed.analysis.workflow.length > 0;
-          
           if (parsed.role === role && (new Date().getTime() - parsed.timestamp < 3600000) && hasWorkflow) {
              console.log("Using analysis from local storage");
              setRoleDataState(getAiRoleData(parsed.analysis, parsed.role));
@@ -140,6 +139,16 @@ export default function RoleAnalysis() {
 
         // If no state and no valid local storage, FETCH from API
         console.log("Fetching analysis from API for:", role);
+
+        // --- Start Progress Bar Simulation for Real-Time feedback ---
+        setLoadingProgress(0);
+        const interval = setInterval(() => {
+           setLoadingProgress(prev => {
+              if (prev >= 95) return prev;
+              const increment = Math.random() * 8; // Random jumps
+              return Math.min(95, prev + increment);
+           });
+        }, 500);
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
         
@@ -160,6 +169,11 @@ export default function RoleAnalysis() {
         }
 
         const data = await response.json();
+        
+        // --- Complete Progress Bar Simulation ---
+        clearInterval(interval);
+        setLoadingProgress(100);
+
         if (data.success && data.data) {
            setRoleDataState(getAiRoleData(data.data, role));
            // Save this new fetch to local storage
@@ -252,13 +266,40 @@ export default function RoleAnalysis() {
     }
   };
 
-  // Guard clause while loading or error
+  // Guard clause while loading
   if (isLoading) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Generating comprehensive role guide...</p>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+          <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center">
+            {/* Animated Icon */}
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-75"></div>
+              <div className="relative bg-emerald-500 rounded-full p-4 shadow-xl flex items-center justify-center text-white">
+                <Sparkles className="w-8 h-8 animate-pulse" />
+              </div>
+            </div>
+
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Analyzing Resume Data</h2>
+            <p className="text-sm text-slate-500 mb-8 text-center">
+              Generating your definitive {location.state?.learningPath === 'expand' ? 'expansion' : 'mastery'} guide for {role}...
+            </p>
+
+            {/* Progress Bar Container */}
+            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
+              <div 
+                className="h-full bg-emerald-500 transition-all duration-300 ease-out flex items-center justify-end"
+                style={{ width: `${loadingProgress}%` }}
+              >
+                {/* Optional shimmer effect on the bar itself */}
+                <div className="w-full h-full bg-white/20"></div>
+              </div>
+            </div>
+
+            {/* Percentage Text */}
+            <div className="w-full flex justify-between items-center text-xs font-bold text-slate-400">
+               <span>Initializing</span>
+               <span className="text-emerald-600 font-extrabold">{Math.floor(loadingProgress)}%</span>
+            </div>
           </div>
         </div>
       );
