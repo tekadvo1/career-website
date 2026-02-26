@@ -549,7 +549,7 @@ export default function ProjectWorkspace() {
               <>
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h2 className="text-xl font-bold text-slate-900">Antigravity Learning Path</h2>
+                    <h2 className="text-xl font-bold text-slate-900">FindStreak Learning Path</h2>
                     <p className="text-sm text-slate-600 mt-1">Step-by-step interactive timeline synced real-time</p>
                   </div>
                   <Badge className="bg-emerald-100 text-emerald-800 border-none shadow-sm">
@@ -731,9 +731,9 @@ export default function ProjectWorkspace() {
 
           {/* Right Column - REAL TIME AI Assistant */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6">
-              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50">
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5">
+            <div className="sticky top-[88px]">
+              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 flex flex-col" style={{ height: 'calc(100vh - 110px)' }}>
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-inner relative">
                       <Sparkles className="w-5 h-5 text-white" />
@@ -748,7 +748,7 @@ export default function ProjectWorkspace() {
                   </div>
                 </div>
 
-                <div className="h-[520px] overflow-y-auto p-5 space-y-5 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-300">
+                <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-300">
                   {messages.map((message) => (
                     <div
                       key={message.id}
@@ -828,7 +828,7 @@ export default function ProjectWorkspace() {
                     </button>
                 </div>
 
-                <div className="p-4 bg-white border-t border-slate-100">
+                <div className="p-4 bg-white border-t border-slate-100 shrink-0">
                   <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-inner">
                     <input
                       ref={inputRef}
