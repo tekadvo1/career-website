@@ -3,45 +3,23 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   CheckCircle2,
-  Calendar,
   TrendingUp,
-  Clock,
   Bell,
   ChevronRight,
   Circle,
   CheckCircle,
   Sparkles,
-  MessageCircle,
-  X,
   Send,
   Lightbulb,
-  Code,
-  BookOpen,
-  Zap,
-  Play,
-  Info,
   FileText,
-  AlertTriangle,
   Star,
-  Award,
-  SearchCheck,
-  Target,
-  BrainCircuit,
-  ListChecks,
 } from "lucide-react";
 
 import { taskGuides } from "./task-guides";
 import { TaskGuideView } from "./TaskGuideView";
 import { RightSidebar } from "./RightSidebar";
 
-// Stub toast, can just use browser alert or custom inline toast if missing
-// Usually there's a global toast, but let's emulate it
-const toast = {
-  success: (msg: any, options?: any) => console.log('Toast:', msg),
-  error: (msg: any, options?: any) => console.error('Toast Error:', msg),
-  // If function is passed:
-  call: (content: any, options?: any) => console.log('Toast Call:', content)
-} as any;
+
 
 // Fallback UI Components since we stripped out ./ui
 function Button({ children, className, ...props }: any) {
@@ -113,7 +91,7 @@ const projectStepsMock: Step[] = [
 export default function ProjectWorkspace() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { project, role, settings, preLoadedCurriculum } = (location.state as any) || {};
+  const { project, role, preLoadedCurriculum } = (location.state as any) || {};
 
   const userString = localStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : {};
@@ -177,16 +155,16 @@ export default function ProjectWorkspace() {
 
   const mapCurriculumToSteps = (curr: any[]): Step[] => {
       return curr.map((mod: any, i: number) => ({
-          id: \`mod-\${i+1}\`,
+          id: `mod-${i+1}`,
           title: mod.title,
           description: mod.description || 'Complete this module to advance your skills.',
           tasks: mod.tasks?.length > 0 
             ? mod.tasks.map((t: any, idx: number) => ({
-                id: \`task-\${i+1}-\${idx+1}\`,
+                id: `task-${i+1}-${idx+1}`,
                 text: t.title || t.text || t.description || t,
                 completed: false
             }))
-            : [ { id: \`task-\${i+1}-1\`, text: \`Review material for \${mod.title}\`, completed: false } ],
+            : [ { id: `task-${i+1}-1`, text: `Review material for ${mod.title}`, completed: false } ],
           resources: ['MDN Web Docs', 'Official Documentation'],
           completed: false,
           expanded: false
@@ -283,7 +261,7 @@ export default function ProjectWorkspace() {
              }
         } else if (project.id) {
             try {
-                const res = await fetch(\`/api/role/my-projects?userId=\${user.id || 1}&role=\${role || ''}\`);
+                const res = await fetch(`/api/role/my-projects?userId=${user.id || 1}&role=${role || ''}`);
                 const data = await res.json();
                 if (data.success && data.projects) {
                     const found = data.projects.find((p: any) => p.id === project.id || p.id === parseInt(project.id));
@@ -421,7 +399,7 @@ export default function ProjectWorkspace() {
     let updatedXp = totalXP;
     if (!wasCompleted) {
         updatedXp += 20;
-        awardXP(20, \`Completed task\`);
+        awardXP(20, `Completed task`);
     } else {
         updatedXp -= 20;
         setTotalXP(updatedXp);
@@ -464,7 +442,7 @@ export default function ProjectWorkspace() {
     let updatedXp = totalXP;
     if (!wasCompleted) {
         updatedXp += 100;
-        awardXP(100, \`Completed module\`);
+        awardXP(100, `Completed module`);
     } else {
         updatedXp -= 100;
         setTotalXP(updatedXp);
@@ -491,7 +469,7 @@ export default function ProjectWorkspace() {
     const nextIncompleteStep = steps.find(s => !s.completed);
     const nextIncompleteTask = nextIncompleteStep?.tasks.find(t => !t.completed);
 
-    const insights = \`📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 \${completedTasks} of \${totalTasks} tasks completed (\${progressPercent}%)\n⭐ Level \${level} with \${totalXP} XP\n🏆 \${completedSteps} of \${steps.length} steps completed\n\n**Next Recommendation:**\n\${nextIncompleteTask ? \`➡️ Focus on: "\${nextIncompleteTask.text}"\` : "🎉 All tasks completed!"}\`;
+    const insights = `📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%)\n⭐ Level ${level} with ${totalXP} XP\n🏆 ${completedSteps} of ${steps.length} steps completed\n\n**Next Recommendation:**\n${nextIncompleteTask ? `➡️ Focus on: "${nextIncompleteTask.text}"` : "🎉 All tasks completed!"}`;
 
     const aiResponse: Message = {
       id: Date.now().toString(),
@@ -507,9 +485,9 @@ export default function ProjectWorkspace() {
     const currentStepTasks = selectedStep?.tasks || [];
     const nextUncompletedTask = currentStepTasks.find(t => !t.completed);
 
-    let hints = \`💡 **Smart Hint AI**\n\n\`;
+    let hints = `💡 **Smart Hint AI**\n\n`;
     if (nextUncompletedTask) {
-      hints += \`**Current Task:** \${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!\`;
+      hints += `**Current Task:** ${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!`;
     }
 
     const aiResponse: Message = {
@@ -572,11 +550,11 @@ export default function ProjectWorkspace() {
                   <div
                     className="h-full bg-gradient-to-r from-yellow-400 to-emerald-500 transition-all duration-500"
                     style={{
-                      width: \`\${
+                      width: `${
                         ((totalXP - getXPForCurrentLevel(level)) /
                           ((getXPForNextLevel(level) - getXPForCurrentLevel(level)) || 1)) *
                         100
-                      }%\`,
+                      }%`,
                     }}
                   ></div>
                 </div>
@@ -601,7 +579,7 @@ export default function ProjectWorkspace() {
             <div className="w-full bg-slate-100 rounded-full h-1.5">
               <div
                 className="bg-emerald-500 h-1.5 rounded-full transition-all duration-700 shadow-sm"
-                style={{ width: \`\${progressPercentage}%\` }}
+                style={{ width: `${progressPercentage}%` }}
               ></div>
             </div>
           </div>
@@ -629,13 +607,13 @@ export default function ProjectWorkspace() {
                   {steps.map((step, index) => (
                     <Card
                       key={step.id}
-                      className={\`border transition-all \${
+                      className={`border transition-all ${
                         step.completed
                           ? "border-emerald-200 bg-emerald-50/20 shadow-md shadow-emerald-100/30"
                           : step.expanded
                           ? "border-emerald-300 bg-white ring-4 ring-emerald-50/50 shadow-md"
                           : "border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm"
-                      }\`}
+                      }`}
                     >
                       <div
                         className="p-5 cursor-pointer"
@@ -643,11 +621,11 @@ export default function ProjectWorkspace() {
                       >
                         <div className="flex items-start gap-4">
                           <div
-                            className={\`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm \${
+                            className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm ${
                               step.completed
                                 ? "bg-emerald-500 text-white"
                                 : "bg-emerald-50 border border-emerald-100 text-emerald-700"
-                            }\`}
+                            }`}
                           >
                             {step.completed ? (
                               <CheckCircle className="w-5 h-5" />
@@ -660,11 +638,11 @@ export default function ProjectWorkspace() {
                             <div className="flex items-start justify-between">
                               <div className="flex-1 mr-4">
                                 <h3
-                                  className={\`text-[17px] font-bold mb-1 line-clamp-1 \${
+                                  className={`text-[17px] font-bold mb-1 line-clamp-1 ${
                                     step.completed
                                       ? "text-emerald-900"
                                       : "text-slate-900"
-                                  }\`}
+                                  }`}
                                 >
                                   {step.title}
                                 </h3>
@@ -673,9 +651,9 @@ export default function ProjectWorkspace() {
                                 </p>
                               </div>
                               <ChevronRight
-                                className={\`w-5 h-5 text-slate-300 transition-transform \${
+                                className={`w-5 h-5 text-slate-300 transition-transform ${
                                   step.expanded ? "rotate-90 text-emerald-500" : ""
-                                }\`}
+                                }`}
                               />
                             </div>
 
@@ -687,7 +665,7 @@ export default function ProjectWorkspace() {
                                 <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
                                     <div 
                                         className="h-full bg-emerald-400 rounded-full" 
-                                        style={{ width: \`\${(step.tasks.filter(t => t.completed).length / (step.tasks.length || 1)) * 100}%\`}} 
+                                        style={{ width: `${(step.tasks.filter(t => t.completed).length / (step.tasks.length || 1)) * 100}%`}} 
                                     />
                                 </div>
                                 <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
@@ -710,11 +688,11 @@ export default function ProjectWorkspace() {
                             {step.tasks.map((task, taskIndex) => (
                               <div
                                 key={task.id}
-                                className={\`flex items-start gap-3 p-3.5 rounded-xl border transition-all hover:-translate-y-0.5 \${
+                                className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all hover:-translate-y-0.5 ${
                                   task.completed
                                     ? "border-emerald-200 bg-emerald-50/50 shadow-sm shadow-emerald-100/20"
                                     : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md shadow-slate-100"
-                                }\`}
+                                }`}
                               >
                                 <div 
                                   className="flex-shrink-0 mt-0.5 cursor-pointer"
@@ -732,11 +710,11 @@ export default function ProjectWorkspace() {
                                 <div className="flex-1">
                                   <div className="flex items-start justify-between gap-4">
                                     <p
-                                      className={\`text-sm leading-relaxed font-medium \${
+                                      className={`text-sm leading-relaxed font-medium ${
                                         task.completed
                                           ? "text-emerald-800 line-through opacity-70"
                                           : "text-slate-700"
-                                      }\`}
+                                      }`}
                                     >
                                       {task.text}
                                     </p>
@@ -769,13 +747,13 @@ export default function ProjectWorkspace() {
                                   alert("Please check off all tasks above to mark the module complete.");
                                 }
                               }}
-                              className={\`shadow-sm transition-all \${
+                              className={`shadow-sm transition-all ${
                                 step.completed
                                   ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
                                   : step.tasks.every((t) => t.completed)
                                   ? "bg-emerald-600 text-white hover:bg-emerald-700"
                                   : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                              }\`}
+                              }`}
                               disabled={!step.tasks.every((t) => t.completed) && !step.completed}
                             >
                               {step.completed ? (
@@ -847,9 +825,9 @@ export default function ProjectWorkspace() {
                   {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={\`flex gap-3 \${
+                      className={`flex gap-3 ${
                         message.role === "user" ? "justify-end" : "justify-start"
-                      }\`}
+                      }`}
                     >
                       {message.role === "assistant" && (
                         <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
@@ -857,13 +835,13 @@ export default function ProjectWorkspace() {
                         </div>
                       )}
                       
-                      <div className={\`flex flex-col max-w-[85%] \${message.role === "user" ? "items-end" : "items-start"}\`}>
+                      <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
                         <div
-                          className={\`rounded-2xl \${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm \${
+                          className={`rounded-2xl ${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm ${
                             message.role === "assistant"
                               ? "bg-white text-slate-700 border border-slate-100"
                               : "bg-emerald-600 text-white"
-                          }\`}
+                          }`}
                         >
                           <p className="text-[14px] whitespace-pre-wrap leading-relaxed">
                             {message.content}
