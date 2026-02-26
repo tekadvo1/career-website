@@ -29,9 +29,17 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
             projectTitle: projectTitle || 'Project',
             currentTask: task?.text
           },
-          role: 'Software Engineer'
+          role: 'Software Engineer',
+          responseFormat: 'json'
         })
       });
+
+      if (!response.ok) {
+         const errText = await response.text();
+         console.error("AI API Error:", errText);
+         throw new Error(`Server returned ${response.status}: ${errText.slice(0, 100)}`);
+      }
+
       const data = await response.json();
       const match = data.reply.match(/\{[\s\S]*\}/);
       const parsed = match ? JSON.parse(match[0]) : null;
@@ -46,10 +54,11 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
           troubleshooting: []
         });
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("TaskGuideView fetch error:", err);
       setGuide({
         title: task?.text,
-        overview: "Network error loading this guide. Check your connection or ask the AI in the sidebar.",
+        overview: `Network or generation error: ${err.message || 'Unknown error'}. Check your connection or ask the AI in the sidebar.`,
         steps: [],
         tips: [],
         troubleshooting: []

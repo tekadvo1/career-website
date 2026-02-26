@@ -46,15 +46,21 @@ router.post('/chat', async (req, res) => {
             Be encouraging, professional, and helpful.`;
         }
 
-        const completion = await openai.chat.completions.create({
+        const requestOptions = {
             model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: message }
             ],
-            max_tokens: 500,
+            max_tokens: 2500,
             temperature: 0.7,
-        });
+        };
+
+        if (req.body.responseFormat === 'json' || message.includes('Format exactly as JSON')) {
+            requestOptions.response_format = { type: "json_object" };
+        }
+
+        const completion = await openai.chat.completions.create(requestOptions);
 
         const reply = completion.choices[0].message.content;
 
