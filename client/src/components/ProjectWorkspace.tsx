@@ -13,7 +13,6 @@ import {
   Lightbulb,
   FileText,
   Star,
-  BookOpen,
 } from "lucide-react";
 
 import { TaskGuideView } from "./TaskGuideView";
@@ -709,20 +708,7 @@ export default function ProjectWorkspace() {
                             ))}
                           </div>
 
-                          <div className="mb-6 space-y-3 border-t border-slate-100 pt-6">
-                               <h4 className="text-[14px] font-bold text-slate-800 mb-3 flex items-center gap-2">
-                                <BookOpen className="w-4 h-4 text-slate-500" /> Helpful Resources
-                               </h4>
-                               {step.resources?.map((r: any, rIndex: number) => {
-                                 const name = r.name || r;
-                                 const url = r.url || '#';
-                                 return (
-                                   <a key={rIndex} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[#00875a] hover:underline font-medium">
-                                      <ChevronRight className="w-3.5 h-3.5" /> {name}
-                                   </a>
-                                 );
-                               })}
-                          </div>
+
 
                           <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
                              <Button
