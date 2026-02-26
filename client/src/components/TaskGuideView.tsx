@@ -6,60 +6,60 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
   const [guide, setGuide] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchGuide = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: `Generate a detailed step-by-step guide for the task: "${task?.text}". 
-            Format exactly as JSON:
-            {
-              "title": "Task Title",
-              "overview": "Brief overview...",
-              "steps": [
-                { "title": "...", "description": "...", "code": "...or null" }
-              ],
-              "tips": ["..."],
-              "troubleshooting": ["..."]
-            }`,
-            context: {
-              type: 'project',
-              projectTitle: projectTitle || 'Project',
-              currentTask: task?.text
-            },
-            role: 'Software Engineer'
-          })
-        });
-        const data = await response.json();
-        const match = data.reply.match(/\{[\s\S]*\}/);
-        const parsed = match ? JSON.parse(match[0]) : null;
-        if (parsed) {
-          setGuide(parsed);
-        } else {
-          setGuide({
-            title: task?.text,
-            overview: "We couldn't generate a guide dynamically. Please try again or ask the AI in the sidebar.",
-            steps: [],
-            tips: [],
-            troubleshooting: []
-          });
-        }
-      } catch (err) {
+  const fetchGuide = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Generate a detailed step-by-step guide for the task: "${task?.text}". 
+          Format exactly as JSON:
+          {
+            "title": "Task Title",
+            "overview": "Brief overview...",
+            "steps": [
+              { "title": "...", "description": "...", "code": "...or null" }
+            ],
+            "tips": ["..."],
+            "troubleshooting": ["..."]
+          }`,
+          context: {
+            type: 'project',
+            projectTitle: projectTitle || 'Project',
+            currentTask: task?.text
+          },
+          role: 'Software Engineer'
+        })
+      });
+      const data = await response.json();
+      const match = data.reply.match(/\{[\s\S]*\}/);
+      const parsed = match ? JSON.parse(match[0]) : null;
+      if (parsed) {
+        setGuide(parsed);
+      } else {
         setGuide({
           title: task?.text,
-          overview: "Network error loading this guide. Check your connection or ask the AI in the sidebar.",
+          overview: "We couldn't generate a guide dynamically. Please try again or ask the AI in the sidebar.",
           steps: [],
           tips: [],
           troubleshooting: []
         });
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      setGuide({
+        title: task?.text,
+        overview: "Network error loading this guide. Check your connection or ask the AI in the sidebar.",
+        steps: [],
+        tips: [],
+        troubleshooting: []
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchGuide();
   }, [task, projectTitle]);
 
@@ -106,6 +106,15 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
         <div className="mb-8">
           <h3 className="flex items-center gap-2 text-[#00875a] text-lg font-bold mb-3"><Info className="w-5 h-5"/> Overview</h3>
           <p className="text-slate-700 leading-relaxed text-[15px]">{guide.overview}</p>
+          
+          {(guide.overview.includes('Network error') || guide.overview.includes("couldn't generate")) && (
+             <button 
+               onClick={fetchGuide}
+               className="mt-6 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors border border-slate-200 shadow-sm"
+             >
+               Try Reloading AI Guide
+             </button>
+          )}
         </div>
 
         {/* Steps */}
