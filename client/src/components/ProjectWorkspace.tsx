@@ -543,7 +543,7 @@ export default function ProjectWorkspace() {
       {/* Main Content - Two Column Layout */}
       <div className="px-6 py-8 h-[calc(100vh-68px)] flex flex-col md:flex-row max-w-[1600px] mx-auto overflow-hidden">
         {/* Left Column - Step-by-Step Guide OR Task Guide View */}
-        <div className="w-full md:w-2/3 lg:w-3/4 pr-0 md:pr-8 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
+        <div className="w-full md:w-3/5 lg:w-[55%] pr-0 md:pr-8 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
             {!showGuideView ? (
               <>
                 <div className="flex items-center justify-between mb-2">
@@ -729,7 +729,7 @@ export default function ProjectWorkspace() {
           </div>
 
           {/* Right Column - REAL TIME AI Assistant */}
-          <div className="w-full md:w-1/3 lg:w-1/4 h-full hidden md:block">
+          <div className="w-full md:w-2/5 lg:w-[45%] h-full hidden md:block">
             <div className="h-full relative">
               <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 flex flex-col absolute inset-0">
                 <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5 shrink-0">
