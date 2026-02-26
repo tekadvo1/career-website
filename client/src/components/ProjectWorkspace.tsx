@@ -607,28 +607,28 @@ export default function ProjectWorkspace() {
                   {steps.map((step, index) => (
                     <Card
                       key={step.id}
-                      className={`border transition-all ${
+                      className={`transition-all overflow-hidden ${
                         step.completed
-                          ? "border-emerald-200 bg-emerald-50/20 shadow-md shadow-emerald-100/30"
+                          ? "border border-emerald-300 bg-emerald-50/20 shadow-sm"
                           : step.expanded
-                          ? "border-emerald-300 bg-white ring-4 ring-emerald-50/50 shadow-md"
-                          : "border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm"
+                          ? "border border-[#00875a] bg-white ring-1 ring-[#00875a]/10 shadow-md rounded-xl"
+                          : "border border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm rounded-xl"
                       }`}
                     >
                       <div
                         className="p-5 cursor-pointer"
                         onClick={() => handleStepClick(step.id)}
                       >
-                        <div className="flex items-start gap-4">
+                          <div className="flex items-start gap-3">
                           <div
-                            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
+                            className={`flex-shrink-0 w-8 h-8 mt-0.5 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
                               step.completed
                                 ? "bg-[#00875a] text-white"
                                 : "bg-emerald-100 text-[#00875a]"
                             }`}
                           >
                             {step.completed ? (
-                              <CheckCircle className="w-5 h-5" />
+                              <CheckCircle className="w-4 h-4" />
                             ) : (
                               index + 1
                             )}
@@ -688,10 +688,10 @@ export default function ProjectWorkspace() {
                             {step.tasks.map((task, taskIndex) => (
                               <div
                                 key={task.id}
-                                className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                                className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
                                   task.completed
                                     ? "bg-slate-50 border-slate-100"
-                                    : "bg-white border-emerald-100/50 hover:bg-slate-50/50 hover:border-emerald-200"
+                                    : "bg-white border-emerald-300 hover:bg-emerald-50/30 hover:border-emerald-400 shadow-sm"
                                 }`}
                               >
                                 <div 
@@ -702,13 +702,13 @@ export default function ProjectWorkspace() {
                                   }}
                                 >
                                   {task.completed ? (
-                                    <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50" />
+                                    <CheckCircle2 className="w-[22px] h-[22px] text-emerald-500 fill-emerald-50" />
                                   ) : (
-                                    <Circle className="w-5 h-5" />
+                                    <Circle className="w-[22px] h-[22px] text-slate-300" />
                                   )}
                                 </div>
                                 
-                                <p className={`text-[14px] flex-1 font-medium ${task.completed ? "text-slate-400 line-through" : "text-slate-700"}`}>
+                                <p className={`text-[14px] flex-1 font-medium ${task.completed ? "text-slate-400 line-through" : "text-slate-800"}`}>
                                     {taskIndex + 1}. {task.text}
                                 </p>
 
@@ -717,7 +717,7 @@ export default function ProjectWorkspace() {
                                       e.stopPropagation();
                                       handleTaskClick(task.id);
                                   }}
-                                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#00875a] bg-white hover:bg-emerald-50 rounded border border-[#00875a]/30 transition-colors shadow-sm"
+                                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[#00875a] bg-white hover:bg-emerald-50 rounded-lg border border-emerald-200 transition-colors shadow-sm"
                                 >
                                   <FileText className="w-3.5 h-3.5" />
                                   View Guide
