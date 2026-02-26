@@ -105,11 +105,24 @@ router.post('/guide', async (req, res) => {
 
              Your goal is to be a "Pair Programmer":
              1. Explain the current task concepts clearly.
-             2. If the user asks for code, provide clean, commented, production-ready snippets impacting the specific task.
-             3. If the user shares an error, debug it precisely.
-             4. Do NOT just give the answer—explain WHY so they learn.
+             2. Provide a step-by-step guide to complete this specific task.
+             3. Include clean, commented, production-ready code snippets where helpful.
+             4. Provide Tips and Troubleshooting advice.
              
-             Keep responses focused on the immediate task unless asked otherwise.`;
+             You MUST return your response as a valid JSON object with the following schema:
+             {
+               "title": "Clear title for the task",
+               "overview": "Brief overview of what will be done and why",
+               "steps": [
+                 {
+                   "title": "Step title",
+                   "description": "Detailed explanation of this step",
+                   "code": "Optional code block or command for this step (or null)"
+                 }
+               ],
+               "tips": ["Pro tip 1", "Pro tip 2"],
+               "troubleshooting": ["Common issue 1 and solution", "Common issue 2"]
+             }`;
 
         const requestOptions = {
             model: "gpt-4o-mini",
