@@ -76,7 +76,7 @@ router.post('/analyze', async (req, res) => {
             ${learningPath === 'master' ? 'CRITICAL: The user has chosen the "Develop & Master Current Skills" path. Focus heavily on advanced techniques, best practices, real-world deep problem solving, and becoming an expert in their current technical stack. The workflow, day in life, and skills should reflect a senior/expert deepening their craft.' : ''}
             ${learningPath === 'expand' ? 'CRITICAL: The user has chosen the "Add New Skills & Expand" path. Focus on identifying missing, highly-demanded complementary skills that expand their versatility. The workflow, day in life, and skills should reflect transitioning to a broader role or adopting new trending tools.' : ''}
 
-            Your goal is to make the user FULLY UNDERSTAND what is required and WHY. Do not hold back information. If a role requires 20 skills, list all 20. If it requires 15 tools, list all 15.
+            Your goal is to make the user FULLY UNDERSTAND what is required and WHY, but you must be CONCISE and FAST. Do not generate an exhaustive list. Only provide the TOP 8 most critical skills, tools, and workflow steps. Keep descriptions brief and highly impactful.
             
             Provide the response strictly in JSON format with this structure:
             {

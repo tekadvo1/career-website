@@ -43,6 +43,7 @@ export default function RoleAnalysis() {
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
   const [isDownloading, setIsDownloading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   
   // Collapse state for day in life
   const [expandedDayItems, setExpandedDayItems] = useState<number[]>([]);
@@ -105,6 +106,24 @@ export default function RoleAnalysis() {
     };
   }, []);
 
+  // Loading message rotator
+  useEffect(() => {
+    if (isLoading && !aiAnalysis) {
+      const messages = [
+        "Extracting your skills...",
+        "Mapping career trajectories...",
+        "Generating custom day-in-the-life...",
+        "Finalizing guide..."
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        setLoadingMessage(messages[i % messages.length]);
+        i++;
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [isLoading, aiAnalysis]);
+
   // Effect to load data from location, local storage, or API
   useEffect(() => {
     const fetchData = async () => {
@@ -149,10 +168,10 @@ export default function RoleAnalysis() {
         const interval = setInterval(() => {
            setLoadingProgress(prev => {
               if (prev >= 95) return prev;
-              const increment = Math.random() * 8; // Random jumps
+              const increment = Math.random() * 4; // Slower random jumps
               return Math.min(95, prev + increment);
            });
-        }, 500);
+        }, 800);
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
         
@@ -284,7 +303,7 @@ export default function RoleAnalysis() {
             </div>
 
             <h2 className="text-xl font-bold text-slate-800 mb-2">Analyzing Resume Data</h2>
-            <p className="text-sm text-slate-500 mb-8 text-center">
+            <p className="text-sm text-slate-500 mb-8 text-center px-4">
               Generating your definitive {location.state?.learningPath === 'expand' ? 'expansion' : 'mastery'} guide for {role}...
             </p>
 
@@ -301,7 +320,7 @@ export default function RoleAnalysis() {
 
             {/* Percentage Text */}
             <div className="w-full flex justify-between items-center text-xs font-bold text-slate-400">
-               <span>Initializing</span>
+               <span className="animate-pulse">{loadingMessage}</span>
                <span className="text-emerald-600 font-extrabold">{Math.floor(loadingProgress)}%</span>
             </div>
           </div>
