@@ -196,8 +196,8 @@ export default function Dashboard() {
         const updated = [p, ...recommendedProjects];
         setRecommendedProjects(updated);
         localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updated));
-        setActiveTab('recommended');
-        setSelectedProject(p);
+        setActiveTab('trending');
+        setSelectedProject(null); // Just switch tab, don't open modal yet
         showToast(`🔥 Trending: "${p.title}" added!`);
       } else { showToast('No trending project found right now.', false); }
     } catch { showToast('AI scan failed. Try again.', false); }
