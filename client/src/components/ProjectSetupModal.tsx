@@ -91,18 +91,27 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
   const handleStart = async () => {
     setLoading(true);
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    let dbProjectId = project.id;
+
     if (user.id) {
       try {
-        await fetch('/api/role/start-project', {
+        const res = await fetch('/api/role/start-project', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id, project, role, curriculum }),
         });
-      } catch { /* navigate anyway */ }
+        const data = await res.json();
+        if (data.success && data.projectId) {
+            dbProjectId = data.projectId;
+        }
+      } catch (e) {
+        console.error('Failed to save project', e);
+      }
     }
+    
     navigate('/project-workspace', {
       state: {
-        project,
+        project: { ...project, id: dbProjectId, projectId: dbProjectId },
         role,
         settings: {
           timeCommitment: `${weeklyHours} hours/week`,

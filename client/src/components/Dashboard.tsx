@@ -348,7 +348,13 @@ export default function Dashboard() {
                     <p className="text-emerald-50 text-sm max-w-xl">Complete your daily task to earn XP points and accelerate your career growth!</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <button onClick={() => navigate('/project-workspace', { state: { project: proj, role: selectedRole } })}
+                    <button onClick={() => {
+                        if (['active', 'completed'].includes(proj.status || '')) {
+                           navigate('/project-workspace', { state: { project: proj, role: selectedRole } });
+                        } else {
+                           handleStartProject(proj);
+                        }
+                    }}
                       className="px-6 py-2.5 bg-white text-emerald-700 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-50 transition-all text-sm shadow-sm">
                       Start Mission
                       <ChevronRight className="w-4 h-4" />

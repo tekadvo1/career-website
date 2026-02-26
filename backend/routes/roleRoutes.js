@@ -775,10 +775,10 @@ router.post('/project-details', async (req, res) => {
                         Tech Stack: ${techStack ? techStack.join(', ') : 'Standard Industry Stack'}
                         Weekly Time Commitment: ${timeCommitment || 'Flexible'} hours
 
-                        Task: Create a complete, step-by-step implementation curriculum for this project, tailored to the user's time commitment.
                         - Break it down into 4-6 Logical MODULES.
                         - Each module should have 2-4 TASKS.
                         - Each module MUST have an "estimatedHours" field based on the difficulty and user's pace.
+                        - Each module MUST have a "resources" array containing 2 helpful documentation/reference links specific to the module's tech stack (fields: "name", "url").
                         - For each task, provide:
                             - Title
                             - Description (What strictly needs to be done)
@@ -794,6 +794,9 @@ router.post('/project-details', async (req, res) => {
                                     "id": "module-1",
                                     "title": "Module 1: Setup & Init",
                                     "estimatedHours": "2 hours",
+                                    "resources": [
+                                        { "name": "MDN Web Docs", "url": "https://developer.mozilla.org/" }
+                                    ],
                                     "tasks": [
                                         {
                                             "id": "task-1-1",

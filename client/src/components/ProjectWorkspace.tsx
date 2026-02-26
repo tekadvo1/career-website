@@ -165,7 +165,7 @@ export default function ProjectWorkspace() {
                 completed: false
             }))
             : [ { id: `task-${i+1}-1`, text: `Review material for ${mod.title}`, completed: false } ],
-          resources: ['MDN Web Docs', 'Official Documentation'],
+          resources: mod.resources || [{name: 'MDN Web Docs', url: '#'}, {name: 'Official Documentation', url: '#'}],
           completed: false,
           expanded: false
       }));
@@ -207,26 +207,9 @@ export default function ProjectWorkspace() {
         let loadedSteps: Step[] = [];
 
         // 1. New Project (PreLoaded Curriculum Present, usually directly from setup modal)
-        if (preLoadedCurriculum && !projectId) {
-            try {
-                const res = await fetch('/api/role/start-project', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: user.id || 1,
-                        project: project,
-                        role: role,
-                        curriculum: preLoadedCurriculum
-                    })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    setProjectId(data.projectId);
-                    loadedSteps = mapCurriculumToSteps(preLoadedCurriculum);
-                }
-            } catch (e) {
-                console.error("Failed to start project in DB", e);
-            }
+        if (preLoadedCurriculum) {
+            loadedSteps = mapCurriculumToSteps(preLoadedCurriculum);
+            // projectId has already been created and passed by ProjectSetupModal
         } 
         // 2. Existing Project Resuming
         else if (project.project_data || project.progress_data) {
@@ -730,12 +713,15 @@ export default function ProjectWorkspace() {
                                <h4 className="text-[14px] font-bold text-slate-800 mb-3 flex items-center gap-2">
                                 <BookOpen className="w-4 h-4 text-slate-500" /> Helpful Resources
                                </h4>
-                               <a href="#" className="flex items-center gap-2 text-sm text-[#00875a] hover:underline font-medium">
-                                  <ChevronRight className="w-3.5 h-3.5" /> MDN Web Docs
-                               </a>
-                               <a href="#" className="flex items-center gap-2 text-sm text-[#00875a] hover:underline font-medium">
-                                  <ChevronRight className="w-3.5 h-3.5" /> Official API Reference
-                               </a>
+                               {step.resources?.map((r: any, rIndex: number) => {
+                                 const name = r.name || r;
+                                 const url = r.url || '#';
+                                 return (
+                                   <a key={rIndex} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[#00875a] hover:underline font-medium">
+                                      <ChevronRight className="w-3.5 h-3.5" /> {name}
+                                   </a>
+                                 );
+                               })}
                           </div>
 
                           <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
