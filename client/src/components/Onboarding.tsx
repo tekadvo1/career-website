@@ -141,8 +141,8 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-gray-100 p-4">
-      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10">
+    <div className="min-h-screen w-screen overflow-y-auto flex items-center justify-center bg-gray-100 p-4 py-8 md:py-12">
+      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10 my-auto">
         
         {step === 'input' && (
           <>
@@ -349,7 +349,7 @@ export default function Onboarding() {
                     Drop resume here
                   </p>
                   <p className="text-xs text-gray-500 mb-4">
-                    Support for PDF, DOC, DOCX
+                    Support for DOC, DOCX
                   </p>
                   <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                     Browse Files
