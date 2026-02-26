@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Upload, Sparkles, FileText, X } from 'lucide-react';
+import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -12,6 +12,8 @@ export default function Onboarding() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState<'input' | 'choose-path'>('input');
+  const [analysisData, setAnalysisData] = useState<any>(null);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -90,14 +92,8 @@ export default function Onboarding() {
             localStorage.setItem('user', JSON.stringify(updatedUser));
         }
         
-        navigate('/role-analysis', {
-          state: {
-            role: data.analysis.suggestedRole || role || 'General Career Path',
-            hasResume: true,
-            resumeFileName: file.name,
-            analysis: data.analysis
-          }
-        });
+        setAnalysisData(data.analysis);
+        setStep('choose-path');
       } catch (error: any) {
         console.error('Error analyzing resume:', error);
         alert(`Resume Analysis Failed: ${error.message || 'Unknown error'}. \n\nPlease try entering your desired role manually instead.`);
@@ -128,6 +124,8 @@ export default function Onboarding() {
     <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-gray-100 p-4">
       <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10">
         
+        {step === 'input' && (
+          <>
         {/* Header Section */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-indigo-600 text-white text-xs font-semibold mb-4">
@@ -338,6 +336,148 @@ export default function Onboarding() {
             </p>
           </div>
         </div>
+        </>
+        )}
+
+        {step === 'choose-path' && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-teal-500 text-white text-sm font-semibold mb-6 shadow-sm">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Resume Analyzed Successfully
+              </div>
+              <h1 className="text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
+                Choose Your Learning Path
+              </h1>
+              <p className="text-slate-600 text-base">
+                Based on your resume analysis, how would you like to grow?
+              </p>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
+              <h2 className="text-lg font-bold text-slate-800 mb-4">Your Current Skills</h2>
+              
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-slate-600 mb-2">Technical Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysisData?.technicalSkills?.length > 0 ? analysisData.technicalSkills.map((skill: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-sm font-medium">
+                      {skill}
+                    </span>
+                  )) : (
+                    analysisData?.existingSkills?.slice(0, 5).map((skill: any, idx: number) => (
+                      <span key={idx} className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-sm font-medium">
+                        {skill.name}
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="text-sm font-medium text-slate-600 mb-2">Soft Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysisData?.softSkills?.length > 0 ? analysisData.softSkills.map((skill: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-full text-sm font-medium">
+                      {skill}
+                    </span>
+                  )) : <span className="text-sm text-slate-400">Analysis didn't extract clear soft skills</span>}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm text-slate-700 leading-relaxed">
+                {analysisData?.summary || analysisData?.description || "Your resume shows a strong foundation."}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              {/* Card 1: Master */}
+              <button 
+                onClick={() => {
+                  navigate('/role-analysis', {
+                    state: {
+                      role: analysisData?.suggestedRole || role || 'Expert',
+                      hasResume: true,
+                      resumeFileName: file?.name,
+                      analysis: null, // trigger new fetch
+                      learningPath: 'master' // pass the intent
+                    }
+                  });
+                }}
+                className="group text-left bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-teal-500 hover:shadow-md transition-all flex flex-col items-start"
+              >
+                <div className="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-teal-700 transition-colors">Develop & Master Current Skills</h3>
+                <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+                  Focus on deepening your expertise in the skills you already have. Perfect for strengthening your foundation and becoming an expert.
+                </p>
+                <ul className="space-y-2 mt-auto">
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
+                    Advanced projects in current stack
+                  </li>
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
+                    Best practices & optimization
+                  </li>
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
+                    Real-world problem solving
+                  </li>
+                </ul>
+              </button>
+
+              {/* Card 2: Expand */}
+              <button 
+                onClick={() => {
+                  navigate('/role-analysis', {
+                    state: {
+                      role: analysisData?.suggestedRole || role || 'Next Level Role',
+                      hasResume: true,
+                      resumeFileName: file?.name,
+                      analysis: null, // trigger new fetch
+                      learningPath: 'expand' // pass the intent
+                    }
+                  });
+                }}
+                className="group text-left bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-cyan-500 hover:shadow-md transition-all flex flex-col items-start"
+              >
+                <div className="w-12 h-12 bg-cyan-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm">
+                  <Plus className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">Add New Skills & Expand</h3>
+                <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+                  Learn complementary skills to expand your capabilities. Great for career pivots and becoming more versatile.
+                </p>
+                <ul className="space-y-2 mt-auto">
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
+                    Trending technologies & tools
+                  </li>
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
+                    Cross-functional skills
+                  </li>
+                  <li className="flex items-center text-sm text-slate-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
+                    Industry-demanded expertise
+                  </li>
+                </ul>
+              </button>
+            </div>
+
+            <div className="text-center">
+              <button 
+                onClick={() => setStep('input')}
+                className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

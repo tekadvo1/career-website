@@ -38,6 +38,12 @@ const navItems: NavItem[] = [
     route: '/profile',
   },
   {
+    label: 'Start New Journey',
+    subtitle: 'Analyze new resume',
+    icon: <Sparkles className="w-5 h-5 text-emerald-600" />,
+    route: '/onboarding',
+  },
+  {
     label: 'Role Analysis',
     subtitle: 'AI career insights',
     icon: <Search className="w-5 h-5 text-emerald-600" />,

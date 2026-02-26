@@ -150,7 +150,8 @@ export default function RoleAnalysis() {
             role: role, 
             userId: user.id || null, // Pass userId if logged in
             experienceLevel: location.state?.experienceLevel || 'Beginner', 
-            country: location.state?.country || 'USA'
+            country: location.state?.country || 'USA',
+            learningPath: location.state?.learningPath
           }) 
         });
 

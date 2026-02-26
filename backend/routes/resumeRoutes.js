@@ -119,6 +119,9 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
               "jobGrowth": "e.g. +22% demand",
               "salaryRange": "e.g. $90k - $140k",
               "description": "Professional summary and career trajectory advice based on valid resume data.",
+              "summary": "A short, engaging paragraph summarizing their foundation and expertise (e.g. 'Your resume shows strong foundation in web development with expertise in...').",
+              "technicalSkills": ["List of core technical skills extracted, e.g., JavaScript, React, Node.js"],
+              "softSkills": ["List of core soft skills extracted, e.g., Communication, Problem Solving"],
               "missingSkills": [
                 { "name": "Skill Name", "level": "Required Level", "priority": "High Priority", "timeToLearn": "e.g. 2 weeks", "reason": "Why this is needed for the role" }
               ],
