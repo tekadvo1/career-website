@@ -9,28 +9,17 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
   const fetchGuide = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await fetch('/api/ai/guide', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Generate a detailed step-by-step guide for the task: "${task?.text}". 
-          Format exactly as JSON:
-          {
-            "title": "Task Title",
-            "overview": "Brief overview...",
-            "steps": [
-              { "title": "...", "description": "...", "code": "...or null" }
-            ],
-            "tips": ["..."],
-            "troubleshooting": ["..."]
-          }`,
+          message: `Generate a detailed step-by-step guide for the task: "${task?.text}".`,
           context: {
             type: 'project',
             projectTitle: projectTitle || 'Project',
             currentTask: task?.text
           },
-          role: 'Software Engineer',
-          responseFormat: 'json'
+          role: 'Software Engineer'
         })
       });
 

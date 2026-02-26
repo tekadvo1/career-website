@@ -113,6 +113,18 @@ const updateSchema = async () => {
       );
     `);
 
+    // Create task_guides table for caching generated guides
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task_guides (
+        id SERIAL PRIMARY KEY,
+        project_title VARCHAR(255) NOT NULL,
+        task_text TEXT NOT NULL,
+        guide_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(project_title, task_text)
+      );
+    `);
+
     client.release();
     console.log('Schema updated for role caching');
   } catch (err) {
