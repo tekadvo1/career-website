@@ -1,7 +1,7 @@
 
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
-export function TaskGuideView({ taskId, guide, onBack, onMarkComplete }: any) {
+export function TaskGuideView({ guide, onBack, onMarkComplete }: any) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 animate-in slide-in-from-right-4 duration-300">
       <button 

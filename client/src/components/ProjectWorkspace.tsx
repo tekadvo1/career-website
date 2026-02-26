@@ -685,7 +685,7 @@ export default function ProjectWorkspace() {
                             <h4 className="text-[13px] font-bold text-slate-400 tracking-widest uppercase mb-4 ml-1 flex items-center gap-2">
                                 Checkpoint Tasks
                             </h4>
-                            {step.tasks.map((task, taskIndex) => (
+                            {step.tasks.map((task) => (
                               <div
                                 key={task.id}
                                 className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all hover:-translate-y-0.5 ${
