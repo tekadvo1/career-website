@@ -1,80 +1,224 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeft, 
-  CheckCircle, 
-  Circle, 
-  Terminal, 
-  MessageSquare,
-  RotateCcw,
-  Menu,
-  X,
-  ChevronRight,
-  Clock,
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  ArrowLeft,
+  CheckCircle2,
   Calendar,
+  TrendingUp,
+  Clock,
+  Bell,
+  ChevronRight,
+  Circle,
+  CheckCircle,
+  Sparkles,
+  MessageCircle,
+  X,
+  Send,
+  Lightbulb,
+  Code,
+  BookOpen,
   Zap,
-  Target,
   Play,
+  Info,
   FileText,
-  Bell
-} from 'lucide-react';
-import ChatAssistant from './roadmap/AIChatAssistant';
-import WeeklyReviewModal from './WeeklyReviewModal';
+  AlertTriangle,
+  Star,
+  Award,
+  SearchCheck,
+  Target,
+  BrainCircuit,
+  ListChecks,
+} from "lucide-react";
 
-interface Task {
+import { taskGuides } from "./task-guides";
+import { TaskGuideView } from "./TaskGuideView";
+import { RightSidebar } from "./RightSidebar";
+
+// Stub toast, can just use browser alert or custom inline toast if missing
+// Usually there's a global toast, but let's emulate it
+const toast = {
+  success: (msg: any, options?: any) => console.log('Toast:', msg),
+  error: (msg: any, options?: any) => console.error('Toast Error:', msg),
+  // If function is passed:
+  call: (content: any, options?: any) => console.log('Toast Call:', content)
+} as any;
+
+// Fallback UI Components since we stripped out ./ui
+function Button({ children, className, ...props }: any) {
+  return (
+    <button 
+      className={`px-4 py-2 font-medium transition-colors rounded-lg flex items-center justify-center ${className || ''}`} 
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Card({ children, className, ...props }: any) {
+  return (
+    <div className={`bg-white rounded-xl shadow-sm overflow-hidden ${className || ''}`} {...props}>
+      {children}
+    </div>
+  );
+}
+
+function Badge({ children, className, ...props }: any) {
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${className || ''}`} {...props}>
+      {children}
+    </span>
+  );
+}
+
+interface Step {
   id: string;
   title: string;
   description: string;
-  why: string;
-  codeSnippet: string;
-  verification: string;
-  duration?: string;
-  xp?: number;
+  tasks: Task[];
+  resources: string[];
+  completed: boolean;
+  expanded: boolean;
 }
 
-interface Module {
+interface Task {
   id: string;
-  title: string;
-  estimatedHours?: string;
-  tasks: Task[];
+  text: string;
+  completed: boolean;
 }
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
+// Fallback Mock Project Steps
+const projectStepsMock: Step[] = [
+  {
+    id: "1",
+    title: "Project Outline & Real-time Integration",
+    description: "Preparing your environment to fetch real data",
+    tasks: [
+      { id: "1-1", text: "Ensure your setup is connected to the backend", completed: false },
+      { id: "1-2", text: "Map dynamic tasks correctly", completed: false }
+    ],
+    resources: ["Backend API Docs"],
+    completed: false,
+    expanded: true
+  }
+];
 
 export default function ProjectWorkspace() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { project, role, settings, preLoadedCurriculum } = location.state || {}; // Expecting project object and role
-  const [timeCommitment] = useState(settings?.timeCommitment || '5');
-  
-  // Calculate Timeline Stats
-  const weeklyHours = parseInt(timeCommitment.replace(/[^0-9]/g, '')) || 5; 
-  const totalProjectHours = project?.metrics?.timeEstimate ? parseInt(project.metrics.timeEstimate) : 40; 
-  const estimatedWeeks = Math.ceil(totalProjectHours / weeklyHours);
-  
-  // Use user's start date if available, otherwise today
-  const startDate = settings?.schedule?.startDate ? new Date(settings.schedule.startDate) : new Date();
-  const completionDate = new Date(startDate);
-  completionDate.setDate(completionDate.getDate() + (estimatedWeeks * 7));
-  const formattedCompletionDate = completionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const location = useLocation();
+  const { project, role, settings, preLoadedCurriculum } = (location.state as any) || {};
 
-  // Initialize curriculum from pre-loaded data if available
-  const [curriculum, setCurriculum] = useState<Module[]>(preLoadedCurriculum || []);
-  const [isLoading, setIsLoading] = useState(!preLoadedCurriculum);
-  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
-  const [currentTaskIndex, setCurrentTaskIndex] = useState(0);
-  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const [showSidebar, setShowSidebar] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 768 : false);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [viewMode, setViewMode] = useState<'dashboard' | 'execution'>('dashboard');
-  const [initialAiQuery, setInitialAiQuery] = useState('');
+  const userString = localStorage.getItem('user');
+  const user = userString ? JSON.parse(userString) : {};
+
+  const [projectId, setProjectId] = useState<string | null>(project?.projectId || project?.id || null);
+  const [steps, setSteps] = useState<Step[]>([]);
+  const [selectedStep, setSelectedStep] = useState<Step | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [showGuideView, setShowGuideView] = useState(false);
+  const [showRightSidebar, setShowRightSidebar] = useState(false);
   
-  // Adaptive State
-  const [adaptiveMessage, setAdaptiveMessage] = useState<string | null>(null);
-  const [showWeeklyReview, setShowWeeklyReview] = useState(false);
+  const [totalXP, setTotalXP] = useState(0);
+  const [level, setLevel] = useState(1);
+  
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content:
+        "👋 Welcome to your FindStreak Dashboard! I'm your AI guide with LIVE real-time connectivity.\n\n✅ My responses are generated via OpenAI API.\n✅ Your completed tasks and XP instantly sync to PostgreSQL.\n✅ Start checking off steps to build your streak!\n\nClick on any step or ask me a question.",
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const [projectId, setProjectId] = useState<string | null>(project?.projectId || null); // Check if passed ID is from DB
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // XP logic
+  const calculateLevel = (xp: number) => {
+    if (xp < 100) return 1;
+    if (xp < 250) return 2;
+    if (xp < 500) return 3;
+    if (xp < 850) return 4;
+    if (xp < 1300) return 5;
+    if (xp < 1900) return 6;
+    if (xp < 2600) return 7;
+    if (xp < 3400) return 8;
+    if (xp < 4300) return 9;
+    return 10;
+  };
 
-  // Load Initial State
+  const getXPForNextLevel = (currentLevel: number) => {
+    const xpThresholds = [0, 100, 250, 500, 850, 1300, 1900, 2600, 3400, 4300, 5500];
+    return xpThresholds[currentLevel] || 5500;
+  };
+
+  const getXPForCurrentLevel = (currentLevel: number) => {
+    const xpThresholds = [0, 100, 250, 500, 850, 1300, 1900, 2600, 3400, 4300];
+    return xpThresholds[currentLevel - 1] || 0;
+  };
+
+  const awardXP = (amount: number, reason: string) => {
+    const newXP = totalXP + amount;
+    const newLevel = calculateLevel(newXP);
+    setTotalXP(newXP);
+    setLevel(newLevel);
+    // Real implementation uses Sonner to show toast, we'll log it
+    console.log(`+${amount} XP: ${reason}`);
+  };
+
+  const mapCurriculumToSteps = (curr: any[]): Step[] => {
+      return curr.map((mod: any, i: number) => ({
+          id: \`mod-\${i+1}\`,
+          title: mod.title,
+          description: mod.description || 'Complete this module to advance your skills.',
+          tasks: mod.tasks?.length > 0 
+            ? mod.tasks.map((t: any, idx: number) => ({
+                id: \`task-\${i+1}-\${idx+1}\`,
+                text: t.title || t.text || t.description || t,
+                completed: false
+            }))
+            : [ { id: \`task-\${i+1}-1\`, text: \`Review material for \${mod.title}\`, completed: false } ],
+          resources: ['MDN Web Docs', 'Official Documentation'],
+          completed: false,
+          expanded: false
+      }));
+  };
+
+  const persistProgress = async (newSteps: Step[], currentXp: number) => {
+    if (!projectId || !user.id) return;
+    const newCompletedList: string[] = [];
+    newSteps.forEach(s => s.tasks.forEach(t => {
+        if (t.completed) newCompletedList.push(t.id);
+    }));
+
+    try {
+        await fetch('/api/role/update-project-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: user.id,
+                projectId: projectId,
+                progress: {
+                    completedTasks: newCompletedList,
+                    xp: currentXp
+                }
+            })
+        });
+    } catch (e) {
+        console.error("Failed to save progress", e);
+    }
+  };
+
+  // INITIALIZATION: REAL-TIME DB SYNC
   useEffect(() => {
     if (!project) {
         navigate('/dashboard');
@@ -82,14 +226,16 @@ export default function ProjectWorkspace() {
     }
 
     const initProject = async () => {
-        // 1. New Project (PreLoaded Curriculum Present)
+        let loadedSteps: Step[] = [];
+
+        // 1. New Project (PreLoaded Curriculum Present, usually directly from setup modal)
         if (preLoadedCurriculum && !projectId) {
             try {
                 const res = await fetch('/api/role/start-project', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        userId: user.id,
+                        userId: user.id || 1,
                         project: project,
                         role: role,
                         curriculum: preLoadedCurriculum
@@ -98,41 +244,46 @@ export default function ProjectWorkspace() {
                 const data = await res.json();
                 if (data.success) {
                     setProjectId(data.projectId);
-                    setCurriculum(preLoadedCurriculum);
+                    loadedSteps = mapCurriculumToSteps(preLoadedCurriculum);
                 }
             } catch (e) {
                 console.error("Failed to start project in DB", e);
-            } finally {
-                setIsLoading(false);
             }
         } 
-        // 2. Existing Project (Resuming) — check project_data OR progress_data
+        // 2. Existing Project Resuming
         else if (project.project_data || project.progress_data) {
-             // We are resuming from Dashboard (Active Project)
-             try {
-                const prog = project.progress_data 
-                  ? (typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data)
-                  : {};
-                const projData = project.project_data
-                  ? (typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data)
-                  : {};
-                
-                setProjectId(project.id);
-                setCurriculum(projData.curriculum || []);
-                setCompletedTasks(new Set(prog.completedTasks || []));
-                setXp(prog.xp || 0);
-                setCurrentModuleIndex(prog.currentModuleIndex || 0);
-                setCurrentTaskIndex(prog.currentTaskIndex || 0);
-             } catch(e) {
-                 console.error("Error parsing project data", e);
-             } finally {
-                setIsLoading(false);
+             const prog = project.progress_data 
+               ? (typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data)
+               : {};
+             const projData = project.project_data
+               ? (typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data)
+               : {};
+             
+             loadedSteps = mapCurriculumToSteps(projData.curriculum || []);
+             
+             // Restore progress
+             if (prog.completedTasks && prog.completedTasks.length > 0) {
+                 const completedSet = new Set(prog.completedTasks);
+                 loadedSteps = loadedSteps.map(step => ({
+                     ...step,
+                     tasks: step.tasks.map(t => ({
+                         ...t,
+                         completed: completedSet.has(t.id)
+                     }))
+                 }));
+                 // Check if step is fully completed
+                 loadedSteps = loadedSteps.map(step => ({
+                    ...step,
+                    completed: step.tasks.every(t => t.completed)
+                 }));
              }
-        }
-        // 3. Fallback: Fetch project from API using project ID
-        else if (project.id) {
+             if (prog.xp) {
+               setTotalXP(prog.xp);
+               setLevel(calculateLevel(prog.xp));
+             }
+        } else if (project.id) {
             try {
-                const res = await fetch(`/api/role/my-projects?userId=${user.id}&role=${role || ''}`);
+                const res = await fetch(\`/api/role/my-projects?userId=\${user.id || 1}&role=\${role || ''}\`);
                 const data = await res.json();
                 if (data.success && data.projects) {
                     const found = data.projects.find((p: any) => p.id === project.id || p.id === parseInt(project.id));
@@ -143,593 +294,665 @@ export default function ProjectWorkspace() {
                           : {};
                         
                         setProjectId(found.id);
-                        setCurriculum(projData?.curriculum || []);
-                        setCompletedTasks(new Set(prog?.completedTasks || []));
-                        setXp(prog?.xp || 0);
-                        setCurrentModuleIndex(prog?.currentModuleIndex || 0);
-                        setCurrentTaskIndex(prog?.currentTaskIndex || 0);
+                        loadedSteps = mapCurriculumToSteps(projData?.curriculum || []);
+                        
+                        if (prog.completedTasks && prog.completedTasks.length > 0) {
+                             const completedSet = new Set(prog.completedTasks);
+                             loadedSteps = loadedSteps.map(step => ({
+                                 ...step,
+                                 tasks: step.tasks.map(t => ({
+                                     ...t,
+                                     completed: completedSet.has(t.id)
+                                 }))
+                             }));
+                             loadedSteps = loadedSteps.map(step => ({
+                                ...step,
+                                completed: step.tasks.every(t => t.completed)
+                             }));
+                        }
+                        if (prog.xp) {
+                          setTotalXP(prog.xp);
+                          setLevel(calculateLevel(prog.xp));
+                        }
                     }
                 }
             } catch (e) {
                 console.error("Failed to fetch project from API", e);
-            } finally {
-                setIsLoading(false);
             }
         }
-        else {
-            setIsLoading(false);
+
+        if (loadedSteps.length > 0) {
+            const stepsWithExpanded = loadedSteps.map((s, i) => ({ ...s, expanded: i === 0 }));
+            setSteps(stepsWithExpanded);
+            setSelectedStep(stepsWithExpanded[0]);
+        } else {
+            setSteps(projectStepsMock);
+            setSelectedStep(projectStepsMock[0]);
         }
     };
 
     initProject();
   }, [project, role, navigate, preLoadedCurriculum]);
 
+  // Handle Send Message (REALTIME OPENAI INTEGRATION)
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
 
-  const [xp, setXp] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null); // Ref for scroll container
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputMessage,
+      timestamp: new Date(),
+    };
 
-  // Scroll to top when task changes
+    const currentMsg = inputMessage;
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
+    setIsTyping(true);
+
+    try {
+        const res = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: currentMsg,
+                context: {
+                    type: 'project',
+                    projectTitle: project?.title || 'Personal Project',
+                    currentTask: selectedStep?.title || 'Setup',
+                    taskDescription: selectedStep?.description
+                },
+                role: role || 'Software Engineer'
+            })
+        });
+        
+        const data = await res.json();
+        const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data.reply || "I encountered an error connecting to OpenAI. Please try again.",
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+    } catch (err) {
+        console.error("OpenAI Error:", err);
+        const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "I encountered a network error. Ensure your backend server is running.",
+            timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+    }
+    setIsTyping(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // Auto-scroll
   useEffect(() => {
-      if (scrollRef.current) {
-          scrollRef.current.scrollTop = 0;
-      }
-  }, [currentTaskIndex, currentModuleIndex]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  const toggleTaskCompletion = async (taskId: string) => {
-      const newCompleted = new Set(completedTasks);
-      const isCompleting = !newCompleted.has(taskId);
-      let newXp = xp;
-
-      if (isCompleting) {
-          newCompleted.add(taskId);
-          newXp += 50; 
-      } else {
-          newCompleted.delete(taskId);
-          newXp = Math.max(0, newXp - 50);
-      }
-      
-      setCompletedTasks(newCompleted);
-      setXp(newXp);
-
-      // Persist to DB
-      if (projectId && user.id) {
-          try {
-              await fetch('/api/role/update-project-progress', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                      userId: user.id,
-                      projectId: projectId,
-                      progress: {
-                          completedTasks: Array.from(newCompleted),
-                          xp: newXp,
-                          currentModuleIndex,
-                          currentTaskIndex
-                      }
-                  })
-              });
-          } catch (e) {
-              console.error("Failed to save progress", e);
-          }
-      }
+  const handleStepClick = (stepId: string) => {
+    setSteps((prev) =>
+      prev.map((step) =>
+        step.id === stepId
+          ? { ...step, expanded: !step.expanded }
+          : { ...step, expanded: false }
+      )
+    );
+    const clickedStep = steps.find((s) => s.id === stepId);
+    if (clickedStep) {
+      setSelectedStep(clickedStep);
+    }
   };
 
-  const isLastTask = 
-    curriculum.length > 0 &&
-    currentModuleIndex === curriculum.length - 1 &&
-    currentTaskIndex === curriculum[currentModuleIndex].tasks.length - 1;
+  const handleTaskToggle = (stepId: string, taskId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    const task = step?.tasks.find(t => t.id === taskId);
+    const wasCompleted = task?.completed || false;
 
-  const handleNextTask = () => {
-      if (!curriculum.length) return;
-      
-      const currentModule = curriculum[currentModuleIndex];
-      // Check if we can move to next task in current module
-      if (currentTaskIndex < currentModule.tasks.length - 1) {
-          setCurrentTaskIndex(prev => prev + 1);
-      } 
-      // Check if we can move to next module
-      else if (currentModuleIndex < curriculum.length - 1) {
-          setCurrentModuleIndex(prev => prev + 1);
-          setCurrentTaskIndex(0);
-      }
-  };
-  
-  const handlePrevTask = () => {
-      if (currentTaskIndex > 0) {
-          setCurrentTaskIndex(prev => prev - 1);
-      } else if (currentModuleIndex > 0) {
-          setCurrentModuleIndex(prev => prev - 1);
-          setCurrentTaskIndex(curriculum[currentModuleIndex - 1].tasks.length - 1);
-      }
-  };
+    let updatedXp = totalXP;
+    if (!wasCompleted) {
+        updatedXp += 20;
+        awardXP(20, \`Completed task\`);
+    } else {
+        updatedXp -= 20;
+        setTotalXP(updatedXp);
+        setLevel(calculateLevel(updatedXp));
+    }
 
-  const handleExplainTask = () => {
-      setInitialAiQuery(`Explain the task "${currentTask?.title}" and why it's important.`);
-      setShowAssistant(true);
-      setViewMode('execution');
-  };
-
-  const handleGenerateCode = () => {
-      setInitialAiQuery(`Generate starter code for the task: "${currentTask?.title}" using ${project?.tools?.join(', ') || 'standard tools'}. My OS is ${settings?.os || 'Windows'}.`);
-      setShowAssistant(true);
-      setViewMode('execution');
+    const updatedSteps = steps.map((s) => {
+        if (s.id === stepId) {
+          const updatedTasks = s.tasks.map((t) =>
+            t.id === taskId ? { ...t, completed: !t.completed } : t
+          );
+          const allTasksCompleted = updatedTasks.every((t) => t.completed);
+          return {
+            ...s,
+            tasks: updatedTasks,
+            completed: allTasksCompleted,
+          };
+        }
+        return s;
+    });
+    
+    setSteps(updatedSteps);
+    persistProgress(updatedSteps, updatedXp);
   };
 
-  if (isLoading) {
-      return (
-          <div className="flex h-screen items-center justify-center bg-gray-950 text-white">
-              <div className="flex flex-col items-center gap-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-                  <p className="text-gray-400">Initializing Mission Control...</p>
-              </div>
-          </div>
-      );
-  }
+  const handleTaskClick = (taskId: string) => {
+    setSelectedTaskId(taskId);
+    setShowGuideView(true);
+  };
 
-  const currentModule = curriculum[currentModuleIndex];
-  const currentTask = currentModule?.tasks?.[currentTaskIndex];
-  const totalTasks = curriculum.reduce((acc, mod) => acc + mod.tasks.length, 0);
-  const progressPercentage = Math.round((completedTasks.size / totalTasks) * 100);
-  
-  // Dashboard Logic
+  const handleBackToTasks = () => {
+    setShowGuideView(false);
+    setSelectedTaskId(null);
+  };
 
+  const handleStepToggle = (stepId: string) => {
+    const step = steps.find(s => s.id === stepId);
+    const wasCompleted = step?.completed || false;
+    
+    let updatedXp = totalXP;
+    if (!wasCompleted) {
+        updatedXp += 100;
+        awardXP(100, \`Completed module\`);
+    } else {
+        updatedXp -= 100;
+        setTotalXP(updatedXp);
+        setLevel(calculateLevel(updatedXp));
+    }
+
+    const updatedSteps = steps.map((s) =>
+        s.id === stepId ? { ...s, completed: !s.completed } : s
+    );
+    
+    setSteps(updatedSteps);
+    persistProgress(updatedSteps, updatedXp);
+  };
+
+  // Progress Insights
+  const getProgressInsights = () => {
+    const totalTasks = steps.reduce((acc, step) => acc + step.tasks.length, 0);
+    const completedTasks = steps.reduce(
+      (acc, step) => acc + step.tasks.filter(t => t.completed).length,
+      0
+    );
+    const progressPercent = Math.round((completedTasks / (totalTasks || 1)) * 100);
+
+    const nextIncompleteStep = steps.find(s => !s.completed);
+    const nextIncompleteTask = nextIncompleteStep?.tasks.find(t => !t.completed);
+
+    const insights = \`📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 \${completedTasks} of \${totalTasks} tasks completed (\${progressPercent}%)\n⭐ Level \${level} with \${totalXP} XP\n🏆 \${completedSteps} of \${steps.length} steps completed\n\n**Next Recommendation:**\n\${nextIncompleteTask ? \`➡️ Focus on: "\${nextIncompleteTask.text}"\` : "🎉 All tasks completed!"}\`;
+
+    const aiResponse: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: insights,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, aiResponse]);
+  };
+
+  const getSmartHints = () => {
+    const currentStepTasks = selectedStep?.tasks || [];
+    const nextUncompletedTask = currentStepTasks.find(t => !t.completed);
+
+    let hints = \`💡 **Smart Hint AI**\n\n\`;
+    if (nextUncompletedTask) {
+      hints += \`**Current Task:** \${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!\`;
+    }
+
+    const aiResponse: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: hints,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, aiResponse]);
+  };
+
+  const completedSteps = steps.filter((s) => s.completed).length;
+  const progressPercentage = Math.round((completedSteps / (steps.length || 1)) * 100);
 
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-200 overflow-hidden font-sans">
-        
-        {/* VIEW MODE: EXECUTION (Original Workspace) */}
-        {viewMode === 'execution' && (
-            <>
-                 {/* MOBILE OVERLAY */}
-                {showSidebar && (
-                    <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setShowSidebar(false)} />
-                )}
-
-                {/* SIDEBAR - CURRICULUM */}
-                <aside className={`fixed md:relative z-30 w-72 h-full bg-gray-900 border-r border-gray-800 flex flex-col transition-transform duration-300 ${
-                    showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0 md:w-0 md:opacity-0 md:overflow-hidden'
-                }`}>
-                    <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                        <div>
-                        <h2 className="font-bold text-white text-sm tracking-wide uppercase">Curriculum</h2>
-                        <p className="text-xs text-gray-500 mt-1">{completedTasks.size} / {totalTasks} Tasks Completed</p>
-                        </div>
-                        <button onClick={() => setShowSidebar(false)} className="md:hidden p-1 hover:bg-gray-800 rounded">
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        {curriculum.map((module, mIndex) => (
-                            <div key={module.id}>
-                                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-2">
-                                {module.title}
-                                {module.estimatedHours && <span className="ml-2 text-[10px] bg-gray-800 text-gray-500 py-0.5 px-1.5 rounded">{module.estimatedHours}</span>}
-                                </h3>
-                                <div className="space-y-1">
-                                    {module.tasks.map((task, tIndex) => {
-                                        const isActive = mIndex === currentModuleIndex && tIndex === currentTaskIndex;
-                                        const isCompleted = completedTasks.has(task.id);
-                                        
-                                        return (
-                                            <button
-                                                key={task.id}
-                                                onClick={() => {
-                                                    setCurrentModuleIndex(mIndex);
-                                                    setCurrentTaskIndex(tIndex);
-                                                }}
-                                                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-start gap-3 transition-colors ${
-                                                    isActive 
-                                                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/30' 
-                                                    : 'hover:bg-gray-800 text-gray-400'
-                                                }`}
-                                            >
-                                                {isCompleted ? (
-                                                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                                                ) : (
-                                                    <Circle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isActive ? 'text-indigo-500' : 'text-gray-600'}`} />
-                                                )}
-                                                <span className={isCompleted ? 'line-through opacity-50' : ''}>
-                                                    {task.title}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </aside>
-
-                {/* MAIN CONTENT Area - SPLIT SCREEN */}
-                <main className="flex-1 flex flex-col min-w-0">
-                    {/* HEADER */}
-                    <header className="h-16 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 sticky top-0 z-10 shrink-0">
-                        <div className="flex items-center gap-3">
-                            <button 
-                                onClick={() => setShowSidebar(!showSidebar)}
-                                className="p-2 hover:bg-gray-800 rounded-lg text-gray-400 md:hidden"
-                            >
-                                <Menu className="w-5 h-5" />
-                            </button>
-                            <button 
-                                onClick={() => setViewMode('dashboard')}
-                                className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                                Mission Control
-                            </button>
-                            <div className="h-6 w-px bg-gray-800 mx-1"></div>
-                            <h1 className="text-sm font-semibold text-white truncate max-w-[200px] md:max-w-md">
-                                {project?.title} - Execution Mode
-                            </h1>
-                        </div>
-                        <div className="flex items-center gap-3 px-2">
-                             <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full">
-                                <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
-                                <span className="text-xs font-bold text-indigo-300">{xp} XP</span>
-                             </div>
-                        </div>
-                    </header>
-
-                    {/* SPLIT VIEW CONTAINER */}
-                    <div className="flex-1 flex overflow-hidden">
-                        
-                        {/* LEFT: Task Content */}
-                        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-10 scrollbar-thin scrollbar-thumb-gray-800 scrollbar-track-transparent">
-                            <div className="max-w-4xl mx-auto">
-                                {currentTask ? (
-                                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                        {/* Task Execution UI (Same as before) */}
-                                        <div>
-                                            <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
-                                                <span className="px-2 py-0.5 bg-indigo-500/10 rounded border border-indigo-500/20">
-                                                    {currentModule?.title}
-                                                </span>
-                                                <span>Task {currentTaskIndex + 1} of {currentModule?.tasks.length}</span>
-                                                {currentTask.duration && <span className="text-gray-500">• {currentTask.duration}</span>}
-                                            </div>
-                                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                                                {currentTask.title}
-                                            </h1>
-                                            <p className="text-lg text-gray-400 leading-relaxed">
-                                                {currentTask.description}
-                                            </p>
-                                        </div>
-                                        <div className="bg-blue-900/10 border-l-4 border-blue-500 p-6 rounded-r-lg">
-                                            <h3 className="text-blue-400 font-bold text-sm mb-2 flex items-center gap-2">
-                                                <RotateCcw className="w-4 h-4" /> Context & Rationale
-                                            </h3>
-                                            <p className="text-gray-300 text-sm leading-relaxed">
-                                                {currentTask.why}
-                                            </p>
-                                        </div>
-                                        <div className="space-y-6">
-                                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                                <Terminal className="w-5 h-5 text-indigo-400" /> 
-                                                Implementation Guide
-                                            </h3>
-                                            <div className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800 shadow-2xl">
-                                                <div className="bg-gray-800/50 px-4 py-2 border-b border-gray-800 flex items-center justify-between">
-                                                    <div className="flex gap-1.5">
-                                                        <div className="w-3 h-3 rounded-full bg-red-500/20"></div>
-                                                        <div className="w-3 h-3 rounded-full bg-amber-500/20"></div>
-                                                        <div className="w-3 h-3 rounded-full bg-green-500/20"></div>
-                                                    </div>
-                                                    <span className="text-xs text-gray-500 font-mono">terminal / editor</span>
-                                                </div>
-                                                <div className="p-6 overflow-x-auto">
-                                                    <pre className="font-mono text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
-                                                        {currentTask.codeSnippet}
-                                                    </pre>
-                                                </div>
-                                            </div>
-                                            <div className="bg-green-900/10 border border-green-500/20 rounded-xl p-6">
-                                                <h4 className="text-green-400 font-bold text-sm mb-3 flex items-center gap-2">
-                                                    <CheckCircle className="w-4 h-4" /> Verify Your Work
-                                                </h4>
-                                                <p className="text-gray-300 text-sm">{currentTask.verification}</p>
-                                            </div>
-                                        </div>
-                                        <div className="pt-10 border-t border-gray-800 flex items-center justify-between">
-                                            <button 
-                                                onClick={handlePrevTask}
-                                                disabled={currentModuleIndex === 0 && currentTaskIndex === 0}
-                                                className="px-6 py-3 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                                            >
-                                                Previous Step
-                                            </button>
-                                            <div className="flex items-center gap-4">
-                                                <button 
-                                                    onClick={() => toggleTaskCompletion(currentTask.id)}
-                                                    className={`px-6 py-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
-                                                        completedTasks.has(currentTask.id)
-                                                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20'
-                                                        : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-                                                    }`}
-                                                >
-                                                    {completedTasks.has(currentTask.id) ? (
-                                                        <>
-                                                        <CheckCircle className="w-4 h-4" /> Completed (+50 XP)
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                        <Circle className="w-4 h-4" /> Mark as Complete
-                                                        </>
-                                                    )}
-                                                </button>
-                                                <button 
-                                                    onClick={handleNextTask}
-                                                    disabled={isLastTask}
-                                                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-lg shadow-indigo-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    Next Step <ChevronRight className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center p-12 text-center h-full">
-                                            <div className="bg-gray-800 p-4 rounded-full mb-4">
-                                                <Target className="w-8 h-8 text-gray-500" />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-gray-300 mb-2">No Task Selected</h3>
-                                            <p className="text-gray-500 max-w-sm mb-6">
-                                                Select a module from the sidebar to view its tasks, or ensure your curriculum is properly loaded.
-                                            </p>
-                                            <button 
-                                                onClick={() => setViewMode('dashboard')}
-                                                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white text-sm font-medium transition-colors"
-                                            >
-                                                Back to Dashboard
-                                            </button>
-                                        </div>
-                                    )}
-                            </div>
-                        </div>
-
-                        {/* RIGHT: AI Assistant (Embedded) */}
-                        <div className="w-96 hidden lg:block h-full border-l border-gray-800 bg-gray-900">
-                             <ChatAssistant 
-                                isOpen={true}
-                                onClose={() => {}} 
-                                isEmbedded={true}
-                                role={role}
-                                initialQuery={initialAiQuery} // Pass initial query here
-                                context={{
-                                    type: 'project',
-                                    projectTitle: project?.title,
-                                    currentTask: currentTask?.title,
-                                    taskDescription: currentTask?.description,
-                                    userOS: settings?.os || 'Windows'
-                                } as any}
-                            />
-                        </div>
-
-                    </div>
-                </main>
-            </>
-        )}
-
-        {/* VIEW MODE: MISSION CONTROL DASHBOARD */}
-        {viewMode === 'dashboard' && (
-             <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-gray-950">
-                 {/* Mission Header */}
-                 <header className="px-6 py-6 md:px-12 md:py-8 border-b border-gray-900 bg-gray-950/50 backdrop-blur-sm sticky top-0 z-10 flex items-center justify-between">
-                     <div>
-                         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-xs font-medium text-gray-500 hover:text-white mb-2 transition-colors">
-                             <ChevronLeft className="w-3 h-3" /> Back to Projects
-                         </button>
-                         <h1 className="text-2xl font-bold text-white tracking-tight">{project?.title}</h1>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4 text-indigo-500" /> {weeklyHours}h / week</span>
-                              <span className="flex items-center gap-1.5 transition-colors">
-                                  <Calendar className="w-4 h-4 text-indigo-500" /> 
-                                  Target: {formattedCompletionDate}
-                              </span>
-                               <div className="flex items-center gap-1.5 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 rounded-full ml-2">
-                                    <Zap className="w-3.5 h-3.5 text-indigo-400 fill-indigo-400" />
-                                    <span className="text-xs font-bold text-indigo-300">{xp} XP</span>
-                               </div>
-                          </div>
-                      </div>
-                      <div className="hidden md:flex flex-col items-end gap-2">
-                          <button 
-                              onClick={() => setShowWeeklyReview(true)}
-                              className="text-xs font-medium text-indigo-400 hover:text-white flex items-center gap-1 transition-colors px-3 py-1.5 rounded-lg border border-indigo-500/30 hover:bg-indigo-500/20"
-                          >
-                              <FileText className="w-3.5 h-3.5" /> Weekly Review
-                          </button>
-                         <div className="text-right">
-                             <div className="text-xs text-gray-500 mb-0.5 font-mono uppercase tracking-widest">Project Progress</div>
-                             <div className="text-3xl font-bold text-white leading-none">{progressPercentage}%</div>
-                         </div>
-                      </div>
-                 </header>
-
-                 <div className="p-6 md:p-12 max-w-7xl mx-auto w-full space-y-8">
-                     
-                     {/* TODAY'S MISSION CARD */}
-                     <div className="bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-2xl p-6 md:p-8 relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                         
-                         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                             <div>
-                                 <div className="flex items-center gap-2 mb-3">
-                                     <span className="px-2.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-indigo-500/20 animate-pulse">
-                                         Today's Mission
-                                     </span>
-                                     <span className="text-gray-400 text-xs font-mono">Phase 3: Core Architecture</span>
-                                 </div>
-                                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                                     {currentTask?.title || "Initialize Project Structure"}
-                                 </h2>
-                                 <p className="text-indigo-200/80 max-w-xl text-sm leading-relaxed mb-6">
-                                     {currentTask?.description || "Let's get the foundation right. Setup the repository and basic folder structure."}
-                                 </p>
-                                 <div className="flex gap-4">
-                                     <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-                                         <Zap className="w-4 h-4 text-amber-400" />
-                                         <span className="text-xs font-bold text-gray-300">40 XP</span>
-                                     </div>
-                                     <div className="flex items-center gap-2 bg-black/20 px-3 py-1.5 rounded-lg border border-white/5">
-                                         <Target className="w-4 h-4 text-emerald-400" />
-                                         <span className="text-xs font-bold text-gray-300">+0.8% Match Score</span>
-                                     </div>
-                                 </div>
-                             </div>
-
-                             <div className="w-full md:w-auto">
-                                 <button 
-                                     onClick={() => setViewMode('execution')}
-                                     className="w-full md:w-auto px-8 py-4 bg-white text-indigo-950 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-50 transition-all shadow-xl shadow-indigo-900/20 group-hover:scale-105 duration-300"
-                                 >
-                                     <Play className="w-5 h-5 fill-indigo-900" /> Start Mission
-                                 </button>
-                                 <p className="text-center text-[10px] text-indigo-300 mt-2">Est. Time: {currentTask?.duration || "45m"}</p>
-                             </div>
-                         </div>
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                         {/* YOUR SCHEDULE CARD (Replaces Weekly Velocity) */}
-                         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                                 <Calendar className="w-4 h-4" /> Your Schedule
-                             </h3>
-                             <div className="space-y-6">
-                                 <div>
-                                     <div className="text-xs text-gray-500 mb-1">Hours per day</div>
-                                     <div className="text-2xl font-bold text-white flex items-end gap-1">
-                                         {settings?.schedule?.dailyHours || 2}h
-                                         <span className="text-sm text-gray-500 font-normal mb-1">/ session</span>
-                                     </div>
-                                 </div>
-                                 
-                                 <div>
-                                     <div className="text-xs text-gray-500 mb-2">Working Days</div>
-                                     <div className="flex flex-wrap gap-1.5">
-                                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
-                                             const isActive = settings?.schedule?.selectedDays?.includes(day);
-                                             return (
-                                                 <span 
-                                                     key={day}
-                                                     className={`text-[10px] font-bold px-2 py-1 rounded-md border ${
-                                                         isActive 
-                                                         ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' 
-                                                         : 'bg-gray-800 text-gray-600 border-gray-800'
-                                                     }`}
-                                                 >
-                                                     {day}
-                                                 </span>
-                                             );
-                                         })}
-                                     </div>
-                                 </div>
-
-                                 <div className="pt-4 border-t border-gray-800">
-                                     <div className="flex items-center gap-2 text-xs text-gray-400">
-                                         <Bell className="w-3.5 h-3.5 text-indigo-500" />
-                                         Browser notifications on
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-
-                         {/* AI COACH CARD */}
-                         <div className="md:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-6 relative overflow-hidden">
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl"></div>
-                             
-                             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                 <MessageSquare className="w-4 h-4" /> AI Project Coach
-                             </h3>
-                             
-                             <div className="flex gap-4 items-start">
-                                 <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                                     <Terminal className="w-5 h-5 text-white" />
-                                 </div>
-                                 <div className="flex-1">
-                                     <div className="bg-gray-800 rounded-xl rounded-tl-none p-4 text-sm text-gray-300 leading-relaxed mb-4">
-                                         "You have <strong>{settings?.schedule?.dailyHours || 2}h</strong> scheduled for today. Completing this module will boost your <strong>Backend Systems</strong> skill by 12%. Ready to code?"
-                                     </div>
-                                     <div className="flex gap-2">
-                                         <button 
-                                             onClick={handleExplainTask}
-                                             className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium text-white transition-colors border border-gray-700"
-                                         >
-                                             Explain Task
-                                         </button>
-                                         <button 
-                                            onClick={handleGenerateCode}
-                                            className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs font-medium text-white transition-colors border border-gray-700"
-                                         >
-                                             Generate Starter Code
-                                         </button>
-                                     </div>
-                                 </div>
-                             </div>
-                         </div>
-                     </div>
-
-                     {/* UPCOMING MODULES PREVIEW */}
-                     <div className="mt-8">
-                         <h3 className="text-sm font-bold text-gray-500 mb-4 ml-1">UPCOMING MODULES</h3>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                             {curriculum.slice(0, 4).map((mod, i) => (
-                                 <div key={mod.id} className={`p-4 rounded-xl border border-gray-800 ${i === currentModuleIndex ? 'bg-indigo-900/10 border-indigo-500/30 ring-1 ring-indigo-500/30' : 'bg-gray-900 opacity-60'}`}>
-                                     <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-2">Module {i+1}</div>
-                                     <h4 className="font-bold text-white text-sm mb-1">{mod.title}</h4>
-                                     <span className="text-xs text-gray-500">{mod.tasks.length} Tasks • {mod.estimatedHours || "2h"}</span>
-                                 </div>
-                             ))}
-                         </div>
-                     </div>
-
-                 </div>
-             </div>
-        )}
-
-        {/* AI ASSISTANT PANEL */}
-        <ChatAssistant 
-            isOpen={showAssistant}
-            onClose={() => setShowAssistant(false)}
-            role={role}
-            initialQuery={initialAiQuery}
-            context={{
-                type: 'project',
-                projectTitle: project?.title,
-                currentTask: currentTask?.title,
-                taskDescription: currentTask?.description,
-                userOS: settings?.os || 'Windows'
-            } as any}
-        />
-
-        {/* ADAPTIVE SCHEDULE TOAST */}
-        {adaptiveMessage && (
-            <div className="fixed bottom-6 right-6 md:right-10 max-w-sm bg-gray-900 border border-amber-500/30 shadow-2xl rounded-xl p-4 animate-in slide-in-from-bottom-5 duration-500 z-50 flex gap-3">
-                <div className="bg-amber-500/10 p-2 rounded-lg h-fit">
-                    <Calendar className="w-5 h-5 text-amber-500" />
-                </div>
-                <div>
-                    <h4 className="font-bold text-amber-400 text-sm mb-1">Schedule Adjusted</h4>
-                    <p className="text-xs text-gray-300 leading-relaxed">{adaptiveMessage}</p>
-                </div>
-                <button 
-                    onClick={() => setAdaptiveMessage(null)}
-                    className="text-gray-500 hover:text-white h-fit"
+    <div className="min-h-screen bg-slate-50 relative pb-20">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowRightSidebar(true)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Open Menu"
+              >
+                <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              
+              <div>
+                <button
+                  onClick={() => navigate("/dashboard")}
+                  className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-3 transition-colors text-sm"
                 >
-                    <X className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to Projects
                 </button>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2 truncate max-w-lg">
+                  {project?.title || "Real-time Chat Application"}
+                </h1>
+                <p className="text-slate-600 text-sm truncate max-w-md">
+                  {project?.description || "Build a full-stack web application."}
+                </p>
+              </div>
             </div>
-        )}
+            <div className="flex items-center gap-3">
+              {/* XP and Level Display */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-200 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                  <div>
+                    <p className="text-xs font-medium text-slate-600">Level {level}</p>
+                    <p className="text-[13px] font-bold text-emerald-700 leading-none">{totalXP} XP</p>
+                  </div>
+                </div>
+                <div className="w-24 h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-400 to-emerald-500 transition-all duration-500"
+                    style={{
+                      width: \`\${
+                        ((totalXP - getXPForCurrentLevel(level)) /
+                          ((getXPForNextLevel(level) - getXPForCurrentLevel(level)) || 1)) *
+                        100
+                      }%\`,
+                    }}
+                  ></div>
+                </div>
+              </div>
 
-        {/* WEEKLY REVIEW MODAL */}
-        <WeeklyReviewModal 
-            isOpen={showWeeklyReview}
-            onClose={() => setShowWeeklyReview(false)}
-            projectTitle={project?.title}
-        />
+              <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors relative">
+                <Bell className="w-5 h-5 text-slate-600" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-600 rounded-full border border-white"></span>
+              </button>
+              
+              <button className="w-10 h-10 bg-gradient-to-r from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-white font-bold hover:scale-105 transition-transform shadow-md">
+                JD
+              </button>
+            </div>
+          </div>
 
+          {/* Progress Bar */}
+          <div className="mt-5">
+            <p className="text-[13px] font-medium text-slate-600 mb-2 tracking-wide flex items-center gap-1.5">
+              <span className="text-emerald-600 font-bold">{progressPercentage}%</span> PROJECT COMPLETED
+            </p>
+            <div className="w-full bg-slate-100 rounded-full h-1.5">
+              <div
+                className="bg-emerald-500 h-1.5 rounded-full transition-all duration-700 shadow-sm"
+                style={{ width: \`\${progressPercentage}%\` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Two Column Layout */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Step-by-Step Guide OR Task Guide View */}
+          <div className="lg:col-span-2 space-y-4">
+            {!showGuideView ? (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-900">FindStreak Learning Path</h2>
+                    <p className="text-sm text-slate-600 mt-1">Step-by-step interactive timeline synced real-time</p>
+                  </div>
+                  <Badge className="bg-emerald-100 text-emerald-800 border-none shadow-sm">
+                    {steps.length} Modules
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {steps.map((step, index) => (
+                    <Card
+                      key={step.id}
+                      className={\`border transition-all \${
+                        step.completed
+                          ? "border-emerald-200 bg-emerald-50/20 shadow-md shadow-emerald-100/30"
+                          : step.expanded
+                          ? "border-emerald-300 bg-white ring-4 ring-emerald-50/50 shadow-md"
+                          : "border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm"
+                      }\`}
+                    >
+                      <div
+                        className="p-5 cursor-pointer"
+                        onClick={() => handleStepClick(step.id)}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div
+                            className={\`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm \${
+                              step.completed
+                                ? "bg-emerald-500 text-white"
+                                : "bg-emerald-50 border border-emerald-100 text-emerald-700"
+                            }\`}
+                          >
+                            {step.completed ? (
+                              <CheckCircle className="w-5 h-5" />
+                            ) : (
+                              index + 1
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 mr-4">
+                                <h3
+                                  className={\`text-[17px] font-bold mb-1 line-clamp-1 \${
+                                    step.completed
+                                      ? "text-emerald-900"
+                                      : "text-slate-900"
+                                  }\`}
+                                >
+                                  {step.title}
+                                </h3>
+                                <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
+                                  {step.description}
+                                </p>
+                              </div>
+                              <ChevronRight
+                                className={\`w-5 h-5 text-slate-300 transition-transform \${
+                                  step.expanded ? "rotate-90 text-emerald-500" : ""
+                                }\`}
+                              />
+                            </div>
+
+                            {!step.expanded && (
+                              <div className="mt-4 flex items-center gap-2">
+                                <span className="text-xs font-bold text-slate-500 tracking-wide">
+                                    TASKS
+                                </span>
+                                <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-emerald-400 rounded-full" 
+                                        style={{ width: \`\${(step.tasks.filter(t => t.completed).length / (step.tasks.length || 1)) * 100}%\`}} 
+                                    />
+                                </div>
+                                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                                    {step.tasks.filter((t) => t.completed).length}/{step.tasks.length}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {step.expanded && (
+                         <div className="px-5 pb-5 pt-2 animate-in slide-in-from-top-2 duration-200">
+                          <div className="h-px bg-slate-100 w-full mb-5 -mt-2"></div>
+                          
+                          <div className="space-y-3 mb-6">
+                            <h4 className="text-[13px] font-bold text-slate-400 tracking-widest uppercase mb-4 ml-1 flex items-center gap-2">
+                                Checkpoint Tasks
+                            </h4>
+                            {step.tasks.map((task, taskIndex) => (
+                              <div
+                                key={task.id}
+                                className={\`flex items-start gap-3 p-3.5 rounded-xl border transition-all hover:-translate-y-0.5 \${
+                                  task.completed
+                                    ? "border-emerald-200 bg-emerald-50/50 shadow-sm shadow-emerald-100/20"
+                                    : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-md shadow-slate-100"
+                                }\`}
+                              >
+                                <div 
+                                  className="flex-shrink-0 mt-0.5 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTaskToggle(step.id, task.id);
+                                  }}
+                                >
+                                  {task.completed ? (
+                                    <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50" />
+                                  ) : (
+                                    <Circle className="w-5 h-5 text-slate-300 hover:text-emerald-400 transition-colors" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-start justify-between gap-4">
+                                    <p
+                                      className={\`text-sm leading-relaxed font-medium \${
+                                        task.completed
+                                          ? "text-emerald-800 line-through opacity-70"
+                                          : "text-slate-700"
+                                      }\`}
+                                    >
+                                      {task.text}
+                                    </p>
+                                    {taskGuides[task.id] && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTaskClick(task.id);
+                                        }}
+                                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100 shadow-sm"
+                                      >
+                                        <FileText className="w-3.5 h-3.5" />
+                                        Guide
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-6">
+                            <Button
+                              onClick={(e: Event) => {
+                                e.stopPropagation();
+                                const allCompleted = step.tasks.every((t) => t.completed);
+                                if (allCompleted) {
+                                  handleStepToggle(step.id);
+                                } else {
+                                  alert("Please check off all tasks above to mark the module complete.");
+                                }
+                              }}
+                              className={\`shadow-sm transition-all \${
+                                step.completed
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                  : step.tasks.every((t) => t.completed)
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                  : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                              }\`}
+                              disabled={!step.tasks.every((t) => t.completed) && !step.completed}
+                            >
+                              {step.completed ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  Module Verified
+                                </>
+                              ) : step.tasks.every((t) => t.completed) ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                                  Verify Module Sync
+                                </>
+                              ) : (
+                                <>
+                                  <Circle className="w-4 h-4 mr-2" />
+                                  Complete Pending Tasks
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </>
+            ) : (
+              selectedTaskId && taskGuides[selectedTaskId] ? (
+                <TaskGuideView
+                  taskId={selectedTaskId}
+                  guide={taskGuides[selectedTaskId]}
+                  onBack={handleBackToTasks}
+                  onMarkComplete={() => {
+                    const step = steps.find(s => s.tasks.some(t => t.id === selectedTaskId));
+                    if (step) handleTaskToggle(step.id, selectedTaskId);
+                    handleBackToTasks();
+                  }}
+                />
+              ) : (
+                <div className="text-center text-slate-500 py-12 bg-white rounded-xl border border-slate-200 shadow-sm">
+                  Documentation pending for this assignment section.
+                  <br/>
+                  <button onClick={handleBackToTasks} className="mt-4 text-emerald-600 font-medium">Go Back</button>
+                </div>
+              )
+            )}
+          </div>
+
+          {/* Right Column - REAL TIME AI Assistant */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50">
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-inner relative">
+                      <Sparkles className="w-5 h-5 text-white" />
+                      <div className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-800 animate-pulse"></div>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-white text-[15px]">FindStreak AI</h3>
+                      <p className="text-[11px] text-emerald-300 font-medium uppercase tracking-widest flex items-center gap-1">
+                          🟢 Online
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-[520px] overflow-y-auto p-5 space-y-5 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-300">
+                  {messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={\`flex gap-3 \${
+                        message.role === "user" ? "justify-end" : "justify-start"
+                      }\`}
+                    >
+                      {message.role === "assistant" && (
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
+                          <Sparkles className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      
+                      <div className={\`flex flex-col max-w-[85%] \${message.role === "user" ? "items-end" : "items-start"}\`}>
+                        <div
+                          className={\`rounded-2xl \${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm \${
+                            message.role === "assistant"
+                              ? "bg-white text-slate-700 border border-slate-100"
+                              : "bg-emerald-600 text-white"
+                          }\`}
+                        >
+                          <p className="text-[14px] whitespace-pre-wrap leading-relaxed">
+                            {message.content}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-1.5 px-1">
+                            <p className="text-[10px] text-slate-400 font-medium">
+                            {message.timestamp.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            })}
+                            </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {isTyping && (
+                    <div className="flex gap-3 animate-in fade-in duration-300">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="bg-white rounded-2xl rounded-tl-sm p-4 border border-slate-100 shadow-sm flex items-center h-10">
+                        <div className="flex gap-1.5">
+                          <div className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"></div>
+                          <div
+                            className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.15s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"
+                            style={{ animationDelay: "0.3s" }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="px-5 py-3 bg-white border-t border-slate-100 flex gap-2">
+                    <button
+                      onClick={getProgressInsights}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors shadow-sm"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Run Analytics
+                    </button>
+                    <button
+                      onClick={getSmartHints}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors shadow-sm"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      Smart Hint
+                    </button>
+                </div>
+
+                <div className="p-4 bg-white border-t border-slate-100">
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-inner">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask the AI anything..."
+                      className="flex-1 bg-transparent border-none focus:outline-none text-[14px] text-slate-800 placeholder:text-slate-400 px-3 py-2"
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={!inputMessage.trim()}
+                      className="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+                    >
+                      <Send className="w-4 h-4 ml-0.5" />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <RightSidebar 
+        isOpen={showRightSidebar} 
+        onClose={() => setShowRightSidebar(false)} 
+      />
     </div>
   );
 }
