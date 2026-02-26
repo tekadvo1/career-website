@@ -35,6 +35,10 @@ export default function RoleAnalysis() {
   const hasResume = location.state?.hasResume || false;
   const resumeFileName = location.state?.resumeFileName || null;
   const aiAnalysis = location.state?.analysis;
+  
+  // Extract custom path intent and skills from Onboarding
+  const skillPreference = location.state?.learningPath;
+  const resumeSkills = location.state?.resumeSkills;
   /* New Tab State */
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
   const [isDownloading, setIsDownloading] = useState(false);
@@ -429,6 +433,65 @@ export default function RoleAnalysis() {
                <p className="font-bold text-sm text-gray-900">{roleData.salary_insights?.senior_level || "N/A"}</p>
             </div>
           </div>
+          
+          {/* Learning Path Banner - Only shown if skillPreference exists */}
+          {skillPreference && (
+            <div
+              className={`mt-6 p-5 rounded-lg border-2 ${
+                skillPreference === "master"
+                  ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-300"
+                  : "bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-300"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    skillPreference === "master"
+                      ? "bg-emerald-600"
+                      : "bg-teal-600"
+                  }`}
+                >
+                  {skillPreference === "master" ? (
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  ) : (
+                    <Sparkles className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 mb-1">
+                    {skillPreference === "master"
+                      ? "🎯 Focusing on: Developing & Mastering Current Skills"
+                      : "🚀 Focusing on: Adding New Skills & Expanding"}
+                  </h3>
+                  <p className="text-sm text-slate-700">
+                    {skillPreference === "master"
+                      ? "Your role analysis is tailored to deepen your expertise in your current skill set. You'll focus on advanced concepts that strengthen your foundation."
+                      : "Your role analysis is tailored to help you learn complementary skills. You'll explore trending technologies in this AI-generated guide to expand your capabilities."}
+                  </p>
+                  
+                  {resumeSkills && resumeSkills.technicalSkills && (
+                    <div className="mt-3 flex flex-wrap gap-2 items-center">
+                      <span className="text-xs font-medium text-slate-600">
+                        Analyzing based on your:
+                      </span>
+                      {resumeSkills.technicalSkills.slice(0, 4).map((skill: string, index: number) => (
+                        <span
+                          key={index}
+                          className={`px-2 py-1 text-xs font-medium rounded ${
+                            skillPreference === "master"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-teal-100 text-teal-700"
+                          }`}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Start Scrollable Tabs Container */}
@@ -499,6 +562,23 @@ export default function RoleAnalysis() {
            {/* SKILLS TAB */}
            {activeTab === 'skills' && (
              <div className="space-y-6">
+                 {/* Title logic from the new design */}
+                 <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                      {skillPreference === "master" 
+                        ? "Master Your Current Skills - Advanced Path"
+                        : skillPreference === "expand"
+                        ? "Expand Your Skillset - Growth Path"
+                        : "Required Skills & Competencies"}
+                    </h2>
+                    <p className="text-slate-600">
+                      {skillPreference === "master"
+                        ? "Based on your resume analysis, here is the AI-generated path to mastery for your current stack."
+                        : skillPreference === "expand"
+                        ? "Based on your current skills, the AI recommends these complementary skills to expand your capability."
+                        : "Essential skills needed for this role"}
+                    </p>
+                 </div>
                 
                 {/* Soft Skills Section */}
                 {roleData.soft_skills && roleData.soft_skills.length > 0 && (
@@ -572,6 +652,31 @@ export default function RoleAnalysis() {
                    </div>
                 </div>
              </div>
+           )}
+
+           {/* Recommended Projects or Resources (if standard skills view or custom) */}
+           {activeTab === 'skills' && skillPreference && (
+              <div className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
+                 <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <Code className="w-5 h-5 text-indigo-500" />
+                    {skillPreference === 'master' ? 'Advanced Mastery Projects' : 'Projects to Learn New Skills'}
+                 </h3>
+                 <p className="text-sm text-slate-600 mb-4">
+                    Apply your AI-generated {skillPreference === 'master' ? 'deep dive' : 'expansion'} knowledge.
+                 </p>
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-indigo-300 transition-colors">
+                        <h4 className="font-bold text-slate-800 mb-2">Build a Production-Ready System</h4>
+                        <p className="text-xs text-slate-500 mb-2">Take the core technical skills from above and implement them with full CI/CD, testing, and optimization.</p>
+                        <span className="text-xs font-bold text-indigo-600">{skillPreference === 'master' ? 'Focus: Architecture' : 'Focus: Implementation'}</span>
+                    </div>
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-indigo-300 transition-colors">
+                        <h4 className="font-bold text-slate-800 mb-2">Open Source Contribution</h4>
+                        <p className="text-xs text-slate-500 mb-2">Contribute to a major repository utilizing the primary skills listed in your personalized guide.</p>
+                        <span className="text-xs font-bold text-indigo-600">Focus: Collaboration</span>
+                    </div>
+                 </div>
+              </div>
            )}
 
            {/* DAY IN THE LIFE TAB (NEW) */}

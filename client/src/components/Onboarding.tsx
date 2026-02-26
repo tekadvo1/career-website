@@ -13,7 +13,8 @@ export default function Onboarding() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<'input' | 'choose-path'>('input');
+  const [step, setStep] = useState<'input' | 'choose-path' | 'choose-level'>('input');
+  const [selectedPath, setSelectedPath] = useState<'master' | 'expand' | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
   useEffect(() => {
@@ -421,15 +422,8 @@ export default function Onboarding() {
               {/* Card 1: Master */}
               <button 
                 onClick={() => {
-                  navigate('/role-analysis', {
-                    state: {
-                      role: analysisData?.suggestedRole || role || 'Expert',
-                      hasResume: true,
-                      resumeFileName: file?.name,
-                      analysis: null, // trigger new fetch
-                      learningPath: 'master' // pass the intent
-                    }
-                  });
+                  setSelectedPath('master');
+                  setStep('choose-level');
                 }}
                 className="group text-left bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-teal-500 hover:shadow-md transition-all flex flex-col items-start"
               >
@@ -465,7 +459,8 @@ export default function Onboarding() {
                       hasResume: true,
                       resumeFileName: file?.name,
                       analysis: null, // trigger new fetch
-                      learningPath: 'expand' // pass the intent
+                      learningPath: 'expand', // pass the intent
+                      resumeSkills: analysisData // Forward for UI rendering
                     }
                   });
                 }}
@@ -503,6 +498,58 @@ export default function Onboarding() {
                 Go Back
               </button>
             </div>
+          </div>
+        )}
+
+        {step === 'choose-level' && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full md:max-w-2xl max-w-xl mx-auto flex flex-col items-center">
+            <div className="text-center mb-8">
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-6 h-6 text-teal-600" />
+              </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
+                Select Your Expertise Level
+              </h1>
+              <p className="text-slate-600 text-base">
+                To build your mastery path, tell us your current proficiency level.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 w-full mb-8">
+              {[
+                { level: 'Beginner', desc: 'Solid foundation, looking to build confidence and deeper understanding.' },
+                { level: 'Intermediate', desc: 'Comfortable with core concepts, ready to conquer advanced features.' },
+                { level: 'Advanced', desc: 'Highly experienced, focusing on architecture and leadership.' }
+              ].map((lvl, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    navigate('/role-analysis', {
+                      state: {
+                        role: analysisData?.suggestedRole || role || 'Expert',
+                        experienceLevel: lvl.level,
+                        hasResume: true,
+                        resumeFileName: file?.name,
+                        analysis: null,
+                        learningPath: selectedPath,
+                        resumeSkills: analysisData // Forward skills for RoleAnalysis UI
+                      }
+                    });
+                  }}
+                  className="group flex flex-col items-start w-full text-left bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-teal-500 hover:shadow-md transition-all"
+                >
+                  <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-teal-700 transition-colors">{lvl.level}</h3>
+                  <p className="text-sm text-slate-600">{lvl.desc}</p>
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setStep('choose-path')}
+              className="mt-2 text-sm text-slate-500 hover:text-slate-700 transition-colors underline underline-offset-4 font-medium"
+            >
+              Back to Path Selection
+            </button>
           </div>
         )}
 
