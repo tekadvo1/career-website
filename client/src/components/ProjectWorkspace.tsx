@@ -13,6 +13,7 @@ import {
   Lightbulb,
   FileText,
   Star,
+  BookOpen,
 } from "lucide-react";
 
 import { TaskGuideView } from "./TaskGuideView";
