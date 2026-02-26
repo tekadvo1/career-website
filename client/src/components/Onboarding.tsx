@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [role, setRole] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('Beginner');
   const [country, setCountry] = useState('USA'); // New state for country
@@ -17,10 +18,10 @@ export default function Onboarding() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user && user.onboarding_completed) {
+    if (user && user.onboarding_completed && !location.state?.force) {
       navigate('/dashboard');
     }
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

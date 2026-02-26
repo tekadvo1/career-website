@@ -189,7 +189,11 @@ export default function Sidebar({ activePage }: SidebarProps) {
                 key={item.route + item.label}
                 onClick={() => {
                   setIsOpen(false);
-                  navigate(item.route);
+                  if (item.route === '/onboarding') {
+                    navigate(item.route, { state: { force: true } });
+                  } else {
+                    navigate(item.route);
+                  }
                 }}
                 className={`w-full flex items-center gap-4 px-5 py-3.5 transition-all group ${
                   active
