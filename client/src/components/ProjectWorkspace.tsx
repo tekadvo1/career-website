@@ -110,7 +110,7 @@ export default function ProjectWorkspace() {
       id: "1",
       role: "assistant",
       content:
-        "👋 Welcome! I'm Antigravity AI, your real-time assistant for this guide.\n\n✅ My responses are generated via OpenAI API.\n✅ Your completed tasks and XP instantly sync to PostgreSQL.\n✅ Start checking off steps to build your streak!\n\nClick on any step or ask me a question about this project.",
+        "👋 Welcome! I'm FindStreak AI, your real-time assistant for this guide.\n\n✅ My responses are generated via OpenAI API.\n✅ Your completed tasks and XP instantly sync to PostgreSQL.\n✅ Start checking off steps to build your streak!\n\nClick on any step or ask me a question about this project.",
       timestamp: new Date(),
     },
   ]);
@@ -478,7 +478,7 @@ export default function ProjectWorkspace() {
   const progressPercentage = Math.round((completedSteps / (steps.length || 1)) * 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 relative pb-20">
+    <div className="min-h-screen bg-slate-50 relative pb-20 lg:pb-0">
       {/* Header */}
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
@@ -541,10 +541,9 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Main Content - Two Column Layout */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Step-by-Step Guide OR Task Guide View */}
-          <div className="lg:col-span-2 space-y-4">
+      <div className="px-6 py-8 h-[calc(100vh-68px)] flex flex-col md:flex-row max-w-[1600px] mx-auto overflow-hidden">
+        {/* Left Column - Step-by-Step Guide OR Task Guide View */}
+        <div className="w-full md:w-2/3 lg:w-3/4 pr-0 md:pr-8 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
             {!showGuideView ? (
               <>
                 <div className="flex items-center justify-between mb-2">
@@ -730,9 +729,9 @@ export default function ProjectWorkspace() {
           </div>
 
           {/* Right Column - REAL TIME AI Assistant */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-[88px]">
-              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 flex flex-col" style={{ height: 'calc(100vh - 110px)' }}>
+          <div className="w-full md:w-1/3 lg:w-1/4 h-full hidden md:block">
+            <div className="h-full relative">
+              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 flex flex-col absolute inset-0">
                 <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-inner relative">
@@ -740,7 +739,7 @@ export default function ProjectWorkspace() {
                       <div className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-800 animate-pulse"></div>
                     </div>
                     <div>
-                      <h3 className="font-bold text-white text-[15px]">Antigravity AI</h3>
+                      <h3 className="font-bold text-white text-[15px]">FindStreak AI</h3>
                       <p className="text-[11px] text-emerald-300 font-medium uppercase tracking-widest flex items-center gap-1">
                           🟢 Online
                       </p>
@@ -850,7 +849,6 @@ export default function ProjectWorkspace() {
                 </div>
               </Card>
             </div>
-          </div>
         </div>
       </div>
 
