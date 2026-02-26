@@ -105,12 +105,12 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
           <h3 className="flex items-center gap-2 text-[#00875a] text-lg font-bold mb-3"><Info className="w-5 h-5"/> Overview</h3>
           <p className="text-slate-700 leading-relaxed text-[15px]">{guide.overview}</p>
           
-          {(guide.overview.includes('Network error') || guide.overview.includes("couldn't generate")) && (
+          {(!guide.steps || guide.steps.length === 0 || guide.overview.toLowerCase().includes('error') || guide.overview.includes("couldn't generate")) && (
              <button 
                onClick={fetchGuide}
-               className="mt-6 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors border border-slate-200 shadow-sm"
+               className="mt-6 px-4 py-2 bg-[#00875a] hover:bg-emerald-700 text-white font-bold rounded-lg transition-colors shadow-sm flex items-center gap-2"
              >
-               Try Reloading AI Guide
+               <Zap className="w-4 h-4" /> Try Generating Again
              </button>
           )}
         </div>
