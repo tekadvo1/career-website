@@ -257,8 +257,8 @@ export default function Dashboard() {
 
       {/* ── HEADER ── */}
       <div className="bg-white border-b border-slate-200">
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
             {/* Left */}
             <div className="flex items-center gap-4">
               <div className="w-10" />
@@ -314,11 +314,11 @@ export default function Dashboard() {
           </div>
 
           {/* Search */}
-          <div className="relative mt-4">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="relative mt-2 md:mt-3">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input type="text" placeholder="Search projects by name, skills, or tags…"
               value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors" />
+              className="w-full pl-9 pr-4 py-1.5 md:py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50 focus:bg-white transition-colors" />
           </div>
         </div>
       </div>
@@ -333,8 +333,8 @@ export default function Dashboard() {
           const taskIdx = proj.progress_data?.currentTaskIndex   || 0;
           const task    = proj.project_data?.curriculum?.[modIdx]?.tasks?.[taskIdx];
           return (
-            <div className="px-6 pt-6 pb-2">
-              <div className="bg-gradient-to-r from-emerald-700 to-teal-800 rounded-2xl p-5 relative overflow-hidden shadow-md group">
+            <div className="px-4 md:px-6 pt-4 pb-2">
+              <div className="bg-gradient-to-r from-emerald-700 to-teal-800 rounded-xl p-4 md:p-5 relative overflow-hidden shadow-sm group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex-1">
@@ -371,8 +371,8 @@ export default function Dashboard() {
         })()}
 
         {/* Tabs */}
-        <div className="bg-white border-b border-slate-200 px-6">
-          <div className="flex gap-6 border-b border-slate-200">
+        <div className="bg-white border-b border-slate-200 px-4 md:px-6">
+          <div className="flex gap-4 md:gap-6 border-b border-slate-200">
             {[
               { id: 'recommended', label: 'For You',   count: null },
               { id: 'trending',    label: 'Trending',  count: null },
@@ -381,7 +381,7 @@ export default function Dashboard() {
               { id: 'saved',       label: 'Saved',     count: userProjects.filter(p => p.status === 'saved').length },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
-                className={`py-3.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                className={`py-2 md:py-2.5 text-xs md:text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
                 {tab.label}
                 {tab.count !== null && tab.count > 0 && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeTab === tab.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{tab.count}</span>
@@ -392,10 +392,10 @@ export default function Dashboard() {
         </div>
 
         {/* Project Grid */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 md:p-6">
           {/* Mission context banner */}
           {fromMission && (
-            <div className="mb-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-4">
+            <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
                 <Target className="w-4 h-4 text-white" />
               </div>
@@ -412,28 +412,27 @@ export default function Dashboard() {
 
           {isLoading ? (
             /* Skeleton */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="bg-white rounded-2xl overflow-hidden border border-slate-100 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-white rounded-xl overflow-hidden border border-slate-100 animate-pulse">
                   <div className="h-1.5 bg-gradient-to-r from-indigo-200 to-purple-200" />
-                  <div className="p-6 space-y-3">
+                  <div className="p-4 space-y-3">
                     <div className="flex justify-between"><div className="h-4 bg-slate-200 rounded w-1/4" /><div className="h-4 bg-slate-100 rounded w-16" /></div>
                     <div className="h-5 bg-slate-200 rounded w-3/4" />
                     <div className="h-3 bg-slate-100 rounded w-full" />
                     <div className="h-3 bg-slate-100 rounded w-2/3" />
-                    <div className="flex gap-2 pt-1"><div className="h-6 bg-slate-100 rounded-full w-16" /><div className="h-6 bg-slate-100 rounded-full w-20" /></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : filteredProjects.length > 0 ? (
             <>
-              <p className="text-slate-500 text-sm mb-4">
+              <p className="text-slate-500 text-xs md:text-sm mb-3">
                 Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
                 {activeTab === 'recommended' && <span className="ml-1 text-emerald-600 font-medium">· AI-personalised for you</span>}
                 {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 flex-wrap items-stretch">
                 {filteredProjects.map(project => {
                   const ds = diffStyle(project.difficulty);
                   const isUserProj = ['active', 'completed'].includes(project.status || '');
@@ -444,25 +443,25 @@ export default function Dashboard() {
                     <div
                       key={project.id}
                       onClick={() => handleCardClick(project)}
-                      className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-emerald-200 transition-all duration-200 cursor-pointer flex flex-col">
+                      className="bg-white rounded-lg border border-slate-200 overflow-hidden hover:shadow-md hover:border-emerald-200 transition-all duration-200 cursor-pointer flex flex-col h-full">
 
                       {/* colour top bar */}
-                      <div className={`h-1 ${ds.bar}`} />
+                      <div className={`h-1 flex-shrink-0 ${ds.bar}`} />
 
-                      <div className="p-5 flex-1">
+                      <div className="p-3 md:p-4 flex-1 flex flex-col min-h-0">
                         {/* Title row */}
-                        <div className="flex items-start justify-between mb-3 gap-2">
-                          <h2 className="text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-snug flex-1">
+                        <div className="flex items-start justify-between mb-2 gap-2">
+                          <h2 className="text-sm md:text-base font-bold text-slate-900 group-hover:text-emerald-600 transition-colors leading-snug flex-1 line-clamp-2">
                             {project.title}
                           </h2>
-                          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                          <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
                             {project.trending && (
-                              <span className="flex items-center gap-0.5 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-[10px] font-bold">
+                              <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-[9px] font-bold">
                                 <Flame className="w-2.5 h-2.5" /> Trending
                               </span>
                             )}
                             {isUserProj && project.status === 'completed' && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-600">
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase bg-slate-100 text-slate-600">
                                 ✓ Done
                               </span>
                             )}
@@ -470,23 +469,23 @@ export default function Dashboard() {
                         </div>
 
                         {/* Meta */}
-                        <div className="flex items-center gap-3 mb-3 text-sm text-slate-500">
-                          <span className={`font-semibold text-xs px-2 py-0.5 rounded-md ${ds.badge}`}>{project.difficulty}</span>
+                        <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-2 text-[10px] md:text-xs text-slate-500">
+                          <span className={`font-semibold px-1.5 py-0.5 rounded ${ds.badge}`}>{project.difficulty}</span>
                           <span>·</span>
                           <span>{project.metrics?.timeEstimate || project.duration}</span>
                           <span>·</span>
                           <span className="font-bold text-green-600">{project.matchScore}% Match</span>
                         </div>
 
-                        <p className="text-slate-500 text-sm line-clamp-2 mb-3">{project.description}</p>
+                        <p className="text-slate-500 text-xs line-clamp-2 md:line-clamp-3 mb-3 flex-1">{project.description}</p>
 
                         {/* Progress bar for active */}
                         {project.status === 'active' && totalTasks > 0 && (
-                          <div className="mb-3">
-                            <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                          <div className="mb-2 mt-auto">
+                            <div className="flex justify-between text-[9px] text-slate-400 mb-0.5">
                               <span>Progress</span><span>{pct}%</span>
                             </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
                               <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                             </div>
                           </div>
@@ -494,24 +493,24 @@ export default function Dashboard() {
 
                         {/* Tags */}
                         {project.tags && project.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {project.tags.slice(0, 4).map(tag => (
-                              <span key={tag} className="px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">{tag}</span>
+                          <div className="flex flex-wrap gap-1 mt-auto pt-2">
+                            {project.tags.slice(0, 3).map(tag => (
+                              <span key={tag} className="px-1.5 py-0.5 bg-slate-50 border border-slate-100 text-slate-500 rounded text-[9.5px] font-medium whitespace-nowrap">{tag}</span>
                             ))}
                           </div>
                         )}
                       </div>
 
                       {/* Footer */}
-                      <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span className="flex items-center gap-1 font-semibold text-slate-600"><Zap className="w-3.5 h-3.5 text-amber-500" />{project.metrics?.xp || 500} XP</span>
+                      <div className="px-3 py-2 md:px-4 md:py-2.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <span className="flex items-center gap-1 font-semibold text-slate-600"><Zap className="w-3 h-3 text-amber-500" />{project.metrics?.xp || 500} XP</span>
                           {project.metrics?.matchIncrease && (
                             <span className="font-semibold text-emerald-600">{project.metrics.matchIncrease} boost</span>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-slate-400 group-hover:text-emerald-600 font-medium transition-colors">
-                          View Details <ChevronRight className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 group-hover:text-emerald-600 font-medium transition-colors">
+                          Details <ChevronRight className="w-3 h-3" />
                         </div>
                       </div>
                     </div>
