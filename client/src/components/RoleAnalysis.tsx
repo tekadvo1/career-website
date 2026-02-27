@@ -363,27 +363,27 @@ export default function RoleAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 py-6" id="role-analysis-content">
-      <div className="max-w-5xl mx-auto">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-2 md:p-4 min-h-screen" id="role-analysis-content">
+      <div className="max-w-5xl mx-auto flex flex-col h-[90vh]">
         
 
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4">
-          <div className="flex flex-col md:flex-row md:items-start justify-between mb-4 gap-4">
+        <div className="bg-white rounded-xl shadow-lg p-3 md:p-5 mb-3 flex-shrink-0">
+          <div className="flex flex-col md:flex-row md:items-start justify-between mb-2 md:mb-3 gap-2">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-xs mb-3 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-bold mb-1.5 shadow-sm">
                 <Award className="w-3 h-3" />
                 <span>AI-Powered Career Guide</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{roleData.title}</h1>
-              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-4">{roleData.description}</p>
+              <h1 className="text-xl md:text-xl font-bold text-gray-900 mb-1">{roleData.title}</h1>
+              <p className="text-xs text-gray-600 leading-snug line-clamp-2">{roleData.description}</p>
               
               {/* Career Path Quick View */}
               {roleData.career_paths && roleData.career_paths.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-2">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500 mt-1.5">
                      <span className="font-bold uppercase tracking-wide">Next Steps:</span>
                      {roleData.career_paths.map((path: any, i: number) => (
-                        <span key={i} className="bg-gray-100 px-2 py-1 rounded text-gray-700 border border-gray-200">
+                        <span key={i} className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 border border-gray-200">
                            {path.role}
                         </span>
                      ))}
@@ -391,23 +391,23 @@ export default function RoleAnalysis() {
               )}
 
               {hasResume && resumeFileName && (
-                <p className="text-xs text-indigo-600 font-medium mt-2 flex items-center gap-1">
+                <p className="text-[10px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
                   ✓ Resume analyzed: <span className="truncate max-w-[200px]">{resumeFileName}</span>
                 </p>
               )}
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                 <button 
                   onClick={handleDownloadPDF}
                   disabled={isDownloading}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium w-full md:w-auto disabled:opacity-50"
+                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium w-full md:w-auto disabled:opacity-50"
                 >
                   {isDownloading ? (
                     <span>Generating...</span>
                   ) : (
                     <>
-                      <Download className="w-4 h-4" />
+                      <Download className="w-3.5 h-3.5" />
                       Download PDF
                     </>
                   )}
@@ -417,41 +417,42 @@ export default function RoleAnalysis() {
           </div>
 
           {/* Enhanced Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2 md:mt-0">
             
             {/* Job Growth */}
-            <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-               <div className="flex items-center gap-2 mb-1">
-                  <div className="p-1.5 bg-green-100 rounded text-green-600">
-                     <TrendingUp className="w-4 h-4" />
+            <div className="p-2 bg-green-50 rounded-lg border border-green-200">
+               <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="p-1 bg-green-100 rounded text-green-600">
+                     <TrendingUp className="w-3 h-3" />
                   </div>
-                  <span className="text-xs font-bold text-gray-500 uppercase">Growth</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Growth</span>
                </div>
-               <p className="font-bold text-sm text-gray-900">{roleData.jobGrowth}</p>
+               <p className="font-bold text-[11px] text-gray-900 line-clamp-2 md:line-clamp-none">{roleData.jobGrowth}</p>
             </div>
 
             {/* Entry Salary */}
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-               <div className="flex items-center gap-2 mb-1">
-                  <div className="p-1.5 bg-blue-100 rounded text-blue-600">
-                     <DollarSign className="w-4 h-4" />
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+               <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="p-1 bg-blue-100 rounded text-blue-600">
+                     <DollarSign className="w-3 h-3" />
                   </div>
-                  <span className="text-xs font-bold text-gray-500 uppercase">Entry Level</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Entry Level</span>
                </div>
-               <p className="font-bold text-sm text-gray-900">{roleData.salary_insights?.entry_level || roleData.salaryRange}</p>
+               <p className="font-bold text-xs text-gray-900">{roleData.salary_insights?.entry_level || roleData.salaryRange}</p>
             </div>
 
             {/* Senior Salary */}
-            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-               <div className="flex items-center gap-2 mb-1">
-                  <div className="p-1.5 bg-indigo-100 rounded text-indigo-600">
-                     <DollarSign className="w-4 h-4" />
+            <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-200">
+               <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className="p-1 bg-indigo-100 rounded text-indigo-600">
+                     <DollarSign className="w-3 h-3" />
                   </div>
-                  <span className="text-xs font-bold text-gray-500 uppercase">Senior Level</span>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Senior Level</span>
                </div>
-               <p className="font-bold text-sm text-gray-900">{roleData.salary_insights?.senior_level || "N/A"}</p>
+               <p className="font-bold text-xs text-gray-900">{roleData.salary_insights?.senior_level || "N/A"}</p>
             </div>
           </div>
+          
           
           {/* Learning Path Banner - Only shown if skillPreference exists */}
           {skillPreference && (
@@ -513,84 +514,84 @@ export default function RoleAnalysis() {
           )}
         </div>
 
-        {/* Start Scrollable Tabs Container */}
-        <div className="bg-white rounded-lg shadow-sm p-1.5 mb-4 overflow-x-auto no-scrollbar">
-            <div className="flex md:grid md:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
+        {/* Start Tabs Container (Wrapped on Mobile, Grid on Desktop) */}
+        <div className="bg-white rounded-lg shadow-sm p-1 md:p-1.5 mb-3 flex-shrink-0 border border-slate-100">
+            <div className="flex flex-wrap md:grid md:grid-cols-7 gap-1 md:gap-1.5 justify-center">
               <button
                 onClick={() => setActiveTab('workflow')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'workflow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <GitBranch className="w-4 h-4" /> Workflow
+                <GitBranch className="w-3 h-3" /> Workflow
               </button>
               <button
                 onClick={() => setActiveTab('skills')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'skills' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Award className="w-4 h-4" /> Skills
+                <Award className="w-3 h-3" /> Skills
               </button>
               <button
                 onClick={() => setActiveTab('daylife')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'daylife' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Clock className="w-4 h-4" /> Day in Life
+                <Clock className="w-3 h-3" /> Day in Life
               </button>
               <button
                 onClick={() => setActiveTab('interview')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'interview' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <User className="w-4 h-4" /> Interview
+                <User className="w-3 h-3" /> Interview
               </button>
               <button
                 onClick={() => setActiveTab('tools')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'tools' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Wrench className="w-4 h-4" /> Tools
+                <Wrench className="w-3 h-3" /> Tools
               </button>
               <button
                 onClick={() => setActiveTab('languages')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'languages' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Code className="w-4 h-4" /> Tech
+                <Code className="w-3 h-3" /> Tech
               </button>
               <button
                 onClick={() => setActiveTab('resources')}
-                className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg font-medium text-xs md:text-sm transition-all whitespace-nowrap ${
+                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
                   activeTab === 'resources' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <BookOpen className="w-4 h-4" /> Resources
+                <BookOpen className="w-3 h-3" /> Resources
               </button>
             </div>
         </div>
         
         {/* Content Area */}
-        <div className="bg-white rounded-xl shadow-lg p-5">
+        <div className="bg-white rounded-xl shadow-lg p-3 md:p-5 mb-3 flex-1 overflow-y-auto no-scrollbar relative min-h-0">
            
            {/* SKILLS TAB */}
            {activeTab === 'skills' && (
-             <div className="space-y-6">
+             <div className="space-y-4">
                  {/* Title logic from the new design */}
-                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                 <div className="mb-3">
+                    <h2 className="text-lg font-bold text-slate-900 mb-0.5">
                       {skillPreference === "master" 
                         ? "Master Your Current Skills - Advanced Path"
                         : skillPreference === "expand"
                         ? "Expand Your Skillset - Growth Path"
                         : "Required Skills & Competencies"}
                     </h2>
-                    <p className="text-slate-600">
+                    <p className="text-xs text-slate-600">
                       {skillPreference === "master"
                         ? "Based on your resume analysis, here is the AI-generated path to mastery for your current stack."
                         : skillPreference === "expand"
@@ -1011,34 +1012,36 @@ export default function RoleAnalysis() {
 
            {/* WORKFLOW TAB (NEW) */}
            {activeTab === 'workflow' && (
-             <div>
-               <h2 className="text-xl font-bold text-gray-900 mb-2">Role Workflow & Lifecycle</h2>
-               <p className="text-gray-500 mb-6">A high-level overview of how projects are executed in this role.</p>
+             <div className="h-full flex flex-col">
+               <h2 className="text-lg font-bold text-gray-900 mb-1">Role Workflow & Lifecycle</h2>
+               <p className="text-xs text-gray-500 mb-3">A high-level overview of how projects are executed in this role.</p>
 
-               <div className="space-y-6">
+               <div className="space-y-3 flex-1 flex flex-col">
                  {roleData.workflow && roleData.workflow.length > 0 ? (
                    <>
-                     <div className="relative border-l-2 border-indigo-100 ml-3 space-y-8 py-2">
+                     <div className="relative border-l-2 border-indigo-100 ml-2 space-y-4 py-1">
                        {roleData.workflow.slice(0, 3).map((step: any, index: number) => (
-                         <div key={index} className="ml-6 relative">
-                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm"></div>
-                           <h3 className="font-bold text-lg text-gray-900 mb-1">{step.stage}</h3>
-                           <p className="text-sm text-gray-600">{step.description}</p>
+                         <div key={index} className="ml-4 relative">
+                           <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-indigo-600 border-[3px] border-white shadow-sm"></div>
+                           <h3 className="font-bold text-sm text-gray-900 mb-0.5">{step.stage}</h3>
+                           <p className="text-[11px] text-gray-600 line-clamp-2 md:line-clamp-none">{step.description}</p>
                          </div>
                        ))}
                      </div>
                      
                      {roleData.workflow.length > 3 && (
-                        <p className="text-center text-sm text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
+                        <p className="text-center text-[10px] text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
                      )}
 
+                     <div className="mt-auto">
                      <button
                        onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4"
+                       className="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-1.5 text-xs"
                      >
-                       <GitBranch className="w-5 h-5" />
+                       <GitBranch className="w-4 h-4" />
                        View Full Workflow & Lifecycle Details
                      </button>
+                     </div>
                    </>
                  ) : (
                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -1057,12 +1060,12 @@ export default function RoleAnalysis() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end mt-4">
+        <div className="flex justify-end flex-shrink-0">
           <button
             onClick={() => navigate('/dashboard', { state: { role, analysis: roleData } })}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            Continue <ChevronRight className="w-4 h-4" />
+            Continue <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       </div>
