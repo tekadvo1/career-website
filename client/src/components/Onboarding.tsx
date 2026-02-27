@@ -142,18 +142,18 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen w-screen overflow-y-auto flex items-center justify-center bg-gray-100 p-4 py-8 md:py-12">
-      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-8 md:p-10 my-auto">
+    <div className="min-h-screen w-screen overflow-y-auto flex items-center justify-center bg-gray-100 p-4 md:py-6">
+      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 my-auto">
         
         {step === 'input' && (
           <>
         {/* Header Section */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold mb-4">
+        <div className="text-center mb-5">
+          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold mb-3">
             <Sparkles className="w-3 h-3 mr-1.5" />
             AI-Powered Matching
           </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
+          <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 mb-2">
             Let's Find Your Perfect Match
           </h1>
           <p className="text-slate-600 text-sm">
@@ -162,11 +162,11 @@ export default function Onboarding() {
         </div>
 
         {/* Main Content - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* LEFT SIDE: Role Input */}
           <div className="flex flex-col">
-            <h2 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
+            <h2 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
               What role are you looking for?
             </h2>
             
@@ -176,7 +176,7 @@ export default function Onboarding() {
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                 placeholder="e.g. Software Engineer, Product Manager"
                 value={role}
                 onChange={(e) => {
@@ -203,7 +203,7 @@ export default function Onboarding() {
               
               {/* AI Suggestions Dropdown */}
               {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-48 overflow-auto">
                   <div className="px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 border-b border-indigo-100 flex items-center">
                     <Sparkles className="w-3 h-3 mr-1.5" />
                     AI Suggested Roles
@@ -226,8 +226,8 @@ export default function Onboarding() {
               )}
             </div>
             
-            <div className="mb-4">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <div className="mb-3">
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Experience Level
               </label>
               <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -247,8 +247,8 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="mb-6">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+            <div className="mb-4">
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
                 Target Country
               </label>
               <div className="grid grid-cols-3 gap-2">
@@ -268,7 +268,7 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <p className="text-xs text-gray-500 mb-6">
+            <p className="text-[10px] text-gray-500 mb-4">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>
 
@@ -277,7 +277,7 @@ export default function Onboarding() {
               <button 
                 onClick={handleSubmit}
                 disabled={isAnalyzing}
-                className={`relative flex-1 overflow-hidden px-5 py-3 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
+                className={`relative flex-1 overflow-hidden px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
               >
                 {/* Progress bar background */}
                 {isAnalyzing && (
@@ -304,12 +304,12 @@ export default function Onboarding() {
 
           {/* RIGHT SIDE: Upload Resume */}
           <div className="flex flex-col">
-            <h2 className="text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
+            <h2 className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
               Upload your resume
             </h2>
             
             <div 
-              className={`flex-1 min-h-[200px] border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer ${
+              className={`flex-1 min-h-[160px] border-2 border-dashed rounded-lg p-5 flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isDragging 
                   ? 'border-emerald-500 bg-emerald-50' 
                   : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
@@ -323,43 +323,43 @@ export default function Onboarding() {
                 type="file" 
                 ref={fileInputRef} 
                 className="hidden" 
-                accept=".doc,.docx"
+                accept=".doc,.docx,.pdf"
                 onChange={handleFileSelect}
               />
               
               {file ? (
                 <div className="text-center">
-                  <div className="inline-flex p-3 bg-indigo-100 rounded-full mb-3">
-                    <FileText className="w-8 h-8 text-indigo-600" />
+                  <div className="inline-flex p-2 bg-indigo-100 rounded-full mb-2">
+                    <FileText className="w-6 h-6 text-indigo-600" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-900 mb-1 truncate max-w-full">{file.name}</p>
-                  <p className="text-xs text-gray-500 mb-3">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                  <p className="text-xs font-semibold text-gray-900 mb-1 truncate max-w-full">{file.name}</p>
+                  <p className="text-[10px] text-gray-500 mb-2">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    className="text-red-600 text-xs font-medium hover:text-red-700 inline-flex items-center"
+                    className="text-red-600 text-[10px] font-medium hover:text-red-700 inline-flex items-center"
                   >
                     <X className="w-3 h-3 mr-1" /> Remove File
                   </button>
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="inline-flex p-3 bg-gray-100 rounded-full mb-3">
-                    <Upload className="w-7 h-7 text-gray-400" />
+                  <div className="inline-flex p-2 bg-gray-100 rounded-full mb-2">
+                    <Upload className="w-6 h-6 text-gray-400" />
                   </div>
                   <p className="text-sm font-bold text-gray-900 mb-1">
                     Drop resume here
                   </p>
-                  <p className="text-xs text-gray-500 mb-4">
-                    Support for DOC, DOCX
+                  <p className="text-[10px] text-gray-500 mb-3">
+                    Support for PDF, DOCX
                   </p>
-                  <button className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                  <button className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                     Browse Files
                   </button>
                 </div>
               )}
             </div>
             
-            <p className="text-xs text-gray-400 text-center mt-2">
+            <p className="text-[10px] text-gray-400 text-center mt-2">
               Max file size: 5MB
             </p>
           </div>
