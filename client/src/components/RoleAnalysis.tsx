@@ -363,12 +363,12 @@ export default function RoleAnalysis() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-2 md:p-4 min-h-screen" id="role-analysis-content">
-      <div className="max-w-5xl mx-auto flex flex-col h-[90vh]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-2 md:p-4" id="role-analysis-content">
+      <div className="max-w-5xl mx-auto">
         
 
         {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg p-3 md:p-5 mb-3 flex-shrink-0">
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4">
           <div className="flex flex-col md:flex-row md:items-start justify-between mb-2 md:mb-3 gap-2">
             <div className="flex-1">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-bold mb-1.5 shadow-sm">
@@ -515,7 +515,7 @@ export default function RoleAnalysis() {
         </div>
 
         {/* Start Tabs Container (Wrapped on Mobile, Grid on Desktop) */}
-        <div className="bg-white rounded-lg shadow-sm p-1 md:p-1.5 mb-3 flex-shrink-0 border border-slate-100">
+        <div className="bg-white rounded-lg shadow-sm p-1.5 mb-4 border border-slate-100">
             <div className="flex flex-wrap md:grid md:grid-cols-7 gap-1 md:gap-1.5 justify-center">
               <button
                 onClick={() => setActiveTab('workflow')}
@@ -577,8 +577,7 @@ export default function RoleAnalysis() {
         </div>
         
         {/* Content Area */}
-        <div className="bg-white rounded-xl shadow-lg p-3 md:p-5 mb-3 flex-1 overflow-y-auto no-scrollbar relative min-h-0">
-           
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4 relative">
            {/* SKILLS TAB */}
            {activeTab === 'skills' && (
              <div className="space-y-4">
@@ -1012,36 +1011,34 @@ export default function RoleAnalysis() {
 
            {/* WORKFLOW TAB (NEW) */}
            {activeTab === 'workflow' && (
-             <div className="h-full flex flex-col">
-               <h2 className="text-lg font-bold text-gray-900 mb-1">Role Workflow & Lifecycle</h2>
-               <p className="text-xs text-gray-500 mb-3">A high-level overview of how projects are executed in this role.</p>
+             <div>
+               <h2 className="text-xl font-bold text-gray-900 mb-2">Role Workflow & Lifecycle</h2>
+               <p className="text-gray-500 mb-6">A high-level overview of how projects are executed in this role.</p>
 
-               <div className="space-y-3 flex-1 flex flex-col">
+               <div className="space-y-6">
                  {roleData.workflow && roleData.workflow.length > 0 ? (
                    <>
-                     <div className="relative border-l-2 border-indigo-100 ml-2 space-y-4 py-1">
+                     <div className="relative border-l-2 border-indigo-100 ml-3 space-y-8 py-2">
                        {roleData.workflow.slice(0, 3).map((step: any, index: number) => (
-                         <div key={index} className="ml-4 relative">
-                           <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-indigo-600 border-[3px] border-white shadow-sm"></div>
-                           <h3 className="font-bold text-sm text-gray-900 mb-0.5">{step.stage}</h3>
-                           <p className="text-[11px] text-gray-600 line-clamp-2 md:line-clamp-none">{step.description}</p>
+                         <div key={index} className="ml-6 relative">
+                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm"></div>
+                           <h3 className="font-bold text-lg text-gray-900 mb-1">{step.stage}</h3>
+                           <p className="text-sm text-gray-600">{step.description}</p>
                          </div>
                        ))}
                      </div>
                      
                      {roleData.workflow.length > 3 && (
-                        <p className="text-center text-[10px] text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
+                        <p className="text-center text-sm text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
                      )}
 
-                     <div className="mt-auto">
                      <button
                        onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-1.5 text-xs"
+                       className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4"
                      >
-                       <GitBranch className="w-4 h-4" />
+                       <GitBranch className="w-5 h-5" />
                        View Full Workflow & Lifecycle Details
                      </button>
-                     </div>
                    </>
                  ) : (
                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -1060,12 +1057,12 @@ export default function RoleAnalysis() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end flex-shrink-0">
+        <div className="flex justify-end mt-4 mb-8">
           <button
             onClick={() => navigate('/dashboard', { state: { role, analysis: roleData } })}
-            className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
           >
-            Continue <ChevronRight className="w-3 h-3" />
+            Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
