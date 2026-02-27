@@ -61,8 +61,8 @@ export default function SignUp() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-gray-100 font-sans p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-full">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 font-sans p-4 sm:p-8">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden md:max-h-[90vh]">
         
         {/* LEFT SIDE - Sign Up Form */}
         <div className="w-full md:w-3/5 p-6 md:p-8 overflow-y-auto custom-scrollbar">
@@ -112,7 +112,7 @@ export default function SignUp() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label htmlFor="password" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Password</label>
                 <div className="relative">
@@ -171,7 +171,7 @@ export default function SignUp() {
         </div>
 
         {/* RIGHT SIDE - Social Login */}
-        <div className="w-full md:w-2/5 p-6 md:p-8 bg-slate-50 border-l border-slate-100 flex flex-col justify-center items-center text-center">
+        <div className="w-full md:w-2/5 p-6 md:p-8 bg-slate-50 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col justify-center items-center text-center">
           
           <div className="mb-4 md:mb-6">
             <h2 className="text-base font-bold text-slate-800">Or continue with</h2>
