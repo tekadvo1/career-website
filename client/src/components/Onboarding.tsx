@@ -162,8 +162,13 @@ export default function Onboarding() {
         </div>
 
         {/* Main Content - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
           
+          {/* Optional OR divider for desktop */}
+          <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-100 rounded-full items-center justify-center text-[10px] font-bold text-gray-400 uppercase z-10 shadow-sm">
+            OR
+          </div>
+
           {/* LEFT SIDE: Role Input */}
           <div className="flex flex-col">
             <h2 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
@@ -268,38 +273,15 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <p className="text-[10px] text-gray-500 mb-4">
+            <p className="text-[10px] text-gray-500 mb-4 md:mb-0">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>
+          </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 mt-auto">
-              <button 
-                onClick={handleSubmit}
-                disabled={isAnalyzing}
-                className={`relative flex-1 overflow-hidden px-4 py-2.5 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
-              >
-                {/* Progress bar background */}
-                {isAnalyzing && (
-                  <div 
-                    className="absolute inset-y-0 left-0 bg-teal-500/50 transition-all duration-300 ease-out z-0" 
-                    style={{ width: `${progress}%` }} 
-                  />
-                )}
-                
-                <div className="relative z-10 flex items-center justify-center">
-                  {isAnalyzing ? (
-                    <>
-                      <Sparkles className="animate-pulse -ml-1 mr-2 h-4 w-4 text-white" />
-                      Analyzing... {Math.round(progress)}%
-                    </>
-                  ) : (
-                    file ? 'Analyze Resume & Build Plan' : 'Build My Career Plan'
-                  )}
-                </div>
-              </button>
-
-            </div>
+          <div className="md:hidden flex items-center justify-center -my-2">
+            <div className="w-full h-px bg-gray-200"></div>
+            <span className="px-3 text-[10px] font-bold text-gray-400 uppercase bg-white">OR</span>
+            <div className="w-full h-px bg-gray-200"></div>
           </div>
 
           {/* RIGHT SIDE: Upload Resume */}
@@ -363,6 +345,34 @@ export default function Onboarding() {
               Max file size: 5MB
             </p>
           </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="mt-8 mb-2 flex justify-center">
+          <button 
+            onClick={handleSubmit}
+            disabled={isAnalyzing}
+            className={`relative w-full md:w-3/4 overflow-hidden px-4 md:py-3 py-3.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center shadow-lg hover:shadow-xl ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
+          >
+            {/* Progress bar background */}
+            {isAnalyzing && (
+              <div 
+                className="absolute inset-y-0 left-0 bg-teal-500/50 transition-all duration-300 ease-out z-0" 
+                style={{ width: `${progress}%` }} 
+              />
+            )}
+            
+            <div className="relative z-10 flex items-center justify-center">
+              {isAnalyzing ? (
+                <>
+                  <Sparkles className="animate-pulse -ml-1 mr-2 h-4 w-4 text-white" />
+                  Analyzing... {Math.round(progress)}%
+                </>
+              ) : (
+                file ? 'Analyze Resume & Build Career Plan' : 'Build My Career Plan'
+              )}
+            </div>
+          </button>
         </div>
         </>
         )}
