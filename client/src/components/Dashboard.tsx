@@ -258,9 +258,9 @@ export default function Dashboard() {
       {/* ── HEADER ── */}
       <div className="bg-white border-b border-slate-200">
         <div className="px-4 md:px-6 py-3 md:py-4">
-          <div className="flex items-center justify-between mb-2 md:mb-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2 md:mb-3">
             {/* Left */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <div className="w-10" />
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -282,7 +282,7 @@ export default function Dashboard() {
             </div>
 
             {/* Right */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end md:self-auto w-full md:w-auto justify-end">
               {/* Difficulty pills */}
               <div className="hidden md:flex items-center gap-1">
                 {['All', 'Beginner', 'Intermediate', 'Advanced'].map(d => {
@@ -305,7 +305,7 @@ export default function Dashboard() {
 
               {/* Find Trending */}
               <button onClick={handleGenerateTrending} disabled={isTrendLoading}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-70 h-8">
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-70 h-8 flex-1 md:flex-none">
                 {isTrendLoading
                   ? <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Scanning…</>
                   : <><Sparkles className="w-3.5 h-3.5" /> Find Trending</>}
@@ -347,7 +347,7 @@ export default function Dashboard() {
                     <h2 className="text-2xl font-bold text-white mb-2">{task?.title || 'Continue Your Project'}</h2>
                     <p className="text-emerald-50 text-sm max-w-xl">Complete your daily task to earn XP points and accelerate your career growth!</p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
+                  <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto mt-2 md:mt-0">
                     <button onClick={() => {
                         if (['active', 'completed'].includes(proj.status || '')) {
                            navigate('/project-workspace', { state: { project: proj, role: selectedRole } });
@@ -355,11 +355,11 @@ export default function Dashboard() {
                            handleStartProject(proj);
                         }
                     }}
-                      className="px-6 py-2.5 bg-white text-emerald-700 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-50 transition-all text-sm shadow-sm">
+                      className="px-6 py-2.5 bg-white text-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 transition-all text-sm shadow-sm w-full md:w-auto">
                       Start Mission
                       <ChevronRight className="w-4 h-4" />
                     </button>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full md:w-auto justify-end">
                       <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-[10px] font-bold text-amber-300 backdrop-blur-sm border border-white/5"><Zap className="w-3 h-3" /> 50 XP</span>
                       <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-[10px] font-medium text-emerald-100 backdrop-blur-sm border border-white/5"><Clock className="w-3 h-3" /> {task?.duration || '30 min'}</span>
                     </div>
@@ -371,8 +371,8 @@ export default function Dashboard() {
         })()}
 
         {/* Tabs */}
-        <div className="bg-white border-b border-slate-200 px-4 md:px-6">
-          <div className="flex gap-4 md:gap-6 border-b border-slate-200">
+        <div className="bg-white border-b border-slate-200 px-4 md:px-6 overflow-x-auto no-scrollbar">
+          <div className="flex gap-4 md:gap-6 border-b border-slate-200 min-w-max md:min-w-0">
             {[
               { id: 'recommended', label: 'For You',   count: null },
               { id: 'trending',    label: 'Trending',  count: null },
