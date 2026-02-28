@@ -17,6 +17,7 @@ import WorkflowLifecycle from './components/WorkflowLifecycle';
 import ProjectWorkspace from './components/ProjectWorkspace';
 import Missions from './components/Missions';
 import Achievements from './components/Achievements';
+import MyProjects from './components/MyProjects';
 
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -70,6 +71,7 @@ function App() {
           <Route path="/project-workspace" element={<ProjectWorkspace />} />
           <Route path="/missions" element={<Missions />} />
           <Route path="/achievements" element={<Achievements />} />
+          <Route path="/my-projects" element={<MyProjects />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -73,7 +73,7 @@ const navItems: NavItem[] = [
     label: 'My Projects',
     subtitle: 'View ongoing projects',
     icon: <LayoutDashboard className="w-5 h-5 text-emerald-600" />,
-    route: '/project-workspace',
+    route: '/my-projects',
   },
   {
     label: 'Achievements',
