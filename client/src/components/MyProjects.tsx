@@ -160,15 +160,18 @@ export default function MyProjects() {
       <Sidebar activePage="my-projects" />
       
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[1400px] mx-auto px-8 py-6">
-          {/* Header */}
-          <div className="mb-8 flex flex-col md:flex-row md:items-center gap-4">
+        {/* Sticky Header Top Bar to protect Hamburger Menu */}
+        <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200/50 px-6 md:px-8 py-4 mb-6">
+          <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center gap-4">
             <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
             <div>
               <h1 className="text-2xl font-bold text-slate-800">My Projects</h1>
-              <p className="text-slate-500 text-sm mt-1">Track and manage all your learning projects</p>
+              <p className="text-slate-500 text-sm mt-0.5">Track and manage all your learning projects</p>
             </div>
           </div>
+        </div>
+
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 pb-12">
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
              <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500">
