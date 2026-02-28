@@ -3,106 +3,92 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   Send,
   Sparkles,
-  User,
-  Bot,
-  Lightbulb,
-  BookOpen,
-  Code,
-  ArrowLeft,
   Zap,
-  Info,
+  Target,
+  Lightbulb,
+  Code,
+  Rocket,
+  Star,
+  BookOpen,
+  Clock,
+  AlertCircle,
+  Wrench,
+  FileCode,
+  LayoutDashboard,
+  User,
+  Menu,
+  X,
+  Plus,
+  Download,
+  FileText,
+  Gamepad2,
 } from "lucide-react";
 
 interface Message {
   id: string;
-  role: "user" | "assistant";
+  type: "user" | "assistant";
   content: string;
   timestamp: Date;
+  projectRecommendations?: ProjectRecommendation[];
+  setupGuide?: SetupGuide;
+  debuggingHelp?: DebuggingHelp;
 }
 
-// Mock AI responses based on common questions
-const generateAIResponse = (userMessage: string, eli5Mode: boolean, role: string): string => {
-  const message = userMessage.toLowerCase();
+interface ProjectRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  duration: string;
+  skills: string[];
+  xpReward: number;
+}
 
-  // ELI5 Mode responses
-  if (eli5Mode) {
-    if (message.includes("react") || message.includes("component")) {
-      return "Think of React like building with LEGO blocks! 🧱\n\nEach LEGO block is a 'component' - like a button, a picture, or a text box. You can put these blocks together to build a whole website, just like you put LEGO blocks together to build a house!\n\nThe cool thing? You can use the same LEGO block (component) over and over again. If you make one red button, you can use it 10 times without building it again!";
-    }
-    if (message.includes("api") || message.includes("rest")) {
-      return "Imagine you're at a restaurant! 🍔\n\nYou (the website) look at the menu and order food. The waiter takes your order to the kitchen. The kitchen makes your food and the waiter brings it back to you.\n\nAn API is like that waiter! It takes requests from your website, gets information from a server (the kitchen), and brings it back. That's how websites get information like weather, news, or user profiles!";
-    }
-    if (message.includes("variable") || message.includes("variables")) {
-      return "A variable is like a toy box! 🎁\n\nImagine you have a box labeled 'My Favorite Toy'. Today, you put a teddy bear in it. Tomorrow, you might put a car in it instead.\n\nIn programming, a variable is a box that holds information. The box has a name (like 'score' or 'userName'), and you can put different things in it - numbers, words, or lists!";
-    }
-    if (message.includes("loop") || message.includes("for loop")) {
-      return "A loop is like doing the same thing over and over! 🔄\n\nImagine your mom asks you to clean up 10 toys. Instead of saying 'pick up toy 1, pick up toy 2, pick up toy 3...' 10 times, you just say 'keep picking up toys until all 10 are done!'\n\nThat's what a loop does - it repeats an action multiple times automatically, so you don't have to write the same code again and again!";
-    }
-    if (message.includes("function")) {
-      return "A function is like a recipe! 👨‍🍳\n\nWhen you want to make cookies, you follow a recipe: mix ingredients, bake, and get cookies! You don't have to remember all the steps every time - you just follow the recipe.\n\nIn programming, a function is a recipe for your code. You give it a name (like 'makeCookies'), and whenever you need to do those steps, you just use that name instead of writing everything again!";
-    }
-  }
+interface SetupGuide {
+  projectName: string;
+  steps: SetupStep[];
+}
 
-  // Regular mode responses
-  if (message.includes("start") || message.includes("begin")) {
-    return `Great question! To start learning ${role}, I recommend:\n\n1. **Foundation First**: Begin with the fundamentals in Phase 1 of your roadmap. Master the basics before moving to advanced topics.\n\n2. **Hands-On Practice**: Build small projects immediately. Don't just watch tutorials - code along and experiment!\n\n3. **Daily Consistency**: Dedicate 1-2 hours daily rather than cramming on weekends. Consistency beats intensity.\n\n4. **Use Multiple Resources**: Combine video tutorials, documentation, and interactive coding platforms.\n\nWould you like specific recommendations for any particular skill?`;
-  }
+interface SetupStep {
+  number: number;
+  title: string;
+  description: string;
+  code?: string;
+  tips?: string[];
+}
 
-  if (message.includes("react")) {
-    return `React is a JavaScript library for building user interfaces. Here's what you need to know:\n\n**Core Concepts:**\n• **Components**: Reusable UI building blocks\n• **Props**: Data passed from parent to child components\n• **State**: Dynamic data that can change\n• **Hooks**: Functions that let you use React features (useState, useEffect)\n\n**Learning Path:**\n1. Master JavaScript first (ES6+ features)\n2. Learn JSX syntax\n3. Understand component lifecycle\n4. Practice with hooks\n5. Build real projects\n\n**Best Resources:**\n• Official React docs (react.dev)\n• FreeCodeCamp React course\n• Build a todo app, weather app, and blog\n\nNeed help with any specific React concept?`;
-  }
+interface DebuggingHelp {
+  errorType: string;
+  commonIssues: DebugIssue[];
+}
 
-  if (message.includes("javascript") || message.includes("js")) {
-    return `JavaScript is the language that makes websites interactive. Here's your learning roadmap:\n\n**Fundamentals:**\n• Variables (let, const, var)\n• Data types (strings, numbers, booleans, objects, arrays)\n• Functions and arrow functions\n• Conditionals (if/else, switch)\n• Loops (for, while, forEach)\n\n**ES6+ Features:**\n• Destructuring\n• Spread/rest operators\n• Template literals\n• Promises and async/await\n• Modules (import/export)\n\n**Practice Resources:**\n1. JavaScript.info - comprehensive guide\n2. freeCodeCamp JavaScript course\n3. Build 30 projects in 30 days\n4. Solve coding challenges on Codewars\n\nWhat specific JS topic would you like to dive deeper into?`;
-  }
-
-  if (message.includes("algorithm") || message.includes("data structure")) {
-    return `Data Structures & Algorithms are crucial for problem-solving. Here's how to master them:\n\n**Essential Data Structures:**\n1. Arrays & Strings\n2. Linked Lists\n3. Stacks & Queues\n4. Hash Tables/Maps\n5. Trees & Graphs\n6. Heaps\n\n**Important Algorithms:**\n• Searching: Binary Search\n• Sorting: Quick Sort, Merge Sort\n• Two Pointers\n• Sliding Window\n• Recursion\n• Dynamic Programming\n\n**Study Strategy:**\n1. Learn one data structure at a time\n2. Solve 10-15 easy problems for each\n3. Understand time/space complexity\n4. Practice on LeetCode/HackerRank\n5. Review and optimize solutions\n\n**Timeline:** 3-6 months with daily practice\n\nWhich data structure would you like to start with?`;
-  }
-
-  if (message.includes("portfolio") || message.includes("project")) {
-    return `Building a strong portfolio is essential! Here's what makes a great portfolio:\n\n**Must-Have Projects:**\n1. **Personal Website**: Showcase your skills and about yourself\n2. **CRUD Application**: Todo app, blog, or inventory system\n3. **API Integration**: Weather app, movie database, or news aggregator\n4. **Full-Stack Project**: E-commerce, social media clone, or dashboard\n5. **Original Idea**: Something unique that solves a real problem\n\n**Portfolio Tips:**\n✅ Clean, responsive design\n✅ Live demos + GitHub links\n✅ Clear README with screenshots\n✅ Explain your tech choices\n✅ Show your problem-solving process\n✅ Include 3-5 quality projects (not 20 tutorials)\n\n**Deployment:**\n• Frontend: Vercel, Netlify, GitHub Pages\n• Backend: Render, Railway, Heroku\n\nNeed ideas for a standout project?`;
-  }
-
-  if (message.includes("interview") || message.includes("job")) {
-    return `Let me help you prepare for ${role} interviews!\n\n**Technical Preparation:**\n• Solve 150-200 LeetCode problems (Easy: 60%, Medium: 35%, Hard: 5%)\n• Study system design basics\n• Practice coding without IDE\n• Review data structures & algorithms\n\n**Behavioral Prep:**\n• Prepare STAR method stories\n• Research the company\n• Have questions ready\n• Practice mock interviews\n\n**Interview Process:**\n1. Phone Screen (30 min)\n2. Technical Screen (1 hour coding)\n3. Onsite/Virtual (4-5 hours)\n   - 2-3 coding rounds\n   - 1 system design\n   - 1 behavioral\n\n**Resources:**\n• Cracking the Coding Interview book\n• Pramp/Interviewing.io for mock interviews\n• Glassdoor for company-specific questions\n\nWhat specific area would you like to focus on?`;
-  }
-
-  if (message.includes("css") || message.includes("styling")) {
-    return `CSS is essential for styling web applications. Here's what to master:\n\n**Core Concepts:**\n• Selectors and specificity\n• Box model (margin, padding, border)\n• Display properties (block, inline, flex, grid)\n• Positioning (static, relative, absolute, fixed)\n• Responsive design (media queries)\n\n**Modern CSS:**\n• Flexbox - for 1D layouts\n• Grid - for 2D layouts\n• CSS Variables\n• Animations & Transitions\n• Pseudo-classes & Pseudo-elements\n\n**Frameworks to Learn:**\n1. Tailwind CSS - utility-first\n2. Bootstrap - component library\n3. Sass/SCSS - CSS preprocessor\n\n**Practice Projects:**\n• Clone popular website layouts\n• Build responsive navigation\n• Create animated landing pages\n\nNeed help with a specific CSS concept?`;
-  }
-
-  // Default response
-  return `That's a great question about ${role}! I'm here to help you learn.\n\nI can assist with:\n\n📚 **Learning Resources**: Best courses, tutorials, and documentation\n💻 **Technical Concepts**: Explanations of programming concepts\n🎯 **Career Advice**: Job preparation and interview tips\n🛠️ **Tools & Technologies**: How to use specific tools\n🚀 **Project Ideas**: Suggestions for portfolio projects\n📈 **Study Plans**: How to structure your learning\n\n**Try asking:**\n• "How do I start learning React?"\n• "What projects should I build?"\n• "How do I prepare for interviews?"\n• "Explain APIs in simple terms"\n\nWhat would you like to know more about?`;
-};
-
-const suggestedQuestions = [
-  "How do I start learning as a beginner?",
-  "What projects should I build for my portfolio?",
-  "Explain React to me",
-  "How do I prepare for technical interviews?",
-  "What's the difference between frontend and backend?",
-  "How long will it take to become job-ready?",
-];
+interface DebugIssue {
+  issue: string;
+  solution: string;
+  code?: string;
+}
 
 export default function AILearningAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = location.state?.role || "Software Engineer";
-  
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      role: "assistant",
-      content: `Hi! I'm your AI Learning Assistant! 👋\n\nI'm here to help you on your journey to becoming a ${role}. I can:\n\n✨ Answer questions about programming concepts\n📚 Recommend learning resources\n💡 Explain complex topics in simple terms\n🎯 Help you with your roadmap\n🚀 Suggest practice projects\n\nYou can also toggle "ELI5 Mode" (Explain Like I'm 5) for super simple explanations!\n\nWhat would you like to learn about today?`,
+      type: "assistant",
+      content:
+        `👋 Hi! I'm your FindStreak AI Learning Assistant. I can help you find the perfect projects to boost your skills for ${role}. Would you like me to recommend some guided dashboard projects?`,
       timestamp: new Date(),
     },
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showResourcesModal, setShowResourcesModal] = useState(false);
+  const [showGameModal, setShowGameModal] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -112,13 +98,145 @@ export default function AILearningAssistant() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const projectRecommendations: ProjectRecommendation[] = [
+    {
+      id: "beginner-1",
+      title: "Personal Task Manager Dashboard",
+      description: "Build a simple dashboard to manage daily tasks with add, edit, and delete functionality.",
+      difficulty: "beginner",
+      duration: "2-3 hours",
+      skills: ["React", "State Management", "Basic CSS"],
+      xpReward: 150,
+    },
+    {
+      id: "beginner-2",
+      title: "Weather Dashboard",
+      description: "Create a weather dashboard that displays current weather and 5-day forecast using a public API.",
+      difficulty: "beginner",
+      duration: "3-4 hours",
+      skills: ["API Integration", "React", "Responsive Design"],
+      xpReward: 200,
+    },
+    {
+      id: "beginner-3",
+      title: "Expense Tracker Dashboard",
+      description: "Build a dashboard to track daily expenses with charts showing spending categories.",
+      difficulty: "beginner",
+      duration: "4-5 hours",
+      skills: ["React", "Charts", "Local Storage"],
+      xpReward: 250,
+    },
+    {
+      id: "intermediate-1",
+      title: "E-commerce Analytics Dashboard",
+      description: "Create a comprehensive dashboard showing sales metrics, revenue trends, and customer insights.",
+      difficulty: "intermediate",
+      duration: "8-10 hours",
+      skills: ["React", "Data Visualization", "State Management", "APIs"],
+      xpReward: 400,
+    },
+    {
+      id: "intermediate-2",
+      title: "Social Media Analytics Dashboard",
+      description: "Build a dashboard to track social media metrics across multiple platforms with real-time updates.",
+      difficulty: "intermediate",
+      duration: "10-12 hours",
+      skills: ["React", "Real-time Data", "Charts", "API Integration"],
+      xpReward: 450,
+    },
+    {
+      id: "advanced-1",
+      title: "Real-time Crypto Trading Dashboard",
+      description: "Build an advanced dashboard with live cryptocurrency prices, trading charts, and portfolio management.",
+      difficulty: "advanced",
+      duration: "20-25 hours",
+      skills: ["React", "WebSocket", "Advanced Charts", "State Management", "API Integration"],
+      xpReward: 800,
+    },
+  ];
+
+  const quickActions = [
+    {
+      icon: Zap,
+      label: "Show Beginner Projects",
+      color: "from-green-500 to-emerald-500",
+      action: "beginner",
+    },
+    {
+      icon: Target,
+      label: "Show Intermediate Projects",
+      color: "from-amber-500 to-orange-500",
+      action: "intermediate",
+    },
+    {
+      icon: Rocket,
+      label: "Show Advanced Projects",
+      color: "from-red-500 to-rose-500",
+      action: "advanced",
+    },
+    {
+      icon: Sparkles,
+      label: "Show All Projects",
+      color: "from-emerald-500 to-teal-500",
+      action: "all",
+    },
+  ];
+
+  const handleQuickAction = (action: string) => {
+    let filteredProjects: ProjectRecommendation[] = [];
+    let messageText = "";
+
+    switch (action) {
+      case "beginner":
+        filteredProjects = projectRecommendations.filter((p) => p.difficulty === "beginner");
+        messageText = "Show me beginner dashboard projects";
+        break;
+      case "intermediate":
+        filteredProjects = projectRecommendations.filter((p) => p.difficulty === "intermediate");
+        messageText = "Show me intermediate dashboard projects";
+        break;
+      case "advanced":
+        filteredProjects = projectRecommendations.filter((p) => p.difficulty === "advanced");
+        messageText = "Show me advanced dashboard projects";
+        break;
+      case "all":
+        filteredProjects = projectRecommendations;
+        messageText = "Show me all dashboard projects";
+        break;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      role: "user",
-      content: inputMessage,
+      type: "user",
+      content: messageText,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsTyping(true);
+    
+    setTimeout(() => {
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "assistant",
+        content: `Great choice! Here are ${filteredProjects.length} ${action} dashboard projects I recommend for you. Each project is designed to help you build practical skills while earning XP! Click "Start Project" to begin your guided learning journey. 🚀`,
+        timestamp: new Date(),
+        projectRecommendations: filteredProjects,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const currentInput = inputMessage;
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: "user",
+      content: currentInput,
       timestamp: new Date(),
     };
 
@@ -126,226 +244,605 @@ export default function AILearningAssistant() {
     setInputMessage("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const aiResponse: Message = {
+    const lowerMessage = currentInput.toLowerCase();
+
+    // Check for hardcoded intercept patterns first
+    if (lowerMessage.includes("setup") || lowerMessage.includes("how to start") || lowerMessage.includes("guide") || lowerMessage.includes("step by step")) {
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: "Here's a comprehensive step-by-step setup guide for building a Task Manager Dashboard project. Follow each step carefully! 📚",
+          timestamp: new Date(),
+          setupGuide: {
+            projectName: "Task Manager Dashboard",
+            steps: [
+              {
+                number: 1,
+                title: "Create React Project",
+                description: "Initialize a new React project using Vite for fast development.",
+                code: "npm create vite@latest task-manager -- --template react\ncd task-manager\nnpm install",
+                tips: ["Use Vite for faster build times", "Make sure Node.js 16+ is installed"],
+              },
+              {
+                number: 2,
+                title: "Install Required Dependencies",
+                description: "Add Tailwind CSS and essential libraries for your project.",
+                code: "npm install -D tailwindcss postcss autoprefixer\nnpx tailwindcss init -p\nnpm install lucide-react",
+                tips: ["Lucide provides beautiful icons", "Tailwind makes styling easier"],
+              },
+              {
+                 number: 3,
+                 title: "Create Task State Management",
+                 description: "Build the core state logic using React hooks.",
+                 code: "const [tasks, setTasks] = useState([])\nconst [newTask, setNewTask] = useState('')\n\nconst addTask = () => {\n  if (!newTask.trim()) return\n  setTasks([...tasks, { id: Date.now(), text: newTask, completed: false }])\n  setNewTask('')\n}",
+                 tips: ["Use Date.now() for unique IDs", "Always validate input before adding tasks"],
+              }
+            ],
+          },
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setIsTyping(false);
+      }, 1000);
+      return;
+    }
+
+    if (lowerMessage.includes("error") || lowerMessage.includes("bug") || lowerMessage.includes("debug") || lowerMessage.includes("fix my code")) {
+      setTimeout(() => {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: "I can help you debug common issues! Here are solutions to the most frequent problems developers face when building dashboard projects. 🔧",
+          timestamp: new Date(),
+          debuggingHelp: {
+            errorType: "Common Dashboard Issues",
+            commonIssues: [
+              {
+                issue: "Tasks not saving to localStorage",
+                solution: "Make sure you're using useEffect correctly and stringifying/parsing JSON data. Check browser console for quota errors.",
+                code: "// ✅ Correct way\nuseEffect(() => {\n  localStorage.setItem('tasks', JSON.stringify(tasks))\n}, [tasks])",
+              },
+              {
+                issue: "State not updating immediately",
+                solution: "React state updates are asynchronous. Use the updated value in the next render or useEffect, not immediately after setState.",
+                code: "// ❌ Wrong - won't show updated value\nsetTasks([...tasks, newTask])\nconsole.log(tasks) // Still shows old value!\n\n// ✅ Correct - use in next render or useEffect\nuseEffect(() => {\n  console.log(tasks) // Shows updated value\n}, [tasks])",
+              },
+            ],
+          },
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+        setIsTyping(false);
+      }, 1000);
+      return;
+    }
+
+    // Default: Hit real backend /api/ai/chat
+    try {
+      let contextStr = "User is asking for general AI assistance in their programming career.";
+      if (eli5Mode) {
+        contextStr += " ELI5 MODE IS ACTIVE: You MUST explain this concept as simply as possible, using relatable metaphors that a 5-year-old would understand. Break down hard terms.";
+      }
+
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: currentInput,
+          context: contextStr,
+          role: role,
+        }),
+      });
+
+      const data = await res.json();
+      const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: generateAIResponse(inputMessage, eli5Mode, role),
+        type: "assistant",
+        content: data.reply || "I couldn't process that right now.",
         timestamp: new Date(),
       };
-
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(),
+        type: "assistant",
+        content: "Oops! AI is currently offline. Please try again later.",
+        timestamp: new Date()
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
-  const handleSuggestedQuestion = (question: string) => {
-    setInputMessage(question);
-    inputRef.current?.focus();
+  const handleStartProject = (_project: ProjectRecommendation) => {
+    navigate("/dashboard");
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+  const handleNewChat = () => {
+    setMessages([
+      {
+        id: "1",
+        type: "assistant",
+        content: `👋 Hi! I'm your FindStreak AI Learning Assistant. I can help you find the perfect projects to boost your skills for ${role}. Would you like me to recommend some guided dashboard projects?`,
+        timestamp: new Date(),
+      },
+    ]);
+    setInputMessage("");
+  };
+
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner": return "bg-green-100 text-green-700 border-green-200";
+      case "intermediate": return "bg-amber-100 text-amber-700 border-amber-200";
+      case "advanced": return "bg-red-100 text-red-700 border-red-200";
+      default: return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-5 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Left Navigation Sidebar Override */}
+      {showSidebar && <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-all" onClick={() => setShowSidebar(false)} />}
+      <div className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
+          <div>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">FindStreak</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Navigation Menu</p>
+          </div>
+          <button onClick={() => setShowSidebar(false)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-5 h-5 text-slate-600" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto py-2">
+          <button onClick={() => { setShowSidebar(false); navigate("/dashboard"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+              <LayoutDashboard className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">Dashboard</span>
+              <p className="text-sm text-slate-500">Back to Home</p>
+            </div>
+          </button>
+          <button onClick={() => { setShowSidebar(false); navigate("/my-projects"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
+              <Code className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 text-left">
+              <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">My Projects</span>
+              <p className="text-sm text-slate-500">Active tasks</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
+        <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setShowSidebar(true)} className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 shadow-sm" title="Open Menu">
+                <Menu className="w-5 h-5 text-slate-700" />
               </button>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <h1 className="text-xl font-bold text-slate-900">AI Learning Assistant</h1>
-                </div>
-                <p className="text-xs text-slate-600">Ask me anything about {role}</p>
+                  AI Learning Assistant
+                </h1>
+                <p className="text-slate-500 text-sm mt-0.5">Get personalized project recommendations, code fixes, and guidance</p>
               </div>
             </div>
 
-            {/* ELI5 Mode Toggle */}
-            <div className="flex items-center gap-2 p-2.5 bg-purple-50 rounded-lg border border-purple-200">
-              <Lightbulb className="w-4 h-4 text-purple-600" />
-              <div className="flex items-center gap-2">
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={eli5Mode}
-                    onChange={(e) => setEli5Mode(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
-                </label>
-                <label className="text-xs font-medium cursor-pointer">
-                  ELI5 Mode
-                  <span className="block text-xs font-normal text-slate-600">
-                    {eli5Mode ? "Simple ON" : "Normal"}
-                  </span>
-                </label>
+            <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+              {/* Beautiful ELI5 Mode Toggle */}
+              <div 
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-all shadow-sm ${eli5Mode ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+                onClick={() => setEli5Mode(!eli5Mode)}
+              >
+                <div className={`p-1.5 rounded-md ${eli5Mode ? 'bg-amber-100 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
+                   <Lightbulb className="w-4 h-4 fill-current" />
+                </div>
+                <div className="flex flex-col mr-2">
+                  <span className={`text-[11px] font-bold leading-none ${eli5Mode ? 'text-amber-800' : 'text-slate-500'}`}>ELI5 Mode</span>
+                  <span className={`text-[9px] font-semibold uppercase leading-tight ${eli5Mode ? 'text-amber-600' : 'text-slate-400'}`}>{eli5Mode ? 'Active' : 'Off'}</span>
+                </div>
+                {/* Switch Graphic */}
+                <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-300 ${eli5Mode ? 'bg-amber-500' : 'bg-slate-300'}`}>
+                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${eli5Mode ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+              </div>
+
+              <button onClick={handleNewChat} className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm">
+                <Plus className="w-4 h-4" />
+                <span className="text-sm hidden sm:block">New Chat</span>
+              </button>
+
+              <button onClick={() => setShowResourcesModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
+                <BookOpen className="w-4 h-4" />
+                <span className="text-sm hidden sm:block">Resources</span>
+              </button>
+
+              <button onClick={() => setShowGameModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
+                <Gamepad2 className="w-4 h-4 text-purple-600" />
+                <span className="text-sm hidden sm:block">Challenge</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full h-[calc(100vh-100px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 flex-1 min-h-0">
+          
+          {/* Left Sidebar - Quick Actions */}
+          <div className="hidden lg:flex flex-col gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-sm text-slate-900">Project Collections</h3>
+              </div>
+              <div className="space-y-2">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <button key={index} onClick={() => handleQuickAction(action.action)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                      <div className={`w-8 h-8 bg-gradient-to-r ${action.color} rounded-md flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border border-slate-700 p-5 mt-auto relative overflow-hidden text-white">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
+               <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <Target className="w-4 h-4 text-emerald-400" />
+                  <h3 className="font-bold text-sm text-slate-200">Your Learning Streak</h3>
+                </div>
+                <div className="flex items-end gap-2 text-white">
+                  <p className="text-4xl font-black text-emerald-400 leading-none">3</p>
+                  <p className="text-lg font-bold pb-0.5">Days</p>
+                  <FlameIcon className="w-8 h-8 text-orange-500 fill-orange-500 animate-pulse mb-0.5 ml-1" />
+                </div>
+                <div className="w-full bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
+                   <div className="w-3/5 bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full"></div>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-2">Chat daily to keep your AI learning streak alive! 2 days until next milestone.</p>
               </div>
             </div>
           </div>
 
-          {/* ELI5 Info */}
-          {eli5Mode && (
-            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
-              <Info className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-medium text-yellow-900">ELI5 Mode Active</p>
-                <p className="text-xs text-yellow-700 mt-0.5">
-                  All explanations will be simplified using everyday examples and analogies!
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Chat Container */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col" style={{ height: "500px" }}>
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex gap-2 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                {message.role === "assistant" && (
-                  <div className="w-7 h-7 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[80%] rounded-xl px-3 py-2 ${
-                    message.role === "user"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 text-slate-900"
-                  }`}
-                >
-                  <p className="text-xs whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                  <p
-                    className={`text-xs mt-1.5 ${
-                      message.role === "user" ? "text-indigo-200" : "text-slate-500"
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
-                {message.role === "user" && (
-                  <div className="w-7 h-7 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="flex gap-2 justify-start">
-                <div className="w-7 h-7 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-white" />
-                </div>
-                <div className="bg-slate-100 rounded-xl px-3 py-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                    <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                  </div>
-                </div>
+          {/* Chat Interface */}
+          <div className="lg:col-span-3 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative min-h-0">
+            {eli5Mode && (
+              <div className="flex items-center justify-center gap-2 shrink-0 bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 text-center shadow-sm border-b border-amber-200">
+                <Lightbulb className="w-4 h-4 fill-amber-500 text-amber-500" />
+                ELI5 Mode Active: AI will explain everything using simple, easy-to-understand metaphors!
               </div>
             )}
 
-            <div ref={messagesEndRef} />
-          </div>
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+              {messages.map((message) => (
+                <div key={message.id}>
+                  {message.type === "assistant" ? (
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-4 md:px-5 py-3 md:py-4 max-w-[95%] text-slate-800 text-sm whitespace-pre-wrap leading-relaxed shadow-sm">
+                          {message.content}
+                        </div>
 
-          {/* Suggested Questions */}
-          {messages.length <= 1 && (
-            <div className="px-4 pb-3">
-              <p className="text-xs font-semibold text-slate-600 mb-2">Suggested Questions:</p>
-              <div className="grid grid-cols-2 gap-2">
-                {suggestedQuestions.slice(0, 4).map((question, index) => (
+                        {message.projectRecommendations && (
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mr-4">
+                            {message.projectRecommendations.map((project) => (
+                              <div key={project.id} className="bg-white rounded-xl border border-slate-200 hover:border-emerald-300 transition-all p-4 shadow-sm group cursor-pointer" onClick={() => handleStartProject(project)}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-bold text-slate-900 group-hover:text-emerald-700 flex-1 truncate">{project.title}</h4>
+                                </div>
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase mb-2 ${getDifficultyColor(project.difficulty)}`}>
+                                  {project.difficulty}
+                                </span>
+                                <p className="text-xs text-slate-500 mb-3 line-clamp-2">{project.description}</p>
+                                <div className="flex items-center justify-between text-xs font-medium pt-3 border-t border-slate-100">
+                                  <span className="flex items-center gap-1 text-slate-500"><Clock className="w-3.5 h-3.5" /> {project.duration}</span>
+                                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded"><Star className="w-3 h-3 fill-emerald-500 text-emerald-500" /> {project.xpReward} XP</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {message.setupGuide && (
+                          <div className="mt-4 bg-slate-50 rounded-xl border border-slate-200 p-5 max-w-[95%]">
+                            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
+                              <FileCode className="w-5 h-5 text-emerald-600" />
+                              {message.setupGuide.projectName} - Setup Guide
+                            </h3>
+                            <div className="space-y-4">
+                              {message.setupGuide.steps.map((step) => (
+                                <div key={step.number} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                                  <h4 className="font-bold text-slate-900 mb-1 flex items-center gap-2">
+                                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">{step.number}</span>
+                                    {step.title}
+                                  </h4>
+                                  <p className="text-sm text-slate-600 mb-3 pl-8">{step.description}</p>
+                                  {step.code && (
+                                    <div className="ml-8 bg-slate-900 rounded-lg p-3 overflow-x-auto">
+                                      <pre className="text-xs text-emerald-400 font-mono">{step.code}</pre>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {message.debuggingHelp && (
+                          <div className="mt-4 bg-orange-50 rounded-xl border border-orange-200 p-5 max-w-[95%]">
+                            <h3 className="font-bold text-lg text-orange-900 mb-4 flex items-center gap-2">
+                              <Wrench className="w-5 h-5 text-orange-600" />
+                              {message.debuggingHelp.errorType}
+                            </h3>
+                            <div className="space-y-4">
+                              {message.debuggingHelp.commonIssues.map((issue, idx) => (
+                                <div key={idx} className="bg-white rounded-xl border border-orange-100 p-4 shadow-sm">
+                                  <h4 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 text-orange-500" />
+                                    {issue.issue}
+                                  </h4>
+                                  <p className="text-sm text-slate-600 mb-3 pl-6 border-l-2 border-orange-200 ml-2">{issue.solution}</p>
+                                  {issue.code && (
+                                    <div className="ml-6 bg-slate-900 rounded-lg p-3 overflow-x-auto">
+                                      <pre className="text-xs text-emerald-400 font-mono">{issue.code}</pre>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <p className="text-[10px] text-slate-400 mt-2 font-medium ml-1">
+                          {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 justify-end">
+                      <div className="flex-1 flex justify-end min-w-0">
+                        <div className="bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-4 md:px-5 py-3 md:py-4 max-w-[85%] text-sm shadow-sm whitespace-pre-wrap">
+                          {message.content}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
+                        <User className="w-4 h-4 text-slate-600" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center gap-1.5 w-16 h-12">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></div>
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Bottom 3 Cards matching Uploaded Screenshot exactly */}
+            <div className="shrink-0 border-t border-slate-100 bg-white">
+              <div className="px-4 py-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-[1000px] mx-auto">
+                  
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("Can you give me some project ideas?"); handleSendMessage(); }}>
+                    <div className="w-10 h-10 bg-[#e8fbf0] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <Code className="w-5 h-5 text-[#10b981]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-emerald-700 transition-colors">Project Ideas</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Get suggestions</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => setShowResourcesModal(true)}>
+                    <div className="w-10 h-10 bg-[#eff6ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <BookOpen className="w-5 h-5 text-[#3b82f6]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-blue-700 transition-colors">Resources</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Best materials</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("How do I prepare for technical interviews?"); handleSendMessage(); }}>
+                    <div className="w-10 h-10 bg-[#fae8ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <Zap className="w-5 h-5 text-[#d946ef]" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-purple-700 transition-colors">Interview Prep</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">Get ready</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Input Box */}
+              <div className="border-t border-slate-200 bg-slate-50 p-3 md:p-4">
+                <div className="flex gap-2 max-w-[1000px] mx-auto">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    placeholder={eli5Mode ? "Ask me anything (I'll explain simply!)..." : "Ask me anything about your learning journey..."}
+                    className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-sm shadow-sm"
+                  />
                   <button
-                    key={index}
-                    onClick={() => handleSuggestedQuestion(question)}
-                    className="text-left text-xs p-2 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg transition-colors"
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || isTyping}
+                    className="px-5 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 disabled:opacity-50 disabled:bg-slate-400 transition-colors flex items-center gap-2 shadow-sm shrink-0"
                   >
-                    {question}
+                    <Send className="w-4 h-4" />
+                    <span className="hidden sm:inline">Send</span>
                   </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Input Area */}
-          <div className="border-t border-slate-200 p-3 bg-slate-50">
-            <div className="flex gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={eli5Mode ? "Ask me anything (I'll explain simply!)..." : "Ask me anything about your learning journey..."}
-                className="flex-1 px-3 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-sm"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isTyping}
-                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <div className="bg-white rounded-lg shadow-lg p-3 hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleSuggestedQuestion("What projects should I build?")}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <Code className="w-4 h-4 text-green-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-xs">Project Ideas</p>
-                <p className="text-xs text-slate-600">Get suggestions</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-3 hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleSuggestedQuestion("Recommend learning resources")}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-xs">Resources</p>
-                <p className="text-xs text-slate-600">Best materials</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-lg p-3 hover:shadow-xl transition-shadow cursor-pointer" onClick={() => handleSuggestedQuestion("How do I prepare for interviews?")}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Zap className="w-4 h-4 text-purple-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-slate-900 text-xs">Interview Prep</p>
-                <p className="text-xs text-slate-600">Get ready</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Resources Modal */}
+      {showResourcesModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Learning Resources</h2>
+                  <p className="text-sm text-slate-500">Curated materials to accelerate your growth</p>
+                </div>
+              </div>
+              <button onClick={() => setShowResourcesModal(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {[
+                { title: "React Architecture Patterns", description: "Design scalable and maintainable React applications.", size: "4.2 MB", type: "PDF", icon: FileText, color: "from-blue-500 to-cyan-500" },
+                { title: "Node.js API Mastery", description: "Build robust backend architectures with Node.js.", size: "3.8 MB", type: "PDF", icon: Code, color: "from-emerald-500 to-teal-500" },
+                { title: "System Design for Beginners", description: "Learn how to approach complex engineering problems.", size: "5.1 MB", type: "PDF", icon: FileCode, color: "from-purple-500 to-pink-500" },
+              ].map((resource, idx) => {
+                const Icon = resource.icon;
+                return (
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border border-slate-200 rounded-xl hover:border-emerald-300 hover:shadow-md transition-all group bg-slate-50 hover:bg-white">
+                    <div className={`w-14 h-14 bg-gradient-to-r ${resource.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-slate-900 mb-1 leading-tight">{resource.title}</h3>
+                      <p className="text-xs text-slate-500 mb-2">{resource.description}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
+                        <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded uppercase">{resource.type}</span>
+                        <span className="text-slate-400">{resource.size}</span>
+                      </div>
+                    </div>
+                    <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-bold hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 text-sm w-full sm:w-auto shadow-sm">
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Modal */}
+      {showGameModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 flex items-center justify-between shadow-sm z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                  <Gamepad2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white">Coding Daily Challenge</h2>
+                  <p className="text-sm text-purple-100 font-medium">Test your skills and earn XP!</p>
+                </div>
+              </div>
+              <button onClick={() => setShowGameModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors border border-white/20">
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="border border-slate-200 bg-white rounded-xl p-6 mb-6 shadow-sm">
+                <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
+                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-black rounded uppercase border border-green-200">
+                    Difficulty: Easy
+                  </span>
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-black bg-emerald-50 px-3 py-1 rounded border border-emerald-100">
+                    <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+                    +100 XP
+                  </div>
+                </div>
+
+                <h3 className="text-lg font-bold text-slate-900 mb-2">Challenge: Fix the Bug! 🐛</h3>
+                <p className="text-slate-600 text-sm mb-4 leading-relaxed">The code below is supposed to display a greeting, but it's throwing an error. Can you spot the issue?</p>
+
+                <div className="bg-slate-900 rounded-lg p-4 mb-5 shadow-inner">
+                  <pre className="text-sm text-emerald-400 font-mono leading-relaxed overflow-x-auto">
+{`function greetUser() {
+  const message = "Hello, Developer!"
+  console.log(mesage) // Line 3
+}
+
+greetUser()`}
+                  </pre>
+                </div>
+
+                <div className="space-y-3">
+                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
+                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">A.</span> Missing semicolon on line 2
+                  </button>
+                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
+                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">B.</span> Variable typo: "mesage" should be "message"
+                  </button>
+                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
+                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">C.</span> Function is not exported
+                  </button>
+                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
+                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">D.</span> Missing return statement
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <button className="w-full sm:w-auto flex-1 px-6 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-sm text-sm">
+                  Submit Final Answer
+                </button>
+                <button onClick={() => setShowGameModal(false)} className="w-full sm:w-auto px-6 py-3.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm text-sm">
+                  Skip Challenge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// Quick component for flame icon
+function FlameIcon(props: any) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+    </svg>
   );
 }
