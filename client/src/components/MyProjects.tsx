@@ -162,24 +162,12 @@ export default function MyProjects() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-[1400px] mx-auto px-8 py-6">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold flex items-center gap-3">
-              <button 
-                onClick={() => {
-                   const evt = new CustomEvent('open-sidebar');
-                   window.dispatchEvent(evt);
-                }}
-                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 md:hidden"
-              >
-                <div className="flex flex-col gap-1 w-5">
-                  <div className="h-0.5 bg-slate-800 rounded"></div>
-                  <div className="h-0.5 bg-slate-800 rounded"></div>
-                  <div className="h-0.5 bg-slate-800 rounded"></div>
-                </div>
-              </button>
-              <span className="text-slate-800">My Projects</span>
-            </h1>
-            <p className="text-slate-500 text-sm mt-1">Track and manage all your learning projects</p>
+          <div className="mb-8 flex flex-col md:flex-row md:items-center gap-4">
+            <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">My Projects</h1>
+              <p className="text-slate-500 text-sm mt-1">Track and manage all your learning projects</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
