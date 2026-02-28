@@ -160,11 +160,11 @@ export default function MyProjects() {
       <Sidebar activePage="my-projects" />
       
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-[1400px] mx-auto px-8 py-6">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <span className="text-slate-800">≡</span> My Projects
+              <span className="text-slate-800">My Projects</span>
             </h1>
             <p className="text-slate-500 text-sm mt-1">Track and manage all your learning projects</p>
           </div>
@@ -211,8 +211,8 @@ export default function MyProjects() {
           {/* Fixing grid for 5 cards to match mockup exactly */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 -mt-20 flex-wrap relative z-10 opacity-0 pointer-events-none"></div> {/* Spacer hack */}
           
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-             <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+             <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <Trophy className="w-4 h-4 text-indigo-500" />
                 <span>Total Projects</span>
@@ -220,7 +220,7 @@ export default function MyProjects() {
               <p className="text-3xl font-bold text-slate-800">{totalProjects}</p>
             </div>
             
-            <div className="bg-[#f0f9ff] p-5 rounded-xl shadow-sm border border-blue-100 border-t-4 border-t-blue-400">
+            <div className="bg-[#f0f9ff] p-4 rounded-xl shadow-sm border border-blue-100 border-t-4 border-t-blue-400">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <PlaySquare className="w-4 h-4 text-blue-500" />
                 <span>Active</span>
@@ -228,7 +228,7 @@ export default function MyProjects() {
               <p className="text-3xl font-bold text-slate-800">{activeProjects}</p>
             </div>
             
-            <div className="bg-[#f0fdf4] p-5 rounded-xl shadow-sm border border-emerald-100 border-t-4 border-t-emerald-400">
+            <div className="bg-[#f0fdf4] p-4 rounded-xl shadow-sm border border-emerald-100 border-t-4 border-t-emerald-400">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 <span>Completed</span>
@@ -236,7 +236,7 @@ export default function MyProjects() {
               <p className="text-3xl font-bold text-slate-800">{completedProjects}</p>
             </div>
             
-            <div className="bg-[#fffbeb] p-5 rounded-xl shadow-sm border border-amber-100 border-t-4 border-t-amber-400">
+            <div className="bg-[#fffbeb] p-4 rounded-xl shadow-sm border border-amber-100 border-t-4 border-t-amber-400">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <Clock className="w-4 h-4 text-amber-500" />
                 <span>Total Hours</span>
@@ -244,7 +244,7 @@ export default function MyProjects() {
               <p className="text-3xl font-bold text-slate-800">{totalHours}</p>
             </div>
             
-            <div className="bg-[#faf5ff] p-5 rounded-xl shadow-sm border border-purple-100 border-t-4 border-t-purple-400">
+            <div className="bg-[#faf5ff] p-4 rounded-xl shadow-sm border border-purple-100 border-t-4 border-t-purple-400">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <TrendingUp className="w-4 h-4 text-purple-500" />
                 <span>Avg Progress</span>
