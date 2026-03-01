@@ -18,8 +18,6 @@ import {
   User,
   X,
   Plus,
-  Download,
-  FileText,
   Gamepad2,
   MessageSquare,
   Edit2,
@@ -94,8 +92,6 @@ export default function AILearningAssistant() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showResourcesModal, setShowResourcesModal] = useState(false);
-  const [showGameModal, setShowGameModal] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -564,12 +560,12 @@ export default function AILearningAssistant() {
                 <span className="text-sm hidden sm:block">New Chat</span>
               </button>
 
-              <button onClick={() => setShowResourcesModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
+              <button onClick={() => navigate('/resources')} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
                 <BookOpen className="w-4 h-4" />
                 <span className="text-sm hidden sm:block">Resources</span>
               </button>
 
-              <button onClick={() => setShowGameModal(true)} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
+              <button onClick={() => navigate('/missions')} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
                 <Gamepad2 className="w-4 h-4 text-purple-600" />
                 <span className="text-sm hidden sm:block">Challenge</span>
               </button>
@@ -739,7 +735,7 @@ export default function AILearningAssistant() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => setShowResourcesModal(true)}>
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => navigate('/resources')}>
                     <div className="w-10 h-10 bg-[#eff6ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
                       <BookOpen className="w-5 h-5 text-[#3b82f6]" />
                     </div>
@@ -811,130 +807,7 @@ export default function AILearningAssistant() {
         </div>
       </div>
       
-      {/* Resources Modal */}
-      {showResourcesModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-                  <BookOpen className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">Learning Resources</h2>
-                  <p className="text-sm text-slate-500">Curated materials to accelerate your growth</p>
-                </div>
-              </div>
-              <button onClick={() => setShowResourcesModal(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
-                <X className="w-5 h-5 text-slate-600" />
-              </button>
-            </div>
 
-            <div className="p-6 space-y-4">
-              {[
-                { title: "React Architecture Patterns", description: "Design scalable and maintainable React applications.", size: "4.2 MB", type: "PDF", icon: FileText, color: "from-blue-500 to-cyan-500" },
-                { title: "Node.js API Mastery", description: "Build robust backend architectures with Node.js.", size: "3.8 MB", type: "PDF", icon: Code, color: "from-emerald-500 to-teal-500" },
-                { title: "System Design for Beginners", description: "Learn how to approach complex engineering problems.", size: "5.1 MB", type: "PDF", icon: FileCode, color: "from-purple-500 to-pink-500" },
-              ].map((resource, idx) => {
-                const Icon = resource.icon;
-                return (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border border-slate-200 rounded-xl hover:border-emerald-300 hover:shadow-md transition-all group bg-slate-50 hover:bg-white">
-                    <div className={`w-14 h-14 bg-gradient-to-r ${resource.color} rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-slate-900 mb-1 leading-tight">{resource.title}</h3>
-                      <p className="text-xs text-slate-500 mb-2">{resource.description}</p>
-                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold">
-                        <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded uppercase">{resource.type}</span>
-                        <span className="text-slate-400">{resource.size}</span>
-                      </div>
-                    </div>
-                    <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-bold hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 transition-all flex items-center justify-center gap-2 text-sm w-full sm:w-auto shadow-sm">
-                      <Download className="w-4 h-4" />
-                      Download
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Game Modal */}
-      {showGameModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 flex items-center justify-between shadow-sm z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-                  <Gamepad2 className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Coding Daily Challenge</h2>
-                  <p className="text-sm text-purple-100 font-medium">Test your skills and earn XP!</p>
-                </div>
-              </div>
-              <button onClick={() => setShowGameModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors border border-white/20">
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <div className="border border-slate-200 bg-white rounded-xl p-6 mb-6 shadow-sm">
-                <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
-                  <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-black rounded uppercase border border-green-200">
-                    Difficulty: Easy
-                  </span>
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-black bg-emerald-50 px-3 py-1 rounded border border-emerald-100">
-                    <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
-                    +100 XP
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Challenge: Fix the Bug! 🐛</h3>
-                <p className="text-slate-600 text-sm mb-4 leading-relaxed">The code below is supposed to display a greeting, but it's throwing an error. Can you spot the issue?</p>
-
-                <div className="bg-slate-900 rounded-lg p-4 mb-5 shadow-inner">
-                  <pre className="text-sm text-emerald-400 font-mono leading-relaxed overflow-x-auto">
-{`function greetUser() {
-  const message = "Hello, Developer!"
-  console.log(mesage) // Line 3
-}
-
-greetUser()`}
-                  </pre>
-                </div>
-
-                <div className="space-y-3">
-                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
-                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">A.</span> Missing semicolon on line 2
-                  </button>
-                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
-                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">B.</span> Variable typo: "mesage" should be "message"
-                  </button>
-                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
-                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">C.</span> Function is not exported
-                  </button>
-                  <button className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 text-left rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all font-medium text-sm text-slate-700 group shadow-sm">
-                    <span className="font-bold text-slate-900 group-hover:text-purple-700 w-8 inline-block">D.</span> Missing return statement
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <button className="w-full sm:w-auto flex-1 px-6 py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors shadow-sm text-sm">
-                  Submit Final Answer
-                </button>
-                <button onClick={() => setShowGameModal(false)} className="w-full sm:w-auto px-6 py-3.5 bg-white border border-slate-300 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm text-sm">
-                  Skip Challenge
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mobile Chat History Drawer */}
       {showHistoryDrawer && (
