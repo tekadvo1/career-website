@@ -23,6 +23,8 @@ import {
   Edit2,
   Trash2,
   Check,
+  Save,
+  Settings,
 } from "lucide-react";
 
 interface ChatSession {
@@ -839,6 +841,27 @@ export default function AILearningAssistant() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Quick Actions / Settings */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
+               <h3 className="font-bold text-sm text-slate-900 mb-3 flex items-center gap-2">
+                 <Settings className="w-4 h-4 text-emerald-600" /> Options
+               </h3>
+               <div className="space-y-2">
+                 <button onClick={() => alert('Personal project guide successfully saved to your dashboard!')} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Save className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">Save Project Guide</span>
+                 </button>
+                 <button onClick={() => alert('Chat settings panel would open here.')} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                    <div className="w-8 h-8 bg-gradient-to-r from-slate-500 to-slate-600 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Settings className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">Chat Settings</span>
+                 </button>
+               </div>
             </div>
           </div>
         </div>
