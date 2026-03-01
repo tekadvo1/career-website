@@ -520,18 +520,18 @@ export default function AILearningAssistant() {
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
-        <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
-                    <Sparkles className="w-4 h-4 text-white" />
+                <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <div className="w-7 h-7 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
                   </div>
-                  AI Learning Assistant
+                  FindStreak AI Learning Assistant
                 </h1>
-                <p className="text-slate-500 text-sm mt-0.5">Get personalized project recommendations, code fixes, and guidance</p>
+                <p className="text-slate-500 text-xs mt-0.5">Get personalized project recommendations, code fixes, and guidance</p>
               </div>
             </div>
 
