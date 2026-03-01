@@ -21,7 +21,18 @@ import {
   Download,
   FileText,
   Gamepad2,
+  MessageSquare,
+  Edit2,
+  Trash2,
+  Check,
 } from "lucide-react";
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  updatedAt: Date;
+}
 
 interface Message {
   id: string;
@@ -87,6 +98,67 @@ export default function AILearningAssistant() {
   const [showGameModal, setShowGameModal] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // -- Chat History State --
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string>("1");
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+
+  useEffect(() => {
+    if (messages.length > 1) {
+      setChatHistory(prev => {
+        const existingIdx = prev.findIndex(c => c.id === currentChatId);
+        const firstUserMsg = messages.find(m => m.type === 'user');
+        const title = existingIdx >= 0 && prev[existingIdx].title !== "New Chat" 
+                      ? prev[existingIdx].title 
+                      : (firstUserMsg ? firstUserMsg.content.slice(0, 25) + (firstUserMsg.content.length > 25 ? "..." : "") : "New Chat");
+
+        const session: ChatSession = {
+          id: currentChatId,
+          title,
+          messages,
+          updatedAt: new Date()
+        };
+
+        if (existingIdx >= 0) {
+          const updated = [...prev];
+          updated[existingIdx] = session;
+          return updated.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+        } else {
+          return [session, ...prev];
+        }
+      });
+    }
+  }, [messages, currentChatId]);
+
+  const handleSwitchChat = (chatId: string) => {
+    const session = chatHistory.find(c => c.id === chatId);
+    if (session) {
+      setCurrentChatId(session.id);
+      setMessages(session.messages);
+      setShowHistoryDrawer(false);
+    }
+  };
+
+  const handleRenameChat = (e: React.MouseEvent | React.KeyboardEvent, chatId: string) => {
+    e.stopPropagation();
+    if (!editingTitle.trim()) {
+      setEditingChatId(null);
+      return;
+    }
+    setChatHistory(prev => prev.map(c => c.id === chatId ? { ...c, title: editingTitle } : c));
+    setEditingChatId(null);
+  };
+
+  const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+    setChatHistory(prev => prev.filter(c => c.id !== chatId));
+    if (currentChatId === chatId) {
+      handleNewChat();
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -357,6 +429,7 @@ export default function AILearningAssistant() {
   };
 
   const handleNewChat = () => {
+    setCurrentChatId(Date.now().toString());
     setMessages([
       {
         id: "1",
@@ -366,6 +439,7 @@ export default function AILearningAssistant() {
       },
     ]);
     setInputMessage("");
+    setShowHistoryDrawer(false);
   };
 
 
@@ -377,6 +451,68 @@ export default function AILearningAssistant() {
       default: return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
+
+  const renderChatList = () => (
+    <div className="space-y-1">
+      {chatHistory.length === 0 && (
+        <p className="text-xs text-slate-500 text-center py-4">No recent chats</p>
+      )}
+      {chatHistory.map(chat => (
+        <div 
+          key={chat.id}
+          onClick={() => handleSwitchChat(chat.id)}
+          className={`group flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors border max-w-full ${
+            currentChatId === chat.id ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-transparent hover:bg-slate-50 hover:border-slate-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5 min-w-0 pr-2 flex-1">
+            <MessageSquare className={`w-4 h-4 shrink-0 ${currentChatId === chat.id ? 'text-emerald-600' : 'text-slate-400'}`} />
+            {editingChatId === chat.id ? (
+              <input
+                autoFocus
+                type="text"
+                value={editingTitle}
+                onClick={e => e.stopPropagation()}
+                onChange={e => setEditingTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleRenameChat(e, chat.id);
+                  if (e.key === 'Escape') setEditingChatId(null);
+                }}
+                className="flex-1 min-w-0 text-[13px] border-b border-emerald-500 focus:outline-none bg-transparent px-1 py-0.5 text-slate-800 shrink"
+              />
+            ) : (
+              <span className={`text-[13px] truncate pt-0.5 w-[150px] ${currentChatId === chat.id ? 'text-emerald-900 font-medium' : 'text-slate-700'}`}>
+                {chat.title}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity shrink-0">
+            {editingChatId === chat.id ? (
+              <button onClick={(e) => handleRenameChat(e, chat.id)} className="p-1.5 hover:bg-emerald-100 rounded text-emerald-600 transition-colors">
+                <Check className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setEditingTitle(chat.title); setEditingChatId(chat.id); }} 
+                className="p-1.5 hover:bg-blue-100 rounded text-blue-600 transition-colors"
+                title="Rename Chat"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button 
+              onClick={(e) => handleDeleteChat(e, chat.id)} 
+              className="p-1.5 hover:bg-red-100 rounded text-red-600 transition-colors"
+              title="Delete Chat"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -417,6 +553,11 @@ export default function AILearningAssistant() {
                    <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${eli5Mode ? 'translate-x-4' : 'translate-x-0'}`} />
                 </div>
               </div>
+
+              <button onClick={() => setShowHistoryDrawer(true)} className="flex lg:hidden items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm">
+                <MessageSquare className="w-4 h-4" />
+                <span className="text-sm hidden sm:block">History</span>
+              </button>
 
               <button onClick={handleNewChat} className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm">
                 <Plus className="w-4 h-4" />
@@ -463,7 +604,7 @@ export default function AILearningAssistant() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border border-slate-700 p-5 mt-auto relative overflow-hidden text-white">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border border-slate-700 p-5 shrink-0 relative overflow-hidden text-white">
                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
                <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
@@ -478,7 +619,19 @@ export default function AILearningAssistant() {
                 <div className="w-full bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
                    <div className="w-3/5 bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full"></div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-2">Chat daily to keep your AI learning streak alive! 2 days until next milestone.</p>
+                <p className="text-[11px] text-slate-400 mt-2">Chat daily to keep your streak alive! 2 days until next milestone.</p>
+              </div>
+            </div>
+
+            <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[200px] flex-1 overflow-hidden mt-2">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <h3 className="font-bold text-sm text-slate-900">Chat History</h3>
+                </div>
+              </div>
+              <div className="p-2 overflow-y-auto flex-1">
+                {renderChatList()}
               </div>
             </div>
           </div>
@@ -794,6 +947,30 @@ greetUser()`}
                   Skip Challenge
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Chat History Drawer */}
+      {showHistoryDrawer && (
+        <div className="fixed inset-0 bg-black/50 flex lg:hidden z-[60] backdrop-blur-sm" onClick={() => setShowHistoryDrawer(false)}>
+          <div className="bg-white w-80 h-full max-w-full flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between shrink-0 bg-slate-50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-emerald-600"/> Chat History
+              </h3>
+              <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-slate-600"/>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3">
+               {renderChatList()}
+            </div>
+            <div className="p-4 border-t border-slate-200 shrink-0">
+               <button onClick={handleNewChat} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-600 transition-colors">
+                 <Plus className="w-4 h-4" /> New Chat
+               </button>
             </div>
           </div>
         </div>
