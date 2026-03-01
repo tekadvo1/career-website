@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import Sidebar from "./Sidebar";
 import {
   Send,
   Sparkles,
@@ -14,9 +15,7 @@ import {
   AlertCircle,
   Wrench,
   FileCode,
-  LayoutDashboard,
   User,
-  Menu,
   X,
   Plus,
   Download,
@@ -84,7 +83,6 @@ export default function AILearningAssistant() {
   ]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [showSidebar, setShowSidebar] = useState(false);
   const [showResourcesModal, setShowResourcesModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
@@ -382,48 +380,14 @@ export default function AILearningAssistant() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Left Navigation Sidebar Override */}
-      {showSidebar && <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm transition-all" onClick={() => setShowSidebar(false)} />}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
-          <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">FindStreak</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Navigation Menu</p>
-          </div>
-          <button onClick={() => setShowSidebar(false)} className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
-            <X className="w-5 h-5 text-slate-600" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          <button onClick={() => { setShowSidebar(false); navigate("/dashboard"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-              <LayoutDashboard className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">Dashboard</span>
-              <p className="text-sm text-slate-500">Back to Home</p>
-            </div>
-          </button>
-          <button onClick={() => { setShowSidebar(false); navigate("/my-projects"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition-colors">
-              <Code className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div className="flex-1 text-left">
-              <span className="font-semibold text-slate-900 group-hover:text-emerald-700 transition-colors">My Projects</span>
-              <p className="text-sm text-slate-500">Active tasks</p>
-            </div>
-          </button>
-        </div>
-      </div>
+      <Sidebar activePage="ai-assistant" />
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
         <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <button onClick={() => setShowSidebar(true)} className="p-2.5 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 shadow-sm" title="Open Menu">
-                <Menu className="w-5 h-5 text-slate-700" />
-              </button>
+              <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
