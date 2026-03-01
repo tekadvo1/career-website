@@ -515,7 +515,7 @@ export default function AILearningAssistant() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="h-screen bg-slate-50 flex flex-col overflow-hidden">
       <Sidebar activePage="ai-assistant" />
 
       {/* Header */}
@@ -579,12 +579,12 @@ export default function AILearningAssistant() {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full min-h-[calc(100vh-100px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 flex-1">
+      <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 flex-1 min-h-0">
           
           {/* Left Sidebar - Chat History */}
-          <div className="hidden lg:flex flex-col gap-4">
-            <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[200px] flex-1 overflow-hidden">
+          <div className="hidden lg:flex flex-col gap-4 min-h-0 h-full">
+            <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-emerald-600" />
@@ -598,7 +598,7 @@ export default function AILearningAssistant() {
           </div>
 
           {/* Chat Interface */}
-          <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
+          <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative min-h-0 h-full">
             {eli5Mode && (
               <div className="flex items-center justify-center gap-2 shrink-0 bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 text-center shadow-sm border-b border-amber-200">
                 <Lightbulb className="w-4 h-4 fill-amber-500 text-amber-500" />
@@ -787,13 +787,13 @@ export default function AILearningAssistant() {
           </div>
 
           {/* Right Sidebar - Project Collections */}
-          <div className="hidden lg:flex flex-col gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
+          <div className="hidden lg:flex flex-col gap-4 min-h-0 h-full">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col overflow-hidden max-h-full">
+              <div className="flex items-center gap-2 mb-3 shrink-0">
                 <Lightbulb className="w-4 h-4 text-emerald-600" />
                 <h3 className="font-bold text-sm text-slate-900">Project Collections</h3>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-y-auto flex-1 pr-1 custom-scrollbar">
                 {quickActions.map((action, index) => {
                   const Icon = action.icon;
                   return (
