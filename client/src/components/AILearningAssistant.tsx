@@ -81,23 +81,51 @@ export default function AILearningAssistant() {
   const location = useLocation();
   const role = location.state?.role || "Software Engineer";
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "assistant",
-      content:
-        `👋 Hi! I'm your FindStreak AI Learning Assistant. I can help you find the perfect projects to boost your skills for ${role}. Would you like me to recommend some guided dashboard projects?`,
-      timestamp: new Date(),
-    },
-  ]);
+  const LOCAL_STORAGE_KEY = "findstreak_ai_chat_history";
+
+  const loadChatHistory = (): ChatSession[] => {
+    try {
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((session: any) => ({
+          ...session,
+          updatedAt: new Date(session.updatedAt),
+          messages: session.messages.map((m: any) => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          }))
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load chat history", e);
+    }
+    return [];
+  };
+
+  const initialHistory = loadChatHistory();
+  const initialCurrentChatId = initialHistory.length > 0 ? initialHistory[0].id : "1";
+  const initialMessages = initialHistory.length > 0 && initialHistory[0].messages.length > 0
+    ? initialHistory[0].messages
+    : [
+        {
+          id: "1",
+          type: "assistant",
+          content:
+            `👋 Hi! I'm your FindStreak AI Learning Assistant. I can help you find the perfect projects to boost your skills for ${role}. Would you like me to recommend some guided dashboard projects?`,
+          timestamp: new Date(),
+        } as Message,
+      ];
+
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // -- Chat History State --
-  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string>("1");
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(initialHistory);
+  const [currentChatId, setCurrentChatId] = useState<string>(initialCurrentChatId);
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
@@ -128,6 +156,15 @@ export default function AILearningAssistant() {
       });
     }
   }, [messages, currentChatId]);
+
+  // Persist chatHistory to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
+    } catch (e) {
+      console.error("Failed to save chat history", e);
+    }
+  }, [chatHistory]);
 
   const handleSwitchChat = (chatId: string) => {
     const session = chatHistory.find(c => c.id === chatId);
