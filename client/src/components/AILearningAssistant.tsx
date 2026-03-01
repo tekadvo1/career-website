@@ -582,48 +582,9 @@ export default function AILearningAssistant() {
       <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full min-h-[calc(100vh-100px)]">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6 flex-1">
           
-          {/* Left Sidebar - Quick Actions */}
+          {/* Left Sidebar - Chat History */}
           <div className="hidden lg:flex flex-col gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Lightbulb className="w-4 h-4 text-emerald-600" />
-                <h3 className="font-bold text-sm text-slate-900">Project Collections</h3>
-              </div>
-              <div className="space-y-2">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <button key={index} onClick={() => handleQuickAction(action.action)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
-                      <div className={`w-8 h-8 bg-gradient-to-r ${action.color} rounded-md flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                        <Icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">{action.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border border-slate-700 p-5 shrink-0 relative overflow-hidden text-white">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
-               <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="w-4 h-4 text-emerald-400" />
-                  <h3 className="font-bold text-sm text-slate-200">Your Learning Streak</h3>
-                </div>
-                <div className="flex items-end gap-2 text-white">
-                  <p className="text-4xl font-black text-emerald-400 leading-none">3</p>
-                  <p className="text-lg font-bold pb-0.5">Days</p>
-                  <FlameIcon className="w-8 h-8 text-orange-500 fill-orange-500 animate-pulse mb-0.5 ml-1" />
-                </div>
-                <div className="w-full bg-slate-700 h-1.5 rounded-full mt-3 overflow-hidden">
-                   <div className="w-3/5 bg-gradient-to-r from-emerald-400 to-teal-400 h-full rounded-full"></div>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2">Chat daily to keep your streak alive! 2 days until next milestone.</p>
-              </div>
-            </div>
-
-            <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[200px] flex-1 overflow-hidden mt-2">
+            <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[200px] flex-1 overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-emerald-600" />
@@ -637,7 +598,7 @@ export default function AILearningAssistant() {
           </div>
 
           {/* Chat Interface */}
-          <div className="lg:col-span-3 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
+          <div className="lg:col-span-2 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
             {eli5Mode && (
               <div className="flex items-center justify-center gap-2 shrink-0 bg-amber-100 text-amber-800 text-xs font-bold py-2 px-4 text-center shadow-sm border-b border-amber-200">
                 <Lightbulb className="w-4 h-4 fill-amber-500 text-amber-500" />
@@ -824,6 +785,29 @@ export default function AILearningAssistant() {
               </div>
             </div>
           </div>
+
+          {/* Right Sidebar - Project Collections */}
+          <div className="hidden lg:flex flex-col gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Lightbulb className="w-4 h-4 text-emerald-600" />
+                <h3 className="font-bold text-sm text-slate-900">Project Collections</h3>
+              </div>
+              <div className="space-y-2">
+                {quickActions.map((action, index) => {
+                  const Icon = action.icon;
+                  return (
+                    <button key={index} onClick={() => handleQuickAction(action.action)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                      <div className={`w-8 h-8 bg-gradient-to-r ${action.color} rounded-md flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                        <Icon className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -979,11 +963,4 @@ greetUser()`}
   );
 }
 
-// Quick component for flame icon
-function FlameIcon(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-    </svg>
-  );
-}
+
