@@ -423,7 +423,7 @@ export default function AILearningAssistant() {
     try {
       let contextStr = "User is asking for general AI assistance in their programming career.";
       if (eli5Mode) {
-        contextStr += " ELI5 MODE IS ACTIVE: You MUST explain this concept as simply as possible, using relatable metaphors that a 5-year-old would understand. Break down hard terms.";
+        contextStr += " ELI5 MODE IS ACTIVE: You MUST explain this concept as simply as possible, using relatable metaphors that a 5-year-old would understand. Break down hard terms. IMPORTANT: Heavily use EMOJIS (🚀, 💡, 🧩, etc) and visual symbols to make the explanation fun, engaging, and extremely easy to understand for the user.";
       }
 
       const res = await fetch("/api/ai/chat", {
