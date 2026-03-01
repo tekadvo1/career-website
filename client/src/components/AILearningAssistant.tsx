@@ -131,6 +131,25 @@ export default function AILearningAssistant() {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSaveProjectGuide = () => {
+    const guideText = messages.filter(m => m.type === 'assistant').map(m => m.content).join("\n\n---\n\n");
+    const blob = new Blob([guideText || "No project guide details found."], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `FindStreak_Project_Guide_${new Date().toISOString().split('T')[0]}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Project guide saved to your device! 🗂️");
+  };
 
   useEffect(() => {
     if (messages.length > 1) {
@@ -849,13 +868,13 @@ export default function AILearningAssistant() {
                  <Settings className="w-4 h-4 text-emerald-600" /> Options
                </h3>
                <div className="space-y-2">
-                 <button onClick={() => alert('Personal project guide successfully saved to your dashboard!')} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                 <button onClick={handleSaveProjectGuide} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
                     <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
                       <Save className="w-4 h-4 text-white" />
                     </div>
                     <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">Save Project Guide</span>
                  </button>
-                 <button onClick={() => alert('Chat settings panel would open here.')} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
+                 <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
                     <div className="w-8 h-8 bg-gradient-to-r from-slate-500 to-slate-600 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
                       <Settings className="w-4 h-4 text-white" />
                     </div>
@@ -890,6 +909,62 @@ export default function AILearningAssistant() {
                </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-emerald-600" /> Chat Settings
+              </h3>
+              <button onClick={() => setShowSettingsModal(false)} className="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+            <div className="p-5">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm">Clear All History</h4>
+                    <p className="text-xs text-slate-500">Permanently delete all chat sessions.</p>
+                  </div>
+                  <button onClick={() => { setChatHistory([]); setMessages([]); showToast("All chat history cleared! 🗑️"); setShowSettingsModal(false); }} className="px-3 py-1.5 bg-red-100 text-red-600 font-bold text-xs rounded-lg hover:bg-red-200 transition-colors">Clear</button>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm">Export Data</h4>
+                    <p className="text-xs text-slate-500">Download all your chat history.</p>
+                  </div>
+                  <button onClick={() => {
+                      const blob = new Blob([JSON.stringify(chatHistory, null, 2)], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "FindStreak_Chat_Backup.json";
+                      a.click();
+                      showToast("Data exported successfully! 📦");
+                  }} className="px-3 py-1.5 bg-emerald-100 text-emerald-700 font-bold text-xs rounded-lg hover:bg-emerald-200 transition-colors">Export</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[70] bg-slate-900 text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-opacity duration-300 border border-slate-700">
+          <div className="w-8 h-8 flex items-center justify-center bg-emerald-500/20 rounded-full shrink-0">
+             <Check className="w-4 h-4 text-emerald-400" />
+          </div>
+          <span className="font-semibold text-sm">{toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-slate-400 hover:text-white transition-colors">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>
