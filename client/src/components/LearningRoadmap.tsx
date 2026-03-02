@@ -404,7 +404,7 @@ export default function LearningRoadmap() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-3 sm:p-5">
       {/* Sidebar Navigation Menu */}
       {showSidebar && (
         <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowSidebar(false)}>
@@ -468,58 +468,58 @@ export default function LearningRoadmap() {
         )}
 
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6 mt-12 sm:mt-0">
-          <div className="flex items-start justify-between mb-4 flex-col sm:flex-row gap-4">
+        <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-12 sm:mt-0">
+          <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-sm mb-3 shadow-md">
-                <Sparkles className="w-4 h-4" />
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>AI Personalized Learning Path</span>
               </div>
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">Your Learning Roadmap</h1>
-              <p className="text-lg text-slate-600">A structured, real-time path to become a {role}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">Your Learning Roadmap</h1>
+              <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleDownloadRoadmap} variant="outline" className="flex items-center gap-2">
-                <Download className="w-4 h-4" /> Download PDF
+              <Button onClick={handleDownloadRoadmap} variant="outline" className="flex items-center gap-1.5 h-9 px-3 text-sm">
+                <Download className="w-3.5 h-3.5" /> Download PDF
               </Button>
-              <Button onClick={handleOpenAIAssistant} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-                <MessageSquare className="w-4 h-4" /> AI Assistant
+              <Button onClick={handleOpenAIAssistant} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 text-sm">
+                <MessageSquare className="w-3.5 h-3.5" /> AI Assistant
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <Calendar className="w-6 h-6 text-emerald-600" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+            <div className="flex items-center gap-2.5 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+              <Calendar className="w-5 h-5 text-emerald-600" />
               <div>
-                <p className="text-sm text-slate-600">Est. Duration</p>
-                <p className="font-semibold text-slate-900">~{totalWeeks} weeks</p>
+                <p className="text-xs text-slate-600 font-medium">Est. Duration</p>
+                <p className="font-semibold text-slate-900 text-sm">~{totalWeeks} weeks</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-teal-50 rounded-lg border border-teal-200">
-              <Target className="w-6 h-6 text-teal-600" />
+            <div className="flex items-center gap-2.5 p-3 bg-teal-50 rounded-lg border border-teal-200">
+              <Target className="w-5 h-5 text-teal-600" />
               <div>
-                <p className="text-sm text-slate-600">Phases Completed</p>
-                <p className="font-semibold text-slate-900">{completedPhases} / {roadmap.length}</p>
+                <p className="text-xs text-slate-600 font-medium">Phases Completed</p>
+                <p className="font-semibold text-slate-900 text-sm">{completedPhases} / {roadmap.length}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-              <Trophy className="w-6 h-6 text-indigo-600" />
+            <div className="flex items-center gap-2.5 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+              <Trophy className="w-5 h-5 text-indigo-600" />
               <div>
-                <p className="text-sm text-slate-600">Overall Progress</p>
-                <p className="font-semibold text-slate-900">{progressPercentage.toFixed(0)}%</p>
+                <p className="text-xs text-slate-600 font-medium">Overall Progress</p>
+                <p className="font-semibold text-slate-900 text-sm">{progressPercentage.toFixed(0)}%</p>
               </div>
             </div>
           </div>
-          <div className="mt-4"><Progress value={progressPercentage} className="h-3 bg-slate-100" /></div>
+          <div className="mt-3"><Progress value={progressPercentage} className="h-2 bg-slate-100" /></div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-5">
           {/* Roadmap Timeline Sidebar */}
           <div className="lg:col-span-1">
-            <Card className="p-6 sticky top-4">
-              <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-emerald-600" /> Phases
+            <Card className="p-4 sm:p-5 sticky top-4">
+              <h2 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-emerald-600" /> Phases
               </h2>
               <div className="space-y-3">
                 {roadmap.map((phase, index) => {
@@ -530,25 +530,25 @@ export default function LearningRoadmap() {
                     <button
                       key={index}
                       onClick={() => setSelectedPhaseIndex(index)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                         isActive ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-300"
                       }`}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5">
                         {isCompleted ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
                         ) : (
-                          <Circle className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                          <Circle className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-semibold text-slate-500">Phase {index + 1}</span>
-                            <Badge variant={lvl.includes('Beginner') ? 'default' : lvl.includes('Intermediate') ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 font-bold">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] sm:text-xs font-semibold text-slate-500">Phase {index + 1}</span>
+                            <Badge variant={lvl.includes('Beginner') ? 'default' : lvl.includes('Intermediate') ? 'secondary' : 'destructive'} className="text-[9px] px-1.5 py-0 font-bold leading-tight">
                               {lvl}
                             </Badge>
                           </div>
-                          <h3 className="font-semibold text-slate-900 truncate">{phase.title || phase.phase}</h3>
-                          <p className="text-xs text-slate-600 mt-1">{phase.duration}</p>
+                          <h3 className="text-sm sm:text-base font-semibold text-slate-900 truncate">{phase.title || phase.phase}</h3>
+                          <p className="text-[10px] sm:text-xs text-slate-600 mt-0.5">{phase.duration}</p>
                         </div>
                       </div>
                     </button>
@@ -561,34 +561,34 @@ export default function LearningRoadmap() {
           {/* specific logic to display phase content real time */}
           <div className="lg:col-span-2">
             {selectedPhase && (
-              <Card className="p-8">
-                <div className="flex items-start justify-between mb-6">
+              <Card className="p-5 sm:p-7">
+                <div className="flex items-start justify-between mb-5">
                   <div>
-                    <Badge variant={(selectedPhase.level || selectedPhase.difficulty)?.includes('Beginner') ? 'default' : (selectedPhase.level || selectedPhase.difficulty)?.includes('Intermediate') ? 'secondary' : 'destructive'} className="mb-2 uppercase shadow-sm">
+                    <Badge variant={(selectedPhase.level || selectedPhase.difficulty)?.includes('Beginner') ? 'default' : (selectedPhase.level || selectedPhase.difficulty)?.includes('Intermediate') ? 'secondary' : 'destructive'} className="mb-1.5 text-[10px] py-0.5 uppercase shadow-sm">
                       {selectedPhase.level || selectedPhase.difficulty}
                     </Badge>
-                    <h2 className="text-3xl font-bold text-slate-900 mb-2">{selectedPhase.title || selectedPhase.phase}</h2>
-                    <p className="text-slate-600 flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> {selectedPhase.duration}
-                      {selectedPhase.description && <span className="ml-2 hidden sm:inline">• {selectedPhase.description}</span>}
+                    <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1.5">{selectedPhase.title || selectedPhase.phase}</h2>
+                    <p className="text-sm text-slate-600 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> {selectedPhase.duration}
+                      {selectedPhase.description && <span className="ml-1.5 hidden sm:inline">• {selectedPhase.description}</span>}
                     </p>
                   </div>
                   {getPhaseCompletion(selectedPhase) && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      <span className="text-sm font-semibold text-emerald-700">Completed</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span className="text-xs font-semibold text-emerald-700">Completed</span>
                     </div>
                   )}
                 </div>
 
                 {/* Topics / Skills Real Time completion toggle */}
-                <div className="mb-8 border border-slate-200 p-6 rounded-xl bg-slate-50 relative overflow-hidden">
+                <div className="mb-6 border border-slate-200 p-4 sm:p-5 rounded-xl bg-slate-50 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <Code className="w-5 h-5 text-emerald-600" /> Core Skills & Topics
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-1.5">
+                    <Code className="w-4 h-4 text-emerald-600" /> Core Skills & Topics
                   </h3>
-                  <p className="text-sm text-slate-500 mb-4 tracking-tight">Click on a skill to mark it as completed to track your real-time progress.</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <p className="text-[11px] sm:text-xs text-slate-500 mb-3 tracking-tight">Click on a skill to mark it as completed to track your real-time progress.</p>
+                  <div className="grid gap-2.5 sm:grid-cols-2">
                     {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
                       const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
                       const isDone = completedTopics.has(name);
@@ -596,14 +596,14 @@ export default function LearningRoadmap() {
                         <div
                           key={index}
                           onClick={() => toggleTopicCompletion(name)}
-                          className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
+                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
                             isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:border-emerald-400'
                           }`}
                         >
-                          {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
+                          {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
                           <div>
-                            <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
-                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-xs text-slate-500 leading-tight mt-1">{skillObj.description}</p>}
+                            <p className={`text-sm font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
+                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{skillObj.description}</p>}
                           </div>
                         </div>
                       )
@@ -611,51 +611,51 @@ export default function LearningRoadmap() {
                   </div>
                 </div>
 
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-teal-600" /> Actionable Milestones
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-1.5">
+                    <Target className="w-4 h-4 text-teal-600" /> Actionable Milestones
                   </h3>
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     {(selectedPhase.step_by_step_guide || selectedPhase.milestones || []).map((milestone, index) => (
-                      <div key={index} className="flex items-start gap-3 p-4 bg-teal-50 rounded-lg border border-teal-100 shadow-sm">
-                        <Trophy className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-slate-800 font-medium">{milestone}</p>
+                      <div key={index} className="flex items-start gap-2.5 p-3 bg-teal-50 rounded-lg border border-teal-100 shadow-sm">
+                        <Trophy className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-slate-800 font-medium">{milestone}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-indigo-600" /> Recommended Projects
+                  <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-indigo-600" /> Recommended Projects
                   </h3>
                   
                   {/* Real Dashboard Cards adapted */}
-                  <div className="grid gap-4 mb-4">
+                  <div className="grid gap-3 mb-3">
                     {recommendedProjects.map((project) => (
-                      <div key={project.id} className="bg-white rounded-xl border-2 border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onClick={() => navigate("/dashboard")}>
-                        <div className="flex items-start justify-between mb-3">
-                          <h4 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{project.title}</h4>
+                      <div key={project.id} className="bg-white rounded-xl border-2 border-slate-200 p-4 hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onClick={() => navigate("/dashboard")}>
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{project.title}</h4>
                           {project.trending && (
-                            <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium flex-shrink-0 ml-2">
-                              <Flame className="w-3 h-3" /> Trending
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-[10px] font-semibold flex-shrink-0 ml-2">
+                              <Flame className="w-2.5 h-2.5" /> Trending
                             </div>
                           )}
                         </div>
-                        <p className="text-slate-600 mb-4 text-sm line-clamp-2">{project.description}</p>
-                        <div className="flex items-center gap-3 mb-4 text-sm text-slate-600">
-                          <span className="font-medium text-indigo-600">{project.difficulty}</span>
-                          <span>•</span><span>{project.duration}</span><span>•</span>
-                          <span className="font-semibold text-emerald-600">{project.matchScore}% Match</span>
+                        <p className="text-slate-600 mb-3 text-xs line-clamp-2">{project.description}</p>
+                        <div className="flex items-center gap-2 mb-3 text-xs text-slate-600">
+                          <span className="font-semibold text-indigo-600">{project.difficulty}</span>
+                          <span className="text-slate-300">•</span><span>{project.duration}</span><span className="text-slate-300">•</span>
+                          <span className="font-bold text-emerald-600">{project.matchScore}% Match</span>
                         </div>
-                        <div className="flex flex-wrap gap-2 mb-4">
+                        <div className="flex flex-wrap gap-1.5 mb-3">
                           {(project.tags || []).slice(0, 3).map((tag) => (
-                            <span key={tag} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">{tag}</span>
+                            <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-semibold">{tag}</span>
                           ))}
                         </div>
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                          <div className="text-xs text-slate-500">{(project.languages||[]).length} languages • {(project.tools||[]).length} tools</div>
-                          <ChevronRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                          <div className="text-[10px] text-slate-500">{(project.languages||[]).length} languages • {(project.tools||[]).length} tools</div>
+                          <ChevronRight className="w-4 h-4 text-indigo-600 group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
                     ))}
@@ -663,24 +663,24 @@ export default function LearningRoadmap() {
 
                   {/* AI Generated Curriculum Projects */}
                   {selectedPhase.projects && selectedPhase.projects.length > 0 && (
-                  <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
-                    <p className="text-sm font-semibold text-slate-700 mb-3">AI Context-Specific Projects:</p>
+                  <div className="bg-indigo-50 rounded-lg p-3 sm:p-4 border border-indigo-200">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-700 mb-2">AI Context-Specific Projects:</p>
                     <div className="grid gap-2">
                       {selectedPhase.projects.map((projObj, index) => {
                         const projName = typeof projObj === 'string' ? projObj : projObj.name || projObj.title || 'Project';
                         return (
-                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-200 hover:bg-white shadow-sm transition-colors cursor-pointer" onClick={() => navigate("/dashboard")}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">{index + 1}</div>
-                              <p className="font-semibold text-slate-900 text-sm">{projName}</p>
+                          <div key={index} className="flex items-center justify-between p-2.5 bg-white rounded-lg border border-indigo-200 hover:bg-white shadow-sm transition-colors cursor-pointer" onClick={() => navigate("/dashboard")}>
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-sm">{index + 1}</div>
+                              <p className="font-semibold text-slate-900 text-xs sm:text-sm">{projName}</p>
                             </div>
-                            <ArrowRight className="w-4 h-4 text-indigo-600" />
+                            <ArrowRight className="w-3.5 h-3.5 text-indigo-600" />
                           </div>
                       )})}
                     </div>
                   </div>
                   )}
-                  <p className="text-xs text-slate-500 mt-3 text-center">💡 Click on any project to push it to your workspace</p>
+                  <p className="text-[10px] sm:text-xs text-slate-500 mt-3 text-center">💡 Click on any project to push it to your workspace</p>
                 </div>
               </Card>
             )}
@@ -688,12 +688,12 @@ export default function LearningRoadmap() {
         </div>
 
         {/* Bottom Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-          <Button onClick={handleOpenAIAssistant} className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-md hover:shadow-lg transition-all rounded-xl">
-            <MessageSquare className="w-5 h-5" /> Get Advanced AI Learning Help
+        <div className="flex flex-col sm:flex-row gap-3 mt-5">
+          <Button onClick={handleOpenAIAssistant} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-sm transition-all rounded-lg text-sm">
+            <MessageSquare className="w-4 h-4" /> Get Advanced AI Learning Help
           </Button>
-          <Button onClick={() => navigate("/resources")} variant="outline" className="h-12 px-8 border-emerald-300 hover:bg-emerald-50 flex items-center gap-2 rounded-xl text-emerald-800 font-semibold shadow-sm">
-            <BookOpen className="w-5 h-5" /> Browse Free Resources
+          <Button onClick={() => navigate("/resources")} variant="outline" className="h-10 px-5 border-emerald-300 hover:bg-emerald-50 flex items-center gap-2 rounded-lg text-emerald-800 font-semibold shadow-sm text-sm">
+            <BookOpen className="w-4 h-4" /> Browse Free Resources
           </Button>
         </div>
       </div>
