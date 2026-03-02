@@ -507,12 +507,13 @@ export default function LearningRoadmap() {
     navigate("/ai-assistant", { state: { role, roadmap } });
   };
 
-  const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string) => {
+  const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string, subtopics: string[] | null) => {
     e.stopPropagation();
-    navigate("/ai-assistant", { 
+    navigate("/roadmap-guide", { 
         state: { 
             role, 
-            topicContext: `Assume the role of an expert tutor. Create a comprehensive, easy-to-understand study guide for the topic: "${topicName}". Explain the fundamental concepts clearly, provide real-world examples, and list the best practices. Keep it highly readable and engaging.`, 
+            topicName,
+            subtopics: subtopics || [],
             roadmap 
         } 
     });
@@ -766,7 +767,7 @@ export default function LearningRoadmap() {
                               </ul>
                             )}
                             <button
-                               onClick={(e) => handleOpenAIGuideForTopic(e, name)}
+                               onClick={(e) => handleOpenAIGuideForTopic(e, name, subtopics)}
                                className="mt-2 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors border border-indigo-100"
                             >
                                <Sparkles className="w-3 h-3" /> Study with AI Guide
