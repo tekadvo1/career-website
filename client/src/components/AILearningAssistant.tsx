@@ -23,7 +23,6 @@ import {
   Edit2,
   Trash2,
   Check,
-  Save,
   Settings,
 } from "lucide-react";
 
@@ -139,17 +138,6 @@ export default function AILearningAssistant() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSaveProjectGuide = () => {
-    const guideText = messages.filter(m => m.type === 'assistant').map(m => m.content).join("\n\n---\n\n");
-    const blob = new Blob([guideText || "No project guide details found."], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `FindStreak_Project_Guide_${new Date().toISOString().split('T')[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast("Project guide saved to your device! 🗂️");
-  };
 
   useEffect(() => {
     if (messages.length > 1) {
@@ -868,12 +856,6 @@ export default function AILearningAssistant() {
                  <Settings className="w-4 h-4 text-emerald-600" /> Options
                </h3>
                <div className="space-y-2">
-                 <button onClick={handleSaveProjectGuide} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
-                      <Save className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="flex-1 text-left text-sm font-semibold text-slate-700 group-hover:text-emerald-700">Save Project Guide</span>
-                 </button>
                  <button onClick={() => setShowSettingsModal(true)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all group">
                     <div className="w-8 h-8 bg-gradient-to-r from-slate-500 to-slate-600 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
                       <Settings className="w-4 h-4 text-white" />
