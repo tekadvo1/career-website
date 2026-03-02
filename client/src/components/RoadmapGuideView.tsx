@@ -72,8 +72,8 @@ export default function RoadmapGuideView() {
               <h1 className="font-bold text-slate-900 leading-tight">Interactive Guide</h1>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white text-xs font-semibold shadow-sm">
-             <Sparkles className="w-3.5 h-3.5" /> AI Generated
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full text-white text-[10px] sm:text-xs font-semibold shadow-sm overflow-hidden shrink-0">
+             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0" /> <span className="hidden sm:inline">AI Generated</span><span className="sm:hidden">AI</span>
           </div>
         </div>
       </div>
@@ -82,10 +82,10 @@ export default function RoadmapGuideView() {
       <div className="flex-1 overflow-y-auto mb-10">
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-10">
-                <div className="mb-8 border-b border-slate-100 pb-6">
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Comprehension Guide: {topicName}</h2>
-                    <p className="text-slate-500 text-sm flex items-center gap-1.5">
-                       <Lightbulb className="w-4 h-4 text-amber-500" /> Tailored for the {role} path
+                <div className="mb-6 md:mb-8 border-b border-slate-100 pb-5 md:pb-6">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">Comprehension Guide: {topicName}</h2>
+                    <p className="text-slate-500 text-xs sm:text-sm flex items-center gap-1.5">
+                       <Lightbulb className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" /> Tailored for the {role} path
                     </p>
                 </div>
 
@@ -113,9 +113,9 @@ export default function RoadmapGuideView() {
             </div>
 
             {!isLoading && !error && (
-                <div className="mt-6 flex justify-end">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md transition-colors">
-                       <CheckCircle2 className="w-5 h-5" /> Mark as Understood & Return
+                <div className="mt-6 flex flex-col sm:flex-row justify-end">
+                    <button onClick={() => navigate(-1)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md transition-colors">
+                       <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> Mark as Understood & Return
                     </button>
                 </div>
             )}
