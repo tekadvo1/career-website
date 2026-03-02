@@ -38,6 +38,7 @@ interface TopicResource {
 
 interface DetailedTopic {
     name: string;
+    emoji?: string;
     description: string;
     practical_application?: string;
     subtopics: string[];
@@ -105,12 +106,14 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
         topics: [
             {
                 name: "Algorithms & Logic",
+                emoji: "🧠",
                 description: "The building blocks of programming.",
                 subtopics: ["Big O Notation", "Sorting", "Recursion", "Memory Management"],
                 topic_resources: []
             },
             {
                 name: "Basic Syntax",
+                emoji: "💻",
                 description: "Variables, loops, and conditioned statements.",
                 subtopics: ["If/Else flows", "For/While loops", "Functions"],
                 topic_resources: []
@@ -133,12 +136,14 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
         topics: [
             {
                 name: "Version Control",
+                emoji: "🌳",
                 description: "Managing code changes effectively.",
                 subtopics: ["Git workflows", "Branching & Merging", "Pull Requests"],
                 topic_resources: []
             },
             {
                 name: "Web APIs",
+                emoji: "🔌",
                 description: "Connecting clients to servers.",
                 subtopics: ["REST vs GraphQL", "Authentication (JWT)", "Rate Limiting"],
                 topic_resources: []
@@ -161,12 +166,14 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
         topics: [
             {
                 name: "System Design",
+                emoji: "🏗️",
                 description: "Architecting large scale applications.",
                 subtopics: ["Load Balancing", "Caching (Redis)", "Message Queues"],
                 topic_resources: []
             },
             {
                 name: "DevOps & CI/CD",
+                emoji: "⚙️",
                 description: "Automating deployments and tests.",
                 subtopics: ["Docker & Kubernetes", "GitHub Actions", "Monitoring"],
                 topic_resources: []
@@ -500,6 +507,17 @@ export default function LearningRoadmap() {
     navigate("/ai-assistant", { state: { role, roadmap } });
   };
 
+  const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string) => {
+    e.stopPropagation();
+    navigate("/ai-assistant", { 
+        state: { 
+            role, 
+            topicContext: `Assume the role of an expert tutor. Create a comprehensive, easy-to-understand study guide for the topic: "${topicName}". Explain the fundamental concepts clearly, provide real-world examples, and list the best practices. Keep it highly readable and engaging.`, 
+            roadmap 
+        } 
+    });
+  };
+
   if (isLoading || loadingProgress < 100) {
     // If backend returns faster, we allow progress bar to immediately zip to 100% by hiding UI at 100
     if (!isLoading && loadingProgress === 100) {
@@ -724,6 +742,7 @@ export default function LearningRoadmap() {
                     {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
                       const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
                       const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
+                      const emoji = typeof skillObj === 'string' ? '💻' : (skillObj.emoji || '💻');
                       const isDone = completedTopics.has(name);
                       return (
                         <div
@@ -735,7 +754,9 @@ export default function LearningRoadmap() {
                         >
                           {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
                           <div className="flex-1">
-                            <p className={`text-sm font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
+                            <p className={`text-sm font-semibold flex items-center gap-1.5 ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>
+                                <span>{emoji}</span> {name}
+                            </p>
                             {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">{skillObj.description}</p>}
                             {subtopics && subtopics.length > 0 && (
                               <ul className="pl-3 mt-1.5 list-disc text-[10px] text-slate-600 space-y-0.5 marker:text-emerald-400">
@@ -744,6 +765,12 @@ export default function LearningRoadmap() {
                                 ))}
                               </ul>
                             )}
+                            <button
+                               onClick={(e) => handleOpenAIGuideForTopic(e, name)}
+                               className="mt-2 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded transition-colors border border-indigo-100"
+                            >
+                               <Sparkles className="w-3 h-3" /> Study with AI Guide
+                            </button>
                           </div>
                         </div>
                       )

@@ -187,6 +187,7 @@ router.post('/analyze', async (req, res) => {
                   "topics": [
                      {
                        "name": "Topic Name",
+                       "emoji": "Relevant single emoji like 💻 or 🧠",
                        "description": "Comprehensive explanation of this concept.",
                        "practical_application": "A specific mini-project or exercise.",
                        "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
@@ -220,7 +221,7 @@ router.post('/analyze', async (req, res) => {
                - If the role is "Full Stack Developer", the workflow MUST cover: Database Design (SQL/NoSQL) -> Backend API Development (Node/Python) -> Frontend Connection (React/Vue) -> Testing -> Deployment (CI/CD, AWS/Vercel).
                - Mention SPECIFIC tools in the 'tools_used' array for each stage (e.g. 'MySQL', 'Express.js', 'Postman', 'GitHub Actions').
                - Explain HOW components connect in the 'description'. Do not be generic.
-            8. **Roadmap Phases**: The roadmap array MUST contain at least 3 distinct phases (e.g., Beginner, Intermediate, Advanced), each rigorously detailed with 3-5 core topics and practical applications. Do NOT generate just one phase. Under each topic, make SURE to include a 'subtopics' array of 3-5 detailed concepts strings.
+            8. **Roadmap Phases**: The roadmap array MUST contain at least 3 distinct phases (e.g., Beginner, Intermediate, Advanced), each rigorously detailed with 3-5 core topics and practical applications. Do NOT generate just one phase. Under each topic, make SURE to include a 'subtopics' array of 3-5 detailed concepts strings, and a relevant 'emoji' for the topic context.
             
             Return ONLY valid JSON.
             `
