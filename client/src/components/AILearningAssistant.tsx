@@ -142,6 +142,61 @@ export default function AILearningAssistant() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  useEffect(() => {
+    // If we land here with a topicContext, automatically spin up a new chat and send it
+    if (location.state?.topicContext) {
+      const contextStr = location.state.topicContext;
+      // create new chat
+      const newChatId = Date.now().toString();
+      setCurrentChatId(newChatId);
+      
+      const userMsg: Message = {
+        id: newChatId + '-1',
+        type: "user",
+        content: contextStr,
+        timestamp: new Date(),
+      };
+      
+      setMessages([userMsg]);
+      setIsTyping(true);
+
+      // Perform AI fetch
+      const fetchAI = async () => {
+        try {
+          const res = await fetch("/api/ai/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: contextStr,
+              context: "User is asking for external resources and web searches to understand a roadmap topic.",
+              role: role,
+            }),
+          });
+          const data = await res.json();
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            type: "assistant",
+            content: data.reply || "I couldn't process that right now.",
+            timestamp: new Date(),
+          }]);
+        } catch (error) {
+          console.error(error);
+          setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            type: "assistant",
+            content: "Oops! AI is currently offline. Please try again later.",
+            timestamp: new Date()
+          }]);
+        } finally {
+          setIsTyping(false);
+        }
+      };
+      fetchAI();
+      
+      // Clear state so it doesn't refire on reload
+      navigate(location.pathname, { replace: true, state: { ...location.state, topicContext: undefined } });
+    }
+  }, [location.state?.topicContext, role, navigate, location.pathname]);
 
   useEffect(() => {
     if (messages.length > 1) {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Sparkles, Lightbulb, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, Lightbulb, CheckCircle2, MessageSquare } from "lucide-react";
 
 export default function RoadmapGuideView() {
   const navigate = useNavigate();
@@ -113,7 +113,18 @@ export default function RoadmapGuideView() {
             </div>
 
             {!isLoading && !error && (
-                <div className="mt-6 flex flex-col sm:flex-row justify-end">
+                <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                    <button 
+                       onClick={() => navigate("/ai-assistant", { 
+                         state: { 
+                             role, 
+                             topicContext: `I need more help and web resources to fully understand this topic from my roadmap: "${topicName}". Can you explain it differently or provide external links/web searches?` 
+                         } 
+                       })} 
+                       className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-white border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 rounded-xl font-semibold shadow-sm transition-all"
+                    >
+                       <MessageSquare className="w-5 h-5 flex-shrink-0" /> Ask AI to Search for More Info
+                    </button>
                     <button onClick={() => navigate(-1)} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 sm:py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold shadow-md transition-colors">
                        <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> Mark as Understood & Return
                     </button>
