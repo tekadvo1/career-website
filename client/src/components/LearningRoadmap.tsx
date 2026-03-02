@@ -106,7 +106,13 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
             {
                 name: "Algorithms & Logic",
                 description: "The building blocks of programming.",
-                subtopics: ["Big O Notation", "Sorting", "Recursion"],
+                subtopics: ["Big O Notation", "Sorting", "Recursion", "Memory Management"],
+                topic_resources: []
+            },
+            {
+                name: "Basic Syntax",
+                description: "Variables, loops, and conditioned statements.",
+                subtopics: ["If/Else flows", "For/While loops", "Functions"],
                 topic_resources: []
             }
         ],
@@ -116,6 +122,62 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
         ],
         projects: [
             { name: "CLI Task Manager", description: "Build a command-line to-do list.", difficulty: "Beginner" }
+        ],
+    },
+    {
+        phase: "Core Frameworks & Tools",
+        duration: "6 weeks",
+        difficulty: "Intermediate",
+        category: "Deep Dive",
+        description: "Focus on understanding industry-standard frameworks, source control, and APIs.",
+        topics: [
+            {
+                name: "Version Control",
+                description: "Managing code changes effectively.",
+                subtopics: ["Git workflows", "Branching & Merging", "Pull Requests"],
+                topic_resources: []
+            },
+            {
+                name: "Web APIs",
+                description: "Connecting clients to servers.",
+                subtopics: ["REST vs GraphQL", "Authentication (JWT)", "Rate Limiting"],
+                topic_resources: []
+            }
+        ],
+        step_by_step_guide: [
+            "Build a fully functioning CRUD application", 
+            "Deploy your code to a live server",
+        ],
+        projects: [
+            { name: "Full-stack Social App", description: "A simple user timeline and post app.", difficulty: "Intermediate" }
+        ],
+    },
+    {
+        phase: "System Architecture & Scale",
+        duration: "8 weeks",
+        difficulty: "Advanced",
+        category: "Architecture",
+        description: "Focus on designing highly available, performant systems.",
+        topics: [
+            {
+                name: "System Design",
+                description: "Architecting large scale applications.",
+                subtopics: ["Load Balancing", "Caching (Redis)", "Message Queues"],
+                topic_resources: []
+            },
+            {
+                name: "DevOps & CI/CD",
+                description: "Automating deployments and tests.",
+                subtopics: ["Docker & Kubernetes", "GitHub Actions", "Monitoring"],
+                topic_resources: []
+            }
+        ],
+        step_by_step_guide: [
+            "Draw a system architecture diagram for a system with 1 million users", 
+            "Set up an automated deployment pipeline for a microservice",
+        ],
+        projects: [
+            { name: "Microservice E-commerce Shop", description: "Distributed shop with cart queues.", difficulty: "Advanced" }
         ],
     }
 ];
@@ -461,28 +523,29 @@ export default function LearningRoadmap() {
       )}
 
       <div className="max-w-7xl mx-auto" ref={contentRef}>
-        {!showSidebar && (
-          <button onClick={() => setShowSidebar(true)} className="fixed top-4 left-4 z-40 p-2 bg-white hover:bg-slate-100 rounded-lg transition-colors shadow-md border border-slate-200">
-            <Menu className="w-6 h-6 text-slate-700" />
-          </button>
-        )}
-
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-12 sm:mt-0">
-          <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AI Personalized Learning Path</span>
+        <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-4 sm:mt-6 relative">
+          <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-4">
+            <div className="flex items-start gap-3 sm:gap-4 flex-1">
+              {!showSidebar && (
+                <button onClick={() => setShowSidebar(true)} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors shadow-sm border border-slate-200 flex-shrink-0 mt-0.5">
+                  <Menu className="w-5 h-5 text-slate-700" />
+                </button>
+              )}
+              <div className="flex-1">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Personalized Learning Path</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">Your Learning Roadmap</h1>
+                <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">Your Learning Roadmap</h1>
-              <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleDownloadRoadmap} variant="outline" className="flex items-center gap-1.5 h-9 px-3 text-sm">
-                <Download className="w-3.5 h-3.5" /> Download PDF
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button onClick={handleDownloadRoadmap} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 h-9 px-3 text-sm">
+                <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Download</span> PDF
               </Button>
-              <Button onClick={handleOpenAIAssistant} className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 text-sm">
+              <Button onClick={handleOpenAIAssistant} className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-3 text-sm">
                 <MessageSquare className="w-3.5 h-3.5" /> AI Assistant
               </Button>
             </div>
@@ -591,19 +654,27 @@ export default function LearningRoadmap() {
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
                       const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+                      const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
                       const isDone = completedTopics.has(name);
                       return (
                         <div
                           key={index}
                           onClick={() => toggleTopicCompletion(name)}
-                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
+                          className={`flex items-start gap-2.5 p-3 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
                             isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:border-emerald-400'
                           }`}
                         >
                           {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
-                          <div>
+                          <div className="flex-1">
                             <p className={`text-sm font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
-                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{skillObj.description}</p>}
+                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">{skillObj.description}</p>}
+                            {subtopics && subtopics.length > 0 && (
+                              <ul className="pl-3 mt-1.5 list-disc text-[10px] text-slate-600 space-y-0.5 marker:text-emerald-400">
+                                {subtopics.map((sub, i) => (
+                                  <li key={i}>{sub}</li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         </div>
                       )
