@@ -159,29 +159,29 @@ export default function Sidebar({ activePage }: SidebarProps) {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-              <Code className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
+              <Code className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent leading-tight">
+              <h2 className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent leading-tight">
                 FindStreak
               </h2>
-              <p className="text-[10px] text-slate-500 leading-none">Navigation Menu</p>
+              <p className="text-[9px] text-slate-500 leading-none">Navigation Menu</p>
             </div>
           </div>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
             aria-label="Close sidebar"
           >
-            <X className="w-5 h-5 text-slate-600" />
+            <X className="w-4 h-4 text-slate-600" />
           </button>
         </div>
 
         {/* Nav Items */}
-        <div className="flex-1 overflow-y-auto py-2 no-scrollbar">
+        <div className="flex-1 overflow-y-auto py-1 no-scrollbar flex flex-col justify-start">
           {navItems.map((item) => {
             const active = isActive(item.route);
             return (
@@ -195,7 +195,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                     navigate(item.route);
                   }
                 }}
-                className={`w-full flex items-center gap-4 px-5 py-3.5 transition-all group ${
+                className={`w-full flex items-center gap-3 px-4 py-2 transition-all group shrink-0 ${
                   active
                     ? 'bg-emerald-50 border-l-4 border-emerald-600'
                     : 'hover:bg-emerald-50 border-l-4 border-transparent'
@@ -203,7 +203,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
               >
                 {/* Icon Box */}
                 <div
-                  className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                  className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors [&>svg]:w-4 [&>svg]:h-4 ${
                     active
                       ? 'bg-emerald-200'
                       : 'bg-emerald-100 group-hover:bg-emerald-200'
@@ -216,7 +216,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`font-semibold text-sm transition-colors truncate ${
+                      className={`font-semibold text-[13px] leading-tight transition-colors truncate ${
                         active
                           ? 'text-emerald-700'
                           : 'text-slate-900 group-hover:text-emerald-700'
@@ -225,12 +225,12 @@ export default function Sidebar({ activePage }: SidebarProps) {
                       {item.label}
                     </span>
                     {item.badge && (
-                      <span className="flex-shrink-0 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold rounded leading-none">
+                      <span className="flex-shrink-0 px-1 py-[2px] bg-red-500 text-white text-[9px] font-bold rounded leading-none">
                         {item.badge}
                       </span>
                     )}
                   </div>
-                  <p className={`text-xs mt-0.5 ${active ? 'text-slate-600' : 'text-slate-500'}`}>
+                  <p className={`text-[10px] mt-0 ${active ? 'text-slate-600' : 'text-slate-500'}`}>
                     {item.subtitle}
                   </p>
                 </div>
@@ -240,29 +240,26 @@ export default function Sidebar({ activePage }: SidebarProps) {
         </div>
 
         {/* Logout Row */}
-        <div className="border-t border-slate-200 px-5 py-3">
+        <div className="border-t border-slate-200 px-4 py-2 flex-shrink-0 bg-white">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-4 py-3 group hover:bg-red-50 rounded-lg px-2 transition-colors"
+            className="w-full flex items-center gap-3 py-2 group hover:bg-red-50 rounded-lg px-2 transition-colors"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
-              <LogOut className="w-5 h-5 text-red-500" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
+              <LogOut className="w-4 h-4 text-red-500" />
             </div>
             <div className="flex-1 text-left">
-              <span className="font-semibold text-sm text-slate-700 group-hover:text-red-600 transition-colors">
+              <span className="font-semibold text-[13px] leading-tight text-slate-700 group-hover:text-red-600 transition-colors">
                 Sign Out
               </span>
-              <p className="text-xs text-slate-500 mt-0.5">Log out of your account</p>
+              <p className="text-[10px] text-slate-500 mt-0">Log out of your account</p>
             </div>
           </button>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-slate-200 px-6 py-4 flex-shrink-0 text-center">
-          <p className="text-[10px] text-slate-400">Powered by</p>
-          <p className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            FindStreak
-          </p>
+        <div className="border-t border-slate-200 px-4 py-2 flex-shrink-0 text-center bg-slate-50">
+          <p className="text-[9px] text-slate-400 font-medium">Powered by FindStreak</p>
         </div>
       </div>
     </>
