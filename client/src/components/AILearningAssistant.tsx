@@ -131,6 +131,8 @@ export default function AILearningAssistant() {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -614,7 +616,16 @@ export default function AILearningAssistant() {
                 </div>
               </div>
 
-              <button onClick={() => setShowHistoryDrawer(true)} className="flex lg:hidden items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm">
+              <button 
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    setShowLeftSidebar(!showLeftSidebar);
+                  } else {
+                    setShowHistoryDrawer(true);
+                  }
+                }} 
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm"
+              >
                 <MessageSquare className="w-4 h-4" />
                 <span className="text-sm hidden sm:block">History</span>
               </button>
@@ -624,14 +635,57 @@ export default function AILearningAssistant() {
                 <span className="text-sm hidden sm:block">New Chat</span>
               </button>
 
-              <button onClick={() => navigate('/resources')} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
+              {/* Projects Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowProjectsDropdown(!showProjectsDropdown)} 
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm"
+                >
+                  <Lightbulb className="w-4 h-4 text-emerald-600" />
+                  <span className="text-sm hidden sm:block">Projects</span>
+                </button>
+                {showProjectsDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowProjectsDropdown(false)} />
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 overflow-hidden transform origin-top-right transition-all">
+                      <div className="px-4 pb-2 mb-2 border-b border-slate-100">
+                        <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Lightbulb className="w-3.5 h-3.5"/> Project Collections</p>
+                      </div>
+                      {quickActions.map((action, index) => {
+                        const Icon = action.icon;
+                        return (
+                          <button 
+                            key={index} 
+                            onClick={() => {
+                              handleQuickAction(action.action);
+                              setShowProjectsDropdown(false);
+                            }} 
+                            className="w-full text-left px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-3 transition-colors group"
+                          >
+                            <div className={`w-7 h-7 rounded flex items-center justify-center bg-gradient-to-r ${action.color} shadow-sm shrink-0 group-hover:scale-110 transition-transform`}>
+                              <Icon className="w-4 h-4 text-white" />
+                            </div>
+                            {action.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button onClick={() => navigate('/resources')} className="hidden xl:flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
                 <BookOpen className="w-4 h-4" />
-                <span className="text-sm hidden sm:block">Resources</span>
+                <span className="text-sm">Resources</span>
               </button>
 
-              <button onClick={() => navigate('/missions')} className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
+              <button onClick={() => navigate('/missions')} className="hidden xl:flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
                 <Gamepad2 className="w-4 h-4 text-purple-600" />
-                <span className="text-sm hidden sm:block">Challenge</span>
+                <span className="text-sm">Challenge</span>
+              </button>
+
+              <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center p-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm" title="Settings">
+                <Settings className="w-5 h-5 text-slate-600" />
               </button>
             </div>
           </div>
@@ -640,10 +694,11 @@ export default function AILearningAssistant() {
 
       {/* Main Content Area */}
       <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full min-h-0">
-        <div className="flex flex-col lg:grid lg:grid-cols-[260px_1fr_80px] gap-4 lg:gap-6 flex-1 min-h-0">
+        <div className={`flex flex-col lg:grid gap-4 lg:gap-6 flex-1 min-h-0 ${showLeftSidebar ? 'lg:grid-cols-[260px_1fr]' : 'lg:grid-cols-1'}`}>
           
           {/* Left Sidebar - Chat History */}
-          <div className="hidden lg:flex flex-col gap-4 min-h-0 h-full w-[260px]">
+          {showLeftSidebar && (
+            <div className="hidden lg:flex flex-col gap-4 min-h-0 h-full w-[260px] animate-in slide-in-from-left duration-300 ease-in-out">
             <div className="bg-white/80 rounded-xl shadow-sm border border-slate-200 flex flex-col flex-1 overflow-hidden">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/50">
                 <div className="flex items-center gap-2">
@@ -655,7 +710,8 @@ export default function AILearningAssistant() {
                 {renderChatList()}
               </div>
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Chat Interface */}
           <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative min-h-0 h-full">
@@ -846,54 +902,7 @@ export default function AILearningAssistant() {
             </div>
           </div>
 
-          {/* Right Sidebar - Slim Action Bar */}
-          <div className="hidden lg:flex flex-col gap-3 min-h-0 h-full w-20 shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 py-4 flex flex-col items-center gap-3 overflow-y-auto custom-scrollbar flex-1 relative">
-              
-              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0 mb-1" title="Project Collections">
-                <Lightbulb className="w-5 h-5 text-emerald-600" />
-              </div>
-              
-              <div className="w-8 h-[1px] bg-slate-100 shrink-0 mb-1" />
-              
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <div className="relative group" key={index}>
-                    <button 
-                      onClick={() => handleQuickAction(action.action)} 
-                      className="w-12 h-12 flex items-center justify-center rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all shadow-sm"
-                    >
-                      <div className={`w-10 h-10 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center`}>
-                         <Icon className="w-5 h-5 text-white" />
-                      </div>
-                    </button>
-                    {/* Tooltip on Hover */}
-                    <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 px-3 py-2 bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                      {action.label}
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[4px] border-4 border-transparent border-l-slate-900" />
-                    </div>
-                  </div>
-                );
-              })}
-
-              <div className="mt-auto w-full flex flex-col items-center gap-3">
-                <div className="w-8 h-[1px] bg-slate-100 shrink-0" />
-                <div className="relative group">
-                  <button onClick={() => setShowSettingsModal(true)} className="w-12 h-12 flex items-center justify-center rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all shadow-sm">
-                     <div className="w-10 h-10 bg-gradient-to-r from-slate-500 to-slate-600 rounded-lg flex items-center justify-center">
-                       <Settings className="w-5 h-5 text-white" />
-                     </div>
-                  </button>
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 px-3 py-2 bg-slate-900 text-white text-[11px] font-bold rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                    Chat Settings
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[4px] border-4 border-transparent border-l-slate-900" />
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
+          {/* Chat Interface End */}
         </div>
       </div>
       
