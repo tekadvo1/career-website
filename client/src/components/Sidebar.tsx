@@ -181,7 +181,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
         </div>
 
         {/* Nav Items */}
-        <div className="flex-1 overflow-y-auto py-2">
+        <div className="flex-1 overflow-y-auto py-2 no-scrollbar">
           {navItems.map((item) => {
             const active = isActive(item.route);
             return (
