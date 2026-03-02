@@ -1,25 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Calendar,
-  Target,
-  Download,
-  Sparkles,
-  CheckCircle2,
-  Code,
-  BookOpen,
-  ArrowRight,
-  Trophy,
-  Bot,
-  ChevronDown,
-  ChevronUp
+  Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
+  BookOpen, Code, Trophy, Zap, MessageSquare, Menu, X, User, Briefcase, 
+  BarChart3, LayoutDashboard, Award, Flame, ChevronRight, Gamepad2
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import QuizModal from './roadmap/QuizModal';
 import AIChatAssistant from './roadmap/AIChatAssistant';
 
-// Interfaces
+// --- Interfaces ---
 interface Resource {
   name: string;
   url: string;
@@ -28,9 +19,17 @@ interface Resource {
 }
 
 interface Project {
-  name: string;
+  id?: string;
+  title?: string;
+  name?: string;
   description: string;
   difficulty: string;
+  duration?: string;
+  matchScore?: number;
+  tags?: string[];
+  trending?: boolean;
+  languages?: string[];
+  tools?: string[];
 }
 
 interface TopicResource {
@@ -49,214 +48,172 @@ interface DetailedTopic {
 }
 
 interface RoadmapPhase {
-  phase: string;
+  id?: string;
+  title?: string; // from mock data
+  phase?: string; // from api
+  level?: string; // from mock
+  difficulty?: string; // from api
   duration: string;
-  difficulty: string;
   category?: string;
   description?: string;
-  topics: (string | DetailedTopic)[];
-  skills_covered?: string[]; // Fallback if needed
-  step_by_step_guide: string[];
-  resources: Resource[];
-  projects: Project[];
+  topics?: (string | DetailedTopic)[]; // from api
+  skills?: string[]; // from mock
+  skills_covered?: string[]; 
+  milestones?: string[]; // from mock
+  step_by_step_guide?: string[]; // from api
+  resources?: Resource[];
+  projects: (string | Project)[]; 
+  completed?: boolean;
 }
+
+// Inline UI Components for styling portability
+const Button = ({ children, className = '', variant = 'default', ...props }: any) => {
+  const baseStyle = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 disabled:opacity-50 h-9 px-4 py-2";
+  const variants = {
+    default: "bg-slate-900 text-slate-50 hover:bg-slate-900/90",
+    outline: "border border-slate-200 bg-transparent hover:bg-slate-100 text-slate-900",
+  };
+  return <button className={`${baseStyle} ${variants[variant as keyof typeof variants] || variants.default} ${className}`} {...props}>{children}</button>;
+};
+
+const Card = ({ children, className = '', ...props }: any) => {
+  return <div className={`rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm ${className}`} {...props}>{children}</div>;
+};
+
+const Badge = ({ children, className = '', variant = 'default', ...props }: any) => {
+  const baseStyle = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none";
+  const variants = {
+    default: "bg-slate-900 text-slate-50",
+    secondary: "bg-slate-100 text-slate-900",
+    destructive: "bg-red-500 text-slate-50",
+  };
+  return <div className={`${baseStyle} ${variants[variant as keyof typeof variants] || variants.default} ${className}`} {...props}>{children}</div>;
+};
+
+const Progress = ({ value, className = '', ...props }: any) => {
+  return (
+    <div className={`w-full bg-slate-100 rounded-full overflow-hidden ${className}`} {...props}>
+      <div className="bg-indigo-600 h-full rounded-full transition-all duration-500" style={{width: `${Math.min(100, Math.max(0, value || 0))}%`}}/>
+    </div>
+  );
+};
 
 const DEFAULT_ROADMAP: RoadmapPhase[] = [
     {
-        phase: "Computer Science Foundations",
-        duration: "4-6 weeks",
+        phase: "Foundations",
+        duration: "4 weeks",
         difficulty: "Beginner",
         category: "Foundations",
-        description: "Before diving into frameworks, master the timeless principles of computing. This phase focuses on how computers work, algorithms, and data structures.",
+        description: "Focus on how computers work, algorithms, and data structures.",
         topics: [
             {
                 name: "Algorithms & Logic",
                 description: "The building blocks of programming.",
-                subtopics: ["Big O Notation", "Sorting & Searching", "Recursion", "Graph Theory"],
-                topic_resources: [
-                    { name: "CS50: Intro to CS", url: "https://pll.harvard.edu/course/cs50-introduction-computer-science", type: "Course", is_free: true }
-                ]
-            },
-            {
-                name: "Internet Fundamentals",
-                description: "How the web actually works.",
-                subtopics: ["HTTP/HTTPS Protocols", "DNS & Hosting", "Browsers & Rendering", "TCP/IP"],
+                subtopics: ["Big O Notation", "Sorting", "Recursion"],
                 topic_resources: []
             }
         ],
-        skills_covered: ["Algorithmic Thinking", "Problem Solving", "Memory Management"],
         step_by_step_guide: [
-            "Complete CS50 Week 0-5", 
-            "Solve 20 LeetCode 'Easy' problems",
-            "Build a CLI tool in Python or C"
-        ],
-        resources: [
-             { name: "Harvard CS50", url: "https://pll.harvard.edu/course/cs50-introduction-computer-science", type: "Course", is_free: true },
-             { name: "The Odin Project: Foundations", url: "https://www.theodinproject.com/paths/foundations/courses/foundations", type: "Curriculum", is_free: true }
+            "Complete CS50 or basic programming course", 
+            "Solve 20 beginner problems",
         ],
         projects: [
-            { name: "CLI Task Manager", description: "Build a command-line to-do list with file persistence.", difficulty: "Beginner" }
-        ]
-    },
-    {
-        phase: "Frontend Engineering",
-        duration: "6-8 weeks",
-        difficulty: "Intermediate",
-        category: "Frontend",
-        description: "Mastering the art of creating interactive user interfaces. Focus on modern React, state management, and responsive design systems.",
-        topics: [
-            {
-                name: "Modern React",
-                description: "Building component-based UIs.",
-                subtopics: ["Hooks (useEffect, useState)", "Context API", "Custom Hooks", "Performance Optimization"],
-                topic_resources: []
-            },
-            {
-                name: "CSS Mastery",
-                description: "Styling layout and aesthetics.",
-                subtopics: ["Flexbox & Grid", "Tailwind CSS", "Animations", "Responsive Design"],
-                topic_resources: []
-            }
+            { name: "CLI Task Manager", description: "Build a command-line to-do list.", difficulty: "Beginner" }
         ],
-        skills_covered: ["Component Architecture", "State Management", "UI/UX Implementation"],
-        step_by_step_guide: [
-            "Build a clone of a popular site (Tesla/Netflix)",
-            "Master React Hooks",
-            "Learn to use Tailwind CSS efficiently"
-        ],
-        resources: [],
-        projects: [
-             { name: "E-Commerce Dashboard", description: "A responsive dashboard with charts and data tables.", difficulty: "Intermediate" },
-             { name: "Interactive Portfolio", description: "A 3D or highly animated personal website.", difficulty: "Intermediate" }
-        ]
-    },
-    {
-        phase: "Backend & APIs",
-        duration: "6-8 weeks",
-        difficulty: "Intermediate",
-        category: "Backend",
-        description: "Building the engine that powers applications. Learn to design robust APIs, handle authentication, and manage databases.",
-        topics: [
-            {
-                name: "Server-Side Logic",
-                description: "Runtime environments and APIs.",
-                subtopics: ["Node.js & Express", "RESTful Architecture", "GraphQL", "Authentication (JWT/OAuth)"],
-                topic_resources: []
-            },
-            {
-                name: "Databases",
-                description: "Persistent data storage.",
-                subtopics: ["PostgreSQL (SQL)", "MongoDB (NoSQL)", "ORM (Prisma/TypeORM)", "Database Design"],
-                topic_resources: []
-            }
-        ],
-        skills_covered: ["API Design", "Database Modeling", "Security Best Practices"],
-        step_by_step_guide: [
-            "Design a database schema for a social network",
-            "Build a secured REST API with Express",
-            "Implement User Auth from scratch"
-        ],
-        resources: [],
-        projects: [
-             { name: "Real-time Chat App", description: "Using WebSockets (Socket.io) for messaging.", difficulty: "Intermediate" }
-        ]
-    },
-    {
-        phase: "DevOps & Cloud",
-        duration: "4 weeks",
-        difficulty: "Advanced",
-        category: "DevOps",
-        description: "Taking your code from localhost to the world. Learn CI/CD, containerization, and cloud infrastructure.",
-        topics: [
-            {
-                name: "Containerization",
-                description: "Consistent environments everywhere.",
-                subtopics: ["Docker Fundamentals", "Docker Compose", "Multi-stage Builds"],
-                topic_resources: []
-            },
-             {
-                name: "Cloud Infrastructure",
-                description: "Deploying and scaling applications.",
-                subtopics: ["AWS/Vercel/Railway", "CI/CD Pipelines (GitHub Actions)", "Monitoring & Logging"],
-                topic_resources: []
-            }
-        ],
-        skills_covered: ["DevOps Culture", "Infrastructure as Code", "Deployment Strategy"],
-        step_by_step_guide: [
-            "Dockerize your Full Stack App",
-            "Set up automatic deployment on push",
-            "Configure a custom domain with SSL"
-        ],
-        resources: [],
-        projects: [
-             { name: "Production Deployment Pipeline", description: "Fully automated CI/CD for a mono-repo.", difficulty: "Advanced" }
-        ]
-    },
-    {
-        phase: "System Architecture",
-        duration: "Ongoing",
-        difficulty: "Expert",
-        category: "Architecture",
-        description: "Designing for scale, reliability, and maintainability. This is what distinguishes senior engineers.",
-        topics: [
-            {
-                name: "Distributed Systems",
-                description: "Handling high scale.",
-                subtopics: ["Microservices vs Monolith", "Load Balancing", "Caching Strategies (Redis)", "Message Queues (Kafka)"],
-                topic_resources: []
-            }
-        ],
-        skills_covered: ["System Design", "Scalability", "Trade-off Analysis"],
-        step_by_step_guide: [
-            "Read 'Designing Data-Intensive Applications'",
-            "Practice System Design Interview questions",
-            "Refactor a monolith into microservices"
-        ],
-        resources: [],
-        projects: [
-             { name: "Clone a High-Scale Service", description: "Design a simplified version of Twitter or Uber backend.", difficulty: "Expert" }
-        ]
     }
 ];
+
+// Generate recommended practice projects like in the prompt
+const generateRecommendedProjects = (role: string, hasResume: boolean): Project[] => {
+  const projects: Project[] = [
+    {
+      id: "1",
+      title: "Real-time Chat Application",
+      description: "Build a full-stack real-time chat application with user authentication, message history, and typing indicators.",
+      difficulty: "Intermediate",
+      duration: "2-3 weeks",
+      matchScore: hasResume ? 97 : 94,
+      tags: ["Real-time", "Full-stack", "WebSocket"],
+      trending: true,
+      languages: ["JavaScript", "TypeScript", "HTML", "CSS"],
+      tools: ["VS Code", "Postman", "MongoDB Compass", "Chrome DevTools"],
+    },
+    {
+      id: "2",
+      title: "E-commerce Dashboard with Analytics",
+      description: "Create an admin dashboard for e-commerce with sales analytics, inventory management, and data visualization.",
+      difficulty: "Advanced",
+      duration: "3-4 weeks",
+      matchScore: hasResume ? 95 : 92,
+      tags: ["Dashboard", "Analytics", "Data Viz"],
+      trending: true,
+      languages: ["JavaScript", "TypeScript", "SQL"],
+      tools: ["Figma", "VS Code", "Recharts", "Postman"],
+    },
+    {
+      id: "3",
+      title: "Task Management App with Drag & Drop",
+      description: "Build a Kanban-style task management application with drag-and-drop functionality, filters, and team collaboration.",
+      difficulty: "Intermediate",
+      duration: "2-3 weeks",
+      matchScore: hasResume ? 93 : 90,
+      tags: ["Productivity", "Drag & Drop", "Kanban"],
+      trending: false,
+      languages: ["JavaScript", "TypeScript"],
+      tools: ["VS Code", "React DnD", "Chrome DevTools"],
+    },
+    {
+      id: "4",
+      title: "AI-Powered Recipe Finder",
+      description: "Create a recipe discovery app that uses AI to recommend recipes based on available ingredients and dietary preferences.",
+      difficulty: "Intermediate",
+      duration: "2-3 weeks",
+      matchScore: hasResume ? 91 : 88,
+      tags: ["AI", "API Integration", "Search"],
+      trending: true,
+      languages: ["JavaScript", "TypeScript"],
+      tools: ["VS Code", "OpenAI API", "Postman"],
+    },
+  ];
+
+  return projects.slice(0, 4); // Return top 4 recommendations
+};
 
 export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [role, setRole] = useState(location.state?.role || "Software Engineer");
+  
+  const initialRole = location.state?.role || "Software Engineer";
+  const hasResume = location.state?.hasResume || false;
+
+  const [role, setRole] = useState(initialRole);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
   const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
-  const [isTopicsExpanded, setIsTopicsExpanded] = useState(false); // New state to track topic expansion
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [chatContext, setChatContext] = useState('');
-
-  // --- NEW FEATURES STATE ---
+  
+  // Real-time tracking state
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
   
-  // Quiz State
+  // Feature flags / Modals
+  const [isLoading, setIsLoading] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [chatContext, setChatContext] = useState('');
   const [showQuiz, setShowQuiz] = useState(false);
 
-  const openChatWithContext = (context: string) => {
-      setChatContext(context);
-      setShowChat(true);
-  };
+  const [recommendedProjects] = useState<Project[]>(generateRecommendedProjects(role, hasResume));
+  const contentRef = useRef<HTMLDivElement>(null);
 
+  // Initialize
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       
-      // Load completed topics from LocalStorage
+      // Load progress
       const savedProgress = localStorage.getItem(`roadmap_progress_${role}`);
       if (savedProgress) {
-          try {
-              setCompletedTopics(new Set(JSON.parse(savedProgress)));
-          } catch (e) {
-              console.error("Failed to parse progress", e);
-          }
+          try { setCompletedTopics(new Set(JSON.parse(savedProgress))); } catch (e) {}
       }
 
-      // Load progress from API (Source of Truth)
       try {
           const userStr = localStorage.getItem('user');
           if (userStr) {
@@ -267,18 +224,14 @@ export default function LearningRoadmap() {
                     if (data.success && Array.isArray(data.completedTopics)) {
                         setCompletedTopics(new Set(data.completedTopics));
                     }
-                })
-                .catch(e => console.error("Error loading progress from API", e));
+                }).catch(e => console.error(e));
           }
-      } catch (e) {
-          console.error("Error checking user for progress load", e);
-      }
+      } catch (e) {}
 
-      // 1. Try to get data from location state 
+      // Load Roadmap Data
       let analysis = location.state?.analysis;
       let targetRole = location.state?.role || role;
 
-      // 2. If not in state, look in localStorage for analysis
       if (!analysis || !analysis.roadmap) {
          try {
            const saved = localStorage.getItem('lastRoleAnalysis');
@@ -290,23 +243,21 @@ export default function LearningRoadmap() {
                 setRole(targetRole);
              }
            }
-         } catch (e) {
-           console.error("Error reading from local storage", e);
-         }
+         } catch (e) {}
       }
 
-      // 3. If still no roadmap, fetch fresh
       if (analysis && analysis.roadmap && Array.isArray(analysis.roadmap)) {
          setRoadmap(analysis.roadmap);
          setIsLoading(false);
       } else {
          console.log("Fetching fresh roadmap for:", targetRole);
          try {
-           const user = JSON.parse(localStorage.getItem('user') || '{}');
+           const userStr = localStorage.getItem('user');
+           const user = userStr ? JSON.parse(userStr) : {};
            const response = await fetch('/api/role/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ role: targetRole, userId: user.id })
+              body: JSON.stringify({ role: targetRole, userId: user.id || null })
            });
            
            if (response.ok) {
@@ -320,7 +271,7 @@ export default function LearningRoadmap() {
                }));
              } else {
                 setRoadmap(DEFAULT_ROADMAP); 
-              }
+             }
             } else {
               setRoadmap(DEFAULT_ROADMAP);
             }
@@ -336,61 +287,16 @@ export default function LearningRoadmap() {
     loadData();
   }, [location.state, role, navigate]);
 
-  // Save progress
   useEffect(() => {
-      localStorage.setItem(`roadmap_progress_${role}`, JSON.stringify(Array.from(completedTopics)));
+    localStorage.setItem(`roadmap_progress_${role}`, JSON.stringify(Array.from(completedTopics)));
   }, [completedTopics, role]);
-
-    const handleResetRoadmap = () => {
-        if (window.confirm("This will replace your current view with the full comprehensive roadmap curriculum. Continue?")) {
-            setRoadmap(DEFAULT_ROADMAP);
-            localStorage.removeItem('lastRoleAnalysis');
-            localStorage.removeItem(`roadmap_progress_${role}`);
-            setCompletedTopics(new Set());
-            setSelectedPhaseIndex(0);
-        }
-    };
-
-  const handleDownloadPDF = async () => {
-      const element = document.getElementById('roadmap-content');
-      if (!element) return;
-      
-      setIsDownloading(true);
-      try {
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          logging: false
-        });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'landscape',
-          unit: 'mm',
-          format: 'a4'
-        });
-        
-        const imgWidth = 297;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        pdf.save(`${role}_Learning_Roadmap.pdf`);
-      } catch (error) {
-        console.error('PDF generation failed:', error);
-        alert('Failed to generate PDF. Please try again.');
-      } finally {
-        setIsDownloading(false);
-      }
-    };
 
   const toggleTopicCompletion = async (topicName: string) => {
       const isCompleted = !completedTopics.has(topicName);
       setCompletedTopics(prev => {
           const newSet = new Set(prev);
-          if (isCompleted) {
-              newSet.add(topicName);
-          } else {
-              newSet.delete(topicName);
-          }
+          if (isCompleted) newSet.add(topicName);
+          else newSet.delete(topicName);
           return newSet;
       });
 
@@ -402,367 +308,402 @@ export default function LearningRoadmap() {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
-                     userId: user.id,
-                     role: role,
-                     topicName: topicName,
-                     isCompleted: isCompleted
+                     userId: user.id, role: role, topicName: topicName, isCompleted: isCompleted
                  })
-             }).catch(err => console.error("Background sync failed", err));
+             }).catch(err => console.error("Sync failed", err));
           }
-      } catch (error) {
-          console.error("Failed to initiate sync", error);
+      } catch (error) {}
+  };
+
+  const selectedPhase = roadmap[selectedPhaseIndex] || null;
+
+  // Calculators
+  const totalWeeks = roadmap.reduce((acc, phase) => {
+    const dur = phase.duration || "0";
+    const nums = dur.match(/\d+/g);
+    let val = 0;
+    if (nums && nums.length > 0) val = parseInt(nums[nums.length - 1]);
+    if (dur.toLowerCase().includes('month')) val *= 4;
+    return acc + val;
+  }, 0);
+
+  const getPhaseCompletion = (phase: RoadmapPhase) => {
+      const topicsList = phase.topics || phase.skills || [];
+      if (!topicsList || topicsList.length === 0) return false;
+      return topicsList.every(t => {
+          const name = typeof t === 'string' ? t : t.name;
+          return completedTopics.has(name);
+      });
+  };
+
+  const completedPhases = roadmap.filter(getPhaseCompletion).length;
+  const progressPercentage = roadmap.length > 0 ? (completedPhases / roadmap.length) * 100 : 0;
+
+  const handleDownloadRoadmap = () => {
+    const pdf = new jsPDF();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 20;
+    let yPosition = margin;
+
+    pdf.setFontSize(20);
+    pdf.text(`Learning Roadmap: ${role}`, margin, yPosition);
+    yPosition += 10;
+
+    pdf.setFontSize(10);
+    pdf.text(`Total Duration: ~${totalWeeks} weeks`, margin, yPosition);
+    yPosition += 10;
+
+    roadmap.forEach((phase, index) => {
+      if (yPosition > pdf.internal.pageSize.getHeight() - 60) {
+        pdf.addPage();
+        yPosition = margin;
       }
+      
+      const pTitle = phase.title || phase.phase || '';
+      pdf.setFontSize(14);
+      pdf.text(`Phase ${index + 1}: ${pTitle}`, margin, yPosition);
+      yPosition += 7;
+
+      pdf.setFontSize(10);
+      pdf.text(`Level: ${phase.level || phase.difficulty} | Duration: ${phase.duration}`, margin + 5, yPosition);
+      yPosition += 7;
+
+      const topics = phase.topics || phase.skills || [];
+      if (topics.length > 0) {
+        pdf.text("Topics/Skills:", margin + 5, yPosition);
+        yPosition += 5;
+        topics.forEach((t) => {
+          const name = typeof t === 'string' ? t : t.name;
+          pdf.text(`  • ${name}`, margin + 10, yPosition);
+          yPosition += 5;
+        });
+        yPosition += 3;
+      }
+
+      if (phase.projects && phase.projects.length > 0) {
+          pdf.text("Projects:", margin + 5, yPosition);
+          yPosition += 5;
+          phase.projects.forEach((proj) => {
+            const pName = typeof proj === 'string' ? proj : (proj.name || proj.title || 'Project');
+            pdf.text(`  • ${pName}`, margin + 10, yPosition);
+            yPosition += 5;
+          });
+      }
+      yPosition += 8;
+    });
+
+    pdf.save(`${role.replace(/\s+/g, "_")}_Roadmap.pdf`);
   };
 
-  const totalPhases = roadmap.length; 
-  
-  const handlePhaseChange = (idx: number) => {
-      setSelectedPhaseIndex(idx);
-      setIsTopicsExpanded(false); // Reset expansion when changing phases
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    const d = difficulty?.toLowerCase() || '';
-    if (d.includes("beginner")) return "bg-green-100 text-green-700 border-green-200";
-    if (d.includes("intermediate")) return "bg-amber-100 text-amber-700 border-amber-200";
-    return "bg-red-100 text-red-700 border-red-200";
+  const handleOpenAIAssistant = () => {
+    navigate("/ai-assistant", { state: { role, roadmap } });
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Generating your personalized roadmap...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Generating your personalized AI roadmap...</p>
         </div>
       </div>
     );
   }
 
-  if (roadmap.length === 0) {
-     return (
-       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-4">
-          <p className="text-gray-600 mb-4">We couldn't find a roadmap for this role.</p>
-          <button 
-             onClick={() => navigate('/onboarding')}
-             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-             Start New Analysis
-          </button>
-       </div>
-     );
-  }
-
-  const totalTopics = roadmap.reduce((acc, phase) => acc + (phase.topics?.length || 0), 0);
-  const progressPercent = Math.min(100, Math.round((completedTopics.size / (totalTopics || 1)) * 100));
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans text-slate-800" id="roadmap-content">
-      {/* HEADER SECTION - ULTRA COMPACT */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm transition-all duration-300">
-         <div className="max-w-7xl mx-auto px-4 py-2"> {/* Reduced py-3 to py-2 */}
-             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2"> {/* Reduced gap-3 to gap-2 */}
-                 <div>
-                     <div className="flex items-center gap-1.5 mb-0.5">
-                         <div className="p-0.5 bg-purple-600 rounded text-white shadow-sm">
-                            <Sparkles className="w-2.5 h-2.5" /> 
-                         </div>
-                         <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full uppercase tracking-wider border border-purple-100">
-                            Personalized Learning Path
-                         </span>
-                     </div>
-                     <h1 className="text-lg font-bold text-gray-900 tracking-tight">Your Learning Roadmap</h1> {/* Reduced text-xl to text-lg */}
-                 </div>
-                 
-                 <div className="flex items-center gap-2">
-                     <button 
-                        onClick={handleResetRoadmap}
-                        className="px-2 py-1 text-[9px] font-medium text-gray-400 hover:text-red-500 transition-colors underline"
-                     >
-                         Reset View
-                     </button>
-                     <button 
-                        onClick={handleDownloadPDF}
-                        disabled={isDownloading}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-white border border-gray-200 text-gray-700 text-[10px] font-medium rounded hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                     >
-                         <Download className="w-3 h-3" /> 
-                         {isDownloading ? 'Saving...' : 'Download PDF'}
-                     </button>
-                     <button 
-                        onClick={() => openChatWithContext(`I need help with my ${role} roadmap`)}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-bold rounded hover:bg-indigo-700 transition-all shadow-sm hover:shadow-md"
-                     >
-                         <Bot className="w-3 h-3" /> AI Assistant
-                     </button>
-                 </div>
-             </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8">
+      {/* Sidebar Navigation Menu */}
+      {showSidebar && (
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowSidebar(false)}>
+          <div
+            className="absolute left-0 top-0 h-full w-80 bg-white shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-slate-200 flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-lg">F</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-900">FindStreak</h2>
+                </div>
+                <button onClick={() => setShowSidebar(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                  <X className="w-5 h-5 text-slate-600" />
+                </button>
+              </div>
+              <p className="text-sm text-slate-600">Quick access to all features</p>
+            </div>
 
-             {/* DASHBOARD STATS - ULTRA COMPACT */}
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2"> {/* Reduced gap-3 to gap-2 and mt-4 to mt-2 */}
-                 <div className="bg-blue-50 border border-blue-100 rounded p-2 flex items-center gap-2 hover:shadow-sm transition-shadow"> 
-                     <div className="w-8 h-8 bg-white text-blue-600 rounded flex items-center justify-center shadow-sm">
-                         <Calendar className="w-4 h-4" />
-                     </div>
-                     <div>
-                         <p className="text-[9px] text-blue-600 font-bold uppercase tracking-wide">Total Duration</p>
-                         <p className="font-bold text-gray-900 text-sm">~{roadmap.length * 4} weeks</p> 
-                     </div>
-                 </div>
-                 <div className="bg-green-50 border border-green-100 rounded p-2 flex items-center gap-2 hover:shadow-sm transition-shadow">
-                     <div className="w-8 h-8 bg-white text-green-600 rounded flex items-center justify-center shadow-sm">
-                         <Target className="w-4 h-4" />
-                     </div>
-                     <div>
-                         <p className="text-[9px] text-green-600 font-bold uppercase tracking-wide">Phases Completed</p>
-                         <p className="font-bold text-gray-900 text-sm flex items-center gap-1">
-                             {completedTopics.size > 0 ? (completedTopics.size / 5).toFixed(0) : '0'} 
-                             <span className="text-[10px] text-gray-400 font-normal">/ {totalPhases}</span>
-                         </p>
-                     </div>
-                 </div>
-                 <div className="bg-purple-50 border border-purple-100 rounded p-2 flex items-center gap-2 hover:shadow-sm transition-shadow">
-                     <div className="w-8 h-8 bg-white text-purple-600 rounded flex items-center justify-center shadow-sm">
-                         <Trophy className="w-4 h-4" />
-                     </div>
-                     <div className="flex-1">
-                         <div className="flex justify-between items-end mb-0.5">
-                            <p className="text-[9px] text-purple-600 font-bold uppercase tracking-wide">Overall Progress</p>
-                            <span className="text-[10px] font-bold text-purple-700">{progressPercent}%</span>
-                         </div>
-                         <div className="w-full bg-purple-200 rounded-full h-1"> 
-                             <div className="bg-purple-600 h-1 rounded-full transition-all duration-1000 ease-out" style={{width: `${progressPercent}%`}}></div>
-                         </div>
-                     </div>
-                 </div>
-             </div>
-         </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 py-8 relative"> 
-          
-          {/* CENTRAL TIMELINE LINE */}
-          <div className="absolute left-8 md:left-1/2 top-8 bottom-0 w-0.5 bg-gray-200 -translate-x-1/2 hidden md:block"></div>
-          <div className="absolute left-4 top-8 bottom-0 w-0.5 bg-gray-200 md:hidden"></div>
-
-          <div className="space-y-8">
-              {roadmap.map((phase, idx) => {
-                  const isExpanded = selectedPhaseIndex === idx;
-                  const isEven = idx % 2 === 0;
-
-                  return (
-                      <div key={idx} className={`relative flex md:items-center gap-8 ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
-                          
-                          {/* TIMELINE DOT */}
-                          <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 flex items-center justify-center bg-indigo-600">
-                             <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                          </div>
-
-                          {/* SPACER for Desktop Alternating Layout */}
-                          <div className="hidden md:block flex-1"></div>
-
-                          {/* PHASE CARD */}
-                          <div className={`flex-1 w-full ml-8 md:ml-0 transition-all duration-500 ${isExpanded ? 'scale-[1.01]' : 'hover:scale-[1.01]'}`}>
-                              <div 
-                                onClick={() => handlePhaseChange(isExpanded ? -1 : idx)}
-                                className={`bg-white rounded-xl border shadow-sm cursor-pointer overflow-hidden transition-all ${
-                                    isExpanded ? 'border-indigo-600 shadow-md ring-1 ring-indigo-50' : 'border-gray-200 hover:border-gray-300'
-                                }`}
-                              >
-                                  {/* CARD HEADER */}
-                                  <div className="p-4 border-b border-gray-50 flex items-start gap-3">
-                                      <div className={`p-2 rounded-lg shrink-0 ${getDifficultyColor(phase.difficulty).replace('border', 'bg-opacity-10')}`}>
-                                          <Target className="w-5 h-5" />
-                                      </div>
-                                      <div className="flex-1">
-                                          <div className="flex items-center justify-between gap-2">
-                                              <div className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${getDifficultyColor(phase.difficulty)}`}>
-                                                  {phase.difficulty}
-                                              </div>
-                                              <span className="text-[10px] items-center gap-1 text-gray-400 hidden sm:flex">
-                                                  <Calendar className="w-3 h-3" /> {phase.duration}
-                                              </span>
-                                          </div>
-                                          <h3 className="font-bold text-gray-900 text-lg mt-1">{phase.phase}</h3>
-                                          <p className="text-xs text-gray-500 line-clamp-2 mt-1">{phase.description}</p>
-                                      </div>
-                                      <div className={`self-center transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-                                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                                      </div>
-                                  </div>
-
-                                  {/* EXPANDED CONTENT */}
-                                  <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                                      <div className="overflow-hidden">
-                                          <div className="p-4 space-y-6 bg-gray-50/30">
-                                              
-                                              {/* 1. SKILLS SECTION */}
-                                              <div>
-                                                  <div className="flex items-center gap-1.5 text-blue-700 mb-2 px-1">
-                                                      <Code className="w-3.5 h-3.5" />
-                                                      <h4 className="font-bold text-sm">Key Skills</h4>
-                                                  </div>
-                                                  <div className="bg-white border border-blue-100 rounded-lg shadow-sm overflow-hidden flex flex-col">
-                                                      <div className="divide-y divide-gray-50">
-                                                          {(isTopicsExpanded ? (phase.topics || []) : (phase.topics || []).slice(0, 3)).map((topic, i) => {
-                                                              const topicName = typeof topic === 'string' ? topic : topic.name;
-                                                              const topicDesc = typeof topic === 'string' ? null : topic.description;
-                                                              const subtopics = typeof topic === 'string' ? [] : topic.subtopics;
-                                                              const isCompleted = completedTopics.has(topicName);
-                                                              
-                                                              return (
-                                                                  <div 
-                                                                    key={i} 
-                                                                    onClick={(e) => { e.stopPropagation(); toggleTopicCompletion(topicName); }}
-                                                                    className={`p-2.5 transition-colors cursor-pointer group ${
-                                                                        isCompleted ? 'bg-blue-50/50' : 'hover:bg-gray-50'
-                                                                    }`}
-                                                                  >
-                                                                      <div className="flex items-start gap-2.5">
-                                                                          <div className={`mt-0.5 flex-shrink-0 ${isCompleted ? 'text-blue-600' : 'text-gray-300 group-hover:text-blue-400'}`}>
-                                                                              <CheckCircle2 className={`w-4 h-4 ${isCompleted ? 'fill-blue-100' : ''}`} /> 
-                                                                          </div>
-                                                                          <div className="flex-1">
-                                                                              <p className={`font-medium text-xs ${isCompleted ? 'text-blue-900/60 line-through' : 'text-gray-900'}`}>{topicName}</p>
-                                                                              {isTopicsExpanded && (
-                                                                                  <div className="mt-1.5 animate-in fade-in slide-in-from-top-1">
-                                                                                      {topicDesc && <p className="text-[10px] text-gray-500 mb-1.5">{topicDesc}</p>}
-                                                                                      {subtopics && subtopics.length > 0 && (
-                                                                                          <ul className="grid grid-cols-2 gap-1 pl-1">
-                                                                                              {subtopics.map((sub, idx) => (
-                                                                                                  <li key={idx} className="text-[9px] text-gray-400 flex items-center gap-1">
-                                                                                                      <span className="w-1 h-1 rounded-full bg-blue-200"></span>{sub}
-                                                                                                  </li>
-                                                                                              ))}
-                                                                                          </ul>
-                                                                                      )}
-                                                                                  </div>
-                                                                              )}
-                                                                          </div>
-                                                                      </div>
-                                                                  </div>
-                                                              );
-                                                          })}
-                                                      </div>
-                                                      {((phase.topics || []).length > 3 || (phase.topics || []).length > 0) && (
-                                                          <button 
-                                                              onClick={(e) => { e.stopPropagation(); setIsTopicsExpanded(!isTopicsExpanded); }}
-                                                              className="w-full py-2 bg-gray-50 hover:bg-gray-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider transition-colors border-t border-blue-50 flex items-center justify-center gap-1"
-                                                          >
-                                                              {isTopicsExpanded ? <>Show Less <ChevronUp className="w-3 h-3" /></> : <>{(phase.topics || []).length > 3 ? `Show ${(phase.topics || []).length - 3} More` : "Details"} <ChevronDown className="w-3 h-3" /></>}
-                                                          </button>
-                                                      )}
-                                                  </div>
-                                              </div>
-
-                                              {/* 2. MILESTONES SECTION */}
-                                              <div>
-                                                  <div className="flex items-center gap-1.5 text-purple-700 mb-2 px-1">
-                                                      <Trophy className="w-3.5 h-3.5" />
-                                                      <h4 className="font-bold text-sm">Milestones</h4>
-                                                  </div>
-                                                  <div className="space-y-2">
-                                                      {(phase.step_by_step_guide || []).map((step, i) => (
-                                                          <div key={i} className="flex items-center gap-2.5 p-2.5 bg-white border border-purple-100 rounded-lg shadow-sm">
-                                                              <span className="w-5 h-5 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-[10px] font-bold">{i+1}</span>
-                                                              <span className="text-gray-800 text-xs">{step}</span>
-                                                          </div>
-                                                      ))}
-                                                  </div>
-                                              </div>
-
-                                              {/* 3. PROJECTS SECTION */}
-                                              {phase.projects && phase.projects.length > 0 && (
-                                                  <div>
-                                                      <div className="flex items-center gap-1.5 text-green-700 mb-2 px-1">
-                                                          <BookOpen className="w-3.5 h-3.5" />
-                                                          <h4 className="font-bold text-sm">Projects</h4>
-                                                      </div>
-                                                      <div className="grid gap-2">
-                                                          {phase.projects.map((proj, i) => (
-                                                              <div key={i} className="group relative flex items-center justify-between p-3 bg-white border border-green-100 rounded-lg hover:shadow-md transition-all">
-                                                                  <div>
-                                                                      <p className="font-bold text-gray-900 text-xs">{proj.name}</p>
-                                                                      <p className="text-gray-500 text-[10px]">{proj.description}</p>
-                                                                  </div>
-                                                                  <button 
-                                                                      onClick={(e) => { e.stopPropagation(); openChatWithContext(`Help me with project: ${proj.name}`); }}
-                                                                      className="text-green-600 bg-green-50 p-1.5 rounded hover:bg-green-100"
-                                                                  >
-                                                                      <Bot className="w-3.5 h-3.5" />
-                                                                  </button>
-                                                              </div>
-                                                          ))}
-                                                      </div>
-                                                  </div>
-                                              )}
-
-                                              {/* AI HELP BUTTON */}
-                                              <button 
-                                                  onClick={(e) => { e.stopPropagation(); openChatWithContext(`I need help with ${phase.phase}`); }}
-                                                  className="w-full py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-                                              >
-                                                  <Bot className="w-3.5 h-3.5" /> Ask AI about {phase.phase}
-                                              </button>
-
-                                          </div>
-                                      </div>
-                                  </div>
-
-                              </div>
-                          </div>
-                      </div>
-                  );
-              })}
+            <div className="flex-1 overflow-y-auto py-2 scrollbar-thin hover:scrollbar-thumb-slate-400">
+              <button onClick={() => { setShowSidebar(false); navigate("/profile"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><User className="w-5 h-5 text-emerald-600" /></div>
+                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">View Profile</span><p className="text-sm text-slate-500">Manage your account</p></div>
+              </button>
+              <button onClick={() => { setShowSidebar(false); navigate("/dashboard"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><BarChart3 className="w-5 h-5 text-emerald-600" /></div>
+                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">Project Dashboard</span><p className="text-sm text-slate-500">Browse AI projects</p></div>
+              </button>
+              <button onClick={() => setShowSidebar(false)} className="w-full flex items-center gap-4 px-6 py-4 bg-emerald-50 border-l-4 border-emerald-600">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-200 flex items-center justify-center"><Target className="w-5 h-5 text-emerald-700" /></div>
+                <div className="flex-1 text-left"><span className="font-semibold text-emerald-700">My Learning Progress</span><p className="text-sm text-slate-600">Track your roadmap</p></div>
+              </button>
+              <button onClick={() => { setShowSidebar(false); navigate("/my-projects"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><LayoutDashboard className="w-5 h-5 text-emerald-600" /></div>
+                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">My Projects</span><p className="text-sm text-slate-500">View ongoing projects</p></div>
+              </button>
+              <button onClick={() => { setShowSidebar(false); navigate("/achievements"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><Award className="w-5 h-5 text-emerald-600" /></div>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center gap-2"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">Achievements</span><span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded">NEW</span></div>
+                  <p className="text-sm text-slate-500">View your milestones</p>
+                </div>
+              </button>
+              <button onClick={() => { setShowSidebar(false); navigate("/ai-assistant"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><Sparkles className="w-5 h-5 text-emerald-600" /></div>
+                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">AI Assistant</span><p className="text-sm text-slate-500">Get learning help</p></div>
+              </button>
+            </div>
           </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto" ref={contentRef}>
+        {!showSidebar && (
+          <button onClick={() => setShowSidebar(true)} className="fixed top-4 left-4 z-40 p-2 bg-white hover:bg-slate-100 rounded-lg transition-colors shadow-md border border-slate-200">
+            <Menu className="w-6 h-6 text-slate-700" />
+          </button>
+        )}
+
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6 mt-12 sm:mt-0">
+          <div className="flex items-start justify-between mb-4 flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-sm mb-3 shadow-md">
+                <Sparkles className="w-4 h-4" />
+                <span>AI Personalized Learning Path</span>
+              </div>
+              <h1 className="text-4xl font-bold text-slate-900 mb-2">Your Learning Roadmap</h1>
+              <p className="text-lg text-slate-600">A structured, real-time path to become a {role}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleDownloadRoadmap} variant="outline" className="flex items-center gap-2">
+                <Download className="w-4 h-4" /> Download PDF
+              </Button>
+              <Button onClick={handleOpenAIAssistant} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+                <MessageSquare className="w-4 h-4" /> AI Assistant
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <Calendar className="w-6 h-6 text-emerald-600" />
+              <div>
+                <p className="text-sm text-slate-600">Est. Duration</p>
+                <p className="font-semibold text-slate-900">~{totalWeeks} weeks</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-teal-50 rounded-lg border border-teal-200">
+              <Target className="w-6 h-6 text-teal-600" />
+              <div>
+                <p className="text-sm text-slate-600">Phases Completed</p>
+                <p className="font-semibold text-slate-900">{completedPhases} / {roadmap.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+              <Trophy className="w-6 h-6 text-indigo-600" />
+              <div>
+                <p className="text-sm text-slate-600">Overall Progress</p>
+                <p className="font-semibold text-slate-900">{progressPercentage.toFixed(0)}%</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4"><Progress value={progressPercentage} className="h-3 bg-slate-100" /></div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Roadmap Timeline Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="p-6 sticky top-4">
+              <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-emerald-600" /> Phases
+              </h2>
+              <div className="space-y-3">
+                {roadmap.map((phase, index) => {
+                  const isCompleted = getPhaseCompletion(phase);
+                  const isActive = selectedPhaseIndex === index;
+                  const lvl = phase.level || phase.difficulty || 'Beginner';
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedPhaseIndex(index)}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                        isActive ? "border-emerald-600 bg-emerald-50" : "border-slate-200 bg-white hover:border-emerald-300"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-semibold text-slate-500">Phase {index + 1}</span>
+                            <Badge variant={lvl.includes('Beginner') ? 'default' : lvl.includes('Intermediate') ? 'secondary' : 'destructive'} className="text-[10px] px-1.5 font-bold">
+                              {lvl}
+                            </Badge>
+                          </div>
+                          <h3 className="font-semibold text-slate-900 truncate">{phase.title || phase.phase}</h3>
+                          <p className="text-xs text-slate-600 mt-1">{phase.duration}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+          </div>
+
+          {/* specific logic to display phase content real time */}
+          <div className="lg:col-span-2">
+            {selectedPhase && (
+              <Card className="p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <Badge variant={(selectedPhase.level || selectedPhase.difficulty)?.includes('Beginner') ? 'default' : (selectedPhase.level || selectedPhase.difficulty)?.includes('Intermediate') ? 'secondary' : 'destructive'} className="mb-2 uppercase shadow-sm">
+                      {selectedPhase.level || selectedPhase.difficulty}
+                    </Badge>
+                    <h2 className="text-3xl font-bold text-slate-900 mb-2">{selectedPhase.title || selectedPhase.phase}</h2>
+                    <p className="text-slate-600 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" /> {selectedPhase.duration}
+                      {selectedPhase.description && <span className="ml-2 hidden sm:inline">• {selectedPhase.description}</span>}
+                    </p>
+                  </div>
+                  {getPhaseCompletion(selectedPhase) && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-lg border border-emerald-200 shadow-sm">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                      <span className="text-sm font-semibold text-emerald-700">Completed</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Topics / Skills Real Time completion toggle */}
+                <div className="mb-8 border border-slate-200 p-6 rounded-xl bg-slate-50 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <Code className="w-5 h-5 text-emerald-600" /> Core Skills & Topics
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4 tracking-tight">Click on a skill to mark it as completed to track your real-time progress.</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
+                      const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+                      const isDone = completedTopics.has(name);
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => toggleTopicCompletion(name)}
+                          className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
+                            isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:border-emerald-400'
+                          }`}
+                        >
+                          {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
+                          <div>
+                            <p className={`font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
+                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-xs text-slate-500 leading-tight mt-1">{skillObj.description}</p>}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-teal-600" /> Actionable Milestones
+                  </h3>
+                  <div className="grid gap-3">
+                    {(selectedPhase.step_by_step_guide || selectedPhase.milestones || []).map((milestone, index) => (
+                      <div key={index} className="flex items-start gap-3 p-4 bg-teal-50 rounded-lg border border-teal-100 shadow-sm">
+                        <Trophy className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-slate-800 font-medium">{milestone}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-indigo-600" /> Recommended Projects
+                  </h3>
+                  
+                  {/* Real Dashboard Cards adapted */}
+                  <div className="grid gap-4 mb-4">
+                    {recommendedProjects.map((project) => (
+                      <div key={project.id} className="bg-white rounded-xl border-2 border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group" onClick={() => navigate("/dashboard")}>
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{project.title}</h4>
+                          {project.trending && (
+                            <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium flex-shrink-0 ml-2">
+                              <Flame className="w-3 h-3" /> Trending
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-slate-600 mb-4 text-sm line-clamp-2">{project.description}</p>
+                        <div className="flex items-center gap-3 mb-4 text-sm text-slate-600">
+                          <span className="font-medium text-indigo-600">{project.difficulty}</span>
+                          <span>•</span><span>{project.duration}</span><span>•</span>
+                          <span className="font-semibold text-emerald-600">{project.matchScore}% Match</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {(project.tags || []).slice(0, 3).map((tag) => (
+                            <span key={tag} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">{tag}</span>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                          <div className="text-xs text-slate-500">{(project.languages||[]).length} languages • {(project.tools||[]).length} tools</div>
+                          <ChevronRight className="w-5 h-5 text-indigo-600 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* AI Generated Curriculum Projects */}
+                  {selectedPhase.projects && selectedPhase.projects.length > 0 && (
+                  <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                    <p className="text-sm font-semibold text-slate-700 mb-3">AI Context-Specific Projects:</p>
+                    <div className="grid gap-2">
+                      {selectedPhase.projects.map((projObj, index) => {
+                        const projName = typeof projObj === 'string' ? projObj : projObj.name || projObj.title || 'Project';
+                        return (
+                          <div key={index} className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-200 hover:bg-white shadow-sm transition-colors cursor-pointer" onClick={() => navigate("/dashboard")}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-7 h-7 bg-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">{index + 1}</div>
+                              <p className="font-semibold text-slate-900 text-sm">{projName}</p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-indigo-600" />
+                          </div>
+                      )})}
+                    </div>
+                  </div>
+                  )}
+                  <p className="text-xs text-slate-500 mt-3 text-center">💡 Click on any project to push it to your workspace</p>
+                </div>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+          <Button onClick={handleOpenAIAssistant} className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-md hover:shadow-lg transition-all rounded-xl">
+            <MessageSquare className="w-5 h-5" /> Get Advanced AI Learning Help
+          </Button>
+          <Button onClick={() => navigate("/resources")} variant="outline" className="h-12 px-8 border-emerald-300 hover:bg-emerald-50 flex items-center gap-2 rounded-xl text-emerald-800 font-semibold shadow-sm">
+            <BookOpen className="w-5 h-5" /> Browse Free Resources
+          </Button>
+        </div>
       </div>
-
-
-      {/* FOOTER ACTION BAR - ULTRA COMPACT */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-40">
-           <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-               <button 
-                  onClick={() => openChatWithContext(`I need help understanding phase: ${(roadmap[selectedPhaseIndex] || roadmap[0])?.phase}`)}
-                  className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg hover:shadow transition-all flex items-center justify-center gap-1.5 text-xs"
-               >
-                   <Bot className="w-4 h-4" /> Get AI Learning Help
-               </button>
-               
-               <div className="flex gap-2 w-full sm:w-auto">
-                   <button 
-                      onClick={() => navigate('/resources')}
-                      className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-1.5 text-xs"
-                   >
-                       <BookOpen className="w-3 h-3" /> Browse Resources
-                   </button>
-                   <button 
-                      onClick={() => navigate('/dashboard')}
-                      className="flex-1 sm:flex-none px-3 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-1.5 text-xs"
-                   >
-                       Continue to Dashboard <ArrowRight className="w-3 h-3" />
-                   </button>
-               </div>
-           </div>
-      </div>
-
-      {/* SEPARATE FEATURE: Quiz Modal */}
-      {showQuiz && (
-            <QuizModal 
-              isOpen={showQuiz}
-              onClose={() => setShowQuiz(false)}
-              phaseName={(roadmap[selectedPhaseIndex] || roadmap[0])?.phase}
-              topics={((roadmap[selectedPhaseIndex] || roadmap[0])?.topics || []).map(t => typeof t === 'string' ? t : t.name)}
-              role={role}
-            />
-       )}
-
-      {/* SEPARATE FEATURE: AI Chat Assistant */}
-      <AIChatAssistant 
-        isOpen={showChat}
-        onClose={() => setShowChat(false)}
-        context={chatContext}
-        role={role}
-      />
     </div>
   );
 }
