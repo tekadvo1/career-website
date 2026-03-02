@@ -254,12 +254,29 @@ export default function LearningRoadmap() {
   
   // Feature flags / Modals
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
 
   const [recommendedProjects] = useState<Project[]>(generateRecommendedProjects(role, hasResume));
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Initialize
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      setLoadingProgress(0);
+      interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 98) return 98; // Hold at 98% until actually complete
+          return prev + 1; // 1% roughly every 600ms = ~60s
+        });
+      }, 600);
+    } else {
+      setLoadingProgress(100);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -483,15 +500,35 @@ export default function LearningRoadmap() {
     navigate("/ai-assistant", { state: { role, roadmap } });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Generating your personalized AI roadmap...</p>
-        </div>
-      </div>
-    );
+  if (isLoading || loadingProgress < 100) {
+    // If backend returns faster, we allow progress bar to immediately zip to 100% by hiding UI at 100
+    if (!isLoading && loadingProgress === 100) {
+        // Dropthrough and render main
+    } else {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+            <div className="w-full max-w-sm bg-white rounded-2xl p-8 shadow-xl text-center border border-slate-200">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                   <Sparkles className="w-8 h-8 text-emerald-600 animate-pulse" />
+                </div>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Analyzing Profile...</h2>
+                <p className="text-sm text-slate-500 mb-6">Our AI is designing a perfect, personalized roadmap. This takes about a minute.</p>
+                
+                <div className="mb-2 flex justify-between text-xs font-semibold">
+                   <span className="text-emerald-700">Generating curriculum</span>
+                   <span className="text-slate-600">{loadingProgress}%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
+                   <div 
+                     className="bg-emerald-500 h-full rounded-full transition-all duration-300 ease-out" 
+                     style={{ width: `${loadingProgress}%` }}
+                   />
+                </div>
+                <p className="text-[10px] text-slate-400 font-medium italic">Pulling the absolute latest industry data...</p>
+            </div>
+          </div>
+        );
+    }
   }
 
   return (
