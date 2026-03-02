@@ -262,7 +262,7 @@ export default function LearningRoadmap() {
 
   // Initialize
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (isLoading) {
       setLoadingProgress(0);
       interval = setInterval(() => {
@@ -723,19 +723,27 @@ export default function LearningRoadmap() {
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
                       const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+                      const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
                       const isDone = completedTopics.has(name);
                       return (
                         <div
                           key={index}
                           onClick={() => toggleTopicCompletion(name)}
-                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
+                          className={`flex items-start gap-2.5 p-3 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
                             isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:border-emerald-400'
                           }`}
                         >
                           {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
-                          <div>
+                          <div className="flex-1">
                             <p className={`text-sm font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
-                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{skillObj.description}</p>}
+                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">{skillObj.description}</p>}
+                            {subtopics && subtopics.length > 0 && (
+                              <ul className="pl-3 mt-1.5 list-disc text-[10px] text-slate-600 space-y-0.5 marker:text-emerald-400">
+                                {subtopics.map((sub, i) => (
+                                  <li key={i}>{sub}</li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         </div>
                       )

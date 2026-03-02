@@ -220,6 +220,7 @@ router.post('/analyze', async (req, res) => {
                - If the role is "Full Stack Developer", the workflow MUST cover: Database Design (SQL/NoSQL) -> Backend API Development (Node/Python) -> Frontend Connection (React/Vue) -> Testing -> Deployment (CI/CD, AWS/Vercel).
                - Mention SPECIFIC tools in the 'tools_used' array for each stage (e.g. 'MySQL', 'Express.js', 'Postman', 'GitHub Actions').
                - Explain HOW components connect in the 'description'. Do not be generic.
+            8. **Roadmap Phases**: The roadmap array MUST contain at least 3 distinct phases (e.g., Beginner, Intermediate, Advanced), each rigorously detailed with 3-5 core topics and practical applications. Do NOT generate just one phase. Under each topic, make SURE to include a 'subtopics' array of 3-5 detailed concepts strings.
             
             Return ONLY valid JSON.
             `
