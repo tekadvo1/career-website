@@ -13,16 +13,23 @@ router.post('/analyze', async (req, res) => {
 
   try {
     const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()} - ${country.toLowerCase()}${learningPath ? ' - ' + learningPath : ''})`;
+    const forceRefresh = req.body.forceRefresh === true;
     
     // 1. Check for existing analysis (GLOBAL CACHE)
     // We strictly match the normalized role title which includes generic role + level + country
-    const cacheResult = await pool.query(
-      "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
-      [normalizedRole]
-    );
+    let cachedData = null;
+    
+    if (!forceRefresh) {
+      const cacheResult = await pool.query(
+        "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
+        [normalizedRole]
+      );
+      if (cacheResult.rows.length > 0) {
+        cachedData = cacheResult.rows[0].analysis_data;
+      }
+    }
 
-    if (cacheResult.rows.length > 0) {
-      const cachedData = cacheResult.rows[0].analysis_data;
+    if (cachedData) {
       
       let isModernStructure = false;
       if (cachedData.roadmap && Array.isArray(cachedData.roadmap) && cachedData.roadmap.length > 0) {

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Code, Trophy, Zap, MessageSquare, Menu, X, User,
-  BarChart3, LayoutDashboard, Award, Flame, ChevronRight
+  BarChart3, LayoutDashboard, Award, Flame, ChevronRight, RefreshCw
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
@@ -450,6 +450,35 @@ export default function LearningRoadmap() {
     pdf.save(`${role.replace(/\s+/g, "_")}_Roadmap.pdf`);
   };
 
+  const handleRefreshRoadmap = async () => {
+    setIsLoading(true);
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : {};
+      const response = await fetch('/api/role/analyze', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ role: role, userId: user.id || null, forceRefresh: true })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && data.data.roadmap) {
+          setRoadmap(data.data.roadmap);
+          localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+            role: role,
+            analysis: data.data,
+            timestamp: new Date().getTime()
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh roadmap", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleOpenAIAssistant = () => {
     navigate("/ai-assistant", { state: { role, roadmap } });
   };
@@ -541,7 +570,10 @@ export default function LearningRoadmap() {
                 <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
               </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <Button onClick={handleRefreshRoadmap} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 h-9 px-3 text-sm">
+                <RefreshCw className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Refresh</span> AI
+              </Button>
               <Button onClick={handleDownloadRoadmap} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 h-9 px-3 text-sm">
                 <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Download</span> PDF
               </Button>
@@ -654,27 +686,19 @@ export default function LearningRoadmap() {
                   <div className="grid gap-2.5 sm:grid-cols-2">
                     {(selectedPhase.topics || selectedPhase.skills || []).map((skillObj, index) => {
                       const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
-                      const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
                       const isDone = completedTopics.has(name);
                       return (
                         <div
                           key={index}
                           onClick={() => toggleTopicCompletion(name)}
-                          className={`flex items-start gap-2.5 p-3 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
+                          className={`flex items-start gap-2.5 p-2.5 rounded-lg border-2 cursor-pointer transition-all shadow-sm ${
                             isDone ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-slate-200 hover:border-emerald-400'
                           }`}
                         >
                           {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" /> : <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5 group-hover:text-emerald-400" />}
-                          <div className="flex-1">
+                          <div>
                             <p className={`text-sm font-semibold ${isDone ? 'text-emerald-900' : 'text-slate-700'}`}>{name}</p>
-                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">{skillObj.description}</p>}
-                            {subtopics && subtopics.length > 0 && (
-                              <ul className="pl-3 mt-1.5 list-disc text-[10px] text-slate-600 space-y-0.5 marker:text-emerald-400">
-                                {subtopics.map((sub, i) => (
-                                  <li key={i}>{sub}</li>
-                                ))}
-                              </ul>
-                            )}
+                            {typeof skillObj !== 'string' && skillObj.description && <p className="text-[10px] text-slate-500 leading-tight mt-0.5">{skillObj.description}</p>}
                           </div>
                         </div>
                       )
