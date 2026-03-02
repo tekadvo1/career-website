@@ -2,13 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
-  BookOpen, Code, Trophy, Zap, MessageSquare, Menu, X, User, Briefcase, 
-  BarChart3, LayoutDashboard, Award, Flame, ChevronRight, Gamepad2
+  BookOpen, Code, Trophy, Zap, MessageSquare, Menu, X, User,
+  BarChart3, LayoutDashboard, Award, Flame, ChevronRight
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import QuizModal from './roadmap/QuizModal';
-import AIChatAssistant from './roadmap/AIChatAssistant';
 
 // --- Interfaces ---
 interface Resource {
@@ -124,7 +121,7 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
 ];
 
 // Generate recommended practice projects like in the prompt
-const generateRecommendedProjects = (role: string, hasResume: boolean): Project[] => {
+const generateRecommendedProjects = (_role: string, hasResume: boolean): Project[] => {
   const projects: Project[] = [
     {
       id: "1",
@@ -196,9 +193,6 @@ export default function LearningRoadmap() {
   // Feature flags / Modals
   const [isLoading, setIsLoading] = useState(true);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [chatContext, setChatContext] = useState('');
-  const [showQuiz, setShowQuiz] = useState(false);
 
   const [recommendedProjects] = useState<Project[]>(generateRecommendedProjects(role, hasResume));
   const contentRef = useRef<HTMLDivElement>(null);
@@ -341,7 +335,6 @@ export default function LearningRoadmap() {
 
   const handleDownloadRoadmap = () => {
     const pdf = new jsPDF();
-    const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 20;
     let yPosition = margin;
 
