@@ -74,20 +74,6 @@ const Button = ({ children, className = '', variant = 'default', ...props }: any
   return <button className={`${baseStyle} ${variants[variant as keyof typeof variants] || variants.default} ${className}`} {...props}>{children}</button>;
 };
 
-const Card = ({ children, className = '', ...props }: any) => {
-  return <div className={`rounded-xl border border-slate-200 bg-white text-slate-950 shadow-sm ${className}`} {...props}>{children}</div>;
-};
-
-const Badge = ({ children, className = '', variant = 'default', ...props }: any) => {
-  const baseStyle = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none";
-  const variants = {
-    default: "bg-slate-900 text-slate-50",
-    secondary: "bg-slate-100 text-slate-900",
-    destructive: "bg-red-500 text-slate-50",
-  };
-  return <div className={`${baseStyle} ${variants[variant as keyof typeof variants] || variants.default} ${className}`} {...props}>{children}</div>;
-};
-
 const Progress = ({ value, className = '', ...props }: any) => {
   return (
     <div className={`w-full bg-slate-100 rounded-full overflow-hidden ${className}`} {...props}>
@@ -189,68 +175,11 @@ const DEFAULT_ROADMAP: RoadmapPhase[] = [
     }
 ];
 
-// Generate recommended practice projects like in the prompt
-const generateRecommendedProjects = (_role: string, hasResume: boolean): Project[] => {
-  const projects: Project[] = [
-    {
-      id: "1",
-      title: "Real-time Chat Application",
-      description: "Build a full-stack real-time chat application with user authentication, message history, and typing indicators.",
-      difficulty: "Intermediate",
-      duration: "2-3 weeks",
-      matchScore: hasResume ? 97 : 94,
-      tags: ["Real-time", "Full-stack", "WebSocket"],
-      trending: true,
-      languages: ["JavaScript", "TypeScript", "HTML", "CSS"],
-      tools: ["VS Code", "Postman", "MongoDB Compass", "Chrome DevTools"],
-    },
-    {
-      id: "2",
-      title: "E-commerce Dashboard with Analytics",
-      description: "Create an admin dashboard for e-commerce with sales analytics, inventory management, and data visualization.",
-      difficulty: "Advanced",
-      duration: "3-4 weeks",
-      matchScore: hasResume ? 95 : 92,
-      tags: ["Dashboard", "Analytics", "Data Viz"],
-      trending: true,
-      languages: ["JavaScript", "TypeScript", "SQL"],
-      tools: ["Figma", "VS Code", "Recharts", "Postman"],
-    },
-    {
-      id: "3",
-      title: "Task Management App with Drag & Drop",
-      description: "Build a Kanban-style task management application with drag-and-drop functionality, filters, and team collaboration.",
-      difficulty: "Intermediate",
-      duration: "2-3 weeks",
-      matchScore: hasResume ? 93 : 90,
-      tags: ["Productivity", "Drag & Drop", "Kanban"],
-      trending: false,
-      languages: ["JavaScript", "TypeScript"],
-      tools: ["VS Code", "React DnD", "Chrome DevTools"],
-    },
-    {
-      id: "4",
-      title: "AI-Powered Recipe Finder",
-      description: "Create a recipe discovery app that uses AI to recommend recipes based on available ingredients and dietary preferences.",
-      difficulty: "Intermediate",
-      duration: "2-3 weeks",
-      matchScore: hasResume ? 91 : 88,
-      tags: ["AI", "API Integration", "Search"],
-      trending: true,
-      languages: ["JavaScript", "TypeScript"],
-      tools: ["VS Code", "OpenAI API", "Postman"],
-    },
-  ];
-
-  return projects.slice(0, 4); // Return top 4 recommendations
-};
-
 export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
   
   const initialRole = location.state?.role || "Software Engineer";
-  const hasResume = location.state?.hasResume || false;
 
   const [role, setRole] = useState(initialRole);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
