@@ -137,10 +137,10 @@ export default function Sidebar({ activePage }: SidebarProps) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="absolute top-4 left-4 z-40 p-2.5 bg-white hover:bg-slate-100 rounded-lg transition-colors shadow-md border border-slate-200"
+          className="absolute top-2.5 left-2.5 md:top-4 md:left-4 z-40 p-2 md:p-2.5 bg-white hover:bg-slate-100 rounded-lg transition-colors shadow-md border border-slate-200"
           aria-label="Open navigation menu"
         >
-          <Menu className="w-5 h-5 text-slate-700" />
+          <Menu className="w-4 h-4 md:w-5 md:h-5 text-slate-700" />
         </button>
       )}
 

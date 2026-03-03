@@ -682,7 +682,7 @@ export default function AILearningAssistant() {
         <div className="max-w-[1500px] mx-auto px-2 lg:px-6 py-2 md:py-3">
           <div className="flex items-center justify-between gap-1 md:gap-3">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-7 md:w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
+              <div className="w-10 md:w-12 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
               <div>
                 <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-1.5 md:gap-2">
                   <div className="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
