@@ -19,6 +19,7 @@ import Missions from './components/Missions';
 import Achievements from './components/Achievements';
 import MyProjects from './components/MyProjects';
 import RoadmapGuideView from './components/RoadmapGuideView';
+import RoadmapTree from './components/RoadmapTree';
 
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -74,6 +75,7 @@ function App() {
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/my-projects" element={<MyProjects />} />
           <Route path="/roadmap-guide" element={<RoadmapGuideView />} />
+          <Route path="/roadmap-tree" element={<RoadmapTree />} />
         </Routes>
       </div>
     </BrowserRouter>

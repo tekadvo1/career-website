@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare, Menu, X, User,
-  BarChart3, LayoutDashboard, Award, RefreshCw
+  BarChart3, LayoutDashboard, Award, RefreshCw, GitBranch
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
@@ -428,6 +428,10 @@ export default function LearningRoadmap() {
     }
   };
 
+  const handleOpenRoadmapTree = () => {
+    navigate("/roadmap-tree", { state: { role, roadmap } });
+  };
+
   const handleOpenAIAssistant = () => {
     navigate("/ai-assistant", { state: { role, roadmap } });
   };
@@ -554,6 +558,9 @@ export default function LearningRoadmap() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
               <Button onClick={handleRefreshRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <RefreshCw className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Refresh AI</span>
+              </Button>
+              <Button onClick={handleOpenRoadmapTree} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                <GitBranch className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">View Mode Tree</span>
               </Button>
               <Button onClick={handleDownloadRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Download PDF</span>
