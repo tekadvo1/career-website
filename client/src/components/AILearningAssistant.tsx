@@ -654,22 +654,13 @@ export default function AILearningAssistant() {
 
             <div className="flex flex-wrap items-center gap-2 lg:gap-3">
               {/* Beautiful ELI5 Mode Toggle */}
-              <div 
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer select-none transition-all shadow-sm ${eli5Mode ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200 hover:bg-slate-100'}`}
+              <button
                 onClick={() => setEli5Mode(!eli5Mode)}
+                className={`flex flex-col items-center justify-center p-2 sm:p-2.5 rounded-lg border transition-all shadow-sm ${eli5Mode ? 'bg-amber-100 border-amber-300 text-amber-600' : 'bg-white border-slate-300 text-slate-600 hover:border-slate-400 hover:bg-slate-50'}`}
+                title="ELI5 Mode: Explain like I'm 5"
               >
-                <div className={`p-1.5 rounded-md ${eli5Mode ? 'bg-amber-100 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
-                   <Lightbulb className="w-4 h-4 fill-current" />
-                </div>
-                <div className="flex flex-col mr-2">
-                  <span className={`text-[11px] font-bold leading-none ${eli5Mode ? 'text-amber-800' : 'text-slate-500'}`}>ELI5 Mode</span>
-                  <span className={`text-[9px] font-semibold uppercase leading-tight ${eli5Mode ? 'text-amber-600' : 'text-slate-400'}`}>{eli5Mode ? 'Active' : 'Off'}</span>
-                </div>
-                {/* Switch Graphic */}
-                <div className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-300 ${eli5Mode ? 'bg-amber-500' : 'bg-slate-300'}`}>
-                   <div className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-300 ${eli5Mode ? 'translate-x-4' : 'translate-x-0'}`} />
-                </div>
-              </div>
+                <Lightbulb className={`w-4 h-4 sm:w-5 sm:h-5 ${eli5Mode ? 'fill-current' : ''}`} />
+              </button>
 
               <button 
                 onClick={() => {
@@ -679,32 +670,31 @@ export default function AILearningAssistant() {
                     setShowHistoryDrawer(true);
                   }
                 }} 
-                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm"
+                className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm"
+                title="History"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-sm hidden sm:block">History</span>
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
-              <button onClick={handleNewChat} className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm">
-                <Plus className="w-4 h-4" />
-                <span className="text-sm hidden sm:block">New Chat</span>
+              <button onClick={handleNewChat} className="flex items-center justify-center p-2 sm:p-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm" title="New Chat">
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               {/* Projects Dropdown */}
               <div className="relative">
                 <button 
                   onClick={() => setShowProjectsDropdown(!showProjectsDropdown)} 
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm"
+                  className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm"
+                  title="Projects"
                 >
-                  <Lightbulb className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm hidden sm:block">Projects</span>
+                  <Code className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
                 </button>
                 {showProjectsDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowProjectsDropdown(false)} />
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 overflow-hidden transform origin-top-right transition-all">
                       <div className="px-4 pb-2 mb-2 border-b border-slate-100">
-                        <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Lightbulb className="w-3.5 h-3.5"/> Project Collections</p>
+                        <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Code className="w-3.5 h-3.5"/> Project Collections</p>
                       </div>
                       {quickActions.map((action, index) => {
                         const Icon = action.icon;
@@ -729,18 +719,25 @@ export default function AILearningAssistant() {
                 )}
               </div>
 
-              <button onClick={() => navigate('/resources')} className="hidden xl:flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm">
-                <BookOpen className="w-4 h-4" />
-                <span className="text-sm">Resources</span>
+              {/* Roadmap */}
+              <button 
+                onClick={() => navigate('/roadmap')} 
+                className="flex flex-col items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm"
+                title="Learning Roadmap"
+              >
+                <Target className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </button>
 
-              <button onClick={() => navigate('/missions')} className="hidden xl:flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm">
-                <Gamepad2 className="w-4 h-4 text-purple-600" />
-                <span className="text-sm">Challenge</span>
+              <button onClick={() => navigate('/resources')} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm" title="Resources">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
               </button>
 
-              <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center p-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm" title="Settings">
-                <Settings className="w-5 h-5 text-slate-600" />
+              <button onClick={() => navigate('/missions')} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm" title="Challenge">
+                <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+              </button>
+
+              <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm" title="Settings">
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
               </button>
             </div>
           </div>
