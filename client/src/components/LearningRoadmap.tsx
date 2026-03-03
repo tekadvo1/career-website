@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
-  BookOpen, Code, Trophy, Zap, MessageSquare, Menu, X, User,
-  BarChart3, LayoutDashboard, Award, Flame, ChevronRight, RefreshCw
+  BookOpen, Trophy, MessageSquare, Menu, X, User,
+  BarChart3, LayoutDashboard, Award, RefreshCw
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 
