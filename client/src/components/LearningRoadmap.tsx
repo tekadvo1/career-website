@@ -1,3 +1,5 @@
+import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare, Menu, X, User,
@@ -252,7 +254,6 @@ export default function LearningRoadmap() {
 
   const [role, setRole] = useState(initialRole);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);
-  const [selectedPhaseIndex, setSelectedPhaseIndex] = useState<number>(0);
   
   // Real-time tracking state
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
@@ -262,7 +263,6 @@ export default function LearningRoadmap() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
 
-  const [recommendedProjects] = useState<Project[]>(generateRecommendedProjects(role, hasResume));
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Initialize
@@ -392,8 +392,6 @@ export default function LearningRoadmap() {
           }
       } catch (error) {}
   };
-
-  const selectedPhase = roadmap[selectedPhaseIndex] || null;
 
   // Calculators
   const totalWeeks = roadmap.reduce((acc, phase) => {
