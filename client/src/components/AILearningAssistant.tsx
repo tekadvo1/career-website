@@ -679,22 +679,23 @@ export default function AILearningAssistant() {
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
-        <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
+        <div className="max-w-[1500px] mx-auto px-2 lg:px-6 py-2 md:py-3">
+          <div className="flex items-center justify-between gap-1 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-7 md:w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
               <div>
-                <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <div className="w-7 h-7 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-1.5 md:gap-2">
+                  <div className="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
+                    <Sparkles className="w-3 md:w-3.5 h-3 md:h-3.5 text-white" />
                   </div>
-                  FindStreak AI Learning Assistant
+                  <span className="hidden sm:inline">FindStreak AI Learning Assistant</span>
+                  <span className="sm:hidden">AI Assistant</span>
                 </h1>
-                <p className="text-slate-500 text-xs mt-0.5">Get personalized project recommendations, code fixes, and guidance</p>
+                <p className="hidden md:block text-slate-500 text-xs mt-0.5">Get personalized project recommendations, code fixes, and guidance</p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+            <div className="flex items-center gap-1.5 lg:gap-3">
               {/* Beautiful ELI5 Mode Toggle */}
               <button
                 onClick={() => setEli5Mode(!eli5Mode)}
@@ -764,17 +765,17 @@ export default function AILearningAssistant() {
               {/* Roadmap */}
               <button 
                 onClick={() => navigate('/roadmap')} 
-                className="flex flex-col items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm"
+                className="hidden md:flex flex-col items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 transition-all shadow-sm"
                 title="Learning Roadmap"
               >
                 <Target className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               </button>
 
-              <button onClick={() => navigate('/resources')} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm" title="Resources">
+              <button onClick={() => navigate('/resources')} className="hidden md:flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 transition-all shadow-sm" title="Resources">
                 <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
               </button>
 
-              <button onClick={() => navigate('/missions')} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm" title="Challenge">
+              <button onClick={() => navigate('/missions')} className="hidden md:flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm" title="Challenge">
                 <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
               </button>
 
@@ -816,16 +817,16 @@ export default function AILearningAssistant() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-2.5 md:p-6 space-y-4 md:space-y-6">
               {messages.map((message) => (
                 <div key={message.id}>
                   {message.type === "assistant" ? (
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
-                        <Sparkles className="w-4 h-4 text-white" />
+                    <div className="flex gap-2 md:gap-3">
+                      <div className="flex-shrink-0 w-7 h-7 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+                        <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-4 md:px-5 py-3 md:py-4 max-w-[95%] text-slate-800 text-sm whitespace-pre-wrap leading-relaxed shadow-sm">
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-3.5 md:px-5 py-2.5 md:py-4 max-w-[95%] text-slate-800 text-sm whitespace-pre-wrap leading-relaxed shadow-sm">
                           {message.content}
                         </div>
 
@@ -905,14 +906,14 @@ export default function AILearningAssistant() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-3 justify-end">
+                    <div className="flex gap-2 md:gap-3 justify-end">
                       <div className="flex-1 flex justify-end min-w-0">
-                        <div className="bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-4 md:px-5 py-3 md:py-4 max-w-[85%] text-sm shadow-sm whitespace-pre-wrap">
+                        <div className="bg-emerald-600 text-white rounded-2xl rounded-tr-sm px-3.5 md:px-5 py-2.5 md:py-4 max-w-[85%] text-sm shadow-sm whitespace-pre-wrap">
                           {message.content}
                         </div>
                       </div>
-                      <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
-                        <User className="w-4 h-4 text-slate-600" />
+                      <div className="flex-shrink-0 w-7 h-7 md:w-9 md:h-9 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
+                        <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-600" />
                       </div>
                     </div>
                   )}
@@ -920,9 +921,9 @@ export default function AILearningAssistant() {
               ))}
 
               {isTyping && (
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
-                    <Sparkles className="w-4 h-4 text-white" />
+                <div className="flex gap-2 md:gap-3">
+                  <div className="flex-shrink-0 w-7 h-7 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                   </div>
                   <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm flex items-center gap-1.5 w-16 h-12">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
@@ -937,36 +938,36 @@ export default function AILearningAssistant() {
             {/* Bottom 3 Cards matching Uploaded Screenshot exactly */}
             <div className="shrink-0 border-t border-slate-100 bg-white">
               {messages.length <= 1 && (
-              <div className="px-4 py-3">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-[1000px] mx-auto">
+              <div className="px-3 md:px-4 py-2.5 md:py-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3 max-w-[1000px] mx-auto">
                   
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("Can you give me some project ideas?"); handleSendMessage(); }}>
-                    <div className="w-10 h-10 bg-[#e8fbf0] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
-                      <Code className="w-5 h-5 text-[#10b981]" />
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2 hover:border-emerald-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("Can you give me some project ideas?"); handleSendMessage(); }}>
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-[#e8fbf0] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <Code className="w-4 h-4 md:w-5 md:h-5 text-[#10b981]" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-emerald-700 transition-colors">Project Ideas</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Get suggestions</p>
+                      <p className="font-bold text-slate-800 text-xs md:text-[13px] leading-tight group-hover:text-emerald-700 transition-colors">Project Ideas</p>
+                      <p className="text-[10px] md:text-[11px] text-slate-500 mt-0.5">Get suggestions</p>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => navigate('/resources')}>
-                    <div className="w-10 h-10 bg-[#eff6ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
-                      <BookOpen className="w-5 h-5 text-[#3b82f6]" />
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2 hover:border-blue-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => navigate('/resources')}>
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-[#eff6ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-[#3b82f6]" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-blue-700 transition-colors">Resources</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Best materials</p>
+                      <p className="font-bold text-slate-800 text-xs md:text-[13px] leading-tight group-hover:text-blue-700 transition-colors">Resources</p>
+                      <p className="text-[10px] md:text-[11px] text-slate-500 mt-0.5">Best materials</p>
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2.5 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("How do I prepare for technical interviews?"); handleSendMessage(); }}>
-                    <div className="w-10 h-10 bg-[#fae8ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
-                      <Zap className="w-5 h-5 text-[#d946ef]" />
+                  <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-2 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer flex items-center gap-3 group" onClick={() => { setInputMessage("How do I prepare for technical interviews?"); handleSendMessage(); }}>
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-[#fae8ff] rounded-lg flex items-center justify-center flex-shrink-0 transition-colors">
+                      <Zap className="w-4 h-4 md:w-5 md:h-5 text-[#d946ef]" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-800 text-[13px] leading-tight group-hover:text-purple-700 transition-colors">Interview Prep</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Get ready</p>
+                      <p className="font-bold text-slate-800 text-xs md:text-[13px] leading-tight group-hover:text-purple-700 transition-colors">Interview Prep</p>
+                      <p className="text-[10px] md:text-[11px] text-slate-500 mt-0.5">Get ready</p>
                     </div>
                   </div>
 
@@ -975,20 +976,20 @@ export default function AILearningAssistant() {
               )}
 
               {/* Input Box */}
-              <div className="border-t border-slate-200 bg-slate-50 p-3 md:p-4">
+              <div className="border-t border-slate-200 bg-slate-50 p-2.5 md:p-4">
                 <div className="flex gap-2 max-w-[1000px] mx-auto">
                   <input
                     type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder={eli5Mode ? "Ask me anything (I'll explain simply!)..." : "Ask me anything about your learning journey..."}
-                    className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-sm shadow-sm"
+                    placeholder={eli5Mode ? "Ask me anything (ELI5)..." : "Ask me anything..."}
+                    className="flex-1 px-3 md:px-4 py-2.5 md:py-3 bg-white border border-slate-300 rounded-xl focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none transition-all text-xs md:text-sm shadow-sm"
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputMessage.trim() || isTyping}
-                    className="px-5 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 disabled:opacity-50 disabled:bg-slate-400 transition-colors flex items-center gap-2 shadow-sm shrink-0"
+                    className="px-4 md:px-5 py-2.5 md:py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-emerald-600 disabled:opacity-50 disabled:bg-slate-400 transition-colors flex items-center justify-center gap-2 shadow-sm shrink-0"
                   >
                     <Send className="w-4 h-4" />
                     <span className="hidden sm:inline">Send</span>
