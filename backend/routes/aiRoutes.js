@@ -161,4 +161,71 @@ router.post('/guide', async (req, res) => {
     }
 });
 
+// GET /api/ai/chat-history - Sync user's previous chats from mobile/desktop
+router.get('/chat-history', async (req, res) => {
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+    }
+
+    try {
+        const result = await pool.query(
+            "SELECT id, title, messages, updated_at FROM chat_sessions WHERE user_id = $1 ORDER BY updated_at DESC",
+            [userId]
+        );
+        
+        const history = result.rows.map(row => ({
+            id: row.id,
+            title: row.title,
+            messages: typeof row.messages === 'string' ? JSON.parse(row.messages) : row.messages,
+            updatedAt: row.updated_at
+        }));
+
+        res.json({ success: true, history });
+    } catch (err) {
+        console.error('Error fetching chat history:', err);
+        res.status(500).json({ error: 'Failed to fetch tracking history' });
+    }
+});
+
+// POST /api/ai/chat-history - Push changes from frontend client to persistent DB
+router.post('/chat-history', async (req, res) => {
+    const { userId, chatHistory } = req.body;
+    if (!userId || !Array.isArray(chatHistory)) {
+        return res.status(400).json({ error: 'userId and an array of chatHistory data is required' });
+    }
+
+    try {
+        const client = await pool.connect();
+        await client.query('BEGIN');
+        
+        // Clear old ones entirely to replace easily or merge via upsert
+        for (const session of chatHistory) {
+             const messagesObj = JSON.stringify(session.messages);
+             const updatedAt = new Date(session.updatedAt || Date.now());
+             await client.query(`
+                INSERT INTO chat_sessions (id, user_id, title, messages, updated_at) 
+                VALUES ($1, $2, $3, $4, $5) 
+                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at
+             `, [session.id, userId, session.title, messagesObj, updatedAt]);
+        }
+        
+        // Remove ones not in the latest history list anymore
+        if (chatHistory.length > 0) {
+            const currentIds = chatHistory.map(c => c.id);
+            await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND id != ALL($2)', [userId, currentIds]);
+        } else {
+             await client.query('DELETE FROM chat_sessions WHERE user_id = $1', [userId]);
+        }
+
+        await client.query('COMMIT');
+        client.release();
+        
+        res.json({ success: true, message: 'Chat history synchronized successfully' });
+    } catch (err) {
+        console.error('Error pushing chat sync:', err);
+        res.status(500).json({ error: 'Failed to synchronize chats' });
+    }
+});
+
 module.exports = router;

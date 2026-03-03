@@ -40,6 +40,11 @@ export default function SignIn() {
       // Handle successful login
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
+      
+      if (data.user.lastRoleAnalysis) {
+          localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+      }
+
       console.log('User logged in:', data);
       
       if (data.user.onboarding_completed) {

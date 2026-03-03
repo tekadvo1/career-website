@@ -44,17 +44,36 @@ router.get(
 
 const { protect } = require('../middleware/authMiddleware');
 
+const pool = require('../config/db');
+
 // @route   GET /api/auth/me
 // @desc    Get current logged in user
 // @access  Private
-router.get('/me', protect, (req, res) => {
-  res.json({
-    status: 'success',
-    user: req.user
-  });
-});
+router.get('/me', protect, async (req, res) => {
+  try {
+    const roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+    let lastRoleAnalysis = null;
+    if (roleRes.rows.length > 0) {
+      lastRoleAnalysis = {
+        role: roleRes.rows[0].role_title,
+        analysis: typeof roleRes.rows[0].analysis_data === 'string' 
+          ? JSON.parse(roleRes.rows[0].analysis_data) 
+          : roleRes.rows[0].analysis_data
+      };
+    }
 
-const pool = require('../config/db');
+    res.json({
+      status: 'success',
+      user: {
+        ...req.user,
+        lastRoleAnalysis
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user me:', error);
+    res.status(500).json({ status: 'error', message: 'Server error' });
+  }
+});
 
 // @route   POST /api/auth/complete-onboarding
 // @desc    Mark onboarding as complete

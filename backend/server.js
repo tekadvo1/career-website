@@ -125,6 +125,17 @@ const updateSchema = async () => {
       );
     `);
 
+    // Create chat_sessions table to sync AI learning assistant chats across mobile and laptop
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS chat_sessions (
+        id VARCHAR(255) PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        messages JSONB NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     client.release();
     console.log('Schema updated for role caching');
   } catch (err) {

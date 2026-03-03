@@ -110,6 +110,18 @@ const loginUser = async (req, res) => {
       { expiresIn: '30d' }
     );
 
+    // Fetch most recent role analysis to sync across mobile and laptop
+    const roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [user.id]);
+    let lastRoleAnalysis = null;
+    if (roleRes.rows.length > 0) {
+      lastRoleAnalysis = {
+        role: roleRes.rows[0].role_title,
+        analysis: typeof roleRes.rows[0].analysis_data === 'string' 
+          ? JSON.parse(roleRes.rows[0].analysis_data) 
+          : roleRes.rows[0].analysis_data
+      };
+    }
+
     res.json({
       status: 'success',
       message: 'Login successful',
@@ -118,7 +130,8 @@ const loginUser = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        onboarding_completed: user.onboarding_completed || false
+        onboarding_completed: user.onboarding_completed || false,
+        lastRoleAnalysis
       }
     });
 

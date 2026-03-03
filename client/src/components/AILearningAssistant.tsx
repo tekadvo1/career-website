@@ -82,6 +82,7 @@ export default function AILearningAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
   const role = location.state?.role || "Software Engineer";
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const LOCAL_STORAGE_KEY = "findstreak_ai_chat_history";
 
@@ -124,6 +125,7 @@ export default function AILearningAssistant() {
   const [isTyping, setIsTyping] = useState(false);
   const [eli5Mode, setEli5Mode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const syncRef = useRef(false);
 
   // -- Chat History State --
   const [chatHistory, setChatHistory] = useState<ChatSession[]>(initialHistory);
@@ -141,6 +143,37 @@ export default function AILearningAssistant() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // Sync historical chat states globally across mobile & web environments
+  useEffect(() => {
+    if (user?.id) {
+       fetch(`/api/ai/chat-history?userId=${user.id}`)
+         .then(res => res.json())
+         .then(data => {
+            if (data.success && data.history && data.history.length > 0) {
+               const parsedServerHistory = data.history.map((session: any) => ({
+                  ...session,
+                  updatedAt: new Date(session.updatedAt),
+                  messages: session.messages.map((m: any) => ({
+                    ...m,
+                    timestamp: new Date(m.timestamp)
+                  }))
+               }));
+
+               setChatHistory(parsedServerHistory);
+               
+               if (messages.length <= 1) { // If user hasn't typed in new chat yet, restore the most recent active session from server!
+                   setCurrentChatId(parsedServerHistory[0].id);
+                   setMessages(parsedServerHistory[0].messages);
+               } 
+            }
+         })
+         .catch(err => console.error("Could not sync chat history from server", err))
+         .finally(() => { syncRef.current = true; }); // Safely enable DB writes AFTER the initial pull
+    } else {
+        syncRef.current = true; // No user logged in, permit local save immediately 
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     // If we land here with a topicContext, automatically spin up a new chat and send it
@@ -225,14 +258,23 @@ export default function AILearningAssistant() {
     }
   }, [messages, currentChatId]);
 
-  // Persist chatHistory to localStorage whenever it changes
+  // Persist chatHistory to localStorage AND backend whenever it changes
   useEffect(() => {
+    if (!syncRef.current) return; // Prevent overwriting DB before initial GET finishes
     try {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
+
+      if (user?.id) {
+         fetch('/api/ai/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, chatHistory })
+         }).catch(err => console.error("Failed syncing chat history:", err));
+      }
     } catch (e) {
       console.error("Failed to save chat history", e);
     }
-  }, [chatHistory]);
+  }, [chatHistory, user?.id]);
 
   const handleSwitchChat = (chatId: string) => {
     const session = chatHistory.find(c => c.id === chatId);
