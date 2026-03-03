@@ -894,6 +894,7 @@ export default function AILearningAssistant() {
 
             {/* Bottom 3 Cards matching Uploaded Screenshot exactly */}
             <div className="shrink-0 border-t border-slate-100 bg-white">
+              {messages.length <= 1 && (
               <div className="px-4 py-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-[1000px] mx-auto">
                   
@@ -929,6 +930,7 @@ export default function AILearningAssistant() {
 
                 </div>
               </div>
+              )}
 
               {/* Input Box */}
               <div className="border-t border-slate-200 bg-slate-50 p-3 md:p-4">
