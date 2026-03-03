@@ -559,14 +559,11 @@ export default function LearningRoadmap() {
               <Button onClick={handleRefreshRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <RefreshCw className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Refresh AI</span>
               </Button>
-              <Button onClick={handleOpenRoadmapTree} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
-                <GitBranch className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">View Mode Tree</span>
-              </Button>
               <Button onClick={handleDownloadRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Download PDF</span>
               </Button>
-              <Button onClick={handleOpenAIAssistant} className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-10 sm:h-9 px-3 text-sm">
-                <MessageSquare className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">AI Assistant</span>
+              <Button onClick={handleOpenRoadmapTree} variant="outline" className="w-full sm:w-auto flex items-center justify-center h-10 sm:h-9 px-3 sm:px-3 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="View Roadmap Tree">
+                <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </div>
