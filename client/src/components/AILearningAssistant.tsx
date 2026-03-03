@@ -23,9 +23,11 @@ import {
   Edit2,
   Trash2,
   Check,
+  Terminal,
   Settings,
   MoreVertical,
 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
 interface ChatSession {
   id: string;
@@ -826,8 +828,44 @@ export default function AILearningAssistant() {
                         <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-3.5 md:px-5 py-2.5 md:py-4 max-w-[95%] text-slate-800 text-sm whitespace-pre-wrap leading-relaxed shadow-sm">
-                          {message.content}
+                        <div className="bg-slate-50 border border-slate-200 rounded-2xl rounded-tl-sm px-3.5 md:px-5 py-2.5 md:py-4 max-w-[95%] text-slate-800 text-sm leading-relaxed shadow-sm overflow-hidden overflow-x-auto">
+                          <ReactMarkdown 
+                            components={{
+                              h1: ({node, ...props}) => <h1 className="text-xl font-bold text-slate-900 mt-4 mb-2 border-b border-slate-200 pb-1" {...props} />,
+                              h2: ({node, ...props}) => <h2 className="text-lg font-bold text-slate-900 mt-4 mb-2" {...props} />,
+                              h3: ({node, ...props}) => <h3 className="text-base font-bold text-slate-900 mt-4 mb-2" {...props} />,
+                              p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                              ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1 marker:text-emerald-500" {...props} />,
+                              ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1 marker:text-emerald-500 font-medium" {...props} />,
+                              li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                              a: ({node, ...props}) => <a className="text-emerald-600 font-semibold hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                              blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-emerald-400 bg-emerald-50 p-3 rounded-r-lg my-3 italic text-slate-700" {...props} />,
+                              code({node, inline, className, children, ...props}: any) {
+                                const match = /language-(\w+)/.exec(className || '')
+                                return !inline ? (
+                                  <div className="my-3 rounded-lg overflow-hidden border border-slate-800 bg-slate-900 shadow-sm w-full">
+                                    <div className="flex items-center px-3 py-1.5 bg-slate-950 border-b border-slate-800">
+                                      <Terminal className="w-3.5 h-3.5 text-slate-400 mr-2" />
+                                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">{match?.[1] || 'code'}</span>
+                                    </div>
+                                    <div className="p-3 overflow-x-auto">
+                                      <pre className="text-xs text-emerald-400 font-mono leading-relaxed relative" {...props}>
+                                        <code className={className}>
+                                          {children}
+                                        </code>
+                                      </pre>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <code className="bg-slate-100 text-pink-600 border border-slate-200 px-1 py-0.5 rounded text-[13px] font-mono break-words" {...props}>
+                                    {children}
+                                  </code>
+                                )
+                              }
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
                         </div>
 
                         {message.projectRecommendations && (
@@ -937,7 +975,7 @@ export default function AILearningAssistant() {
 
             {/* Bottom 3 Cards matching Uploaded Screenshot exactly */}
             <div className="shrink-0 border-t border-slate-100 bg-white">
-              {messages.length <= 1 && (
+              {messages.length <= 1 && inputMessage.trim() === "" && (
               <div className="px-3 md:px-4 py-2.5 md:py-3">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3 max-w-[1000px] mx-auto">
                   
