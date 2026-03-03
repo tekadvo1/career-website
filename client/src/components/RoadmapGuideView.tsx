@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Sparkles, Lightbulb, CheckCircle2, MessageSquare } from "lucide-react";
+import { ArrowLeft, BookOpen, Sparkles, Lightbulb, CheckCircle2, MessageSquare, Terminal } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
 export default function RoadmapGuideView() {
   const navigate = useNavigate();
@@ -106,8 +107,42 @@ export default function RoadmapGuideView() {
                         </button>
                     </div>
                 ) : (
-                    <div className="prose prose-slate prose-emerald lg:prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight hover:prose-a:text-emerald-600 whitespace-pre-wrap leading-relaxed text-slate-700">
+                    <div className="space-y-6 text-slate-700 leading-relaxed text-[15px] sm:text-base">
+                      <ReactMarkdown 
+                        components={{
+                          h1: ({node, ...props}) => <h1 className="text-3xl font-extrabold text-slate-900 mt-10 mb-6 pb-2 border-b border-slate-200" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-slate-900 mt-10 mb-4 flex items-center gap-2" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-xl font-bold text-slate-900 mt-8 mb-3" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-5 last:mb-0 leading-loose" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-6 space-y-2 marker:text-emerald-500" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-6 space-y-2 marker:text-emerald-500 marker:font-bold" {...props} />,
+                          li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                          a: ({node, ...props}) => <a className="text-emerald-600 font-semibold hover:text-emerald-700 hover:underline transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-emerald-400 bg-emerald-50/50 p-4 rounded-r-xl my-6 italic text-slate-800" {...props} />,
+                          code({node, inline, className, children, ...props}: any) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            return !inline ? (
+                              <div className="my-6 rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-xl">
+                                <div className="flex items-center px-4 py-2 bg-slate-950 border-b border-slate-800">
+                                  <Terminal className="w-4 h-4 text-slate-400 mr-2" />
+                                  <span className="text-xs font-mono text-slate-400 uppercase tracking-wider">{match?.[1] || 'code'}</span>
+                                </div>
+                                <pre className="p-4 overflow-x-auto text-sm text-emerald-400 font-mono leading-relaxed" {...props}>
+                                  <code className={className}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              </div>
+                            ) : (
+                              <code className="bg-slate-100 text-pink-600 border border-slate-200 px-1.5 py-0.5 rounded-md text-sm font-mono" {...props}>
+                                {children}
+                              </code>
+                            )
+                          }
+                        }}
+                      >
                         {guideContent}
+                      </ReactMarkdown>
                     </div>
                 )}
             </div>
