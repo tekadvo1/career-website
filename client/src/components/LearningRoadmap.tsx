@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Calendar, Target, Download, Sparkles, CheckCircle2, Circle, ArrowRight,
+  Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare, Menu, X, User,
   BarChart3, LayoutDashboard, Award, RefreshCw, GitBranch
 } from 'lucide-react';
-import jsPDF from 'jspdf';
+
 
 // --- Interfaces ---
 interface Resource {
@@ -344,61 +344,6 @@ export default function LearningRoadmap() {
   const completedPhases = roadmap.filter(getPhaseCompletion).length;
   const progressPercentage = roadmap.length > 0 ? (completedPhases / roadmap.length) * 100 : 0;
 
-  const handleDownloadRoadmap = () => {
-    const pdf = new jsPDF();
-    const margin = 20;
-    let yPosition = margin;
-
-    pdf.setFontSize(20);
-    pdf.text(`Learning Roadmap: ${role}`, margin, yPosition);
-    yPosition += 10;
-
-    pdf.setFontSize(10);
-    pdf.text(`Total Duration: ~${totalWeeks} weeks`, margin, yPosition);
-    yPosition += 10;
-
-    roadmap.forEach((phase, index) => {
-      if (yPosition > pdf.internal.pageSize.getHeight() - 60) {
-        pdf.addPage();
-        yPosition = margin;
-      }
-      
-      const pTitle = phase.title || phase.phase || '';
-      pdf.setFontSize(14);
-      pdf.text(`Phase ${index + 1}: ${pTitle}`, margin, yPosition);
-      yPosition += 7;
-
-      pdf.setFontSize(10);
-      pdf.text(`Level: ${phase.level || phase.difficulty} | Duration: ${phase.duration}`, margin + 5, yPosition);
-      yPosition += 7;
-
-      const topics = phase.topics || phase.skills || [];
-      if (topics.length > 0) {
-        pdf.text("Topics/Skills:", margin + 5, yPosition);
-        yPosition += 5;
-        topics.forEach((t) => {
-          const name = typeof t === 'string' ? t : t.name;
-          pdf.text(`  • ${name}`, margin + 10, yPosition);
-          yPosition += 5;
-        });
-        yPosition += 3;
-      }
-
-      if (phase.projects && phase.projects.length > 0) {
-          pdf.text("Projects:", margin + 5, yPosition);
-          yPosition += 5;
-          phase.projects.forEach((proj) => {
-            const pName = typeof proj === 'string' ? proj : (proj.name || proj.title || 'Project');
-            pdf.text(`  • ${pName}`, margin + 10, yPosition);
-            yPosition += 5;
-          });
-      }
-      yPosition += 8;
-    });
-
-    pdf.save(`${role.replace(/\s+/g, "_")}_Roadmap.pdf`);
-  };
-
   const handleRefreshRoadmap = async () => {
     setIsLoading(true);
     try {
@@ -554,9 +499,6 @@ export default function LearningRoadmap() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
               <Button onClick={handleRefreshRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <RefreshCw className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Refresh AI</span>
-              </Button>
-              <Button onClick={handleDownloadRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
-                <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Download PDF</span>
               </Button>
               
               <div className="relative group flex items-center">
