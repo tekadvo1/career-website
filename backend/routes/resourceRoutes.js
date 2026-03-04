@@ -364,4 +364,66 @@ router.get('/my-courses', async (req, res) => {
   }
 });
 
+// POST /api/resources/:id/enhance - Enhance an existing resource with detailed AI information
+router.post('/:id/enhance', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const resourceResult = await pool.query('SELECT * FROM resources WHERE id = $1', [id]);
+    if (resourceResult.rows.length === 0) return res.status(404).json({ error: 'Resource not found' });
+    const resource = resourceResult.rows[0];
+
+    const fetch = (await import('node-fetch')).default;
+    const apiKey = process.env.OPENAI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'OpenAI API key missing' });
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+         'Content-Type': 'application/json',
+         'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+         model: 'gpt-4o-mini',
+         messages: [
+            { role: 'system', content: 'You are an AI learning resource expert. Add comprehensive missing details to the learning resource.' },
+            { role: 'user', content: `Analyze the learning resource titled "${resource.title}" (${resource.url || ''}).
+              It is a ${resource.resource_type || 'tutorial'} for ${resource.level || 'all'} level.
+              Provide EXACTLY a JSON object with:
+              {
+                 "skills_covered": ["Skill 1", "Skill 2"],
+                 "tools_used": ["Tool 1"],
+                 "practical_use": "Why this helps in real world projects and interviews...",
+                 "project_ideas": ["Project idea 1", "Project idea 2"]
+              }
+              Ensure the values perfectly match the context of the resource title.`
+            }
+         ],
+         temperature: 0.7
+      })
+    });
+
+    if (!response.ok) throw new Error('OpenAI API failure: ' + await response.text());
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const enhancement = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+
+    const updateResult = await pool.query(`
+      UPDATE resources 
+      SET skills_covered = $1, tools_used = $2, practical_use = $3, project_ideas = $4 
+      WHERE id = $5 
+      RETURNING *
+    `, [enhancement.skills_covered || [], enhancement.tools_used || [], enhancement.practical_use || "", enhancement.project_ideas || [], id]);
+
+    res.json({ success: true, resource: updateResult.rows[0] });
+  } catch(error) {
+    console.error('Enhance Resource Error:', error);
+    res.status(500).json({ error: 'Failed to enhance resource' });
+  }
+});
+
 module.exports = router;
