@@ -1,5 +1,15 @@
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitBranch, Target, BookOpen, Clock, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Target,
+  CheckCircle2,
+  Code,
+  Trophy,
+  BookOpen,
+  Sparkles,
+  Zap,
+  ArrowLeft,
+} from "lucide-react";
 
 interface TopicResource {
   name: string;
@@ -23,7 +33,7 @@ interface RoadmapPhase {
   phase?: string;
   level?: string;
   difficulty?: string;
-  duration: string;
+  duration?: string;
   category?: string;
   description?: string;
   topics?: (string | DetailedTopic)[];
@@ -32,21 +42,84 @@ interface RoadmapPhase {
   milestones?: string[];
   step_by_step_guide?: string[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  projects: any[]; 
+  projects?: any[]; 
   completed?: boolean;
 }
 
 export default function RoadmapTree() {
-  const location = useLocation();
   const navigate = useNavigate();
+  const location = useLocation();
   
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Get real-time AI roadmap data passed via location
   const roadmap: RoadmapPhase[] = location.state?.roadmap || [];
-  const role: string = location.state?.role || "Software Engineer";
+  const selectedRole: string = location.state?.role || "Software Engineer";
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          if (prev >= 98) return 98;
+          return prev + 10; // fast loading chunks
+        });
+      }, 50); // fast 50ms intervals
+      
+      setTimeout(() => {
+        setIsLoading(false);
+        setLoadingProgress(100);
+      }, 600);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  const handleConfirmRoadmap = () => {
+    // Navigate back to the flowchart version of learning roadmap
+    navigate("/roadmap", {
+      state: {
+        role: selectedRole,
+        roadmap: roadmap
+      },
+    });
+  };
+
+  const totalDuration = roadmap.reduce((acc, phase) => {
+    const dur = phase.duration || "0";
+    const nums = dur.match(/\d+/g);
+    let val = 0;
+    if (nums && nums.length > 0) val = parseInt(nums[nums.length - 1]);
+    if (dur.toLowerCase().includes('month')) val *= 4;
+    return acc + val;
+  }, 0);
+
+  if (isLoading || loadingProgress < 100) {
+    if (!isLoading && loadingProgress === 100) {
+      // dropthrough
+    } else {
+      return (
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+            <Sparkles className="w-16 h-16 text-emerald-500 mb-6 animate-pulse" />
+            <h2 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">Generating Tree View...</h2>
+            <div className="w-full max-w-md bg-slate-200 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
+                <div 
+                    className="bg-emerald-500 h-3 rounded-full transition-all ease-out duration-300 relative" 
+                    style={{ width: `${loadingProgress}%` }}
+                >
+                    <div className="absolute inset-0 bg-white/30 animate-[shimmer_1s_infinite] w-full" />
+                </div>
+            </div>
+            <p className="text-slate-500 font-medium">Extracting AI data: {loadingProgress}%</p>
+        </div>
+      );
+    }
+  }
 
   if (!roadmap || roadmap.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-        <GitBranch className="w-16 h-16 text-emerald-300 mb-4" />
+        <Target className="w-16 h-16 text-emerald-300 mb-4" />
         <h2 className="text-2xl font-bold text-slate-800 mb-2">No Roadmap Data Found</h2>
         <p className="text-slate-600 mb-6 max-w-md">Please generate your roadmap first from the main roadmap page.</p>
         <button onClick={() => navigate('/roadmap')} className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors">
@@ -56,200 +129,185 @@ export default function RoadmapTree() {
     );
   }
 
-  // Group phases by difficulty/level
-  const groupedPhases = roadmap.reduce((acc, phase) => {
-    const defaultLevel = phase.difficulty || phase.level || "Intermediate";
-    const levelLower = defaultLevel.toLowerCase();
-    
-    let key = "Custom";
-    if (levelLower.includes("beginner") || levelLower.includes("basic")) key = "Basic";
-    else if (levelLower.includes("intermediate")) key = "Intermediate";
-    else if (levelLower.includes("advanced") || levelLower.includes("expert")) key = "Advanced";
-    
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(phase);
-    return acc;
-  }, {} as Record<string, RoadmapPhase[]>);
-
-  // Sorting order for levels
-  const levelOrder = ["Basic", "Intermediate", "Advanced", "Custom"];
-  const sortedLevels = Object.keys(groupedPhases).sort((a, b) => {
-      const idxA = levelOrder.indexOf(a);
-      const idxB = levelOrder.indexOf(b);
-      return (idxA !== -1 ? idxA : 99) - (idxB !== -1 ? idxB : 99);
-  });
-
-  const getLevelColor = (level: string) => {
-      if (level === "Basic") return "from-emerald-400 to-emerald-600 border-emerald-500 shadow-emerald-500/20";
-      if (level === "Intermediate") return "from-blue-400 to-blue-600 border-blue-500 shadow-blue-500/20";
-      if (level === "Advanced") return "from-purple-400 to-purple-600 border-purple-500 shadow-purple-500/20";
-      return "from-amber-400 to-amber-600 border-amber-500 shadow-amber-500/20";
-  };
-
-  const getNodeColor = (level: string) => {
-      if (level === "Basic") return "border-emerald-200 bg-emerald-50";
-      if (level === "Intermediate") return "border-blue-200 bg-blue-50";
-      if (level === "Advanced") return "border-purple-200 bg-purple-50";
-      return "border-amber-200 bg-amber-50";
-  };
-
-  const getLineColor = (level: string) => {
-      if (level === "Basic") return "border-emerald-300";
-      if (level === "Intermediate") return "border-blue-300";
-      if (level === "Advanced") return "border-purple-300";
-      return "border-amber-300";
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate('/roadmap')}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="bg-emerald-100 p-1.5 rounded-md">
-                <GitBranch className="w-5 h-5 text-emerald-600" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8 relative">
+      {/* Top Left Navigation Button */}
+      <button 
+        onClick={() => navigate(-1)}
+        className="fixed top-4 sm:top-8 left-4 sm:left-6 z-40 p-3 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-md flex items-center gap-2 group border border-slate-200"
+      >
+        <ArrowLeft className="w-5 h-5 text-slate-600 group-hover:-translate-x-1 transition-transform" />
+        <span className="font-semibold text-slate-700 pr-1 hidden sm:inline">Back</span>
+      </button>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto pt-16 sm:pt-4">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-slate-200 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100/50 rounded-full blur-3xl -mr-10 -mt-20"></div>
+          <div className="flex flex-col md:flex-row items-center md:items-start justify-between relative z-10 gap-6">
+            <div className="text-center md:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-full text-sm mb-4 shadow-sm">
+                <Sparkles className="w-4 h-4" />
+                <span>AI Generated Mode Tree</span>
               </div>
-              <h1 className="font-bold text-slate-900 text-lg sm:text-xl">
-                {role} Complete Tree
-              </h1>
+              <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">{selectedRole}</h1>
+              <p className="text-slate-600 text-lg max-w-xl">
+                Follow this intelligently structured tree path to master your career goals
+              </p>
             </div>
-          </div>
-          <div className="text-sm font-medium text-slate-500 hidden sm:block">
-            Mindmap Mode
+            <div className="text-center md:text-right bg-slate-50 p-5 rounded-2xl border border-slate-100 shrink-0">
+              <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mb-1">Total Effort</p>
+              <p className="text-3xl font-black text-emerald-600">~{totalDuration} {totalDuration > 50 ? 'wks' : 'mos'}</p>
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Tree Container */}
-      <main className="max-w-[1600px] mx-auto p-6 md:p-12 overflow-x-auto">
-        <div className="flex flex-col gap-12 sm:gap-16 min-w-max pb-32">
-          
-          {/* Root Node */}
-          <div className="flex flex-col items-center relative">
-            <div className="px-8 py-4 bg-slate-900 text-white rounded-xl shadow-xl font-black text-xl border-4 border-slate-800 z-10">
-              {role}
+        {/* Roadmap Visual Structure */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-12 mb-8 overflow-x-auto border border-slate-200 relative">
+          <div className="min-w-[800px] py-8 relative">
+            
+            {/* Start Line connecting start button to phases */}
+            <div className="absolute top-24 left-[105px] bottom-24 w-1.5 bg-gradient-to-b from-emerald-200 via-emerald-300 to-emerald-200 hidden md:block rounded-full"></div>
+
+            {/* Start Button */}
+            <div className="flex justify-start pl-[28px] mb-16 relative z-10">
+              <div className="px-10 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-bold text-xl shadow-xl shadow-emerald-500/20 flex items-center gap-3">
+                <Target className="w-6 h-6" /> START YOUR JOURNEY
+              </div>
             </div>
-            {/* Main trunk line dropping from root */}
-            <div className="w-1 h-8 sm:h-12 bg-slate-300 -mb-1 z-0"></div>
-          </div>
 
-          <div className="flex gap-8 sm:gap-16 justify-center">
-            {sortedLevels.map((level, levelIdx) => {
-              const phases = groupedPhases[level];
-              const levelColorStr = getLevelColor(level);
-              const nodeColorStr = getNodeColor(level);
-              const lineColorStr = getLineColor(level);
+            {/* Render each phase */}
+            {roadmap.map((phase, phaseIndex) => {
+              const pTitle = phase.title || phase.phase || `Phase ${phaseIndex + 1}`;
+              const pDuration = phase.duration || "Self-paced";
               
-              return (
-                <div key={level} className="flex flex-col relative group shrink-0 w-[350px] sm:w-[400px]">
-                  {/* Connecting line from root trunk to this column */}
-                  <div className={"absolute -top-12 h-12 border-l-4 " + lineColorStr} style={{ left: '50%' }}></div>
-                  <div className={"absolute -top-12 border-t-4 w-full " + lineColorStr} style={{ 
-                      left: levelIdx === 0 ? '50%' : '0', 
-                      width: levelIdx === 0 || levelIdx === sortedLevels.length - 1 ? '50%' : '100%',
-                      right: levelIdx === sortedLevels.length - 1 ? '50%' : 'auto'
-                  }}></div>
+              // Extract data correctly from AI format
+              const skillsList = phase.skills?.length 
+                 ? phase.skills 
+                 : (phase.topics?.map(t => typeof t === 'string' ? t : t.name) || []);
+                 
+              const milestonesList = phase.milestones?.length
+                 ? phase.milestones
+                 : (phase.step_by_step_guide || []);
+                 
+              const projectsList = phase.projects?.map(p => typeof p === 'string' ? p : (p.name || p.title || 'Project')) || [];
 
-                  {/* Level Header Node */}
-                  <div className="flex flex-col items-center relative z-10 mb-8 sm:mb-12">
-                    <div className={`px-8 py-3 bg-gradient-to-r text-white font-bold rounded-full shadow-lg border-2 ${levelColorStr}`}>
-                      {level} Track
+              return (
+                <div key={phaseIndex} className="mb-20 relative z-10">
+                  {/* Phase Header */}
+                  <div className="flex items-center gap-6 mb-8 relative">
+                    {/* Circle Node overlapping the continuous line */}
+                    <div className="absolute left-[77px] w-6 h-6 rounded-full bg-emerald-500 border-4 border-white shadow-md hidden md:block"></div>
+                    
+                    <div className="flex items-center gap-3 px-6 py-4 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl shadow-xl ml-8 relative z-10 overflow-hidden group">
+                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center font-bold text-xl shadow-inner border border-emerald-400">
+                        {phaseIndex + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-bold tracking-tight">{pTitle}</h3>
+                        <p className="text-sm text-emerald-400 font-semibold">{pDuration}</p>
+                      </div>
                     </div>
-                    {/* Trunk connecting level header to phases */}
-                    {phases.length > 0 && (
-                      <div className={"absolute -bottom-8 sm:-bottom-12 h-8 sm:h-12 border-l-4 w-0 " + lineColorStr}></div>
-                    )}
+                    <div className="flex-1 h-0.5 bg-gradient-to-r from-slate-200 to-transparent"></div>
                   </div>
 
-                  {/* Phases in this Level */}
-                  <div className="flex flex-col gap-10 relative">
-                    {/* Continuous vertical line for the column */}
-                    {phases.length > 1 && (
-                       <div className={"absolute top-0 bottom-0 left-[28px] sm:left-8 border-l-4 " + lineColorStr} style={{ left: '32px' }}></div>
+                  {/* Content Grid - Staggered Layout */}
+                  <div className="space-y-8 md:pl-36 pl-8">
+                    {/* Skills Section */}
+                    {skillsList.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-amber-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <Code className="w-4 h-4 bg-amber-100 p-0.5 rounded text-amber-600" />
+                          Skills to Master
+                        </h4>
+                        <div className="flex flex-wrap gap-3">
+                          {skillsList.map((skill, idx) => (
+                            <div
+                              key={idx}
+                              className="px-4 py-2.5 bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-xl text-sm font-bold text-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer shadow-sm"
+                            >
+                              {skill}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
 
-                    {phases.map((phase, pIdx) => {
-                       const pTitle = phase.title || phase.phase || "Untitled Phase";
-                       const topics = phase.topics || phase.skills || [];
-                       return (
-                           <div key={pIdx} className="relative z-10 ml-8">
-                               {/* Horizontal branch to phase node */}
-                               <div className={"absolute top-8 -left-8 w-8 border-t-4 " + lineColorStr}></div>
-                               
-                               <div className={`rounded-2xl border-2 p-5 shadow-sm transition-all hover:shadow-md ${nodeColorStr}`}>
-                                   <div className="flex justify-between items-start mb-3">
-                                       <h3 className="font-bold text-slate-800 text-lg leading-tight pr-4">
-                                           {pTitle}
-                                       </h3>
-                                       {phase.duration && (
-                                           <span className="flex-shrink-0 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-white/60 px-2 py-1 rounded border border-slate-200">
-                                               <Clock className="w-3 h-3" /> {phase.duration}
-                                           </span>
-                                       )}
-                                   </div>
-                                   
-                                   {phase.description && (
-                                       <p className="text-sm text-slate-600 mb-4 line-clamp-3 leading-relaxed">
-                                           {phase.description}
-                                       </p>
-                                   )}
+                    {/* Milestones Section */}
+                    {milestonesList.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 bg-emerald-100 p-0.5 rounded text-emerald-600" />
+                          Milestones to Achieve
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {milestonesList.map((milestone, idx) => (
+                            <div
+                              key={idx}
+                              className="px-4 py-3 bg-gradient-to-br from-emerald-50 to-white border border-emerald-200 rounded-xl text-sm font-semibold text-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer flex items-start gap-3 shadow-sm"
+                            >
+                              <Trophy className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                              <span className="leading-relaxed">{milestone}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                                   {/* Topics List as smaller nodes attached to this phase */}
-                                   {topics.length > 0 && (
-                                       <div className="mt-4 pt-4 border-t border-slate-200/50">
-                                           <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                             <Target className="w-3.5 h-3.5" /> Key Topics
-                                           </div>
-                                           <div className="flex flex-col gap-2">
-                                               {topics.map((t, tIdx) => {
-                                                   const tName = typeof t === "string" ? t : t.name;
-                                                   return (
-                                                       <div key={tIdx} className="bg-white px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 shadow-sm flex items-center justify-between group cursor-pointer hover:border-slate-300">
-                                                           <span>{tName}</span>
-                                                           <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
-                                                       </div>
-                                                   );
-                                               })}
-                                           </div>
-                                       </div>
-                                   )}
-                                   
-                                   {/* Projects Node attached to this phase */}
-                                   {phase.projects && phase.projects.length > 0 && (
-                                       <div className="mt-4 pt-4 border-t border-slate-200/50">
-                                           <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                             <BookOpen className="w-3.5 h-3.5" /> Phase Projects
-                                           </div>
-                                           <div className="flex flex-col gap-2">
-                                               {phase.projects.map((proj, projIdx) => {
-                                                   const projName = typeof proj === "string" ? proj : (proj.title || proj.name || "Project");
-                                                   return (
-                                                       <div key={projIdx} className="bg-slate-800 text-slate-100 px-3 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center justify-between border border-slate-700">
-                                                           <span className="truncate pr-2">🛠️ {projName}</span>
-                                                       </div>
-                                                   );
-                                               })}
-                                           </div>
-                                       </div>
-                                   )}
-                               </div>
-                           </div>
-                       );
-                    })}
+                    {/* Projects Section */}
+                    {projectsList.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 bg-blue-100 p-0.5 rounded text-blue-600" />
+                          Projects to Build
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {projectsList.map((project, idx) => (
+                            <div
+                              key={idx}
+                              className="px-4 py-4 bg-slate-900 border border-slate-800 rounded-xl text-sm font-bold text-emerald-400 hover:shadow-xl hover:shadow-emerald-900/30 hover:-translate-y-1 transition-all cursor-pointer text-center relative overflow-hidden group"
+                            >
+                              <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/10 to-transparent"></div>
+                              <span className="relative z-10">{project}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
+
+            {/* End Badge */}
+            <div className="flex justify-start pl-[53px] mt-24 relative z-10 hidden md:flex">
+              <div className="px-10 py-5 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl font-black text-2xl shadow-xl flex items-center gap-4 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/30 to-teal-600/30"></div>
+                <Trophy className="w-8 h-8 text-amber-400 relative z-10" />
+                <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent relative z-10">CAREER READY!</span>
+                <Zap className="w-8 h-8 text-amber-400 relative z-10" />
+              </div>
+            </div>
           </div>
         </div>
-      </main>
+
+        {/* Bottom Confirm Button */}
+        <div className="bg-white rounded-2xl shadow-xl p-10 text-center border border-slate-200">
+          <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Ready to Start Your Journey?</h3>
+          <p className="text-slate-600 mb-8 max-w-xl mx-auto text-lg">
+            Return to the main flowchart view to start checking off these milestones directly.
+          </p>
+          <button
+            onClick={handleConfirmRoadmap}
+            className="h-14 px-12 bg-slate-900 border-2 border-slate-800 hover:bg-slate-800 text-white text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all inline-flex items-center gap-2 group"
+          >
+            <Sparkles className="w-5 h-5 text-emerald-400 group-hover:rotate-12 transition-transform" />
+            Switch to Flowchart Mode
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
