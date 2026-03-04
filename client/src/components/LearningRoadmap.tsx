@@ -477,7 +477,7 @@ export default function LearningRoadmap() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto" ref={contentRef}>
+      <div className="max-w-5xl mx-auto" ref={contentRef}>
         {/* Header */}
         <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-4 sm:mt-6 relative">
           <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-4">
@@ -562,9 +562,9 @@ export default function LearningRoadmap() {
 
         
         {/* NEW ROADMAP.SH STYLE FLOWCHART */}
-        <div className="relative py-12 px-4 sm:px-8 max-w-5xl mx-auto flex flex-col items-center mt-6">
+        <div className="relative py-8 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col items-center mt-4">
             {/* Main vertical line */}
-            <div className="absolute top-0 bottom-0 left-[28px] md:left-1/2 md:-translate-x-1/2 w-2.5 bg-emerald-200/60 rounded-full z-0" />
+            <div className="absolute top-0 bottom-0 left-[28px] md:left-1/2 md:-translate-x-1/2 w-1.5 bg-emerald-200/60 rounded-full z-0" />
             
             {roadmap.map((phase, index) => {
               const isPhaseCompleted = getPhaseCompletion(phase);
@@ -572,18 +572,18 @@ export default function LearningRoadmap() {
               return (
                 <div key={index} className="relative w-full mb-20 last:mb-0">
                   {/* Phase Title Block on Central Line */}
-                  <div className="flex justify-start md:justify-center items-center sticky top-24 z-20 mb-10 pl-16 md:pl-0">
+                  <div className="flex justify-start md:justify-center items-center sticky top-24 z-20 mb-6 pl-16 md:pl-0">
                       <div className={`
-                         px-6 py-3 rounded-2xl border-4 font-bold text-center shadow-xl transition-all 
+                         px-5 py-2.5 rounded-[12px] border-4 font-bold text-center shadow-xl transition-all 
                          ${isPhaseCompleted ? 'bg-emerald-500 border-white text-white' : 'bg-white border-emerald-400 text-slate-800'}
                        `}>
-                          <p className={`text-[10px] md:text-xs uppercase tracking-widest mb-1 ${isPhaseCompleted ? 'text-emerald-100' : 'text-emerald-600'}`}>Phase {index + 1} • {phase.duration}</p>
-                          <h2 className="text-lg md:text-2xl">{phase.title || phase.phase}</h2>
+                          <p className={`text-[10px] uppercase tracking-widest mb-1 ${isPhaseCompleted ? 'text-emerald-100' : 'text-emerald-600'}`}>Phase {index + 1} • {phase.duration}</p>
+                          <h2 className="text-base md:text-xl">{phase.title || phase.phase}</h2>
                       </div>
                   </div>
 
                   {/* Nodes wrapper */}
-                  <div className="flex flex-col gap-8 relative z-10 w-full mt-6">
+                  <div className="flex flex-col gap-6 relative z-10 w-full mt-4">
                       {(phase.topics || phase.skills || []).map((skillObj, topicIdx) => {
                          const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
                          const emoji = typeof skillObj === 'string' ? '💻' : (skillObj.emoji || '💻');
@@ -597,11 +597,11 @@ export default function LearningRoadmap() {
                            <div key={topicIdx} className={`w-full flex ${alignLeft ? 'md:justify-start' : 'md:justify-end'} justify-start relative`}>
                               
                               {/* Horizontal connector line (desktop) */}
-                              <div className={`hidden md:block absolute top-[28px] h-1.5 bg-emerald-200/80 w-[20%] ${alignLeft ? 'right-1/2 rotate-180 translate-x-[2px]' : 'left-1/2 -translate-x-[2px]'} z-0 origin-left`} />
+                              <div className={`hidden md:block absolute top-[24px] h-1.5 bg-emerald-200/80 w-[20%] ${alignLeft ? 'right-1/2 rotate-180 translate-x-[2px]' : 'left-1/2 -translate-x-[2px]'} z-0 origin-left`} />
 
                               {/* Interactive Dot Connector on the center line */}
-                              <div className={`absolute top-[28px] -translate-y-1/2 w-6 h-6 rounded-full border-[5px] border-slate-50 shadow bg-emerald-400 z-20 
-                                  left-[17px] md:left-1/2 md:-translate-x-1/2 transition-colors duration-300
+                              <div className={`absolute top-[24px] -translate-y-1/2 w-5 h-5 rounded-full border-[4px] border-slate-50 shadow bg-emerald-400 z-20 
+                                  left-[20px] md:left-1/2 md:-translate-x-1/2 transition-colors duration-300
                                   ${isDone ? 'bg-emerald-600 border-emerald-100' : 'bg-emerald-300'}
                               `} />
 
@@ -611,7 +611,7 @@ export default function LearningRoadmap() {
                               `}>
                                  <div 
                                     className={`
-                                      p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer shadow-md hover:-translate-y-1 hover:shadow-xl relative overflow-hidden
+                                      p-3 sm:p-4 rounded-[12px] border-2 transition-all cursor-pointer shadow-md hover:-translate-y-1 hover:shadow-xl relative overflow-hidden
                                       ${isDone ? 'bg-emerald-50 border-emerald-400' : 'bg-white border-slate-200 hover:border-emerald-500'}
                                     `}
                                  >
@@ -619,12 +619,12 @@ export default function LearningRoadmap() {
                                     
                                     <div className="flex items-start justify-between gap-3" onClick={() => toggleTopicCompletion(name)}>
                                         <div className="flex items-center gap-3">
-                                            {isDone ? <CheckCircle2 className="w-6 h-6 text-emerald-600 flex-shrink-0" /> : <Circle className="w-6 h-6 text-slate-300 flex-shrink-0 group-hover:text-emerald-400" />}
+                                            {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" /> : <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 group-hover:text-emerald-400" />}
                                             <div>
-                                                <h3 className={`font-extrabold text-base md:text-lg flex items-center gap-2 ${isDone ? 'text-emerald-900' : 'text-slate-800'}`}>
+                                                <h3 className={`font-extrabold text-sm md:text-base flex items-center gap-2 ${isDone ? 'text-emerald-900' : 'text-slate-800'}`}>
                                                     <span>{emoji}</span> {name}
                                                 </h3>
-                                                {desc && <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 md:line-clamp-none leading-relaxed">{desc}</p>}
+                                                {desc && <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 md:line-clamp-none leading-relaxed">{desc}</p>}
                                             </div>
                                         </div>
                                     </div>
@@ -650,20 +650,20 @@ export default function LearningRoadmap() {
                       
                       {/* Interactive Projects for this phase */}
                       {phase.projects && phase.projects.length > 0 && (
-                          <div className={`w-full flex md:justify-center justify-start relative mt-8`}>
+                          <div className={`w-full flex md:justify-center justify-start relative mt-6`}>
                              <div className="relative z-10 w-full md:max-w-md pl-16 md:pl-0 md:px-4">
-                                <div className="bg-emerald-950 rounded-2xl border-4 border-emerald-900 p-5 shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                                <div className="bg-emerald-950 rounded-[12px] border-4 border-emerald-900 p-4 shadow-2xl relative overflow-hidden group hover:-translate-y-1 transition-transform">
                                     <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-600/20 rounded-full blur-3xl transition-all" />
-                                    <h3 className="font-extrabold text-emerald-100 flex items-center gap-2 mb-4 text-base md:text-lg">
-                                        <Trophy className="w-5 h-5 text-amber-400" /> Milestone Projects
+                                    <h3 className="font-extrabold text-emerald-100 flex items-center gap-2 mb-3 text-sm md:text-base">
+                                        <Trophy className="w-4 h-4 text-amber-400" /> Milestone Projects
                                     </h3>
-                                    <div className="space-y-3">
+                                    <div className="space-y-2.5">
                                         {phase.projects.map((projObj, i) => {
                                             const projName = typeof projObj === 'string' ? projObj : projObj.name || projObj.title || 'Project';
                                             return (
-                                              <div key={i} className="flex items-center justify-between bg-emerald-900/50 hover:bg-emerald-800 px-4 py-3.5 rounded-xl border border-emerald-700 cursor-pointer shadow-inner transition-colors" onClick={() => navigate("/dashboard")}>
+                                              <div key={i} className="flex items-center justify-between bg-emerald-900/50 hover:bg-emerald-800 px-3 py-2.5 rounded-lg border border-emerald-700 cursor-pointer shadow-inner transition-colors" onClick={() => navigate("/dashboard")}>
                                                   <span className="font-bold text-emerald-50 text-xs md:text-sm">{projName}</span>
-                                                  <ArrowRight className="w-4 h-4 text-emerald-400" />
+                                                  <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
                                               </div>
                                             )
                                         })}
