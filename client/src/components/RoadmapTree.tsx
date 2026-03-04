@@ -141,9 +141,9 @@ export default function RoadmapTree() {
       </button>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto pt-16 sm:pt-4">
+      <div className="max-w-5xl mx-auto pt-10 sm:pt-4">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border border-slate-200 relative overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100/50 rounded-full blur-3xl -mr-10 -mt-20"></div>
           <div className="flex flex-col md:flex-row items-center md:items-start justify-between relative z-10 gap-6">
             <div className="text-center md:text-left">
@@ -151,29 +151,29 @@ export default function RoadmapTree() {
                 <Sparkles className="w-4 h-4" />
                 <span>AI Generated Mode Tree</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-3 tracking-tight">{selectedRole}</h1>
-              <p className="text-slate-600 text-lg max-w-xl">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 tracking-tight">{selectedRole}</h1>
+              <p className="text-slate-600 text-base max-w-xl">
                 Follow this intelligently structured tree path to master your career goals
               </p>
             </div>
-            <div className="text-center md:text-right bg-slate-50 p-5 rounded-2xl border border-slate-100 shrink-0">
-              <p className="text-sm text-slate-500 font-bold uppercase tracking-widest mb-1">Total Effort</p>
-              <p className="text-3xl font-black text-emerald-600">~{totalDuration} {totalDuration > 50 ? 'wks' : 'mos'}</p>
+            <div className="text-center md:text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 shrink-0">
+              <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Effort</p>
+              <p className="text-2xl font-black text-emerald-600">~{totalDuration} {totalDuration > 50 ? 'wks' : 'mos'}</p>
             </div>
           </div>
         </div>
 
         {/* Roadmap Visual Structure */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-12 mb-8 overflow-x-auto border border-slate-200 relative">
-          <div className="min-w-[800px] py-8 relative">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 mb-6 overflow-x-auto border border-slate-200 relative">
+          <div className="min-w-[800px] py-6 relative">
             
             {/* Start Line connecting start button to phases */}
-            <div className="absolute top-24 left-[105px] bottom-24 w-1.5 bg-gradient-to-b from-emerald-200 via-emerald-300 to-emerald-200 hidden md:block rounded-full"></div>
+            <div className="absolute top-20 left-[93px] bottom-16 w-1.5 bg-gradient-to-b from-emerald-200 via-emerald-300 to-emerald-200 hidden md:block rounded-full"></div>
 
             {/* Start Button */}
-            <div className="flex justify-start pl-[28px] mb-16 relative z-10">
-              <div className="px-10 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-bold text-xl shadow-xl shadow-emerald-500/20 flex items-center gap-3">
-                <Target className="w-6 h-6" /> START YOUR JOURNEY
+            <div className="flex justify-start pl-[28px] mb-10 relative z-10">
+              <div className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-emerald-500/20 flex items-center gap-3">
+                <Target className="w-5 h-5" /> START YOUR JOURNEY
               </div>
             </div>
 
@@ -194,27 +194,27 @@ export default function RoadmapTree() {
               const projectsList = phase.projects?.map(p => typeof p === 'string' ? p : (p.name || p.title || 'Project')) || [];
 
               return (
-                <div key={phaseIndex} className="mb-20 relative z-10">
+                <div key={phaseIndex} className="mb-12 relative z-10">
                   {/* Phase Header */}
-                  <div className="flex items-center gap-6 mb-8 relative">
+                  <div className="flex items-center gap-5 mb-6 relative">
                     {/* Circle Node overlapping the continuous line */}
-                    <div className="absolute left-[77px] w-6 h-6 rounded-full bg-emerald-500 border-4 border-white shadow-md hidden md:block"></div>
+                    <div className="absolute left-[65px] w-5 h-5 rounded-full bg-emerald-500 border-[3.5px] border-white shadow-md hidden md:block"></div>
                     
-                    <div className="flex items-center gap-3 px-6 py-4 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl shadow-xl ml-8 relative z-10 overflow-hidden group">
+                    <div className="flex items-center gap-3 px-5 py-3 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl shadow-xl ml-8 relative z-10 overflow-hidden group">
                       <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center font-bold text-xl shadow-inner border border-emerald-400">
+                      <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner border border-emerald-400">
                         {phaseIndex + 1}
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold tracking-tight">{pTitle}</h3>
-                        <p className="text-sm text-emerald-400 font-semibold">{pDuration}</p>
+                        <h3 className="text-xl font-bold tracking-tight">{pTitle}</h3>
+                        <p className="text-xs text-emerald-400 font-semibold">{pDuration}</p>
                       </div>
                     </div>
                     <div className="flex-1 h-0.5 bg-gradient-to-r from-slate-200 to-transparent"></div>
                   </div>
 
                   {/* Content Grid - Staggered Layout */}
-                  <div className="space-y-8 md:pl-36 pl-8">
+                  <div className="space-y-6 md:pl-[120px] pl-8">
                     {/* Skills Section */}
                     {skillsList.length > 0 && (
                       <div>
@@ -282,28 +282,28 @@ export default function RoadmapTree() {
             })}
 
             {/* End Badge */}
-            <div className="flex justify-start pl-[53px] mt-24 relative z-10 hidden md:flex">
-              <div className="px-10 py-5 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl font-black text-2xl shadow-xl flex items-center gap-4 relative overflow-hidden">
+            <div className="flex justify-start pl-[41px] mt-16 relative z-10 hidden md:flex">
+              <div className="px-8 py-4 bg-slate-900 border-2 border-slate-800 text-white rounded-2xl font-black text-xl shadow-xl flex items-center gap-3 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/30 to-teal-600/30"></div>
-                <Trophy className="w-8 h-8 text-amber-400 relative z-10" />
+                <Trophy className="w-6 h-6 text-amber-400 relative z-10" />
                 <span className="bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent relative z-10">CAREER READY!</span>
-                <Zap className="w-8 h-8 text-amber-400 relative z-10" />
+                <Zap className="w-6 h-6 text-amber-400 relative z-10" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Confirm Button */}
-        <div className="bg-white rounded-2xl shadow-xl p-10 text-center border border-slate-200">
-          <h3 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Ready to Start Your Journey?</h3>
-          <p className="text-slate-600 mb-8 max-w-xl mx-auto text-lg">
+        <div className="bg-white rounded-2xl shadow-xl p-6 text-center border border-slate-200">
+          <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Ready to Start Your Journey?</h3>
+          <p className="text-slate-600 mb-6 max-w-xl mx-auto text-base">
             Return to the main flowchart view to start checking off these milestones directly.
           </p>
           <button
             onClick={handleConfirmRoadmap}
-            className="h-14 px-12 bg-slate-900 border-2 border-slate-800 hover:bg-slate-800 text-white text-lg font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all inline-flex items-center gap-2 group"
+            className="h-12 px-10 bg-slate-900 border-2 border-slate-800 hover:bg-slate-800 text-white text-base font-bold rounded-2xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all inline-flex items-center gap-2 group"
           >
-            <Sparkles className="w-5 h-5 text-emerald-400 group-hover:rotate-12 transition-transform" />
+            <Sparkles className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
             Switch to Flowchart Mode
           </button>
         </div>
