@@ -149,7 +149,7 @@ export default function RoadmapTree() {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-full text-sm mb-4 shadow-sm">
                 <Sparkles className="w-4 h-4" />
-                <span>AI Generated Mode Tree</span>
+                <span>FindStreak AI Generated Mode Tree</span>
               </div>
               <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 tracking-tight">{selectedRole}</h1>
               <p className="text-slate-600 text-base max-w-xl">

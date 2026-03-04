@@ -490,7 +490,7 @@ export default function LearningRoadmap() {
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>AI Personalized Learning Path</span>
+                  <span>FindStreak AI Personalized Path</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">Your Learning Roadmap</h1>
                 <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
