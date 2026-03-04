@@ -558,15 +558,37 @@ export default function LearningRoadmap() {
               <Button onClick={handleDownloadRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Download PDF</span>
               </Button>
-              <Button onClick={() => navigate("/resources")} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="Browse Free Resources">
-                <BookOpen className="w-5 h-5 sm:w-4 sm:h-4" />
-              </Button>
-              <Button onClick={() => navigate("/ai-assistant", { state: { role, roadmap } })} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="Get Advanced AI Learning Help">
-                <MessageSquare className="w-5 h-5 sm:w-4 sm:h-4" />
-              </Button>
-              <Button onClick={handleOpenRoadmapTree} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="View Mode Tree">
-                <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
-              </Button>
+              
+              <div className="relative group flex items-center">
+                <Button onClick={() => navigate("/resources")} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                  <BookOpen className="w-5 h-5 sm:w-4 sm:h-4" />
+                </Button>
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all whitespace-nowrap pointer-events-none z-50">
+                  Browse Free Resources
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
+                </div>
+              </div>
+
+              <div className="relative group flex items-center">
+                <Button onClick={() => navigate("/ai-assistant", { state: { role, roadmap } })} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                  <MessageSquare className="w-5 h-5 sm:w-4 sm:h-4" />
+                </Button>
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all whitespace-nowrap pointer-events-none z-50">
+                  Advanced AI Help
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
+                </div>
+              </div>
+
+              <div className="relative group flex items-center">
+                <Button onClick={handleOpenRoadmapTree} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                  <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
+                </Button>
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all whitespace-nowrap pointer-events-none z-50">
+                  View Mode Tree
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
