@@ -432,10 +432,6 @@ export default function LearningRoadmap() {
     navigate("/roadmap-tree", { state: { role, roadmap } });
   };
 
-  const handleOpenAIAssistant = () => {
-    navigate("/ai-assistant", { state: { role, roadmap } });
-  };
-
   const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string, subtopics: string[] | null) => {
     e.stopPropagation();
     navigate("/roadmap-guide", { 
@@ -562,7 +558,7 @@ export default function LearningRoadmap() {
               <Button onClick={handleDownloadRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <Download className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Download PDF</span>
               </Button>
-              <Button onClick={handleOpenRoadmapTree} variant="outline" className="w-full sm:w-auto flex items-center justify-center h-10 sm:h-9 px-3 sm:px-3 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="View Roadmap Tree">
+              <Button onClick={handleOpenRoadmapTree} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" title="View Mode Tree">
                 <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
               </Button>
             </div>
@@ -713,7 +709,7 @@ export default function LearningRoadmap() {
         </div>
         {/* Bottom Actions */}
         <div className="flex flex-col sm:flex-row gap-3 mt-5">
-          <Button onClick={handleOpenAIAssistant} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-sm transition-all rounded-lg text-sm">
+          <Button onClick={() => navigate("/ai-assistant", { state: { role, roadmap } })} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 shadow-sm transition-all rounded-lg text-sm">
             <MessageSquare className="w-4 h-4" /> Get Advanced AI Learning Help
           </Button>
           <Button onClick={() => navigate("/resources")} variant="outline" className="h-10 px-5 border-emerald-300 hover:bg-emerald-50 flex items-center gap-2 rounded-lg text-emerald-800 font-semibold shadow-sm text-sm">
