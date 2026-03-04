@@ -12,8 +12,6 @@ import {
   GraduationCap,
   Code,
   Sparkles,
-  X,
-  ClipboardList,
   Wrench,
   Lightbulb,
   Target,
@@ -63,7 +61,7 @@ export default function ResourcesHub() {
         const data = await response.json();
         if (data.success) {
           // Map backend 'resource_type' to frontend 'type'
-          const mappedResources = data.resources.map((r: any) => ({
+          const mappedResources = data.resources.map((r: Resource & { resource_type?: string }) => ({
             ...r,
             type: r.resource_type || r.type
           }));
@@ -98,7 +96,7 @@ export default function ResourcesHub() {
       });
       const data = await response.json();
       if (data.success) {
-         const mappedResources = data.resources.map((r: any) => ({
+         const mappedResources = data.resources.map((r: Resource & { resource_type?: string }) => ({
             ...r,
             type: r.resource_type || r.type
           }));
@@ -273,9 +271,6 @@ export default function ResourcesHub() {
               </div>
             </div>
           </div>
-
-          </div>
-
           {/* Search */}
           <div className="flex gap-2 mb-3">
             <div className="relative flex-1">
