@@ -54,29 +54,40 @@ export default function Profile() {
     return () => es.close();
   }, [user?.id]);
 
+  // Dynamically calculate metrics from actual workspace local storage
+  const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${activeRole}`);
+  const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
+  
+  const totalProjects = projectsData.length > 0 ? projectsData.length : 0;
+  const projectsCompleted = projectsData.filter((p: any) => p.status === 'done').length;
+
+  const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
+  const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
+  const skillsMastered = roadmapProgress.length;
+
   // Mock user data synced with active workspace
   const userData = {
-    name: user?.username || "John Doe",
-    email: user?.email || "john.doe@example.com",
+    name: user?.username || "Guest User",
+    email: user?.email || "No email provided",
     role: activeRole,
     location: "Global",
     joinDate: "Recently",
-    bio: `Passionate about building amazing web applications and learning new technologies in the ${activeRole} space.`,
-    skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 10)) })),
+    bio: `Tracking career progress and mastering skills for ${activeRole}.`,
+    skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
     stats: {
-      projectsCompleted: 8,
-      totalProjects: 12,
+      projectsCompleted: projectsCompleted,
+      totalProjects: totalProjects || 1, // prevent division by zero
       learningStreak: liveStreak,
-      totalLearningHours: 240,
-      achievementsUnlocked: 24,
-      skillsMastered: 6,
+      totalLearningHours: skillsMastered * 2 + liveStreak * 1.5,
+      achievementsUnlocked: Math.floor(skillsMastered / 3) + (projectsCompleted > 0 ? 1 : 0),
+      skillsMastered: skillsMastered,
     },
     recentActivity: [
-      { action: "Completed", item: "Weather Dashboard Project", date: "2 days ago", icon: Trophy },
-      { action: "Started", item: "E-commerce Store Project", date: "3 days ago", icon: Code },
-      { action: "Achieved", item: "15-Day Learning Streak", date: "5 days ago", icon: Sparkles },
-      { action: "Mastered", item: "React Hooks Skill", date: "1 week ago", icon: Target },
-    ],
+      ...(projectsCompleted > 0 ? [{ action: "Completed", item: `${projectsCompleted} Project(s)`, date: "Recently", icon: Trophy }] : []),
+      ...(skillsMastered > 0 ? [{ action: "Mastered", item: `${skillsMastered} technical topic(s)`, date: "Recently", icon: Target }] : []),
+      ...(liveStreak > 0 ? [{ action: "Achieved", item: `${liveStreak}-Day Streak`, date: "Today", icon: Sparkles }] : []),
+      { action: "Started", item: `Career Path context as ${activeRole}`, date: "Recently", icon: Code }
+    ].slice(0, 4),
   };
 
   const completionRate = (userData.stats.projectsCompleted / userData.stats.totalProjects) * 100;
