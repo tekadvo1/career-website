@@ -8,7 +8,9 @@ import {
   Clock,
   TrendingUp,
   Filter,
-  Flame
+  Flame,
+  Radio,
+  Wifi
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -30,7 +32,9 @@ export default function MyProjects() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [isLive, setIsLive] = useState(false);
+  const [lastSync, setLastSync] = useState(new Date());
+
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   
@@ -40,27 +44,43 @@ export default function MyProjects() {
       return;
     }
 
-    const fetchProjects = async () => {
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+
+    es.addEventListener('snapshot', (e: MessageEvent) => {
       try {
-        const response = await fetch(`/api/role/my-projects?userId=${user.id}`);
-        const data = await response.json();
-        if (data.success && data.projects) {
-          // Parse JSON fields if they come as strings
-          const parsedProjects = data.projects.map((p: any) => ({
+        const snap = JSON.parse(e.data);
+        if (snap && snap.projects) {
+          const parsedProjects = snap.projects.map((p: any) => ({
             ...p,
             project_data: typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data,
             progress_data: typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data,
           }));
           setProjects(parsedProjects);
+          setLoading(false);
+          setIsLive(true);
+          setLastSync(new Date());
         }
       } catch (error) {
-        console.error('Failed to fetch projects:', error);
-      } finally {
-        setLoading(false);
+        console.error('Failed to parse snapshot:', error);
       }
-    };
+    });
 
-    fetchProjects();
+    es.addEventListener('project_update', (_e: MessageEvent) => {
+      try {
+        fetch(`/api/realtime/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.id }),
+        });
+      } catch { /* ignore */ }
+    });
+
+    es.onopen = () => setIsLive(true);
+    es.onerror = () => setIsLive(false);
+
+    return () => {
+      es.close();
+    };
   }, [user, navigate]);
 
   // Aggregate stats
@@ -165,8 +185,18 @@ export default function MyProjects() {
           <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center gap-4">
             <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">My Projects</h1>
-              <p className="text-slate-500 text-sm mt-0.5">Track and manage all your learning projects</p>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-bold text-slate-800">My Projects</h1>
+                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${isLive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                  {isLive
+                    ? <><Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE</>
+                    : <><Wifi className="w-2.5 h-2.5" /> Connecting…</>}
+                </span>
+              </div>
+              <p className="text-slate-500 text-sm mt-0.5">
+                Track and manage all your learning projects
+                {!loading && <span className="text-slate-400 ml-2">· synced {lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+              </p>
             </div>
           </div>
         </div>
