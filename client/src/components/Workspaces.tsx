@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2, UserCircle } from 'lucide-react';
+import { Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2, UserCircle, X, UploadCloud, FileText } from 'lucide-react';
+import { useRef } from 'react';
 
 interface Workspace {
   id: number;
@@ -23,6 +24,10 @@ export default function Workspaces() {
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('');
   
+  const [showModal, setShowModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [switchingTo, setSwitchingTo] = useState<number | null>(null);
 
   useEffect(() => {
@@ -85,16 +90,39 @@ export default function Workspaces() {
     
     try {
       setIsCreating(true);
+
+      let finalRole = newRole;
+      
+      // If a resume is uploaded, we could optionally hit /api/resume/analyze here first
+      // to auto-detect the best role or build a roadmap context. For now, we will
+      // pass the user's manually typed/selected role to the workspace creator.
+      if (selectedFile) {
+         const formData = new FormData();
+         formData.append('resume', selectedFile);
+         formData.append('userId', user?.id?.toString() || "");
+         
+         const analyzeRes = await fetch('/api/resume/analyze', {
+            method: 'POST',
+            body: formData
+         });
+         const analyzeData = await analyzeRes.json();
+         if (analyzeData.success && analyzeData.analysis?.suggestedRole) {
+            // we could override role here if we wanted dynamically: finalRole = analyzeData.analysis.suggestedRole
+         }
+      }
+
       const res = await fetch('/api/workspaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, name: newName, role: newRole })
+        body: JSON.stringify({ userId: user?.id, name: newName, role: finalRole })
       });
       const data = await res.json();
       if (data.success) {
         setWorkspaces([data.workspace, ...workspaces]);
         setNewName('');
         setNewRole('');
+        setSelectedFile(null);
+        setShowModal(false);
       }
     } catch (err) {
       console.error("Failed to create workspace");
@@ -161,6 +189,119 @@ export default function Workspaces() {
     <div className="min-h-screen bg-slate-50 flex">
       <div className="z-50"><Sidebar activePage="workspaces" /></div>
       
+      {/* Create Workspace Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+               <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                   <h2 className="text-2xl font-bold text-slate-900">Create New Workspace</h2>
+                   <button onClick={() => setShowModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                       <X className="w-5 h-5" />
+                   </button>
+               </div>
+               
+               <div className="p-6 overflow-y-auto max-h-[70vh]">
+                   <div className="space-y-6">
+                       <div>
+                           <label className="block text-sm font-semibold text-slate-700 mb-2">Workspace Name *</label>
+                           <input 
+                              type="text" 
+                              placeholder="e.g., Data Science Journey, Frontend Career Path" 
+                              className="w-full text-base p-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                              value={newName}
+                              onChange={e => setNewName(e.target.value)}
+                           />
+                       </div>
+
+                       <div>
+                           <label className="block text-sm font-semibold text-slate-700 mb-2">Target Role *</label>
+                           <input 
+                              type="text"
+                              placeholder="e.g. Software Engineer, Data Scientist"
+                              className="w-full text-base p-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-shadow text-slate-700"
+                              value={newRole}
+                              onChange={e => setNewRole(e.target.value)}
+                           />
+                           <div className="mt-2 text-xs text-slate-500 font-medium flex items-center gap-1">
+                               <Sparkles className="w-3 h-3 text-indigo-500" /> AI will automatically adapt the roadmap to your typed role.
+                           </div>
+                       </div>
+
+                       <div>
+                           <label className="block text-sm font-semibold text-slate-700 mb-2">Resume/CV (Optional)</label>
+                           <input 
+                             type="file" 
+                             accept=".pdf,.doc,.docx" 
+                             ref={fileInputRef} 
+                             className="hidden" 
+                             onChange={(e) => {
+                                 if (e.target.files && e.target.files.length > 0) {
+                                     setSelectedFile(e.target.files[0]);
+                                 }
+                             }} 
+                           />
+                           
+                           <div 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer bg-slate-50"
+                           >
+                               {selectedFile ? (
+                                  <div className="flex flex-col items-center text-indigo-600">
+                                     <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
+                                         <FileText className="w-6 h-6" />
+                                     </div>
+                                     <span className="font-bold text-sm">{selectedFile.name}</span>
+                                     <span className="text-xs mt-1 opacity-70">Click to change format</span>
+                                  </div>
+                               ) : (
+                                  <div className="flex flex-col items-center">
+                                     <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
+                                         <UploadCloud className="w-6 h-6 text-indigo-600" />
+                                     </div>
+                                     <span className="font-bold text-slate-700 text-sm">Click to upload or drag and drop</span>
+                                     <span className="text-xs text-slate-500 mt-1">PDF, DOC, or DOCX (Max 10MB)</span>
+                                  </div>
+                               )}
+                           </div>
+                           <p className="text-xs text-slate-500 mt-2">Upload your resume for personalized skill gap analysis and learning recommendations</p>
+                       </div>
+
+                       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
+                           <div className="flex items-center gap-2 mb-3">
+                               <Sparkles className="w-5 h-5 text-indigo-600" />
+                               <h3 className="font-bold text-indigo-900 text-sm">What happens next?</h3>
+                           </div>
+                           <ul className="text-xs font-medium text-indigo-800 space-y-2">
+                               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" /> AI will analyze your selected role and resume (if provided)</li>
+                               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" /> Get personalized career analysis and skill gap identification</li>
+                               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" /> Receive custom learning roadmap and project recommendations</li>
+                               <li className="flex items-start gap-2"><div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0" /> Track your progress independently for each workspace</li>
+                           </ul>
+                       </div>
+                   </div>
+               </div>
+               
+               <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
+                   <button 
+                      onClick={() => setShowModal(false)}
+                      disabled={isCreating}
+                      className="px-6 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-200 transition-colors border border-slate-300 bg-white"
+                   >
+                       Cancel
+                   </button>
+                   <button 
+                      onClick={handleCreate}
+                      disabled={!newName || !newRole || isCreating}
+                      className="px-6 py-2.5 rounded-lg font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md shadow-indigo-500/20"
+                   >
+                       {isCreating ? <Sparkles className="w-4 h-4 animate-pulse" /> : <Plus className="w-4 h-4" />}
+                       Create Workspace
+                   </button>
+               </div>
+           </div>
+        </div>
+      )}
+      
       <div className="flex-1 overflow-y-auto p-4 md:p-8 relative">
         <div className="max-w-5xl mx-auto mt-12 md:mt-2">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
@@ -182,39 +323,17 @@ export default function Workspaces() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Create New Workspace Card */}
-                <div className="bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-emerald-50/50 transition-colors p-6 flex flex-col items-center justify-center text-center min-h-[250px]">
-                    <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 mb-4 shadow-inner">
+                {/* Create New Workspace Card Trigger */}
+                <button 
+                    onClick={() => setShowModal(true)}
+                    className="bg-white rounded-2xl border-2 border-dashed border-slate-300 hover:border-indigo-500 hover:bg-indigo-50/50 transition-colors p-6 flex flex-col items-center justify-center text-center min-h-[250px] group"
+                >
+                    <div className="w-14 h-14 bg-slate-100 group-hover:bg-indigo-100 group-hover:text-indigo-600 rounded-full flex items-center justify-center text-slate-500 mb-4 shadow-inner transition-colors">
                         <Plus className="w-6 h-6" />
                     </div>
                     <h3 className="text-lg font-bold text-slate-800 mb-2">New Workspace</h3>
-                    <p className="text-sm text-slate-500 mb-6">Create a new split profile to track a different job title or career objective.</p>
-                    
-                    <div className="w-full flex flex-col gap-3">
-                        <input 
-                           type="text" 
-                           placeholder="Workspace Name (e.g. Dream Job)" 
-                           className="w-full text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           value={newName}
-                           onChange={e => setNewName(e.target.value)}
-                        />
-                        <input 
-                           type="text" 
-                           placeholder="Target Role (e.g. Data Scientist)" 
-                           className="w-full text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           value={newRole}
-                           onChange={e => setNewRole(e.target.value)}
-                        />
-                        <button 
-                           onClick={handleCreate}
-                           disabled={!newName || !newRole || isCreating}
-                           className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 mt-1"
-                        >
-                           {isCreating ? <Sparkles className="w-4 h-4 animate-pulse" /> : <Plus className="w-4 h-4" />}
-                           Create Profile Object
-                        </button>
-                    </div>
-                </div>
+                    <p className="text-sm text-slate-500 px-4">Create a new split profile to track a different job title or career objective.</p>
+                </button>
 
                 {/* Loading State */}
                 {loading && (
