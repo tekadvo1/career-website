@@ -1,0 +1,234 @@
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  answerIndex: number;
+  explanation: string;
+}
+
+export default function QuizGame() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Default fallback context
+  const [role, setRole] = useState(location.state?.role || "Software Engineer");
+  const [topic] = useState(location.state?.topic || "Full Stack Basics");
+  
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  
+  const [loading, setLoading] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [finished, setFinished] = useState(false);
+  
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+
+  useEffect(() => {
+    // Attempt to load role from lastRoleAnalysis
+    if (!location.state?.role) {
+      try {
+        const saved = localStorage.getItem('lastRoleAnalysis');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.role) setRole(parsed.role);
+        }
+      } catch (e) {}
+    }
+  }, [location.state?.role]);
+
+  const fetchQuiz = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/ai/generate-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, topic })
+      });
+      const data = await res.json();
+      if (data.questions && data.questions.length > 0) {
+        setQuestions(data.questions);
+        setStarted(true);
+      } else {
+        alert("Failed to build quiz map. Please try again later.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to contact the Quiz Master.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelect = (idx: number) => {
+    if (showExplanation) return; // Prevent multiple clicks
+    setSelectedOption(idx);
+    setShowExplanation(true);
+    
+    if (idx === questions[currentIdx].answerIndex) {
+      setScore(s => s + 100);
+      
+      // Update Real-Time XP tracking by saving to DB (optional: mock here by just awarding points)
+    }
+  };
+
+  const handleNext = () => {
+    if (currentIdx + 1 < questions.length) {
+      setCurrentIdx(i => i + 1);
+      setSelectedOption(null);
+      setShowExplanation(false);
+    } else {
+      setFinished(true);
+    }
+  };
+
+  const currentQ = questions[currentIdx];
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex">
+      <div className="z-50"><Sidebar activePage="quiz-game" /></div>
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center relative">
+         {/* Background Elements */}
+         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full"></div>
+             <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/20 blur-[120px] rounded-full"></div>
+         </div>
+
+         <div className="max-w-3xl w-full z-10">
+            {!started && !finished && (
+               <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-8 border border-slate-700 shadow-2xl text-center">
+                   <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30">
+                       <Gamepad2 className="w-10 h-10 text-white" />
+                   </div>
+                   <h1 className="text-3xl font-extrabold text-white mb-2">FindStreak Arcade</h1>
+                   <p className="text-slate-400 mb-8 max-w-lg mx-auto">
+                      Test your knowledge on <span className="text-indigo-400 font-bold">{topic}</span>.
+                      Earn XP automatically synced to your FindStreak profile and level up your {role} journey.
+                   </p>
+                   
+                   <div className="flex flex-col md:flex-row gap-4 justify-center">
+                     <button 
+                       onClick={fetchQuiz} 
+                       disabled={loading}
+                       className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                     >
+                       {loading ? <Sparkles className="w-5 h-5 animate-pulse" /> : <Zap className="w-5 h-5 text-amber-300" />}
+                       {loading ? 'Generating Level...' : 'Start Game'}
+                     </button>
+                   </div>
+               </div>
+            )}
+
+            {started && !finished && currentQ && (
+               <div>
+                  <div className="flex items-center justify-between mb-6">
+                      <div className="bg-slate-800 border border-slate-700 px-4 py-2 rounded-lg text-emerald-400 font-black tracking-widest text-sm flex items-center gap-2">
+                          SCORE: {score} <Trophy className="w-4 h-4" />
+                      </div>
+                      <div className="text-slate-400 font-bold text-sm">
+                          {currentIdx + 1} / {questions.length}
+                      </div>
+                  </div>
+
+                  <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 md:p-10 border border-slate-700 shadow-2xl mb-6">
+                      <h2 className="text-xl md:text-2xl font-bold text-white mb-8 leading-relaxed">
+                          {currentQ.question}
+                      </h2>
+
+                      <div className="grid grid-cols-1 gap-4">
+                          {currentQ.options.map((opt, i) => {
+                              const isSelected = selectedOption === i;
+                              const isCorrectAnswer = showExplanation && i === currentQ.answerIndex;
+                              const isWrongSelection = showExplanation && isSelected && !isCorrectAnswer;
+                              
+                              let btnClass = "border-slate-600 bg-slate-700/50 hover:bg-slate-700 text-slate-300";
+                              if (showExplanation) {
+                                  if (isCorrectAnswer) btnClass = "border-emerald-500 bg-emerald-500/20 text-emerald-300";
+                                  else if (isWrongSelection) btnClass = "border-red-500 bg-red-500/20 text-red-300";
+                                  else btnClass = "border-slate-700 bg-slate-800/30 text-slate-500 opacity-50";
+                              } else if (isSelected) {
+                                  btnClass = "border-indigo-500 bg-indigo-500/20 text-indigo-300";
+                              }
+
+                              return (
+                                  <button
+                                      key={i}
+                                      onClick={() => handleSelect(i)}
+                                      disabled={showExplanation}
+                                      className={`w-full text-left p-4 rounded-xl border-2 transition-all font-medium text-sm md:text-base flex items-center gap-4 ${btnClass}`}
+                                  >
+                                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold flex-shrink-0 ${showExplanation && isCorrectAnswer ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                                          {String.fromCharCode(65 + i)}
+                                      </div>
+                                      {opt}
+                                  </button>
+                              );
+                          })}
+                      </div>
+
+                      {showExplanation && (
+                          <div className={`mt-8 p-6 rounded-xl border ${selectedOption === currentQ.answerIndex ? 'bg-emerald-900/30 border-emerald-800/50' : 'bg-red-900/30 border-red-800/50'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
+                             <h3 className={`flex items-center gap-2 font-bold mb-2 ${selectedOption === currentQ.answerIndex ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {selectedOption === currentQ.answerIndex ? <ShieldCheck className="w-5 h-5"/> : <AlertCircle className="w-5 h-5"/>}
+                                {selectedOption === currentQ.answerIndex ? 'Correct!' : 'Incorrect'}
+                             </h3>
+                             <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                                 {currentQ.explanation}
+                             </p>
+                             
+                             <div className="mt-6 flex justify-end">
+                                 <button 
+                                     onClick={handleNext}
+                                     className="px-6 py-3 bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-lg transition-colors flex items-center gap-2"
+                                 >
+                                     {currentIdx + 1 === questions.length ? 'Finish Level' : 'Next Question'} <ArrowRight className="w-4 h-4" />
+                                 </button>
+                             </div>
+                          </div>
+                      )}
+                  </div>
+               </div>
+            )}
+
+            {finished && (
+               <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-10 border border-slate-700 shadow-2xl text-center">
+                   <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/40">
+                       <Trophy className="w-12 h-12 text-white" />
+                   </div>
+                   <h2 className="text-4xl font-black text-white mb-2">Level Cleared!</h2>
+                   <p className="text-slate-400 mb-8 max-w-md mx-auto">
+                       You scored <span className="text-amber-400 font-bold">{score} XP</span> on this quiz. Keep pushing forward!
+                   </p>
+
+                   <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                       <button 
+                         onClick={() => { setStarted(false); setFinished(false); setScore(0); setCurrentIdx(0); }}
+                         className="px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold rounded-xl transition-colors"
+                       >
+                         Play Again
+                       </button>
+                       <button 
+                         onClick={() => navigate('/roadmap')}
+                         className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors"
+                       >
+                         Back to Roadmap
+                       </button>
+                   </div>
+               </div>
+            )}
+         </div>
+      </div>
+    </div>
+  );
+}
+
+// Temporary inline trophy icon fallback since it wasn't imported from lucide
+function Trophy(props: any) {
+  return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>;
+}

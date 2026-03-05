@@ -246,8 +246,48 @@ router.post('/chat-history', async (req, res) => {
         
         res.json({ success: true, message: 'Chat history synchronized successfully' });
     } catch (err) {
-        console.error('Error pushing chat sync:', err);
         res.status(500).json({ error: 'Failed to synchronize chats' });
+    }
+});
+
+// POST /api/ai/generate-quiz - Generates real-time quizzes based on role and topic
+router.post('/generate-quiz', async (req, res) => {
+    try {
+        const { role, topic } = req.body;
+        
+        let systemPrompt = `You are an expert ${role || 'Software Engineering'} Technical Interviewer and Game Master.
+        
+        The user wants to play a trivia game to test their knowledge on the topic: "${topic || 'General coding'}".
+        You MUST generate exactly 5 multiple-choice questions. 
+        Make them fun, engaging, and suitable for someone actively learning the topic.
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+          "questions": [
+            {
+              "question": "The question text?",
+              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+              "answerIndex": 0, // In this example, "Option 1" is correct (0-indexed)
+              "explanation": "Why this is correct."
+            }
+          ]
+        }`;
+
+        const requestOptions = {
+            model: "gpt-4o-mini",
+            messages: [{ role: "system", content: systemPrompt }],
+            max_tokens: 1500,
+            temperature: 0.8,
+            response_format: { type: "json_object" }
+        };
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        res.json(JSON.parse(reply));
+    } catch (error) {
+        console.error('Quiz Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate quiz' });
     }
 });
 

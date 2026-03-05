@@ -15,11 +15,11 @@ import AILearningAssistant from './components/AILearningAssistant';
 import Profile from './components/Profile';
 import WorkflowLifecycle from './components/WorkflowLifecycle';
 import ProjectWorkspace from './components/ProjectWorkspace';
-import Missions from './components/Missions';
 import Achievements from './components/Achievements';
 import MyProjects from './components/MyProjects';
 import RoadmapGuideView from './components/RoadmapGuideView';
 import RoadmapTree from './components/RoadmapTree';
+import QuizGame from './components/QuizGame';
 
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -71,7 +71,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/workflow-lifecycle" element={<WorkflowLifecycle />} />
           <Route path="/project-workspace" element={<ProjectWorkspace />} />
-          <Route path="/missions" element={<Missions />} />
+          <Route path="/quiz-game" element={<QuizGame />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/my-projects" element={<MyProjects />} />
           <Route path="/roadmap-guide" element={<RoadmapGuideView />} />
