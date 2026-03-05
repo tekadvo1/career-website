@@ -77,6 +77,7 @@ const aiRoutes = require('./routes/aiRoutes');
 const missionRoutes = require('./routes/missionRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const realtimeRoutes = require('./routes/realtimeRoutes');
+const workspaceRoutes = require('./routes/workspaceRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/resume', resumeRoutes);
@@ -86,6 +87,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/missions', missionRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/realtime', realtimeRoutes);
+app.use('/api/workspaces', workspaceRoutes);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {

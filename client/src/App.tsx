@@ -20,6 +20,7 @@ import MyProjects from './components/MyProjects';
 import RoadmapGuideView from './components/RoadmapGuideView';
 import RoadmapTree from './components/RoadmapTree';
 import QuizGame from './components/QuizGame';
+import Workspaces from './components/Workspaces';
 
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -72,6 +73,7 @@ function App() {
           <Route path="/workflow-lifecycle" element={<WorkflowLifecycle />} />
           <Route path="/project-workspace" element={<ProjectWorkspace />} />
           <Route path="/quiz-game" element={<QuizGame />} />
+          <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/achievements" element={<Achievements />} />
           <Route path="/my-projects" element={<MyProjects />} />
           <Route path="/roadmap-guide" element={<RoadmapGuideView />} />

@@ -5,6 +5,7 @@ import {
   Menu,
   User,
   Search,
+  Briefcase,
   Target,
   BarChart3,
   LayoutDashboard,
@@ -46,6 +47,13 @@ const navItems: NavItem[] = [
     subtitle: 'AI career insights',
     icon: <Search className="w-5 h-5 text-emerald-600" />,
     route: '/role-analysis',
+    badge: 'NEW',
+  },
+  {
+    label: 'Career Workspaces',
+    subtitle: 'Explore multiple careers',
+    icon: <Briefcase className="w-5 h-5 text-emerald-600" />,
+    route: '/workspaces',
     badge: 'NEW',
   },
   {
