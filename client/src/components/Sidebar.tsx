@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X,
@@ -16,6 +16,7 @@ import {
   Wrench,
   LogOut,
   Code,
+  Zap,
 } from 'lucide-react';
 
 interface NavItem {
@@ -112,8 +113,35 @@ const navItems: NavItem[] = [
 
 export default function Sidebar({ activePage }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [xp, setXp] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  useEffect(() => {
+    if (!user) return;
+    
+    // Connect to global real-time UI stream for XP/Levels
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    
+    const handleSnapshot = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.totalXP !== undefined) {
+          setXp(data.totalXP);
+        }
+      } catch(err) {}
+    };
+
+    es.addEventListener('snapshot', handleSnapshot);
+    es.addEventListener('refresh', handleSnapshot); // For broadcast notify pushes
+
+    return () => {
+      es.close();
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -237,6 +265,30 @@ export default function Sidebar({ activePage }: SidebarProps) {
               </button>
             );
           })}
+        </div>
+
+        {/* Global Real-Time XP Module */}
+        <div className="mx-4 mt-2 mb-2 p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg relative overflow-hidden group shrink-0">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-white/20 transition-all duration-500"></div>
+          <div className="flex items-center justify-between mb-2 relative z-10">
+             <div className="flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-amber-300 fill-amber-300 animate-[pulse_2s_ease-in-out_infinite]" />
+                <span className="font-extrabold text-[13px] tracking-tight text-white shadow-sm">Level {Math.floor(xp / 100) + 1}</span>
+             </div>
+             <span className="text-[9px] font-black px-1.5 py-0.5 bg-white/20 backdrop-blur-md rounded shadow-inner uppercase tracking-wider">
+                XP {xp}
+             </span>
+          </div>
+          <div className="flex justify-between items-end mb-1.5 relative z-10">
+            <p className="text-[10px] text-indigo-100 font-medium">To next level:</p>
+            <p className="text-[10px] font-bold text-amber-300">{100 - (xp % 100)}</p>
+          </div>
+          <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden shadow-inner relative z-10">
+             <div 
+               className="bg-gradient-to-r from-amber-300 to-amber-500 h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(251,191,36,0.5)]"
+               style={{ width: `${Math.max(xp % 100, 2)}%` }} // ensure visible sliver
+             ></div>
+          </div>
         </div>
 
         {/* Logout Row */}
