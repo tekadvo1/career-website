@@ -10,7 +10,9 @@ import {
   Filter,
   Flame,
   Radio,
-  Wifi
+  Wifi,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -34,6 +36,7 @@ export default function MyProjects() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLive, setIsLive] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
+  const [zoom, setZoom] = useState(0.85);
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -201,7 +204,32 @@ export default function MyProjects() {
           </div>
         </div>
 
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 pb-12">
+        {/* Zoom Controls */}
+        <div className="fixed top-24 right-6 md:right-10 z-40 flex flex-col gap-2 bg-white/60 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 shadow-sm shadow-slate-200">
+          <button 
+            onClick={() => setZoom(z => Math.min(z + 0.1, 1.5))}
+            className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-indigo-600"
+            title="Zoom In"
+          >
+            <ZoomIn className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={() => setZoom(1)}
+            className="bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-indigo-600 flex items-center justify-center font-bold text-[10px] w-9 h-9 sm:w-auto sm:h-9 sm:px-2"
+            title="Reset Zoom"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button 
+            onClick={() => setZoom(z => Math.max(z - 0.1, 0.4))}
+            className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-indigo-600"
+            title="Zoom Out"
+          >
+            <ZoomOut className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 pb-12 transition-all duration-300" style={{ zoom } as React.CSSProperties}>
 
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
              <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500">
