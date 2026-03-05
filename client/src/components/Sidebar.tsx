@@ -5,7 +5,6 @@ import {
   Menu,
   User,
   Search,
-  Briefcase,
   Target,
   BarChart3,
   LayoutDashboard,
@@ -50,13 +49,6 @@ const navItems: NavItem[] = [
     badge: 'NEW',
   },
   {
-    label: 'Career Workspaces',
-    subtitle: 'Explore multiple careers',
-    icon: <Briefcase className="w-5 h-5 text-emerald-600" />,
-    route: '/missions',
-    badge: 'NEW',
-  },
-  {
     label: 'My Learning Progress',
     subtitle: 'Track your roadmap',
     icon: <Target className="w-5 h-5 text-emerald-600" />,
@@ -85,7 +77,7 @@ const navItems: NavItem[] = [
     label: 'Quiz & Games',
     subtitle: 'Play learning games',
     icon: <Gamepad2 className="w-5 h-5 text-emerald-600" />,
-    route: '/missions',
+    route: '/quiz-game',
     badge: 'NEW',
   },
   {
