@@ -38,8 +38,29 @@ export default function Workspaces() {
       setLoading(true);
       const res = await fetch(`/api/workspaces?userId=${user?.id}`);
       const data = await res.json();
+      let fetchedWorkspaces = data.workspaces || [];
+      
+      // Auto-migrate the original onboarding goal if it's not saved
+      const last = localStorage.getItem('lastRoleAnalysis');
+      if (last) {
+        try {
+          const parsed = JSON.parse(last);
+          if (parsed.role && !fetchedWorkspaces.some((w: Workspace) => w.role === parsed.role)) {
+             const createRes = await fetch('/api/workspaces', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user?.id, name: "Original Profile", role: parsed.role })
+             });
+             const createData = await createRes.json();
+             if (createData.success) {
+                fetchedWorkspaces = [createData.workspace, ...fetchedWorkspaces];
+             }
+          }
+        } catch(e) {}
+      }
+      
       if (data.success) {
-        setWorkspaces(data.workspaces);
+        setWorkspaces(fetchedWorkspaces);
       }
     } catch (err) {
       console.error(err);
