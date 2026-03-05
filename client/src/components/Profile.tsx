@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -20,26 +21,45 @@ import {
 export default function Profile() {
   const navigate = useNavigate();
 
+  const [liveStreak, setLiveStreak] = useState(0);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    
+    const handleSnapshot = (e: MessageEvent) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.totalStreak !== undefined) {
+          setLiveStreak(data.totalStreak);
+        }
+      } catch(err) {}
+    };
+
+    es.addEventListener('snapshot', handleSnapshot);
+    es.addEventListener('refresh', handleSnapshot);
+
+    return () => es.close();
+  }, [user?.id]);
+
   // Mock user data
   const userData = {
-    name: "John Doe",
-    email: "john.doe@example.com",
+    name: user?.username || "John Doe",
+    email: user?.email || "john.doe@example.com",
     role: "Software Engineer",
-    location: "San Francisco, CA",
-    joinDate: "January 2024",
-    bio: "Passionate about building amazing web applications and learning new technologies. Currently focusing on full-stack development and cloud technologies.",
+    location: "Global",
+    joinDate: "Recently",
+    bio: "Passionate about building amazing web applications and learning new technologies.",
     skills: [
       { name: "JavaScript", level: 85 },
       { name: "React", level: 80 },
       { name: "Node.js", level: 75 },
-      { name: "TypeScript", level: 70 },
-      { name: "Python", level: 65 },
-      { name: "SQL", level: 60 },
     ],
     stats: {
       projectsCompleted: 8,
       totalProjects: 12,
-      learningStreak: 15,
+      learningStreak: liveStreak,
       totalLearningHours: 240,
       achievementsUnlocked: 24,
       skillsMastered: 6,
@@ -93,7 +113,7 @@ export default function Profile() {
               {/* Profile Picture */}
               <div className="relative w-28 h-28 mx-auto mb-4">
                 <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                  {userData.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                  {userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase()}
                 </div>
                 <button className="absolute bottom-0 right-0 w-9 h-9 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center text-white shadow-lg transition-colors">
                   <Camera className="w-4 h-4" />

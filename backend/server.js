@@ -98,6 +98,12 @@ const updateSchema = async () => {
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'role_analyses') THEN
           ALTER TABLE role_analyses ALTER COLUMN user_id DROP NOT NULL;
         END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'current_streak') THEN
+          ALTER TABLE users ADD COLUMN current_streak INTEGER DEFAULT 0;
+          ALTER TABLE users ADD COLUMN longest_streak INTEGER DEFAULT 0;
+          ALTER TABLE users ADD COLUMN last_active_date DATE;
+        END IF;
       END $$;
     `);
 

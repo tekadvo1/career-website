@@ -66,9 +66,53 @@ router.get('/stream', async (req, res) => {
   });
 });
 
+// ─── Daily Streak Engine ──────────────────────────────────────────────────────
+async function recordDailyActivity(userId) {
+  try {
+    const res = await pool.query('SELECT current_streak, longest_streak, last_active_date FROM users WHERE id = $1', [userId]);
+    if (res.rows.length === 0) return 0;
+    
+    const user = res.rows[0];
+    const today = new Date().toISOString().split('T')[0];
+    const lastActiveObj = user.last_active_date ? new Date(user.last_active_date) : null;
+    const lastActive = lastActiveObj ? lastActiveObj.toISOString().split('T')[0] : null;
+
+    let currentStreak = user.current_streak || 0;
+    let longestStreak = user.longest_streak || 0;
+
+    if (lastActive === today) {
+      return currentStreak; // Already logged in today
+    }
+
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split('T')[0];
+
+    if (lastActive === yesterday) {
+      currentStreak += 1;
+    } else {
+      currentStreak = 1; // Reset streak if missed a day
+    }
+
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
+    }
+
+    await pool.query(
+      'UPDATE users SET current_streak = $1, longest_streak = $2, last_active_date = $3 WHERE id = $4',
+      [currentStreak, longestStreak, today, userId]
+    );
+    
+    return currentStreak;
+  } catch (err) {
+    console.error('Streak update error:', err);
+    return 0; // fallback
+  }
+}
+
 // ─── Helper: fetch the full dashboard snapshot from PostgreSQL ────────────────
 async function getUserDashboardData(userId) {
-  const [projResult, xpResult] = await Promise.all([
+  const [projResult, xpResult, streak] = await Promise.all([
     pool.query(
       `SELECT id, title, description, role, status, progress_data, project_data, last_updated, created_at
        FROM user_projects WHERE user_id = $1 ORDER BY last_updated DESC`,
@@ -79,6 +123,7 @@ async function getUserDashboardData(userId) {
        FROM user_projects WHERE user_id = $1`,
       [userId]
     ),
+    recordDailyActivity(userId),
   ]);
 
   const projects = projResult.rows.map(p => ({
@@ -90,6 +135,7 @@ async function getUserDashboardData(userId) {
   return {
     projects,
     totalXP:        parseInt(xpResult.rows[0]?.total_xp || 0, 10),
+    totalStreak:    streak,
     activeCount:    projects.filter(p => p.status === 'active').length,
     completedCount: projects.filter(p => p.status === 'completed').length,
     savedCount:     projects.filter(p => p.status === 'saved').length,
