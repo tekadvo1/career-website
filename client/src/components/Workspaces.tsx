@@ -183,9 +183,19 @@ export default function Workspaces() {
            timestamp: new Date().getTime(),
            workspaceId: workspace.id
          }));
-         
-         // 3. Navigate directly to roadmap
-         navigate('/roadmap', { state: { role: workspace.role, fromWorkspaceSwitch: true } });
+         // 3. Check if this is the first time switching to this workspace
+         const visitedStr = localStorage.getItem('visitedWorkspaces');
+         let visited = visitedStr ? JSON.parse(visitedStr) : [];
+
+         if (!visited.includes(workspace.id)) {
+             visited.push(workspace.id);
+             localStorage.setItem('visitedWorkspaces', JSON.stringify(visited));
+             // First time: Navigate directly to roadmap (onboarding view)
+             navigate('/roadmap', { state: { role: workspace.role, fromWorkspaceSwitch: true } });
+         } else {
+             // Returning: Go directly to project dashboard
+             navigate('/dashboard');
+         }
       } else {
          alert("Failed to sync workspace roadmap tracking. Please try again.");
       }
