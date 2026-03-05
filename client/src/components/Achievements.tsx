@@ -11,6 +11,9 @@ import {
   Calendar,
   Zap,
   AlertCircle,
+  Radio,
+  Wifi,
+  RefreshCw,
 } from 'lucide-react';
 
 interface Achievement {
@@ -48,15 +51,46 @@ export default function Achievements() {
   const [filter, setFilter] = useState<'all' | 'earned' | 'locked'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isLive, setIsLive] = useState(false);
+  const [lastSync, setLastSync] = useState(new Date());
 
   const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !user) {
       navigate('/signin');
       return;
     }
+    
     fetchAchievements();
+
+    // ── Real-time SSE Connection ──
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+
+    es.addEventListener('snapshot', () => {
+      fetchAchievements(); // Sync achievements whenever a fresh snapshot hits
+      setIsLive(true);
+      setLastSync(new Date());
+    });
+
+    es.addEventListener('project_update', () => {
+      fetchAchievements(); // Someone updated a project, might have unlocked an achievement!
+      // also notify backend to push new snapshot
+      fetch(`/api/realtime/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      }).catch(() => {});
+    });
+
+    es.onopen = () => setIsLive(true);
+    es.onerror = () => setIsLive(false);
+
+    return () => {
+      es.close();
+    };
   }, []);
 
   const fetchAchievements = async () => {
@@ -102,8 +136,16 @@ export default function Achievements() {
               <div className="flex items-center gap-3 mb-1">
                 <Trophy className="w-7 h-7 text-amber-500" />
                 <h1 className="text-2xl font-bold text-slate-900">Achievements</h1>
+                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${isLive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                  {isLive
+                    ? <><Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE</>
+                    : <><Wifi className="w-2.5 h-2.5" /> Connecting…</>}
+                </span>
               </div>
-              <p className="text-slate-600 text-sm">Track your progress and unlock rewards</p>
+              <p className="text-slate-600 text-sm">
+                Track your progress and unlock rewards
+                {!isLoading && <span className="text-slate-400 ml-2">· synced {lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
+              </p>
             </div>
           </div>
 
