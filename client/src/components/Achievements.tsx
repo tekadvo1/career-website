@@ -13,7 +13,6 @@ import {
   AlertCircle,
   Radio,
   Wifi,
-  RefreshCw,
 } from 'lucide-react';
 
 interface Achievement {
