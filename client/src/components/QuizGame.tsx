@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap, ZoomIn, ZoomOut } from 'lucide-react';
 
 interface QuizQuestion {
   question: string;
@@ -21,13 +21,27 @@ export default function QuizGame() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [score, setScore] = useState(0);
-  
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [zoom, setZoom] = useState(100);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (loading) {
+      setLoadingProgress(0);
+      interval = setInterval(() => {
+        setLoadingProgress(p => p >= 98 ? 98 : p + 2);
+      }, 100);
+    } else {
+      setLoadingProgress(100);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   useEffect(() => {
     // Attempt to load role from lastRoleAnalysis
@@ -94,13 +108,30 @@ export default function QuizGame() {
       <div className="z-50"><Sidebar activePage="quiz-game" /></div>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center relative">
+         {/* Zoom Controls */}
+         <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-slate-800 border border-slate-700 p-1.5 rounded-lg shadow-xl">
+           <button 
+             onClick={() => setZoom(z => Math.max(50, z - 10))} 
+             className="p-1.5 hover:bg-slate-700 text-slate-300 rounded transition-colors"
+           >
+             <ZoomOut className="w-4 h-4" />
+           </button>
+           <span className="text-xs font-bold text-slate-300 min-w-[3ch] text-center">{zoom}%</span>
+           <button 
+             onClick={() => setZoom(z => Math.min(150, z + 10))}
+             className="p-1.5 hover:bg-slate-700 text-slate-300 rounded transition-colors"
+           >
+             <ZoomIn className="w-4 h-4" />
+           </button>
+         </div>
+
          {/* Background Elements */}
          <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
              <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full"></div>
              <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/20 blur-[120px] rounded-full"></div>
          </div>
 
-         <div className="max-w-3xl w-full z-10">
+         <div className="max-w-3xl w-full z-10 transition-transform origin-top" style={{ transform: `scale(${zoom / 100})` }}>
             {!started && !finished && (
                <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-8 border border-slate-700 shadow-2xl text-center">
                    <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30">
@@ -113,14 +144,27 @@ export default function QuizGame() {
                    </p>
                    
                    <div className="flex flex-col md:flex-row gap-4 justify-center">
-                     <button 
-                       onClick={fetchQuiz} 
-                       disabled={loading}
-                       className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
-                     >
-                       {loading ? <Sparkles className="w-5 h-5 animate-pulse" /> : <Zap className="w-5 h-5 text-amber-300" />}
-                       {loading ? 'Generating Level...' : 'Start Game'}
-                     </button>
+                     {loading ? (
+                        <div className="w-full max-w-sm mx-auto">
+                           <div className="mb-2 flex justify-between text-xs font-semibold">
+                              <span className="text-indigo-400 flex items-center gap-2"><Sparkles className="w-4 h-4 animate-pulse"/> Generating Level...</span>
+                              <span className="text-slate-400">{loadingProgress}%</span>
+                           </div>
+                           <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden shadow-inner">
+                              <div 
+                                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-300 ease-out" 
+                                style={{ width: `${loadingProgress}%` }}
+                              />
+                           </div>
+                        </div>
+                     ) : (
+                       <button 
+                         onClick={fetchQuiz} 
+                         className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                       >
+                         <Zap className="w-5 h-5 text-amber-300" /> Start Game
+                       </button>
+                     )}
                    </div>
                </div>
             )}
