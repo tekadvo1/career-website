@@ -355,12 +355,15 @@ export default function Workspaces() {
                                 </div>
                             )}
                             
-                            <button 
-                               onClick={(e) => handleDelete(e, ws.id)}
-                               className="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-50 rounded-md"
-                            >
-                               <Trash2 className="w-4 h-4" />
-                            </button>
+                            {!isActive && (
+                                <button 
+                                   onClick={(e) => handleDelete(e, ws.id)}
+                                   className="absolute top-4 right-4 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-slate-50 rounded-md"
+                                   title="Delete Workspace"
+                                >
+                                   <Trash2 className="w-4 h-4" />
+                                </button>
+                            )}
 
                             <div className="flex items-center gap-3 mb-6">
                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
