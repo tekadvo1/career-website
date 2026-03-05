@@ -192,43 +192,43 @@ export default function Workspaces() {
       {/* Create Workspace Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-               <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                   <h2 className="text-2xl font-bold text-slate-900">Create New Workspace</h2>
-                   <button onClick={() => setShowModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+               <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                   <h2 className="text-xl font-bold text-slate-900">Create New Workspace</h2>
+                   <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
                        <X className="w-5 h-5" />
                    </button>
                </div>
                
-               <div className="p-6 overflow-y-auto max-h-[70vh]">
-                   <div className="space-y-6">
+               <div className="p-5 overflow-y-auto max-h-[75vh]">
+                   <div className="space-y-4">
                        <div>
-                           <label className="block text-sm font-semibold text-slate-700 mb-2">Workspace Name *</label>
+                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Workspace Name *</label>
                            <input 
                               type="text" 
                               placeholder="e.g., Data Science Journey, Frontend Career Path" 
-                              className="w-full text-base p-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                              className="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
                               value={newName}
                               onChange={e => setNewName(e.target.value)}
                            />
                        </div>
 
                        <div>
-                           <label className="block text-sm font-semibold text-slate-700 mb-2">Target Role *</label>
+                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Target Role *</label>
                            <input 
                               type="text"
                               placeholder="e.g. Software Engineer, Data Scientist"
-                              className="w-full text-base p-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-shadow text-slate-700"
+                              className="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white transition-shadow text-slate-700"
                               value={newRole}
                               onChange={e => setNewRole(e.target.value)}
                            />
-                           <div className="mt-2 text-xs text-slate-500 font-medium flex items-center gap-1">
+                           <div className="mt-1.5 text-xs text-slate-500 font-medium flex items-center gap-1">
                                <Sparkles className="w-3 h-3 text-indigo-500" /> AI will automatically adapt the roadmap to your typed role.
                            </div>
                        </div>
 
                        <div>
-                           <label className="block text-sm font-semibold text-slate-700 mb-2">Resume/CV (Optional)</label>
+                           <label className="block text-sm font-semibold text-slate-700 mb-1.5">Resume/CV (Optional)</label>
                            <input 
                              type="file" 
                              accept=".pdf,.doc,.docx" 
@@ -243,20 +243,20 @@ export default function Workspaces() {
                            
                            <div 
                               onClick={() => fileInputRef.current?.click()}
-                              className="w-full border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer bg-slate-50"
+                              className="w-full border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer bg-slate-50"
                            >
                                {selectedFile ? (
                                   <div className="flex flex-col items-center text-indigo-600">
-                                     <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
-                                         <FileText className="w-6 h-6" />
+                                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-2">
+                                         <FileText className="w-5 h-5" />
                                      </div>
                                      <span className="font-bold text-sm">{selectedFile.name}</span>
                                      <span className="text-xs mt-1 opacity-70">Click to change format</span>
                                   </div>
                                ) : (
                                   <div className="flex flex-col items-center">
-                                     <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-3">
-                                         <UploadCloud className="w-6 h-6 text-indigo-600" />
+                                     <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mb-2">
+                                         <UploadCloud className="w-5 h-5 text-indigo-600" />
                                      </div>
                                      <span className="font-bold text-slate-700 text-sm">Click to upload or drag and drop</span>
                                      <span className="text-xs text-slate-500 mt-1">PDF, DOC, or DOCX (Max 10MB)</span>
@@ -266,9 +266,9 @@ export default function Workspaces() {
                            <p className="text-xs text-slate-500 mt-2">Upload your resume for personalized skill gap analysis and learning recommendations</p>
                        </div>
 
-                       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-5">
-                           <div className="flex items-center gap-2 mb-3">
-                               <Sparkles className="w-5 h-5 text-indigo-600" />
+                       <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+                           <div className="flex items-center gap-2 mb-2">
+                               <Sparkles className="w-4 h-4 text-indigo-600" />
                                <h3 className="font-bold text-indigo-900 text-sm">What happens next?</h3>
                            </div>
                            <ul className="text-xs font-medium text-indigo-800 space-y-2">
@@ -281,18 +281,18 @@ export default function Workspaces() {
                    </div>
                </div>
                
-               <div className="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
+               <div className="p-5 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50">
                    <button 
                       onClick={() => setShowModal(false)}
                       disabled={isCreating}
-                      className="px-6 py-2.5 rounded-lg font-bold text-slate-600 hover:bg-slate-200 transition-colors border border-slate-300 bg-white"
+                      className="px-5 py-2 rounded-lg font-bold text-sm text-slate-600 hover:bg-slate-200 transition-colors border border-slate-300 bg-white"
                    >
                        Cancel
                    </button>
                    <button 
                       onClick={handleCreate}
                       disabled={!newName || !newRole || isCreating}
-                      className="px-6 py-2.5 rounded-lg font-bold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md shadow-indigo-500/20"
+                      className="px-5 py-2 rounded-lg font-bold text-sm text-white bg-indigo-500 hover:bg-indigo-600 transition-colors disabled:opacity-50 flex items-center gap-2 shadow-md shadow-indigo-500/20"
                    >
                        {isCreating ? <Sparkles className="w-4 h-4 animate-pulse" /> : <Plus className="w-4 h-4" />}
                        Create Workspace
