@@ -9,6 +9,8 @@ import {
   Sparkles,
   Zap,
   ArrowLeft,
+  ZoomIn,
+  ZoomOut
 } from "lucide-react";
 
 interface TopicResource {
@@ -52,6 +54,7 @@ export default function RoadmapTree() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [zoom, setZoom] = useState(0.75);
 
   // Get real-time AI roadmap data passed via location
   const roadmap: RoadmapPhase[] = location.state?.roadmap || [];
@@ -140,8 +143,36 @@ export default function RoadmapTree() {
         <span className="font-semibold text-slate-700 pr-1 hidden sm:inline">Back</span>
       </button>
 
+      {/* Zoom Controls */}
+      <div className="fixed top-20 sm:top-24 right-4 sm:right-6 z-40 flex flex-col gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 shadow-sm shadow-slate-200">
+        <button 
+          onClick={() => setZoom(z => Math.min(z + 0.1, 1.5))}
+          className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={() => setZoom(1)}
+          className="bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600 flex items-center justify-center font-bold text-[10px] w-9 h-9 sm:w-auto sm:h-9 sm:px-2"
+          title="Reset Zoom"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button 
+          onClick={() => setZoom(z => Math.max(z - 0.1, 0.4))}
+          className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto pt-8 sm:pt-4">
+      <div 
+        className="max-w-4xl mx-auto pt-16 sm:pt-4 transition-all duration-300" 
+        style={{ zoom } as React.CSSProperties}
+      >
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-5 mb-5 border border-slate-200 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-100/50 rounded-full blur-3xl -mr-10 -mt-20"></div>
