@@ -83,10 +83,12 @@ interface DebugIssue {
 export default function AILearningAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || "Software Engineer";
+  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+  const role = location.state?.role || lastRoleState?.role || "Software Engineer";
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const LOCAL_STORAGE_KEY = "findstreak_ai_chat_history";
+  const LOCAL_STORAGE_KEY = `findstreak_ai_chat_history_${role.replace(/\s+/g, '_').toLowerCase()}`;
 
   const loadChatHistory = (): ChatSession[] => {
     try {
@@ -149,7 +151,7 @@ export default function AILearningAssistant() {
   // Sync historical chat states globally across mobile & web environments
   useEffect(() => {
     if (user?.id) {
-       fetch(`/api/ai/chat-history?userId=${user.id}`)
+       fetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}`)
          .then(res => res.json())
          .then(data => {
             if (data.success && data.history && data.history.length > 0) {
@@ -296,7 +298,7 @@ export default function AILearningAssistant() {
          fetch('/api/ai/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, chatHistory })
+            body: JSON.stringify({ userId: user.id, role, chatHistory })
          }).catch(err => console.error("Failed syncing chat history:", err));
       }
     } catch (e) {

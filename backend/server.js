@@ -143,6 +143,16 @@ const updateSchema = async () => {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    
+    // Auto-migrate role column into chat_sessions
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'role') THEN
+          ALTER TABLE chat_sessions ADD COLUMN role VARCHAR(255) DEFAULT 'Software Engineer';
+        END IF;
+      END $$;
+    `);
 
     client.release();
     console.log('Schema updated for role caching');

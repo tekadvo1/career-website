@@ -23,6 +23,17 @@ export default function Profile() {
 
   const [liveStreak, setLiveStreak] = useState(0);
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+  const activeRole = lastRoleState?.role || "Software Engineer";
+  
+  // Extract real skills from AI analysis if available
+  let activeSkills = ["JavaScript", "React", "Node.js"];
+  if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
+      activeSkills = lastRoleState.analysis.technicalSkills;
+  } else if (lastRoleState?.analysis?.existingSkills?.length > 0) {
+      activeSkills = lastRoleState.analysis.existingSkills.map((s: any) => s.name);
+  }
 
   useEffect(() => {
     if (!user?.id) return;
@@ -43,19 +54,15 @@ export default function Profile() {
     return () => es.close();
   }, [user?.id]);
 
-  // Mock user data
+  // Mock user data synced with active workspace
   const userData = {
     name: user?.username || "John Doe",
     email: user?.email || "john.doe@example.com",
-    role: "Software Engineer",
+    role: activeRole,
     location: "Global",
     joinDate: "Recently",
-    bio: "Passionate about building amazing web applications and learning new technologies.",
-    skills: [
-      { name: "JavaScript", level: 85 },
-      { name: "React", level: 80 },
-      { name: "Node.js", level: 75 },
-    ],
+    bio: `Passionate about building amazing web applications and learning new technologies in the ${activeRole} space.`,
+    skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 10)) })),
     stats: {
       projectsCompleted: 8,
       totalProjects: 12,
