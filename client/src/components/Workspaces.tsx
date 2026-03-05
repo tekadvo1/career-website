@@ -29,6 +29,20 @@ export default function Workspaces() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [switchingTo, setSwitchingTo] = useState<number | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (switchingTo) {
+      setLoadingProgress(0);
+      interval = setInterval(() => {
+        setLoadingProgress((p) => (p >= 98 ? 98 : p + 2));
+      }, 150);
+    } else {
+      setLoadingProgress(100);
+    }
+    return () => clearInterval(interval);
+  }, [switchingTo]);
 
   useEffect(() => {
     if (user) {
@@ -381,16 +395,24 @@ export default function Workspaces() {
                                 <button 
                                    onClick={() => handleSwitchContext(ws)}
                                    disabled={isSwitching || isActive}
-                                   className={`w-full py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                                   className={`w-full ${isSwitching ? 'p-1' : 'py-3 px-4'} rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-sm ${
                                       isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default' :
-                                      isSwitching ? 'bg-slate-800 text-white opacity-80' : 
+                                      isSwitching ? 'bg-slate-800 border border-slate-700' : 
                                       'bg-slate-800 hover:bg-slate-900 text-white hover:shadow-md'
                                    }`}
                                 >
                                    {isActive ? (
                                        <>Currently Tracking</>
                                    ) : isSwitching ? (
-                                       <> <Sparkles className="w-4 h-4 animate-spin" /> Fetching AI State...</>
+                                       <div className="w-full flex items-center bg-slate-800 rounded-lg overflow-hidden h-10 relative">
+                                          <div 
+                                            className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-[150ms] ease-linear"
+                                            style={{ width: `${loadingProgress}%` }}
+                                          />
+                                          <div className="relative z-10 w-full text-center text-white text-xs flex justify-center items-center gap-2 drop-shadow-md">
+                                             <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Loading Context {loadingProgress}%
+                                          </div>
+                                       </div>
                                    ) : (
                                        <> Switch Context <ArrowRight className="w-4 h-4" /> </>
                                    )}
