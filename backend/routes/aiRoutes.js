@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { OpenAI } = require('openai');
 const pool = require('../config/db');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -288,6 +292,66 @@ router.post('/generate-quiz', async (req, res) => {
     } catch (error) {
         console.error('Quiz Generation Error:', error);
         res.status(500).json({ error: 'Failed to generate quiz' });
+    }
+});
+
+// POST /api/ai/generate-resume-quiz - Generates real-time quizzes based on an uploaded Resume and Role
+router.post('/generate-resume-quiz', upload.single('resume'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No resume file uploaded' });
+        
+        const role = req.body.role || 'Software Engineering';
+        const topic = req.body.topic || 'General coding';
+        
+        let resumeText = '';
+        if (req.file.mimetype === 'application/pdf') {
+             const pdfData = await pdfParse(req.file.buffer);
+             resumeText = pdfData.text;
+        } else {
+             resumeText = req.file.buffer.toString('utf-8'); // Fallback for simple text/docx if necessary (though simplified here)
+        }
+        
+        // Truncate if too long to save tokens
+        if (resumeText.length > 3000) resumeText = resumeText.substring(0, 3000);
+
+        let systemPrompt = `You are an expert ${role} Technical Interviewer.
+        
+        The user has uploaded their resume and wants to test their knowledge on: "${topic}".
+        First, analyze their resume briefly to identify their skill level and missing gaps. 
+        Then, generate exactly 5 multiple-choice questions dynamically tailored to cross-examine their resume strengths OR test them on critical concepts missing from their resume for the ${role} role.
+        
+        Make them fun, engaging, and highly personalized!
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+          "questions": [
+            {
+              "question": "The question text?",
+              "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+              "answerIndex": 0,
+              "explanation": "Why this is correct."
+            }
+          ]
+        }`;
+
+        const requestOptions = {
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: `Here is my Resume Text:\n\n${resumeText}\n\nPlease generate the trivia game.` }
+            ],
+            max_tokens: 1500,
+            temperature: 0.8,
+            response_format: { type: "json_object" }
+        };
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        res.json(JSON.parse(reply));
+    } catch (error) {
+        console.error('Resume Quiz Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate resume quiz' });
     }
 });
 

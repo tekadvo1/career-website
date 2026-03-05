@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap, ZoomIn, ZoomOut } from 'lucide-react';
+import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap, ZoomIn, ZoomOut, UploadCloud, FileText } from 'lucide-react';
 
 interface QuizQuestion {
   question: string;
@@ -29,6 +29,9 @@ export default function QuizGame() {
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [zoom, setZoom] = useState(100);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -59,11 +62,27 @@ export default function QuizGame() {
   const fetchQuiz = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/ai/generate-quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, topic })
-      });
+      let res;
+      if (selectedFile) {
+         // Resume Test Mode
+         const formData = new FormData();
+         formData.append('resume', selectedFile);
+         formData.append('role', role);
+         formData.append('topic', topic);
+         
+         res = await fetch('/api/ai/generate-resume-quiz', {
+            method: 'POST',
+            body: formData
+         });
+      } else {
+         // Standard Mode
+         res = await fetch('/api/ai/generate-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role, topic })
+         });
+      }
+      
       const data = await res.json();
       if (data.questions && data.questions.length > 0) {
         setQuestions(data.questions);
@@ -142,8 +161,19 @@ export default function QuizGame() {
                       Test your knowledge on <span className="text-indigo-400 font-bold">{topic}</span>.
                       Earn XP automatically synced to your FindStreak profile and level up your {role} journey.
                    </p>
+                   <input 
+                       type="file" 
+                       accept=".pdf,.doc,.docx" 
+                       ref={fileInputRef} 
+                       className="hidden" 
+                       onChange={(e) => {
+                           if (e.target.files && e.target.files.length > 0) {
+                               setSelectedFile(e.target.files[0]);
+                           }
+                       }} 
+                   />
                    
-                   <div className="flex flex-col md:flex-row gap-4 justify-center">
+                   <div className="flex flex-col gap-4 justify-center items-center">
                      {loading ? (
                         <div className="w-full max-w-sm mx-auto">
                            <div className="mb-2 flex justify-between text-xs font-semibold">
@@ -158,12 +188,31 @@ export default function QuizGame() {
                            </div>
                         </div>
                      ) : (
-                       <button 
-                         onClick={fetchQuiz} 
-                         className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
-                       >
-                         <Zap className="w-5 h-5 text-amber-300" /> Start Game
-                       </button>
+                       <div className="flex flex-col md:flex-row gap-4">
+                           {selectedFile ? (
+                               <button 
+                                 onClick={() => fileInputRef.current?.click()}
+                                 className="px-6 py-4 border-2 border-indigo-500 bg-indigo-500/10 text-indigo-300 font-bold rounded-xl transition-all hover:bg-indigo-500/20 flex items-center justify-center gap-2"
+                               >
+                                 <FileText className="w-5 h-5 text-indigo-400" /> 
+                                 <span className="truncate max-w-[150px]">{selectedFile.name}</span>
+                               </button>
+                           ) : (
+                               <button 
+                                 onClick={() => fileInputRef.current?.click()}
+                                 className="px-6 py-4 border-2 border-slate-600 bg-slate-700/50 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                               >
+                                 <UploadCloud className="w-5 h-5 text-slate-400" /> Upload Resume (Optional)
+                               </button>
+                           )}
+                           
+                           <button 
+                             onClick={fetchQuiz} 
+                             className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                           >
+                             <Zap className="w-5 h-5 text-amber-300" /> Start {selectedFile ? 'Mock Interview' : 'Game'}
+                           </button>
+                       </div>
                      )}
                    </div>
                </div>
