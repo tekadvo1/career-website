@@ -2,9 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
-  BookOpen, Trophy, MessageSquare, Menu, X, User,
-  BarChart3, LayoutDashboard, Award, RefreshCw, GitBranch
+  BookOpen, Trophy, MessageSquare,
+  RefreshCw, GitBranch
 } from 'lucide-react';
+import Sidebar from './Sidebar';
 
 
 // --- Interfaces ---
@@ -190,7 +191,6 @@ export default function LearningRoadmap() {
   // Feature flags / Modals
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showSidebar, setShowSidebar] = useState(false);
 
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -422,71 +422,14 @@ export default function LearningRoadmap() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-3 sm:p-5">
-      {/* Sidebar Navigation Menu */}
-      {showSidebar && (
-        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowSidebar(false)}>
-          <div
-            className="absolute left-0 top-0 h-full w-[280px] sm:w-80 bg-white shadow-2xl flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5 sm:p-6 border-b border-slate-200 flex-shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">F</span>
-                  </div>
-                  <h2 className="text-xl font-bold text-slate-900">FindStreak</h2>
-                </div>
-                <button onClick={() => setShowSidebar(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-slate-600" />
-                </button>
-              </div>
-              <p className="text-sm text-slate-600">Quick access to all features</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto py-2 scrollbar-thin hover:scrollbar-thumb-slate-400">
-              <button onClick={() => { setShowSidebar(false); navigate("/profile"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><User className="w-5 h-5 text-emerald-600" /></div>
-                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">View Profile</span><p className="text-sm text-slate-500">Manage your account</p></div>
-              </button>
-              <button onClick={() => { setShowSidebar(false); navigate("/dashboard"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><BarChart3 className="w-5 h-5 text-emerald-600" /></div>
-                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">Project Dashboard</span><p className="text-sm text-slate-500">Browse AI projects</p></div>
-              </button>
-              <button onClick={() => setShowSidebar(false)} className="w-full flex items-center gap-4 px-6 py-4 bg-emerald-50 border-l-4 border-emerald-600">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-200 flex items-center justify-center"><Target className="w-5 h-5 text-emerald-700" /></div>
-                <div className="flex-1 text-left"><span className="font-semibold text-emerald-700">My Learning Progress</span><p className="text-sm text-slate-600">Track your roadmap</p></div>
-              </button>
-              <button onClick={() => { setShowSidebar(false); navigate("/my-projects"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><LayoutDashboard className="w-5 h-5 text-emerald-600" /></div>
-                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">My Projects</span><p className="text-sm text-slate-500">View ongoing projects</p></div>
-              </button>
-              <button onClick={() => { setShowSidebar(false); navigate("/achievements"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><Award className="w-5 h-5 text-emerald-600" /></div>
-                <div className="flex-1 text-left">
-                  <div className="flex items-center gap-2"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">Achievements</span><span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded">NEW</span></div>
-                  <p className="text-sm text-slate-500">View your milestones</p>
-                </div>
-              </button>
-              <button onClick={() => { setShowSidebar(false); navigate("/ai-assistant"); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-emerald-50 transition-colors group">
-                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200"><Sparkles className="w-5 h-5 text-emerald-600" /></div>
-                <div className="flex-1 text-left"><span className="font-semibold text-slate-900 group-hover:text-emerald-700">AI Assistant</span><p className="text-sm text-slate-500">Get learning help</p></div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Sidebar activePage="roadmap" />
 
       <div className="max-w-5xl mx-auto" ref={contentRef}>
         {/* Header */}
         <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-4 sm:mt-6 relative">
           <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-4">
             <div className="flex items-start gap-3 sm:gap-4 flex-1">
-              {!showSidebar && (
-                <button onClick={() => setShowSidebar(true)} className="p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors shadow-sm border border-slate-200 flex-shrink-0 mt-0.5">
-                  <Menu className="w-5 h-5 text-slate-700" />
-                </button>
-              )}
+              <div className="w-10 sm:w-0" /> {/* Spacer for absolute hamburger */}
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5" />
