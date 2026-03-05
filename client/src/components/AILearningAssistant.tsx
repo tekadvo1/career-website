@@ -198,6 +198,14 @@ export default function AILearningAssistant() {
       // Perform AI fetch
       const fetchAI = async () => {
         try {
+          const assistantMsgId = Date.now().toString();
+          setMessages(prev => [...prev, {
+            id: assistantMsgId,
+            type: "assistant",
+            content: "",
+            timestamp: new Date(),
+          }]);
+
           const res = await fetch("/api/ai/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -205,15 +213,33 @@ export default function AILearningAssistant() {
               message: contextStr,
               context: "User is asking for external resources and web searches to understand a roadmap topic.",
               role: role,
+              stream: true,
             }),
           });
-          const data = await res.json();
-          setMessages(prev => [...prev, {
-            id: Date.now().toString(),
-            type: "assistant",
-            content: data.reply || "I couldn't process that right now.",
-            timestamp: new Date(),
-          }]);
+          
+          if (!res.body) throw new Error("No stream body");
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let streamedContent = "";
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.content) {
+                    streamedContent += data.content;
+                    setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, content: streamedContent } : m));
+                  }
+                } catch(e) {}
+              }
+            }
+          }
         } catch (error) {
           console.error(error);
           setMessages(prev => [...prev, {
@@ -538,6 +564,14 @@ export default function AILearningAssistant() {
         contextStr += " ELI5 MODE IS ACTIVE: You MUST explain this concept as simply as possible, using relatable metaphors that a 5-year-old would understand. Break down hard terms. IMPORTANT: Heavily use EMOJIS (🚀, 💡, 🧩, etc) and visual symbols to make the explanation fun, engaging, and extremely easy to understand for the user.";
       }
 
+      const assistantMsgId = (Date.now() + 1).toString();
+      setMessages((prev) => [...prev, {
+        id: assistantMsgId,
+        type: "assistant",
+        content: "",
+        timestamp: new Date(),
+      }]);
+
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -545,17 +579,33 @@ export default function AILearningAssistant() {
           message: currentInput,
           context: contextStr,
           role: role,
+          stream: true,
         }),
       });
 
-      const data = await res.json();
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content: data.reply || "I couldn't process that right now.",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
+      if (!res.body) throw new Error("No stream body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let streamedContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+        for (const line of lines) {
+          if (line.startsWith("data: ") && !line.includes("[DONE]")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (data.content) {
+                streamedContent += data.content;
+                setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, content: streamedContent } : m));
+              }
+            } catch(e) {}
+          }
+        }
+      }
     } catch (error) {
       console.error(error);
       setMessages((prev) => [...prev, {

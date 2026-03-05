@@ -61,6 +61,29 @@ router.post('/chat', async (req, res) => {
             requestOptions.response_format = { type: "json_object" };
         }
 
+        if (req.body.stream) {
+            requestOptions.stream = true;
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            
+            try {
+                const stream = await openai.chat.completions.create(requestOptions);
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content || "";
+                    if (content) {
+                        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                    }
+                }
+                res.write(`data: [DONE]\n\n`);
+                return res.end();
+            } catch (err) {
+                console.error('Streaming error:', err);
+                res.write(`data: ${JSON.stringify({ error: 'Stream failed' })}\n\n`);
+                return res.end();
+            }
+        }
+
         const completion = await openai.chat.completions.create(requestOptions);
 
         const reply = completion.choices[0].message.content;
