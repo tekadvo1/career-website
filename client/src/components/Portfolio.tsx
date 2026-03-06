@@ -13,7 +13,9 @@ import {
   Globe,
   Lock,
   Unlock,
-  FileText
+  FileText,
+  X,
+  Plus
 } from "lucide-react";
 
 export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) {
@@ -135,6 +137,41 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
         localStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
         setIsGeneratingAI(false);
     }, 2000);
+  };
+
+  const updateExperience = (index: number, field: string, value: string) => {
+      const newExps = [...editForm.experiences];
+      newExps[index] = { ...newExps[index], [field]: value };
+      setEditForm({ ...editForm, experiences: newExps });
+  };
+
+  const removeExperience = (index: number) => {
+      const newExps = editForm.experiences.filter((_, i) => i !== index);
+      setEditForm({ ...editForm, experiences: newExps });
+  };
+
+  const addExperience = () => {
+      const newExps = [...editForm.experiences, { title: "", role: "", date: "", description: "" }];
+      setEditForm({ ...editForm, experiences: newExps });
+  };
+
+  const handleSyncProjectsFromFindStreak = () => {
+      const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+      const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+      const activeRole = lastRoleState?.role || "Software Engineer";
+      
+      const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${activeRole}`);
+      const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
+      const completedProj = projectsData.filter((p: any) => p.status === 'done');
+
+      const mappedExps = completedProj.map((p: any) => ({
+          title: p.title || "Project",
+          role: activeRole,
+          description: p.description?.substring(0, 200) + (p.description?.length > 200 ? "..." : "") || "Implemented and delivered key features on FindStreak.",
+          date: new Date().toLocaleDateString(undefined, {month: 'short', year:'numeric'})
+      }));
+      
+      setEditForm({ ...editForm, experiences: mappedExps });
   };
 
   const togglePrivacy = () => {
@@ -319,9 +356,48 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
                         {/* Experience / Projects */}
                         <section>
-                            <h2 className="text-xl font-extrabold text-slate-800 mb-4 flex items-center gap-2">Experience & Projects</h2>
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2">Experience & Projects</h2>
+                                {isEditing && !isPublic && (
+                                    <button 
+                                        onClick={handleSyncProjectsFromFindStreak}
+                                        className="text-[11px] font-bold text-teal-600 bg-teal-50 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-teal-100 transition-colors border border-teal-100"
+                                    >
+                                        <Bot className="w-3.5 h-3.5" /> Auto-Sync from FindStreak
+                                    </button>
+                                )}
+                            </div>
                             <div className="space-y-6">
-                                {portfolioData.experiences?.length > 0 ? (
+                                {isEditing && !isPublic ? (
+                                    <div className="space-y-4">
+                                        {editForm.experiences?.map((exp: any, i: number) => (
+                                            <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 relative">
+                                                <button onClick={() => removeExperience(i)} className="absolute top-3 right-3 text-slate-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Job / Project Title</label>
+                                                        <input value={exp.title} onChange={e => updateExperience(i, 'title', e.target.value)} className="w-full mt-1 p-2 text-[13px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-slate-800 outline-none" placeholder="e.g. Frontend Engineer" />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Role / Company</label>
+                                                        <input value={exp.role} onChange={e => updateExperience(i, 'role', e.target.value)} className="w-full mt-1 p-2 text-[13px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-slate-800 outline-none" placeholder="e.g. Tech Corp" />
+                                                    </div>
+                                                    <div className="col-span-2 sm:col-span-1">
+                                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Date / Duration</label>
+                                                        <input value={exp.date} onChange={e => updateExperience(i, 'date', e.target.value)} className="w-full mt-1 p-2 text-[13px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-slate-800 outline-none" placeholder="e.g. Jan 2023 - Present" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Description</label>
+                                                    <textarea value={exp.description} onChange={e => updateExperience(i, 'description', e.target.value)} rows={3} className="w-full mt-1 p-2 text-[13px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-slate-800 outline-none" placeholder="Describe your achievements..." />
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button onClick={addExperience} className="w-full py-3 border-2 border-dashed border-slate-200 text-slate-500 rounded-xl text-[13px] font-bold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                                            <Plus className="w-4 h-4" /> Add Manual Experience
+                                        </button>
+                                    </div>
+                                ) : portfolioData.experiences?.length > 0 ? (
                                     portfolioData.experiences.map((exp: any, i: number) => (
                                         <div key={i} className="relative pl-6 border-l-2 border-slate-100 py-1">
                                             <div className="absolute w-3 h-3 bg-teal-500 rounded-full -left-[7px] top-2 border-[3px] border-white"></div>
