@@ -23,6 +23,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [copiedLink, setCopiedLink] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [builderStep, setBuilderStep] = useState<'landing' | 'editor'>('landing');
 
   // Use localStorage or database for these config options
   const [portfolioData, setPortfolioData] = useState({
@@ -200,8 +201,31 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       )}
 
       <div className="max-w-4xl mx-auto px-5 pt-8 md:pt-12">
-        
-        {/* Editor Tollbar */}
+        {!isPublic && builderStep === 'landing' ? (
+          <div className="text-center py-16 md:py-24 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="w-24 h-24 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-teal-200 transform rotate-3 hover:rotate-0 transition-transform">
+               <Globe className="w-12 h-12 text-teal-600" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight leading-tight">Your AI-Powered <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">Recruiter Portfolio</span></h2>
+            <p className="text-slate-500 max-w-xl mx-auto mb-12 text-[15px] md:text-[17px] leading-relaxed font-medium">
+              Instantly generate a highly professional, verified portfolio website showcasing your skills, shipped projects, and career progress to top recruiters. Built in seconds.
+            </p>
+            <button 
+              onClick={() => setBuilderStep('editor')}
+              className="px-10 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold text-[16px] transition-all shadow-xl shadow-slate-900/20 active:translate-y-0.5 flex items-center justify-center gap-3 mx-auto group"
+            >
+              <Sparkles className="w-6 h-6 text-teal-400 group-hover:rotate-12 transition-transform" />
+              Start Building Now
+            </button>
+            <div className="mt-16 flex items-center justify-center gap-4 opacity-50 grayscale pt-8 border-t border-slate-200 max-w-sm mx-auto">
+               <div className="h-6 w-24 bg-slate-200 rounded"></div>
+               <div className="h-6 w-28 bg-slate-200 rounded"></div>
+               <div className="h-6 w-20 bg-slate-200 rounded"></div>
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in fade-in duration-500">
+            {/* Editor Tollbar */}
         {!isPublic && (
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -367,6 +391,8 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                  <span className="text-white text-[12px] font-bold flex items-center gap-1"><Bot className="w-3.5 h-3.5 text-teal-400" /> FINDSTREAK</span>
             </div>
         </div>
+          </div>
+        )}
       </div>
     </div>
   );
