@@ -70,6 +70,7 @@ function App() {
           <Route path="/resources" element={<ResourcesHub />} />
           <Route path="/ai-assistant" element={<AILearningAssistant />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/p/:username" element={<Profile isPublic={true} />} />
           <Route path="/workflow-lifecycle" element={<WorkflowLifecycle />} />
           <Route path="/project-workspace" element={<ProjectWorkspace />} />
           <Route path="/quiz-game" element={<QuizGame />} />
