@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Mail,
-  Calendar,
   MapPin,
   Briefcase,
   Code,
@@ -53,8 +52,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   // Calculate standard stats based on memory
   const loadRealtimeStats = () => {
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
     const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
     const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
     const activeRole = lastRoleState?.role || "Software Engineer";
@@ -157,8 +154,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       { action: "Started", item: `Career Path context as ${activeRole}`, date: "Recently", icon: Code }
     ].slice(0, 4),
   };
-
-  const completionRate = (userData.stats.projectsCompleted / userData.stats.totalProjects) * 100;
 
   const handleLogout = () => {
     localStorage.removeItem('token');
