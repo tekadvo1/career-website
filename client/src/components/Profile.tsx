@@ -476,6 +476,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                   <Code className="w-3.5 h-3.5 text-teal-600" />
                   My Projects Workspace
                 </button>
+                <button
+                  onClick={() => navigate("/portfolio")}
+                  className="px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-lg font-bold text-[12px] transition-colors flex items-center gap-1.5 shadow-sm shadow-teal-900/20 active:translate-y-0.5"
+                >
+                  <Bot className="w-3.5 h-3.5" />
+                  Edit Public Portfolio
+                </button>
               </div>
             )}
           </div>
