@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2, UserCircle, X, UploadCloud, FileText, Award } from 'lucide-react';
+import { Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2, X, UploadCloud, FileText, Award } from 'lucide-react';
 import { useRef } from 'react';
 
 interface Workspace {
