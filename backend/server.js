@@ -143,6 +143,19 @@ const updateSchema = async () => {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Create interview_guides table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS interview_guides (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(255) NOT NULL,
+        guide_data JSONB NOT NULL,
+        question_help JSONB DEFAULT '{}'::jsonb,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, role)
+      );
+    `);
     
     // Auto-migrate role column into chat_sessions
     await client.query(`

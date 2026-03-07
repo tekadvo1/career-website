@@ -419,4 +419,55 @@ router.post('/generate-interview-guide', upload.single('resume'), async (req, re
     }
 });
 
+// GET /api/ai/interview-guides - Fetch saved interview guide and help
+router.get('/interview-guides', async (req, res) => {
+    const { userId, role } = req.query;
+    if (!userId || !role) {
+        return res.status(400).json({ error: 'userId and role are required' });
+    }
+
+    try {
+        const result = await pool.query(
+            "SELECT guide_data, question_help FROM interview_guides WHERE user_id = $1 AND role = $2",
+            [userId, role]
+        );
+        if (result.rows.length > 0) {
+            res.json({
+                success: true,
+                guideData: typeof result.rows[0].guide_data === 'string' ? JSON.parse(result.rows[0].guide_data) : result.rows[0].guide_data,
+                questionHelp: typeof result.rows[0].question_help === 'string' ? JSON.parse(result.rows[0].question_help) : result.rows[0].question_help
+            });
+        } else {
+            res.json({ success: true, guideData: null, questionHelp: {} });
+        }
+    } catch (err) {
+        console.error('Error fetching interview guide:', err);
+        res.status(500).json({ error: 'Failed to fetch interview guide' });
+    }
+});
+
+// POST /api/ai/interview-guides - Save or update interview guide and help
+router.post('/interview-guides', async (req, res) => {
+    const { userId, role, guideData, questionHelp } = req.body;
+    if (!userId || !role) {
+        return res.status(400).json({ error: 'userId and role are required' });
+    }
+
+    try {
+        await pool.query(
+            `INSERT INTO interview_guides (user_id, role, guide_data, question_help)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (user_id, role) DO UPDATE SET 
+             guide_data = EXCLUDED.guide_data, 
+             question_help = EXCLUDED.question_help,
+             updated_at = CURRENT_TIMESTAMP`,
+            [userId, role, JSON.stringify(guideData || {}), JSON.stringify(questionHelp || {})]
+        );
+        res.json({ success: true, message: 'Interview guide saved successfully' });
+    } catch (err) {
+        console.error('Error saving interview guide:', err);
+        res.status(500).json({ error: 'Failed to save interview guide' });
+    }
+});
+
 module.exports = router;

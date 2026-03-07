@@ -35,13 +35,51 @@ export default function InterviewGuide() {
     const [questionHelp, setQuestionHelp] = useState<{[key: number]: string}>({});
     const [loadingHelp, setLoadingHelp] = useState<{[key: number]: boolean}>({});
 
+    const saveToBackend = async (data: GuideResponse, help: {[key: number]: string}, currentRole: string) => {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) return;
+        const user = JSON.parse(userStr);
+        try {
+            await fetch('/api/ai/interview-guides', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    role: currentRole,
+                    guideData: data,
+                    questionHelp: help
+                })
+            });
+        } catch (err) {
+            console.error("Failed to save interview guide:", err);
+        }
+    };
+
     useEffect(() => {
-        // Hydrate role
+        let initialRole = "Software Engineer";
         const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
              const parsed = JSON.parse(lastStateRaw);
-             if (parsed.role) setRole(parsed.role);
+             if (parsed.role) initialRole = parsed.role;
         }
+        setRole(initialRole);
+
+        const fetchSavedGuide = async () => {
+             const userStrLocal = localStorage.getItem('user');
+             if (!userStrLocal) return;
+             const user = JSON.parse(userStrLocal);
+             try {
+                 const res = await fetch(`/api/ai/interview-guides?userId=${user.id}&role=${encodeURIComponent(initialRole)}`);
+                 const data = await res.json();
+                 if (data.success && data.guideData) {
+                     setGuideData(data.guideData);
+                     setQuestionHelp(data.questionHelp || {});
+                 }
+             } catch(err) {
+                 console.error("Failed to load interview guide:", err);
+             }
+        };
+        fetchSavedGuide();
     }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,9 +107,10 @@ export default function InterviewGuide() {
                 throw new Error(err.error || "Failed to generate guide");
             }
 
-            const data = await res.json();
-            setGuideData(data as GuideResponse);
+            const data = await res.json() as GuideResponse;
+            setGuideData(data);
             setQuestionHelp({});
+            saveToBackend(data, {}, role);
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : "An error occurred");
         } finally {
@@ -99,10 +138,12 @@ export default function InterviewGuide() {
             if (!res.ok) throw new Error("Failed to generate more questions");
 
             const data = await res.json() as GuideResponse;
-            setGuideData({
+            const newGuide = {
                 generalTips: guideData.generalTips,
                 guide: [...guideData.guide, ...data.guide]
-            });
+            };
+            setGuideData(newGuide);
+            saveToBackend(newGuide, questionHelp, role);
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : "An error occurred");
         } finally {
@@ -123,7 +164,11 @@ export default function InterviewGuide() {
                 })
             });
             const data = await res.json();
-            setQuestionHelp(prev => ({...prev, [idx]: data.reply}));
+            setQuestionHelp(prev => {
+                const updated = {...prev, [idx]: data.reply};
+                if (guideData) saveToBackend(guideData, updated, role);
+                return updated;
+            });
         } catch {
             alert("Failed to get realtime help");
         } finally {
