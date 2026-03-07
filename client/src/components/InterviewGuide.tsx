@@ -7,7 +7,9 @@ import {
     Lightbulb, 
     UserCheck, 
     MessageSquare,
-    Loader2
+    Loader2,
+    Plus,
+    Bot
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -28,7 +30,10 @@ export default function InterviewGuide() {
     const [role, setRole] = useState("Software Engineer");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [guideData, setGuideData] = useState<GuideResponse | null>(null);
+    const [questionHelp, setQuestionHelp] = useState<{[key: number]: string}>({});
+    const [loadingHelp, setLoadingHelp] = useState<{[key: number]: boolean}>({});
 
     useEffect(() => {
         // Hydrate role
@@ -66,10 +71,63 @@ export default function InterviewGuide() {
 
             const data = await res.json();
             setGuideData(data as GuideResponse);
+            setQuestionHelp({});
         } catch (error: unknown) {
             alert(error instanceof Error ? error.message : "An error occurred");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAddMore = async () => {
+        if (!guideData) return;
+        setLoadingMore(true);
+        try {
+            const formData = new FormData();
+            formData.append('role', role);
+            if (notes) formData.append('notes', notes);
+            if (selectedFile) formData.append('resume', selectedFile);
+            
+            const existingQs = guideData.guide.map(q => q.question);
+            formData.append('existingQuestions', JSON.stringify(existingQs));
+
+            const res = await fetch('/api/ai/generate-interview-guide', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error("Failed to generate more questions");
+
+            const data = await res.json() as GuideResponse;
+            setGuideData({
+                generalTips: guideData.generalTips,
+                guide: [...guideData.guide, ...data.guide]
+            });
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : "An error occurred");
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const handleGetHelp = async (idx: number, question: string) => {
+        if (questionHelp[idx]) return; // Already fetched
+        setLoadingHelp(prev => ({...prev, [idx]: true}));
+        try {
+            const res = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `I am preparing for a ${role} interview. The question is: "${question}". I need deeper insight, another example, or a realtime tip on how to answer this effectively. Keep it concise, 2-3 sentences max.`,
+                    role: role
+                })
+            });
+            const data = await res.json();
+            setQuestionHelp(prev => ({...prev, [idx]: data.reply}));
+        } catch {
+            alert("Failed to get realtime help");
+        } finally {
+            setLoadingHelp(prev => ({...prev, [idx]: false}));
         }
     };
 
@@ -81,8 +139,8 @@ export default function InterviewGuide() {
                 <main className="max-w-4xl mx-auto px-4 py-8 md:px-8">
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-2">
-                           <div className="p-2.5 bg-indigo-100 rounded-xl">
-                              <MessageSquare className="w-6 h-6 text-indigo-600" />
+                           <div className="p-2.5 bg-teal-100 rounded-xl">
+                              <MessageSquare className="w-6 h-6 text-teal-600" />
                            </div>
                            <h1 className="text-2xl font-bold text-slate-800">AI Interview Prep Guide</h1>
                         </div>
@@ -101,7 +159,7 @@ export default function InterviewGuide() {
                                         type="text"
                                         value={role}
                                         onChange={(e) => setRole(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all font-medium text-sm text-slate-800"
+                                        className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all font-medium text-sm text-slate-800"
                                         placeholder="e.g. Backend Developer"
                                     />
                                 </div>
@@ -111,10 +169,10 @@ export default function InterviewGuide() {
                                 <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Resume (Optional but recommended)</label>
                                 <div 
                                     onClick={() => fileInputRef.current?.click()}
-                                    className={"w-full border-2 border-dashed rounded-xl flex items-center justify-center p-3 transition-colors cursor-pointer " + (selectedFile ? 'border-indigo-400 bg-indigo-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50')}
+                                    className={"w-full border-2 border-dashed rounded-xl flex items-center justify-center p-3 transition-colors cursor-pointer " + (selectedFile ? 'border-teal-400 bg-teal-50' : 'border-slate-300 hover:border-teal-400 hover:bg-slate-50')}
                                 >
                                     {selectedFile ? (
-                                        <span className="text-sm font-bold text-indigo-700 truncate max-w-[200px]">{selectedFile.name}</span>
+                                        <span className="text-sm font-bold text-teal-700 truncate max-w-[200px]">{selectedFile.name}</span>
                                     ) : (
                                         <div className="flex items-center gap-2 text-slate-500 text-sm font-medium">
                                             <UploadCloud className="w-5 h-5" />
@@ -138,7 +196,7 @@ export default function InterviewGuide() {
                                   type="text"
                                   value={notes}
                                   onChange={(e) => setNotes(e.target.value)}
-                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all font-medium text-sm text-slate-800"
+                                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all font-medium text-sm text-slate-800"
                                   placeholder="e.g. System Design, React hooks, Behavioral..."
                              />
                         </div>
@@ -146,8 +204,8 @@ export default function InterviewGuide() {
                         <div className="mt-6 flex justify-end">
                             <button 
                                 onClick={handleGenerate}
-                                disabled={loading}
-                                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl font-bold shadow-md shadow-indigo-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                disabled={loading || loadingMore}
+                                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                                 {loading ? 'Generating Guide...' : 'Generate AI Interview Guide'}
@@ -178,20 +236,30 @@ export default function InterviewGuide() {
                             
                             <div className="space-y-4">
                                 {guideData.guide.map((qa, idx) => (
-                                    <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:border-indigo-300 transition-colors">
-                                        <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                                    <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:border-teal-300 transition-colors">
+                                        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start gap-3">
                                             <div className="flex gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center shrink-0">
+                                                <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center shrink-0">
                                                     Q{idx + 1}
                                                 </div>
                                                 <h3 className="text-[15px] font-bold text-slate-800 mt-1.5 leading-snug">
                                                     {qa.question}
                                                 </h3>
                                             </div>
+                                            {!questionHelp[idx] && (
+                                                <button 
+                                                   onClick={() => handleGetHelp(idx, qa.question)}
+                                                   disabled={loadingHelp[idx]}
+                                                   className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-2.5 py-1.5 rounded-lg transition-colors border border-teal-100"
+                                                >
+                                                   {loadingHelp[idx] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
+                                                   {loadingHelp[idx] ? 'Thinking...' : 'AI Help'}
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="p-5 space-y-4">
-                                            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
-                                                <h4 className="text-xs font-black text-indigo-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                            <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-4">
+                                                <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                                                     <MessageSquare className="w-3.5 h-3.5" /> Optimal Answer Structure
                                                 </h4>
                                                 <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
@@ -207,9 +275,31 @@ export default function InterviewGuide() {
                                                     {qa.tip}
                                                 </p>
                                             </div>
+
+                                            {questionHelp[idx] && (
+                                                <div className="bg-teal-50/50 border border-teal-200 rounded-xl p-4 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                    <h4 className="text-xs font-black text-teal-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                        <Bot className="w-3.5 h-3.5" /> Real-time AI Assistant Insight
+                                                    </h4>
+                                                    <p className="text-[13px] text-teal-900 leading-relaxed font-medium">
+                                                        {questionHelp[idx]}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            
+                            <div className="pt-4 flex justify-center">
+                                <button 
+                                    onClick={handleAddMore}
+                                    disabled={loadingMore}
+                                    className="px-6 py-2.5 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-teal-600" />}
+                                    {loadingMore ? 'Loading more...' : 'Add More Questions'}
+                                </button>
                             </div>
                         </div>
                     )}

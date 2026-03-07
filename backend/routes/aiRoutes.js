@@ -359,6 +359,9 @@ router.post('/generate-interview-guide', upload.single('resume'), async (req, re
     try {
         const role = req.body.role || 'Software Engineering';
         const notes = req.body.notes || ''; // Optional context or specific topics the user wants
+        const existingQsRaw = req.body.existingQuestions;
+        let existingQuestions = [];
+        try { if (existingQsRaw) existingQuestions = JSON.parse(existingQsRaw); } catch(e){}
         
         let resumeText = '';
         if (req.file) {
@@ -376,6 +379,7 @@ router.post('/generate-interview-guide', upload.single('resume'), async (req, re
         The user wants an interview guide to prepare for a ${role} position.
         ${resumeText ? 'The user has uploaded their resume. Base the questions entirely around scrutinizing their actual experience, missing gaps, and the role.' : 'No resume was provided, so provide foundational and advanced questions for this role.'}
         ${notes ? `The user also mentioned they specifically want to focus on: "${notes}".` : ''}
+        ${existingQuestions.length > 0 ? `CRITICAL: Do NOT generate or repeat any of the following questions: ${JSON.stringify(existingQuestions)}` : ''}
         
         Generate exactly 5 highly relevant interview questions. For each question provide:
         1. The Question.
