@@ -15,7 +15,6 @@ import {
   BookOpen,
   Wrench,
   Code,
-  Globe,
 } from 'lucide-react';
 
 interface NavItem {
@@ -108,13 +107,13 @@ const navItems: NavItem[] = [
     route: '/workflow-lifecycle',
     badge: 'NEW',
   },
-  {
-    label: 'AI Portfolio Builder',
-    subtitle: 'Recruiter ready site',
-    icon: <Globe className="w-5 h-5 text-emerald-600" />,
-    route: '/portfolio',
-    badge: 'NEW',
-  },
+  // {
+  //   label: 'AI Portfolio Builder',
+  //   subtitle: 'Recruiter ready site',
+  //   icon: <Globe className="w-5 h-5 text-emerald-600" />,
+  //   route: '/portfolio',
+  //   badge: 'NEW',
+  // },
 ];
 
 export default function Sidebar({ activePage }: SidebarProps) {
