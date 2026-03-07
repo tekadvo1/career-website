@@ -354,4 +354,65 @@ router.post('/generate-resume-quiz', upload.single('resume'), async (req, res) =
     }
 });
 
+// POST /api/ai/generate-interview-guide - Generates an interview guide (Q&A and tips)
+router.post('/generate-interview-guide', upload.single('resume'), async (req, res) => {
+    try {
+        const role = req.body.role || 'Software Engineering';
+        const notes = req.body.notes || ''; // Optional context or specific topics the user wants
+        
+        let resumeText = '';
+        if (req.file) {
+            if (req.file.mimetype === 'application/pdf') {
+                 const pdfData = await pdfParse(req.file.buffer);
+                 resumeText = pdfData.text;
+            } else {
+                 resumeText = req.file.buffer.toString('utf-8');
+            }
+            if (resumeText.length > 3000) resumeText = resumeText.substring(0, 3000);
+        }
+
+        let systemPrompt = `You are an expert ${role} Technical Interviewer and Career Coach.
+        
+        The user wants an interview guide to prepare for a ${role} position.
+        ${resumeText ? 'The user has uploaded their resume. Base the questions entirely around scrutinizing their actual experience, missing gaps, and the role.' : 'No resume was provided, so provide foundational and advanced questions for this role.'}
+        ${notes ? `The user also mentioned they specifically want to focus on: "${notes}".` : ''}
+        
+        Generate exactly 5 highly relevant interview questions. For each question provide:
+        1. The Question.
+        2. A "Great Answer" example or structure.
+        3. A "Pro Tip" for how to stand out when answering this.
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+          "guide": [
+            {
+              "question": "The question text?",
+              "answer": "A great answer example.",
+              "tip": "How to stand out."
+            }
+          ],
+          "generalTips": ["Overall tip 1", "Overall tip 2"]
+        }`;
+
+        const requestOptions = {
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease generate the interview guide.` : `Please generate the interview guide.` }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        };
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        res.json(JSON.parse(reply));
+    } catch (error) {
+        console.error('Interview Guide Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate interview guide' });
+    }
+});
+
 module.exports = router;

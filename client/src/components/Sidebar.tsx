@@ -15,6 +15,7 @@ import {
   BookOpen,
   Wrench,
   Code,
+  MessageSquare,
 } from 'lucide-react';
 
 interface NavItem {
@@ -114,6 +115,13 @@ const navItems: NavItem[] = [
   //   route: '/portfolio',
   //   badge: 'NEW',
   // },
+  {
+    label: 'Interview Guide',
+    subtitle: 'AI Prep & Q&A',
+    icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
+    route: '/interview-guide',
+    badge: 'NEW',
+  },
 ];
 
 export default function Sidebar({ activePage }: SidebarProps) {

@@ -22,6 +22,7 @@ import RoadmapTree from './components/RoadmapTree';
 import QuizGame from './components/QuizGame';
 import Workspaces from './components/Workspaces';
 import Portfolio from './components/Portfolio';
+import InterviewGuide from './components/InterviewGuide';
 
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -33,10 +34,9 @@ const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
       const user = JSON.parse(userStr);
       if (user.onboarding_completed) {
         return <Navigate to="/dashboard" replace />;
-      } else {
-        return <Navigate to="/onboarding" replace />;
       }
-    } catch (e) {
+      return <Navigate to="/onboarding" replace />;
+    } catch {
       // If parsing fails, allow access to public route (and maybe clear bad storage)
       localStorage.removeItem('user');
       localStorage.removeItem('token');
@@ -82,6 +82,7 @@ function App() {
           <Route path="/roadmap-tree" element={<RoadmapTree />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/portfolio/:username" element={<Portfolio isPublic={true} />} />
+          <Route path="/interview-guide" element={<InterviewGuide />} />
         </Routes>
       </div>
     </BrowserRouter>
