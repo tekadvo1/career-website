@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare,
-  RefreshCw, GitBranch
+  RefreshCw, GitBranch, Radio
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -205,22 +205,17 @@ export default function LearningRoadmap() {
           return prev + 1; // 1% roughly every 600ms = ~60s
         });
       }, 600);
-    } else {
-      setLoadingProgress(100);
+    setLoadingProgress(100);
     }
     return () => clearInterval(interval);
   }, [isLoading]);
 
   useEffect(() => {
+    let es: EventSource | null = null;
     const loadData = async () => {
       setIsLoading(true);
-      
-      // Load progress
-      const savedProgress = localStorage.getItem(`roadmap_progress_${role}`);
-      if (savedProgress) {
-          try { setCompletedTopics(new Set(JSON.parse(savedProgress))); } catch (e) {}
-      }
 
+      // Load progress from backend immediately as backup, but SSE takes over
       try {
           const userStr = localStorage.getItem('user');
           if (userStr) {
@@ -234,6 +229,23 @@ export default function LearningRoadmap() {
                 }).catch(e => console.error(e));
           }
       } catch (e) {}
+
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      if (user?.id) {
+          es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+          es.addEventListener('snapshot', (e: MessageEvent) => {
+              try {
+                  const snap = JSON.parse(e.data);
+                  if (snap && snap.roadmapProgress) {
+                      const completedForRole = snap.roadmapProgress
+                          .filter((r: any) => r.role === role)
+                          .map((r: any) => r.topic_name);
+                      setCompletedTopics(new Set(completedForRole));
+                  }
+              } catch (err) {}
+          });
+      }
 
       // Load Roadmap Data
       let analysis = location.state?.analysis;
@@ -292,11 +304,11 @@ export default function LearningRoadmap() {
     };
 
     loadData();
-  }, [location.state, role, navigate]);
 
-  useEffect(() => {
-    localStorage.setItem(`roadmap_progress_${role}`, JSON.stringify(Array.from(completedTopics)));
-  }, [completedTopics, role]);
+    return () => {
+        if (es) es.close();
+    };
+  }, [location.state, role, navigate]);
 
   const toggleTopicCompletion = async (topicName: string) => {
       const isCompleted = !completedTopics.has(topicName);
@@ -435,7 +447,12 @@ export default function LearningRoadmap() {
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>FindStreak AI Personalized Path</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-1">Your Learning Roadmap</h1>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Your Learning Roadmap</h1>
+                  <span className={`hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700`}>
+                     <Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE
+                  </span>
+                </div>
                 <p className="text-sm sm:text-base text-slate-600">A structured, real-time path to become a {role}</p>
               </div>
             </div>

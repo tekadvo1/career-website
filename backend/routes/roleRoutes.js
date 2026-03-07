@@ -726,6 +726,17 @@ router.post('/progress', async (req, res) => {
                 [userId, role, topicName]
             );
         }
+        
+        // Broadcast change live
+        try {
+            const fetch = (await import('node-fetch')).default;
+            fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId, event: 'snapshot' })
+            }).catch(() => {});
+        } catch (_) {}
+
         res.json({ success: true });
     } catch (err) {
         console.error('Error updating progress:', err);

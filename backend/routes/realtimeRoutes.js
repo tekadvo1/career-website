@@ -112,7 +112,7 @@ async function recordDailyActivity(userId) {
 
 // ─── Helper: fetch the full dashboard snapshot from PostgreSQL ────────────────
 async function getUserDashboardData(userId) {
-  const [projResult, xpResult, streak] = await Promise.all([
+  const [projResult, xpResult, streak, roadmapResult, missionsResult, missionsXpResult] = await Promise.all([
     pool.query(
       `SELECT id, title, description, role, status, progress_data, project_data, last_updated, created_at
        FROM user_projects WHERE user_id = $1 ORDER BY last_updated DESC`,
@@ -124,6 +124,18 @@ async function getUserDashboardData(userId) {
       [userId]
     ),
     recordDailyActivity(userId),
+    pool.query(`SELECT role, topic_name FROM roadmap_progress WHERE user_id = $1`, [userId]),
+    pool.query(
+      `SELECT m.*, um.status, um.progress, um.xp_earned 
+       FROM missions m 
+       LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = $1
+       ORDER BY m.difficulty, m.xp_reward`,
+       [userId]
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(xp_earned), 0) as total_xp FROM user_missions WHERE user_id = $1 AND status = 'completed'`,
+      [userId]
+    )
   ]);
 
   const projects = projResult.rows.map(p => ({
@@ -139,6 +151,9 @@ async function getUserDashboardData(userId) {
     activeCount:    projects.filter(p => p.status === 'active').length,
     completedCount: projects.filter(p => p.status === 'completed').length,
     savedCount:     projects.filter(p => p.status === 'saved').length,
+    roadmapProgress: roadmapResult.rows,
+    missions: missionsResult.rows,
+    missionsTotalXp: parseInt(missionsXpResult.rows[0]?.total_xp || 0, 10),
     timestamp:      new Date().toISOString(),
   };
 }

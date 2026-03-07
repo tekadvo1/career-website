@@ -53,31 +53,7 @@ interface Reward {
   available: boolean;
 }
 
-interface SuggestedProject {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: string;
-  duration: string;
-  matchScore: number;
-  tags: string[];
-  tools: string[];
-  languages: string[];
-  whyRecommended: string[];
-  skillsToDevelop: string[];
-  setupGuide: { title: string; steps: string[] };
-  metrics?: {
-    xp: number;
-    matchIncrease: string;
-    timeEstimate: string;
-    roleRelevance: string;
-  };
-  careerImpact?: string[];
-  skillGainEstimates?: { skill: string; before: number; after: number }[];
-  curriculumStats?: { modules: number; tasks: number; deployment: boolean; codeReview: boolean };
-  recruiterAppeal?: string[];
-  trending?: boolean;
-}
+
 
 export default function Missions() {
   const navigate = useNavigate();
@@ -99,79 +75,93 @@ export default function Missions() {
   const [startingMission, setStartingMission] = useState<number | null>(null);
 
   // Workspace state
-  const [dashboardProjects, setDashboardProjects] = useState<SuggestedProject[]>([]);
-  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [userProjects, setUserProjects] = useState<any[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
 
-  // Fetch missions from backend
+  // Real-time Missions and XP connection
   useEffect(() => {
-    const fetchData = async () => {
+    let es: EventSource | null = null;
+    let isMounted = true;
+
+    const fetchInitial = async () => {
       setIsLoading(true);
       try {
         const [missionsRes, rewardsRes] = await Promise.all([
-          fetch(`/api/missions?role=${encodeURIComponent(role)}&userId=${user.id || ''}`),
+          fetch(`/api/missions?role=${encodeURIComponent(role)}&userId=${user?.id || ''}`),
           fetch('/api/missions/rewards')
         ]);
-
+        
         const missionsData = await missionsRes.json();
         const rewardsData = await rewardsRes.json();
-
-        if (missionsData.success) {
-          setMissions(missionsData.missions);
-          setTotalXp(missionsData.totalXp || 0);
-          setCompletedCount(missionsData.completedCount || 0);
-          setTotalCount(missionsData.totalCount || 0);
-        }
-
-        if (rewardsData.success) {
-          setRewards(rewardsData.rewards);
+        
+        if (isMounted) {
+           if (missionsData.success && missionsData.missions) {
+               setMissions(missionsData.missions);
+               if (missionsData.totalXp !== undefined) setTotalXp(missionsData.totalXp);
+               if (missionsData.completedCount !== undefined) setCompletedCount(missionsData.completedCount);
+               if (missionsData.totalCount !== undefined) setTotalCount(missionsData.totalCount);
+           }
+           if (rewardsData.success) {
+               setRewards(rewardsData.rewards);
+           }
         }
       } catch (e) {
-        console.error('Failed to fetch missions:', e);
+        console.error('Failed to fetch initial missions/rewards:', e);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchInitial();
+
+    if (user?.id) {
+       es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+       es.addEventListener('snapshot', (e: MessageEvent) => {
+           try {
+               const snap = JSON.parse(e.data);
+               if (snap && snap.missions && isMounted) {
+                   // Parse steps which might be stringified from DB
+                   const mappedMissions = snap.missions.map((m: any) => ({
+                       ...m,
+                       steps: typeof m.steps === 'string' ? JSON.parse(m.steps) : m.steps,
+                       status: m.status || 'available',
+                       progress: m.progress || 0,
+                       xp_earned: m.xp_earned || 0
+                   }));
+                   
+                   // Filter by role
+                   const roleMissions = mappedMissions.filter((m: any) => m.role === role);
+                   setMissions(roleMissions);
+                   setTotalCount(roleMissions.length);
+                   setCompletedCount(roleMissions.filter((m: any) => m.status === 'completed').length);
+                   
+                   if (snap.missionsTotalXp !== undefined) {
+                      setTotalXp(snap.missionsTotalXp);
+                   }
+                   if (snap.projects && isMounted) {
+                      const realProjects = snap.projects.map((p: any) => {
+                          let pd = p.project_data;
+                          if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = {}; } }
+                          let prg = p.progress_data;
+                          if (typeof prg === 'string') { try { prg = JSON.parse(prg); } catch { prg = {}; } }
+                          return { ...p, project_data: pd, progress_data: prg };
+                      });
+                      const roleUserProjects = realProjects.filter((p: any) => !p.role || p.role === role);
+                      setUserProjects(roleUserProjects);
+                      setLoadingProjects(false);
+                   }
+               }
+           } catch (err) {}
+       });
+    }
+
+    return () => {
+       isMounted = false;
+       if (es) es.close();
+    };
   }, [role, user.id]);
 
-  // Fetch projects for workspace tab
-  useEffect(() => {
-    if (activeTab !== 'workspace') return;
-
-    const fetchProjects = async () => {
-      setLoadingProjects(true);
-      try {
-        // Try cache first
-        const cacheKey = `dashboard_projects_v2_${role}`;
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setDashboardProjects(parsed);
-            setLoadingProjects(false);
-            return;
-          }
-        }
-        // Fetch from API
-        const res = await fetch('/api/role/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role })
-        });
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setDashboardProjects(data.data);
-        }
-      } catch (e) {
-        console.error('Failed to fetch projects:', e);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-
-    fetchProjects();
-  }, [activeTab, role]);
+  // Fetch projects for workspace tab - Removed in favor of real-time SSE userProjects
 
   const filteredMissions = missions.filter(m =>
     categoryFilter === 'all' || m.category === categoryFilter
@@ -298,7 +288,7 @@ export default function Missions() {
   };
 
   // Navigate to workspace for a specific project
-  const handleOpenWorkspace = (project: SuggestedProject) => {
+  const handleOpenWorkspace = (project: any) => {
     navigate('/project-workspace', {
       state: {
         project: project,
@@ -664,11 +654,11 @@ export default function Missions() {
               {loadingProjects ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="w-6 h-6 text-indigo-400 animate-spin mr-3" />
-                  <span className="text-slate-400">Loading AI-recommended projects...</span>
+                  <span className="text-slate-400">Loading your active projects...</span>
                 </div>
-              ) : dashboardProjects.length > 0 ? (
+              ) : userProjects.length > 0 ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {dashboardProjects.map((project, i) => (
+                  {userProjects.map((project, i) => (
                     <div
                       key={i}
                       onClick={() => handleOpenWorkspace(project)}
@@ -678,37 +668,37 @@ export default function Missions() {
                         {/* Header */}
                         <div className="flex justify-between items-start mb-3">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            project.difficulty === 'Beginner' ? 'bg-emerald-500/20 text-emerald-400' :
-                            project.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-400' :
+                            project.project_data?.difficulty === 'Beginner' ? 'bg-emerald-500/20 text-emerald-400' :
+                            project.project_data?.difficulty === 'Intermediate' ? 'bg-amber-500/20 text-amber-400' :
                             'bg-red-500/20 text-red-400'
                           }`}>
-                            {project.difficulty}
+                            {project.project_data?.difficulty || 'Intermediate'}
                           </span>
-                          {project.trending && <Flame className="w-4 h-4 text-orange-400" />}
+                          {project.status === 'active' && <Flame className="w-4 h-4 text-orange-400" />}
                         </div>
 
                         <h3 className="font-bold text-white text-sm mb-2 group-hover/card:text-emerald-300 transition-colors line-clamp-1">
                           {project.title}
                         </h3>
-                        <p className="text-[11px] text-slate-400 line-clamp-2 mb-4">{project.description}</p>
+                        <p className="text-[11px] text-slate-400 line-clamp-2 mb-4">{project.project_data?.description || project.description}</p>
 
                         {/* Project stats */}
                         <div className="flex items-center gap-3 mb-3">
                           <span className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
-                            <Zap className="w-3 h-3" /> {project.metrics?.xp || 500} XP
+                            <Zap className="w-3 h-3" /> {project.project_data?.metrics?.xp || 500} XP
                           </span>
                           <span className="text-[10px] text-slate-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {project.metrics?.timeEstimate || project.duration}
+                            <Clock className="w-3 h-3" /> {project.project_data?.metrics?.timeEstimate || project.project_data?.duration || 'Flexible'}
                           </span>
-                          <span className="text-[10px] text-emerald-400 font-semibold ml-auto">
-                            {project.matchScore}% Match
+                          <span className="text-[10px] text-emerald-400 font-semibold ml-auto capitalize">
+                            Status: {project.status}
                           </span>
                         </div>
 
                         {/* Tech tags */}
-                        {project.tools && project.tools.length > 0 && (
+                        {project.project_data?.tools && project.project_data.tools.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
-                            {project.tools.slice(0, 4).map((tool, j) => (
+                            {project.project_data.tools.slice(0, 4).map((tool: string, j: number) => (
                               <span key={j} className="px-1.5 py-0.5 bg-white/5 text-slate-400 rounded text-[9px] font-medium border border-white/5">
                                 {tool}
                               </span>
@@ -720,7 +710,7 @@ export default function Missions() {
                       {/* Footer CTA */}
                       <div className="px-5 py-3 border-t border-white/5 flex items-center justify-between bg-white/[0.02]">
                         <span className="text-[10px] text-slate-500 font-medium">
-                          {project.metrics?.matchIncrease || '+10%'} Career Boost
+                          {project.project_data?.metrics?.matchIncrease || '+10%'} Career Boost
                         </span>
                         <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold group-hover/card:text-emerald-300">
                           Open Workspace <ArrowRight className="w-3 h-3 group-hover/card:translate-x-1 transition-transform" />
@@ -731,7 +721,7 @@ export default function Missions() {
                 </div>
               ) : (
                 <div className="text-center py-12 bg-white/[0.02] rounded-xl border border-white/5">
-                  <p className="text-slate-400 text-sm">No projects loaded yet. Visit the Dashboard to generate AI project recommendations.</p>
+                  <p className="text-slate-400 text-sm">No active projects found. Visit the Dashboard to generate and save your initial projects.</p>
                   <button
                     onClick={() => navigate('/dashboard', { state: { role } })}
                     className="mt-4 px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-semibold transition-colors"

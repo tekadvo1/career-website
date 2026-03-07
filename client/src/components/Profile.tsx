@@ -108,7 +108,42 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         if (data.totalStreak !== undefined) {
           setLiveStreak(data.totalStreak);
         }
-        loadRealtimeStats();
+        
+        const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+        const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+        const activeRole = lastRoleState?.role || "Software Engineer";
+
+        if (data.projects && Array.isArray(data.projects)) {
+             const realProjects = data.projects.map((p: any) => {
+                 let pd = p.project_data;
+                 if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = {}; } }
+                 return { ...pd, status: p.status, role: p.role, title: p.title };
+             });
+             
+             const roleProjects = realProjects.filter((p: any) => !p.role || p.role === activeRole);
+             const completedArr = roleProjects.filter((p: any) => p.status === 'completed' || p.status === 'done');
+             const inProgressProject = roleProjects.find((p: any) => p.status === 'active');
+             
+             const projectsCompleted = completedArr.length;
+             const totalProjects = roleProjects.length > 0 ? roleProjects.length : 1;
+             const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
+             
+             const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
+             const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
+             const skillsMastered = roadmapProgress.length;
+             
+             setStats(prev => ({
+                 ...prev,
+                 projectsCompleted,
+                 totalProjects,
+                 skillsMastered,
+                 totalLearningHours: skillsMastered * 2 + (data.totalStreak || liveStreak) * 1.5,
+                 achievementsUnlocked: Math.floor(skillsMastered / 3) + (projectsCompleted > 0 ? 1 : 0),
+                 currentProjectName
+             }));
+        } else {
+             loadRealtimeStats();
+        }
       } catch(err) {}
     };
 

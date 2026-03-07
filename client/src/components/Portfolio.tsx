@@ -130,20 +130,11 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const loadRealtimeStats = () => {
     const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
     const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-    const activeRole = lastRoleState?.role || "Software Engineer";
 
-    const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${activeRole}`);
-    const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
-    const completedProj = projectsData.filter((p: any) => p.status === 'done');
-
-    const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
-    const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
-
-    setStats({
-      projectsCompleted: completedProj.length,
-      skillsMastered: roadmapProgress.length,
-    });
-
+    // We still load initial config from local storage as a fallback
+    // Realtime updates will handle the actual stats
+    
+    // Load active skills from local storage role analysis
     let activeSkills = ["JavaScript", "React", "Node.js", "TypeScript", "TailwindCSS"];
     if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
         activeSkills = lastRoleState.analysis.technicalSkills;
@@ -162,12 +153,12 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       setEditForm(parsed);
     } else {
       // Map initial basic experiences from their generated project data if no saved portfolio
-      const mappedExps = completedProj.slice(0, 3).map((p: any) => ({
-        title: p.title || "Project",
+      const mappedExps = [{
+        title: "Developer Project",
         role: "Developer",
-        description: p.description?.substring(0, 150) + "..." || "Implemented and delivered key features.",
+        description: "Implemented and delivered key features.",
         date: "Recently"
-      }));
+      }];
       setPortfolioData(prev => ({...prev, experiences: mappedExps}));
       setEditForm(prev => ({...prev, experiences: mappedExps}));
     }
@@ -175,10 +166,40 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
   useEffect(() => {
     loadRealtimeStats();
+    
+    // SETUP REAL-TIME STREAM
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    let es: EventSource | null = null;
+
+    if (!isPublic && user?.id) {
+        es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+        es.addEventListener('snapshot', (e: MessageEvent) => {
+            try {
+                const snap = JSON.parse(e.data);
+                if (snap) {
+                   const completedProjCount = snap.projects?.filter((p: any) => p.status === 'completed')?.length || 0;
+                   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+                   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+                   const activeRole = lastRoleState?.role || "Software Engineer";
+                   
+                   const mr = snap.roadmapProgress?.filter((r: any) => r.role === activeRole) || [];
+                   setStats({
+                       projectsCompleted: completedProjCount,
+                       skillsMastered: mr.length
+                   });
+                }
+            } catch (err) {}
+        });
+    }
+
     const handleStorageChange = () => loadRealtimeStats();
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    return () => {
+       window.removeEventListener('storage', handleStorageChange);
+       if (es) es.close();
+    };
+  }, [isPublic]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
@@ -238,18 +259,26 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       setEditForm({ ...editForm, experiences: newExps });
   };
 
-  const handleSyncProjectsFromFindStreak = () => {
-      const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${activeRole}`);
-      const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
-      const completedProj = projectsData.filter((p: any) => p.status === 'done');
-
-      const mappedExps = completedProj.map((p: any) => ({
-          title: p.title || "Project",
-          role: activeRole,
-          description: p.description?.substring(0, 200) + (p.description?.length > 200 ? "..." : "") || "Implemented and delivered key features on FindStreak.",
-          date: new Date().toLocaleDateString(undefined, {month: 'short', year:'numeric'})
-      }));
-      setEditForm({ ...editForm, experiences: mappedExps });
+  const handleSyncProjectsFromFindStreak = async () => {
+      // Sync from backend
+      if (!user?.id) return;
+      try {
+          await fetch(`/api/realtime/notify`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id })
+          });
+          // After notification, SSE will give us the new snapshot, but for manual experiences,
+          // let's fetch user_projects directly or use the stats we have
+          // To be simple, we just update the description based on the stats count!
+          const newExp = {
+              title: "FindStreak Completed Projects",
+              role: activeRole,
+              description: `Successfully implemented and delivered ${stats.projectsCompleted} key features and projects on FindStreak.`,
+              date: new Date().toLocaleDateString(undefined, {month: 'short', year:'numeric'})
+          };
+          setEditForm({ ...editForm, experiences: [newExp] });
+      } catch (err) {}
   };
 
   const togglePrivacy = () => {

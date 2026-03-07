@@ -242,6 +242,13 @@ router.post('/start', async (req, res) => {
       ON CONFLICT (user_id, mission_id) DO UPDATE SET status = 'in_progress', started_at = NOW()
     `, [userId, missionId]);
 
+    // Notify clients for real-time updates
+    fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    }).catch(e => console.error('Notify failed:', e));
+
     res.json({ success: true });
   } catch (e) {
     console.error('Error starting mission:', e);
@@ -274,6 +281,12 @@ router.post('/complete', async (req, res) => {
     );
 
     res.json({ success: true, xpEarned: xpReward, totalXp: parseInt(xpResult.rows[0].total_xp) });
+    
+    fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    }).catch(e => console.error('Notify failed:', e));
   } catch (e) {
     console.error('Error completing mission:', e);
     res.status(500).json({ error: 'Failed to complete mission' });
@@ -319,6 +332,12 @@ router.post('/redeem', async (req, res) => {
     );
 
     res.json({ success: true, reward: reward.title, remainingXp: availableXp - reward.xp_cost });
+
+    fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId })
+    }).catch(e => console.error('Notify failed:', e));
   } catch (e) {
     console.error('Error redeeming reward:', e);
     res.status(500).json({ error: 'Failed to redeem reward' });
