@@ -47,6 +47,12 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     location: "Global"
   });
 
+  const [avatarStr, setAvatarStr] = useState("");
+  const [isPublicProfile, setIsPublicProfile] = useState(false);
+  const [customSkills, setCustomSkills] = useState<string[]>([]);
+  const [newSkillInput, setNewSkillInput] = useState("");
+  const [showAddSkill, setShowAddSkill] = useState(false);
+
   const [stats, setStats] = useState({
     projectsCompleted: 0,
     totalProjects: 1,
@@ -97,6 +103,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       const parsed = JSON.parse(savedDetails);
       setProfileDetails(parsed);
       setEditForm(parsed);
+      if (parsed.avatar) setAvatarStr(parsed.avatar);
+      if (parsed.isPublic) setIsPublicProfile(parsed.isPublic);
+      if (parsed.customSkills) setCustomSkills(parsed.customSkills);
+
       if (parsed.bio && parsed.phone && parsed.location) {
         setShowSetupModal(false);
       }
@@ -254,7 +264,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         return;
     }
     setProfileDetails(editForm);
-    localStorage.setItem('user_profile_details', JSON.stringify(editForm));
+    const updated = { ...editForm, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
+    localStorage.setItem('user_profile_details', JSON.stringify(updated));
     setShowSetupModal(false);
   };
 
@@ -272,8 +283,59 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const handleSaveProfile = () => {
     setProfileDetails(editForm);
-    localStorage.setItem('user_profile_details', JSON.stringify(editForm));
+    const updated = { ...editForm, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
+    localStorage.setItem('user_profile_details', JSON.stringify(updated));
     setIsEditing(false);
+  };
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setAvatarStr(reader.result as string);
+              const savedDetails = localStorage.getItem('user_profile_details');
+              if (savedDetails) {
+                 const parsed = JSON.parse(savedDetails);
+                 localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, avatar: reader.result as string }));
+              }
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const togglePublicProfile = () => {
+      setIsPublicProfile(!isPublicProfile);
+      const savedDetails = localStorage.getItem('user_profile_details');
+      if (savedDetails) {
+          const parsed = JSON.parse(savedDetails);
+          localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, isPublic: !isPublicProfile }));
+      }
+  };
+
+  const handleAddCustomSkill = () => {
+      if (newSkillInput.trim() && !customSkills.includes(newSkillInput.trim())) {
+          const updatedSkills = [...customSkills, newSkillInput.trim()];
+          setCustomSkills(updatedSkills);
+          
+          const savedDetails = localStorage.getItem('user_profile_details');
+          if (savedDetails) {
+             const parsed = JSON.parse(savedDetails);
+             localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, customSkills: updatedSkills }));
+          }
+      }
+      setNewSkillInput("");
+      setShowAddSkill(false);
+  };
+
+  const removeCustomSkill = (skillToRemove: string) => {
+      const updatedSkills = customSkills.filter(s => s !== skillToRemove);
+      setCustomSkills(updatedSkills);
+      const savedDetails = localStorage.getItem('user_profile_details');
+      if (savedDetails) {
+          const parsed = JSON.parse(savedDetails);
+          localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, customSkills: updatedSkills }));
+      }
   };
 
   const handleAISync = async () => {
@@ -385,6 +447,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             
             <div className="flex items-center gap-2">
               {!isPublic && (
+                <div className="flex items-center gap-2 mr-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                    <span className="text-[11px] font-bold text-slate-600">Public visibility:</span>
+                    <button 
+                       onClick={togglePublicProfile}
+                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${isPublicProfile ? 'bg-teal-500' : 'bg-slate-300'}`}
+                    >
+                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isPublicProfile ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                    </button>
+                </div>
+              )}
+              {!isPublic && isPublicProfile && (
                 <button 
                   onClick={shareProfile}
                   className="flex items-center gap-1.5 px-2.5 py-1.5 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors font-semibold text-xs mr-1"
@@ -422,12 +495,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               {/* Profile Picture */}
               <div className="relative w-[104px] h-[104px] -mt-10 mb-3 mx-auto md:mx-0">
                 <div className="w-full h-full bg-slate-900 border-4 border-white rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-md cursor-pointer relative overflow-hidden">
-                  {userData.name ? userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G"}
+                  {avatarStr ? (
+                      <img src={avatarStr} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                      <>{userData.name ? userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G"}</>
+                  )}
                 </div>
                 {!isPublic && (
-                    <button className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-slate-100 hover:border-teal-200 hover:text-teal-600 rounded-lg flex items-center justify-center text-slate-500 shadow-md transition-all z-10">
+                    <label className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-slate-100 hover:border-teal-200 hover:text-teal-600 rounded-lg flex items-center justify-center text-slate-500 shadow-md transition-all z-10 cursor-pointer">
                       <Camera className="w-3 h-3" />
-                    </button>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
+                    </label>
                 )}
               </div>
 
@@ -528,11 +606,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
             {/* Skills Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-1.5">
-                <Code className="w-3.5 h-3.5 text-teal-600" />
-                FindStreak Skills
-              </h3>
-              <div className="space-y-3.5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                    <Code className="w-3.5 h-3.5 text-teal-600" />
+                    FindStreak Skills
+                </h3>
+              </div>
+              <div className="space-y-3.5 mb-5">
                 {dynamicSkills.length > 0 ? dynamicSkills.map((skill, index) => (
                   <div key={index}>
                     <div className="flex items-center justify-between mb-1.5">
@@ -560,6 +640,41 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              <div className="border-t border-slate-100 pt-4 mt-6">
+                 <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[12px] font-bold text-slate-700">Custom Skills</h4>
+                    {!isPublic && (
+                        <button onClick={() => setShowAddSkill(!showAddSkill)} className="text-[10px] font-bold text-teal-600 hover:text-teal-700 bg-teal-50 px-2 py-1 rounded">
+                            + Add Skill
+                        </button>
+                    )}
+                 </div>
+                 
+                 {showAddSkill && !isPublic && (
+                     <div className="flex items-center gap-2 mb-3">
+                         <input 
+                            value={newSkillInput} 
+                            onChange={(e) => setNewSkillInput(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddCustomSkill()}
+                            placeholder="Type a skill..."
+                            className="flex-1 text-[12px] p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                         />
+                         <button onClick={handleAddCustomSkill} className="text-[11px] font-bold bg-slate-800 text-white px-2.5 py-1.5 rounded hover:bg-slate-700">Add</button>
+                     </div>
+                 )}
+
+                 <div className="flex flex-wrap gap-1.5">
+                     {customSkills.length > 0 ? customSkills.map(skill => (
+                         <span key={skill} className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded text-[11px] font-semibold">
+                             {skill}
+                             {!isPublic && <span onClick={() => removeCustomSkill(skill)} className="cursor-pointer text-slate-400 hover:text-red-500 ml-1">×</span>}
+                         </span>
+                     )) : (
+                         <span className="text-[11px] text-slate-400">No custom skills added yet.</span>
+                     )}
+                 </div>
               </div>
             </div>
           </div>
@@ -612,21 +727,32 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             </div>
 
             {/* Achievement Badge Banner */}
-            <div className="grid md:grid-cols-1 gap-3">
-              <div className="bg-gradient-to-r from-teal-600 to-emerald-700 border border-teal-500 rounded-2xl shadow-sm p-5 relative overflow-hidden group">
-                <div className="absolute right-0 top-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700"></div>
-                
-                <div className="flex items-center gap-4 relative z-10">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-inner">
-                    <GraduationCap className="w-6 h-6 text-white drop-shadow-sm" />
+              <div className="grid md:grid-cols-2 gap-3">
+                  <div className="bg-gradient-to-r from-teal-600 to-emerald-700 border border-teal-500 rounded-2xl shadow-sm p-5 relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-700"></div>
+                    
+                    <div className="flex items-center gap-4 relative z-10">
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-white/30 shadow-inner">
+                        <GraduationCap className="w-6 h-6 text-white drop-shadow-sm" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold text-[15px] mb-0.5">FindStreak Target: {userData.role}</h3>
+                        <p className="text-teal-100 text-[12px] font-medium">You have unlocked <span className="font-black text-white px-1">{userData.stats.achievementsUnlocked}</span> major milestones.</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-white font-bold text-[15px] mb-0.5">FindStreak Target: {userData.role}</h3>
-                    <p className="text-teal-100 text-[12px] font-medium">You have unlocked <span className="font-black text-white px-1">{userData.stats.achievementsUnlocked}</span> major milestones on this path.</p>
+
+                  <div className="bg-white border text-center border-slate-200 rounded-2xl shadow-sm p-4 hover:shadow-md transition-all flex flex-col justify-center items-center">
+                      <div className="flex -space-x-3 mb-2">
+                        {userData.stats.learningStreak >= 3 && <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-orange-200 z-10" title="Consistency King (3+ Day Streak)"><Sparkles className="w-4 h-4 text-orange-500" /></div>}
+                        {userData.stats.skillsMastered > 0 && <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-teal-200 z-20" title="Skill Master (First Skill Done)"><Target className="w-4 h-4 text-teal-600" /></div>}
+                        {userData.stats.projectsCompleted > 0 && <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-indigo-200 z-30" title="Project Builder"><Code className="w-4 h-4 text-indigo-500" /></div>}
+                        {userData.stats.totalLearningHours > 10 && <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center border-2 border-white shadow-sm ring-1 ring-blue-200 z-40" title="10 Hours Logged"><Clock className="w-4 h-4 text-blue-500" /></div>}
+                      </div>
+                      <p className="text-[12px] font-bold text-slate-700">Recent Badges Earned</p>
+                      {userData.stats.learningStreak < 3 && userData.stats.projectsCompleted === 0 ? <p className="text-[10px] text-slate-400 mt-0.5">Keep learning to unlock more!</p> : null}
                   </div>
-                </div>
               </div>
-            </div>
 
             {/* Daily Task Updates & Recent Activity */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
