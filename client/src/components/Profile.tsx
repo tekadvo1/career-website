@@ -30,6 +30,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncingAI, setIsSyncingAI] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(true);
+
+  const [dynamicSkills, setDynamicSkills] = useState<{name: string, level: number}[]>([]);
+  const [timeline, setTimeline] = useState<any[]>([]);
 
   const [profileDetails, setProfileDetails] = useState({
     phone: "",
@@ -84,14 +88,20 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   useEffect(() => {
+    if (isPublic) {
+      setShowSetupModal(false);
+    }
     // Load persisted profile options
     const savedDetails = localStorage.getItem('user_profile_details');
     if (savedDetails) {
       const parsed = JSON.parse(savedDetails);
       setProfileDetails(parsed);
       setEditForm(parsed);
+      if (parsed.bio && parsed.phone && parsed.location) {
+        setShowSetupModal(false);
+      }
     }
-  }, []);
+  }, [isPublic]);
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -111,6 +121,24 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
         const activeRole = lastRoleState?.role || "Software Engineer";
 
+        let newActivity: any[] = [];
+        let completedArr: any[] = [];
+        let inProgressProject: any = null;
+        let roleProjects: any[] = [];
+
+        if (Array.isArray(data.missions)) {
+            const completedMissions = data.missions.filter((m: any) => m.status === 'completed');
+            completedMissions.forEach((m:any) => newActivity.push({ action: "Finished Mission", item: m.title || `Mission from ${m.category}`, date: new Date(m.last_updated_at || m.updated_at || m.created_at).toLocaleDateString(), icon: Trophy, ts: new Date(m.last_updated_at || m.updated_at || m.created_at).getTime() }));
+            
+            const activeMissions = data.missions.filter((m: any) => m.status === 'in_progress');
+            activeMissions.forEach((m:any) => newActivity.push({ action: "Started Mission", item: m.title || `Mission from ${m.category}`, date: "Recently", icon: Activity, ts: new Date().getTime() - 10000 }));
+        }
+
+        if (Array.isArray(data.roadmapProgress)) {
+            const rp = data.roadmapProgress;
+            rp.forEach((p:any) => newActivity.push({ action: "Mastered", item: `Topic: ${p.topic_id}`, date: new Date(p.completed_at || Date.now()).toLocaleDateString(), icon: Target, ts: new Date(p.completed_at || Date.now()).getTime() }));
+        }
+
         if (data.projects && Array.isArray(data.projects)) {
              const realProjects = data.projects.map((p: any) => {
                  let pd = p.project_data;
@@ -118,16 +146,16 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                  return { ...pd, status: p.status, role: p.role, title: p.title };
              });
              
-             const roleProjects = realProjects.filter((p: any) => !p.role || p.role === activeRole);
-             const completedArr = roleProjects.filter((p: any) => p.status === 'completed' || p.status === 'done');
-             const inProgressProject = roleProjects.find((p: any) => p.status === 'active');
+             roleProjects = realProjects.filter((p: any) => !p.role || p.role === activeRole);
+             completedArr = roleProjects.filter((p: any) => p.status === 'completed' || p.status === 'done');
+             inProgressProject = roleProjects.find((p: any) => p.status === 'active');
              
              const projectsCompleted = completedArr.length;
              const totalProjects = roleProjects.length > 0 ? roleProjects.length : 1;
              const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
              
              const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
-             const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
+             const roadmapProgress = data.roadmapProgress || (roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : []);
              const skillsMastered = roadmapProgress.length;
              
              setStats(prev => ({
@@ -139,9 +167,38 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                  achievementsUnlocked: Math.floor(skillsMastered / 3) + (projectsCompleted > 0 ? 1 : 0),
                  currentProjectName
              }));
+
+             // Activities from Projects
+             completedArr.forEach((p:any) => {
+               newActivity.push({ action: 'Completed Project', item: p.title, date: new Date(p.last_updated || p.created_at || Date.now()).toLocaleDateString(), icon: Trophy, ts: new Date(p.last_updated || p.created_at || Date.now()).getTime() })
+             });
+
+             if (inProgressProject) {
+               newActivity.push({ action: 'Working on', item: inProgressProject.title, date: 'Currently', icon: Activity, ts: new Date().getTime() })
+             }
         } else {
              loadRealtimeStats();
         }
+
+        if (liveStreak > 0 || data.totalStreak > 0) {
+            newActivity.push({ action: "Achieved", item: `${data.totalStreak || liveStreak}-Day Daily Tasks Streak`, date: "Today", icon: Sparkles, ts: new Date().getTime() - 20000 });
+        }
+        newActivity.push({ action: "Started", item: `Career Path setup as ${activeRole}`, date: "Recently", icon: Code, ts: 0 });
+        
+        // Sort and Set Timeline
+        newActivity.sort((a,b) => b.ts - a.ts);
+        setTimeline(newActivity.slice(0, 5));
+
+        // Dynamic Skills Calculation
+        const baseSkills = lastRoleState?.analysis?.technicalSkills || ["JavaScript", "React", "Node.js"];
+        const calculatedSkills = baseSkills.slice(0, 5).map((skillName: string) => {
+           const mentions = completedArr.filter((p:any) => JSON.stringify(p).includes(skillName)).length;
+           const roadmapMentions = Array.isArray(data.roadmapProgress) ? data.roadmapProgress.filter((r:any) => JSON.stringify(r).includes(skillName)).length : 0;
+           
+           const totalBoost = (mentions + roadmapMentions) * 20;
+           return { name: skillName, level: Math.min(95, 30 + totalBoost) };
+        });
+        setDynamicSkills(calculatedSkills);
       } catch(err) {}
     };
 
@@ -189,13 +246,16 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     bio: profileDetails.bio || `Tracking career progress and mastering skills for ${activeRole} via FindStreak.`,
     skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
     stats: { ...stats, learningStreak: liveStreak },
-    recentActivity: [
-      ...(stats.projectsCompleted > 0 ? [{ action: "Completed", item: `${stats.projectsCompleted} Project(s)`, date: "Recently", icon: Trophy }] : []),
-      ...(stats.currentProjectName !== "No Active Project" ? [{ action: "Working on", item: stats.currentProjectName, date: "Currently", icon: Activity }] : []),
-      ...(stats.skillsMastered > 0 ? [{ action: "Mastered", item: `${stats.skillsMastered} technical topic(s)`, date: "Recently", icon: Target }] : []),
-      ...(liveStreak > 0 ? [{ action: "Achieved", item: `${liveStreak}-Day Streak in Daily Tasks`, date: "Today", icon: Sparkles }] : []),
-      { action: "Started", item: `Career Path context as ${activeRole}`, date: "Recently", icon: Code }
-    ].slice(0, 5),
+  };
+
+  const handleCompleteSetup = () => {
+    if (!editForm.phone || !editForm.location || !editForm.bio) {
+        alert("Please fill in all details to proceed.");
+        return;
+    }
+    setProfileDetails(editForm);
+    localStorage.setItem('user_profile_details', JSON.stringify(editForm));
+    setShowSetupModal(false);
   };
 
   const handleLogout = () => {
@@ -251,6 +311,58 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-teal-100 selection:text-teal-900 font-sans">
+      {!isPublic && showSetupModal && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+               <div className="p-6 border-b border-slate-100 bg-teal-600">
+                  <h2 className="text-xl font-bold text-white mb-1">Complete Your Profile</h2>
+                  <p className="text-teal-100 text-sm">Update your information to unlock personal career insights and daily tasks tracking.</p>
+               </div>
+               <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1"><Bot className="w-3.5 h-3.5 text-teal-600" /> Bio & Career Goals</label>
+                    <textarea 
+                        value={editForm.bio}
+                        onChange={(e) => setEditForm(prev => ({...prev, bio: e.target.value}))}
+                        className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        rows={3}
+                        placeholder="E.g., Driven Software Engineer focused on..."
+                    />
+                    <button onClick={handleAISync} disabled={isSyncingAI} className="mt-2 text-[11px] flex items-center justify-center gap-1.5 w-full bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-700 px-3 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-100 transition font-bold">
+                        {isSyncingAI ? <Bot className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                        {isSyncingAI ? "Writing with AI..." : "Let AI Write Bio for Me"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-teal-600" /> Phone</label>
+                        <input 
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm(prev => ({...prev, phone: e.target.value}))}
+                            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                            placeholder="Your contact number"
+                        />
+                     </div>
+                     <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-teal-600" /> Location</label>
+                        <input 
+                            value={editForm.location}
+                            onChange={(e) => setEditForm(prev => ({...prev, location: e.target.value}))}
+                            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                            placeholder="City, Country"
+                        />
+                     </div>
+                  </div>
+               </div>
+               <div className="p-5 border-t border-slate-100 bg-slate-50 flex justify-end">
+                  <button onClick={handleCompleteSetup} className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                     Save & View Profile <CheckCircle2 className="w-4 h-4" />
+                  </button>
+               </div>
+            </div>
+         </div>
+      )}
+
       {!isPublic && <Sidebar activePage="profile" />}
       {/* Header */}
       <div className="bg-white border-b border-slate-100 sticky top-0 z-40 shadow-sm">
@@ -421,7 +533,20 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 FindStreak Skills
               </h3>
               <div className="space-y-3.5">
-                {userData.skills.map((skill, index) => (
+                {dynamicSkills.length > 0 ? dynamicSkills.map((skill, index) => (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[12px] font-bold text-slate-700">{skill.name}</span>
+                      <span className="text-[10px] font-black tracking-wide text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded">{skill.level}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                      <div 
+                        className="bg-teal-500 h-1 rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${skill.level}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                )) : userData.skills.map((skill, index) => (
                   <div key={index}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[12px] font-bold text-slate-700">{skill.name}</span>
@@ -510,7 +635,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 Daily Task Updates & Activity
               </h3>
               <div className="space-y-3">
-                {userData.recentActivity.map((activity, index) => (
+                {timeline.map((activity, index) => (
                   <div
                     key={index}
                     className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all"
@@ -527,7 +652,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                   </div>
                 ))}
                 
-                {userData.recentActivity.length === 0 && (
+                {timeline.length === 0 && (
                   <div className="text-center p-5 text-slate-500 text-[12px]">No recent activity found. Start a project!</div>
                 )}
               </div>
