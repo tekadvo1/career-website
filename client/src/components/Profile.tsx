@@ -18,8 +18,6 @@ import {
   Share2,
   CheckCircle2,
   Bot,
-  Users,
-  CheckCircle,
   Activity
 } from "lucide-react";
 import Sidebar from "./Sidebar";
@@ -325,25 +323,12 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               <div className="text-center md:text-left mb-5">
                 <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                     <h2 className="text-[22px] font-bold text-slate-800 leading-tight">{userData.name}</h2>
-                    <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-blue-100">
-                        <CheckCircle className="w-3 h-3" /> FindStreak Verified
-                    </span>
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
                     <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-[12px] font-semibold border border-slate-200">
                       {userData.role}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                        <Target className="w-3 h-3" /> Open to Work
-                    </span>
-                </div>
-                
-                <div className="flex items-center justify-center md:justify-start gap-1.5 text-slate-500 text-[12px] font-medium mb-3">
-                   <Users className="w-4 h-4 text-slate-400" />
-                   <span className="text-teal-600 hover:underline cursor-pointer">500+ Connections</span>
-                   <span>·</span>
-                   <span className="text-teal-600 hover:underline cursor-pointer">Recruiter Network Activity</span>
                 </div>
                 
                 {isEditing && !isPublic ? (
