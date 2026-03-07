@@ -18,9 +18,29 @@ import {
   Share2,
   CheckCircle2,
   Bot,
-  Activity
+  Activity,
+  Download
 } from "lucide-react";
 import Sidebar from "./Sidebar";
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Radar } from 'react-chartjs-2';
+
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend
+);
 
 export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
@@ -468,8 +488,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               )}
               {!isPublic && (
                 <button 
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-xs mr-2 shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Save as PDF
+                </button>
+              )}
+              {!isPublic && (
+                <button 
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold text-xs"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold text-xs border border-transparent hover:border-red-100"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   Logout
@@ -640,6 +669,41 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Skills Radar Chart */}
+              <div className="mt-8 border-t border-slate-100 pt-5">
+                  <h4 className="text-[12px] font-bold text-slate-700 mb-4 text-center">Skill Balance Analysis</h4>
+                  <div className="relative w-full aspect-square max-w-[280px] mx-auto">
+                    {dynamicSkills.length > 2 || userData.skills.length > 2 ? (
+                        <Radar 
+                            data={{
+                                labels: dynamicSkills.length > 0 ? dynamicSkills.map(s => s.name) : userData.skills.map(s => s.name),
+                                datasets: [{
+                                    label: 'Current Level',
+                                    data: dynamicSkills.length > 0 ? dynamicSkills.map(s => s.level) : userData.skills.map(s => s.level),
+                                    backgroundColor: 'rgba(20, 184, 166, 0.2)',
+                                    borderColor: 'rgba(20, 184, 166, 0.8)',
+                                    pointBackgroundColor: 'rgba(20, 184, 166, 1)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgba(20, 184, 166, 1)',
+                                    borderWidth: 2,
+                                }]
+                            }} 
+                            options={{
+                              responsive: true,
+                              maintainAspectRatio: false,
+                              scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false } } },
+                              plugins: { legend: { display: false } }
+                            }}
+                        />
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-50 border border-dashed border-slate-200 rounded-full">
+                            <p className="text-[11px] text-slate-400 font-medium text-center px-4">Complete more projects/modules to map your skills!</p>
+                        </div>
+                    )}
+                  </div>
               </div>
 
               <div className="border-t border-slate-100 pt-4 mt-6">
