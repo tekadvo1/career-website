@@ -18,8 +18,7 @@ import {
   Share2,
   CheckCircle2,
   Bot,
-  Activity,
-  Download
+  Activity
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import {
@@ -484,15 +483,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 >
                   {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
                   {copiedLink ? 'Link Copied!' : 'Share'}
-                </button>
-              )}
-              {!isPublic && (
-                <button 
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors font-semibold text-xs mr-2 shadow-sm"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  Save as PDF
                 </button>
               )}
               {!isPublic && (
