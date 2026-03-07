@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Mail,
   MapPin,
   Briefcase,
@@ -18,7 +17,10 @@ import {
   Phone,
   Share2,
   CheckCircle2,
-  Bot
+  Bot,
+  Users,
+  CheckCircle,
+  Activity
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 
@@ -48,7 +50,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     totalProjects: 1,
     skillsMastered: 0,
     totalLearningHours: 0,
-    achievementsUnlocked: 0
+    achievementsUnlocked: 0,
+    currentProjectName: "No Active Project"
   });
 
   // Calculate standard stats based on memory
@@ -61,7 +64,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
     
     const totalProjects = projectsData.length > 0 ? projectsData.length : 1;
-    const projectsCompleted = projectsData.filter((p: any) => p.status === 'done').length;
+    const completedArr = projectsData.filter((p: any) => p.status === 'done');
+    const projectsCompleted = completedArr.length;
+    
+    const inProgressProject = projectsData.find((p: any) => p.status !== 'done');
+    const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
 
     const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
     const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
@@ -74,6 +81,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       skillsMastered,
       totalLearningHours: skillsMastered * 2 + liveStreak * 1.5,
       achievementsUnlocked: Math.floor(skillsMastered / 3) + (projectsCompleted > 0 ? 1 : 0),
+      currentProjectName
     }));
   };
 
@@ -150,10 +158,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     stats: { ...stats, learningStreak: liveStreak },
     recentActivity: [
       ...(stats.projectsCompleted > 0 ? [{ action: "Completed", item: `${stats.projectsCompleted} Project(s)`, date: "Recently", icon: Trophy }] : []),
+      ...(stats.currentProjectName !== "No Active Project" ? [{ action: "Working on", item: stats.currentProjectName, date: "Currently", icon: Activity }] : []),
       ...(stats.skillsMastered > 0 ? [{ action: "Mastered", item: `${stats.skillsMastered} technical topic(s)`, date: "Recently", icon: Target }] : []),
-      ...(liveStreak > 0 ? [{ action: "Achieved", item: `${liveStreak}-Day Streak`, date: "Today", icon: Sparkles }] : []),
+      ...(liveStreak > 0 ? [{ action: "Achieved", item: `${liveStreak}-Day Streak in Daily Tasks`, date: "Today", icon: Sparkles }] : []),
       { action: "Started", item: `Career Path context as ${activeRole}`, date: "Recently", icon: Code }
-    ].slice(0, 4),
+    ].slice(0, 5),
   };
 
   const handleLogout = () => {
@@ -174,17 +183,37 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setIsEditing(false);
   };
 
-  const handleAISync = () => {
+  const handleAISync = async () => {
     setIsSyncingAI(true);
-    setTimeout(() => {
-        const newBio = `Driven ${activeRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
-        
-        const newDetails = { ...profileDetails, bio: newBio, location: profileDetails.location || "San Francisco, CA" };
+    
+    try {
+        const response = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: `Please refine this professional bio for a ${activeRole}. Make it sound professional, engaging, and highlight skills and FindStreak achievements. Current manual details: "${editForm.bio}" or fallback info: ${stats.skillsMastered} topics mastered, ${stats.projectsCompleted} projects completed. Limit to 3 short sentences.` }],
+                role: activeRole,
+            }),
+        });
+
+        const data = await response.json();
+        const refinedBio = data.success ? data.response.replace(/["*]/g, '').trim() : `Driven ${activeRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
+
+        const newDetails = { ...profileDetails, ...editForm, bio: refinedBio };
         setProfileDetails(newDetails);
         setEditForm(newDetails);
         localStorage.setItem('user_profile_details', JSON.stringify(newDetails));
+    } catch (e) {
+        console.error(e);
+        // Fallback
+        const newBio = `Driven ${activeRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
+        const newDetails = { ...profileDetails, ...editForm, bio: newBio };
+        setProfileDetails(newDetails);
+        setEditForm(newDetails);
+        localStorage.setItem('user_profile_details', JSON.stringify(newDetails));
+    } finally {
         setIsSyncingAI(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -195,21 +224,16 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         <div className="max-w-7xl mx-auto px-4 py-3 md:px-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              {!isPublic && <div className="w-10" />}
-              {!isPublic && (
-                <button onClick={() => navigate(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-              )}
+              {!isPublic && <div className="w-12 md:w-14" />} {/* Spacer for Sidebar Hamburger */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 text-white font-bold text-sm shadow-sm">
                    FS
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-slate-800 flex items-center gap-1.5">
-                      {isPublic ? `${displayName}'s FindStreak Profile` : 'FindStreak Profile'}
+                      {isPublic ? `${displayName}'s FindStreak Profile` : 'FindStreak Brand Profile'}
                   </h1>
-                  <p className="text-[11px] text-slate-500">{isPublic ? "Public Portfolio view" : "Manage your account and real-time progress"}</p>
+                  <p className="text-[11px] text-slate-500">{isPublic ? "Public Portfolio view" : "Manage your professional identity & daily tasks"}</p>
                 </div>
               </div>
             </div>
@@ -242,24 +266,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         <div className="grid lg:grid-cols-3 gap-5">
           {/* Left Column - Profile Card */}
           <div className="lg:col-span-1 space-y-5">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 relative overflow-hidden">
-              {/* Profile Background Accents */}
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500" />
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+              {/* Profile Background Banner (LinkedIn Style) */}
+              <div className="h-24 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-500 relative">
+                  <div className="absolute inset-0 bg-white/10 pattern-dots opacity-20"></div>
+              </div>
               
-              {!isPublic && (
-                 <button 
-                    onClick={handleAISync} 
-                    disabled={isSyncingAI}
-                    className="absolute top-3 right-3 flex items-center justify-center bg-teal-50 text-teal-600 hover:bg-teal-100 p-1.5 rounded-lg transition-all shadow-sm group"
-                    title="AI Auto Sync Profile"
-                 >
-                    <Bot className={`w-3.5 h-3.5 ${isSyncingAI ? 'animate-bounce' : 'group-hover:rotate-12 transition-transform'}`} />
-                 </button>
-              )}
-
+              <div className="px-5 pb-5 relative">
+              
               {/* Profile Picture */}
-              <div className="relative w-24 h-24 mx-auto mb-4 mt-2">
-                <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md transform rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+              <div className="relative w-[104px] h-[104px] -mt-10 mb-3 mx-auto md:mx-0">
+                <div className="w-full h-full bg-slate-900 border-4 border-white rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-md cursor-pointer relative overflow-hidden">
                   {userData.name ? userData.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G"}
                 </div>
                 {!isPublic && (
@@ -270,22 +287,55 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               </div>
 
               {/* Basic Info */}
-              <div className="text-center mb-5">
-                <h2 className="text-xl font-bold text-slate-800 mb-1">{userData.name}</h2>
-                <span className="inline-block px-2.5 py-0.5 bg-teal-50 text-teal-700 border border-teal-100 rounded-md text-[11px] font-bold tracking-wide mb-2.5">
-                  {userData.role}
-                </span>
+              <div className="text-center md:text-left mb-5">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                    <h2 className="text-[22px] font-bold text-slate-800 leading-tight">{userData.name}</h2>
+                    <span className="flex items-center gap-1 bg-blue-50 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-blue-100">
+                        <CheckCircle className="w-3 h-3" /> FindStreak Verified
+                    </span>
+                </div>
+                
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-3">
+                    <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-full text-[12px] font-semibold border border-slate-200">
+                      {userData.role}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        <Target className="w-3 h-3" /> Open to Work
+                    </span>
+                </div>
+                
+                <div className="flex items-center justify-center md:justify-start gap-1.5 text-slate-500 text-[12px] font-medium mb-3">
+                   <Users className="w-4 h-4 text-slate-400" />
+                   <span className="text-teal-600 hover:underline cursor-pointer">500+ Connections</span>
+                   <span>·</span>
+                   <span className="text-teal-600 hover:underline cursor-pointer">Recruiter Network Activity</span>
+                </div>
                 
                 {isEditing && !isPublic ? (
-                  <textarea 
-                     value={editForm.bio}
-                     onChange={(e) => setEditForm(prev => ({...prev, bio: e.target.value}))}
-                     className="w-full mt-2 p-2 text-[12px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                     rows={3}
-                     placeholder="Write your bio..."
-                  />
+                  <div className="space-y-2 relative">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase">Write About Section</span>
+                        <button 
+                            onClick={handleAISync}
+                            disabled={isSyncingAI}
+                            className="text-[11px] flex items-center gap-1 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-2 py-1 rounded-md hover:from-teal-700 hover:to-emerald-700 transition"
+                        >
+                            {isSyncingAI ? <Bot className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            {isSyncingAI ? "Enhancing..." : "AI Enhance"}
+                        </button>
+                    </div>
+                    <textarea 
+                       value={editForm.bio}
+                       onChange={(e) => setEditForm(prev => ({...prev, bio: e.target.value}))}
+                       className="w-full p-2.5 text-[13px] border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                       rows={4}
+                       placeholder="Enter details manually, let AI suggest best..."
+                    />
+                  </div>
                 ) : (
-                  <p className="text-[12px] text-slate-600 leading-relaxed font-medium px-1">{userData.bio}</p>
+                  <div className="bg-slate-50/80 p-3 rounded-lg border border-slate-100 text-left">
+                     <p className="text-[13px] text-slate-700 leading-relaxed">{userData.bio}</p>
+                  </div>
                 )}
               </div>
 
@@ -327,20 +377,21 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 isEditing ? (
                   <button
                     onClick={handleSaveProfile}
-                    className="w-full px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[12px] transition-all shadow-sm shadow-teal-600/20 active:translate-y-0.5 flex items-center justify-center gap-1.5"
+                    className="w-full px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[13px] transition-all shadow-sm shadow-teal-600/20 active:translate-y-0.5 flex items-center justify-center gap-1.5 mt-2"
                   >
                     Save Changes
                   </button>
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-lg font-bold text-[12px] transition-all flex items-center justify-center gap-1.5"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-lg font-bold text-[13px] transition-all flex items-center justify-center gap-1.5 mt-2"
                   >
                     <Edit className="w-3.5 h-3.5 text-teal-500" />
                     Edit Profile Details
                   </button>
                 )
               )}
+              </div>
             </div>
 
             {/* Skills Card */}
@@ -432,13 +483,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               </div>
             </div>
 
-            {/* Recent Activity */}
+            {/* Daily Task Updates & Recent Activity */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
               <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-teal-600" />
-                Live Real-Time Activity
+                Daily Task Updates & Activity
               </h3>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {userData.recentActivity.map((activity, index) => (
                   <div
                     key={index}
@@ -478,13 +529,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 >
                   <Code className="w-3.5 h-3.5 text-teal-600" />
                   My Projects Workspace
-                </button>
-                <button
-                  onClick={() => navigate("/portfolio")}
-                  className="px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-lg font-bold text-[12px] transition-colors flex items-center gap-1.5 shadow-sm shadow-teal-900/20 active:translate-y-0.5"
-                >
-                  <Bot className="w-3.5 h-3.5" />
-                  Edit Public Portfolio
                 </button>
               </div>
             )}
