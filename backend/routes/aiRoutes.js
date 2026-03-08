@@ -470,4 +470,48 @@ router.post('/interview-guides', async (req, res) => {
     }
 });
 
+// POST /api/ai/mock-interview-evaluate - Evaluates an answer and provides a score and feedback
+router.post('/mock-interview-evaluate', async (req, res) => {
+    try {
+        const { question, answer, role, expectedAnswer } = req.body;
+
+        if (!question || !answer) {
+            return res.status(400).json({ error: 'Question and answer are required' });
+        }
+
+        const systemPrompt = `You are an expert ${role || 'Software Engineering'} Technical Interviewer and Hiring Manager.
+        
+        The user is doing a mock interview.
+        Question asked: "${question}"
+        User's answer: "${answer}"
+        Ideal answer structure based on their resume/role: "${expectedAnswer || 'Not provided'}"
+
+        Your task is to evaluate the user's answer. 
+        1. Give a score out of 100 based on clarity, correctness, and completeness.
+        2. Provide short, constructive feedback (2-3 sentences max). Suggest how they can improve or what they missed.
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+            "score": 85,
+            "feedback": "You explained X well, but missed Y. A complete answer would also mention Z."
+        }`;
+
+        const requestOptions = {
+            model: "gpt-4o-mini",
+            messages: [{ role: "system", content: systemPrompt }],
+            max_tokens: 1000,
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        };
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        res.json(JSON.parse(reply));
+    } catch (error) {
+        console.error('Mock Evaluate Error:', error);
+        res.status(500).json({ error: 'Failed to evaluate answer' });
+    }
+});
+
 module.exports = router;

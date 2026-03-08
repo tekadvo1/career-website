@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Briefcase, 
     UploadCloud, 
@@ -25,6 +26,7 @@ interface GuideResponse {
 }
 
 export default function InterviewGuide() {
+    const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [role, setRole] = useState("Software Engineer");
@@ -368,10 +370,7 @@ export default function InterviewGuide() {
                             
                             <div className="pt-4 flex flex-wrap justify-center gap-4">
                                 <button 
-                                    onClick={() => {
-                                         setMockMode(true);
-                                         setCurrentQuestionIdx(0);
-                                    }}
+                                    onClick={() => navigate('/realtime-mock-interview', { state: { guideData, role } })}
                                     className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center gap-2"
                                 >
                                     Start Interactive Mock Interview

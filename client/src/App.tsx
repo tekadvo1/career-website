@@ -23,7 +23,7 @@ import QuizGame from './components/QuizGame';
 import Workspaces from './components/Workspaces';
 import Portfolio from './components/Portfolio';
 import InterviewGuide from './components/InterviewGuide';
-
+import RealTimeMockInterview from './components/RealTimeMockInterview';
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -83,6 +83,7 @@ function App() {
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/portfolio/:username" element={<Portfolio isPublic={true} />} />
           <Route path="/interview-guide" element={<InterviewGuide />} />
+          <Route path="/realtime-mock-interview" element={<RealTimeMockInterview />} />
         </Routes>
       </div>
     </BrowserRouter>
