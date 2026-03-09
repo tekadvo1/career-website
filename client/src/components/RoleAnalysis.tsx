@@ -31,7 +31,10 @@ export default function RoleAnalysis() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const role = location.state?.role || "Software Engineer";
+  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+  
+  const role = location.state?.role || lastRoleState?.role || "Software Engineer";
   const hasResume = location.state?.hasResume || false;
   const resumeFileName = location.state?.resumeFileName || null;
   const aiAnalysis = location.state?.analysis;
