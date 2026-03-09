@@ -230,9 +230,38 @@ export default function WorkflowLifecycle() {
         {/* Intro */}
         <div className="mb-8 text-center">
             <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Professional Workflow & Lifecycle</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-4">
                 A comprehensive breakdown of how a <span className="text-indigo-600 font-bold">{displayRole}</span> approaches projects from inception to delivery.
             </p>
+
+            {/* Purpose & Usage Guide */}
+            <div className="max-w-3xl mx-auto bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 md:p-5 mb-8 text-left shadow-sm">
+                 <div className="flex items-start gap-3">
+                     <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg flex-shrink-0 mt-0.5">
+                         <GitBranch className="w-5 h-5" />
+                     </div>
+                     <div>
+                         <h3 className="text-sm font-bold text-indigo-900 mb-1.5">How to use this lifecycle map</h3>
+                         <p className="text-sm text-indigo-800/80 leading-relaxed mb-3">
+                             This tool bridges the gap between learning isolated skills and building real-world applications. It breaks down the exact sequence of phases professionals use to deliver robust projects. 
+                         </p>
+                         <ul className="text-sm text-indigo-800/80 space-y-1.5 ml-1">
+                             <li className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0"></span>
+                                <strong>Explore Phases:</strong> Scroll down to see the sequential milestones required to complete a project.
+                             </li>
+                             <li className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0"></span>
+                                <strong>Deep Dive:</strong> Click "Deep Dive & Code" on any step to reveal specific code snippets, best practices, and expert checklists.
+                             </li>
+                             <li className="flex items-start gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 flex-shrink-0"></span>
+                                <strong>Customize:</strong> Type your specific tech stack in the box below to force the AI to regenerate the entire workflow using your desired tools.
+                             </li>
+                         </ul>
+                     </div>
+                 </div>
+            </div>
 
             {/* Customization Input */}
             <div className="max-w-xl mx-auto bg-white p-2 rounded-xl shadow-md border border-gray-200 flex gap-2">
