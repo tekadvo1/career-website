@@ -981,11 +981,34 @@ export default function RoleAnalysis() {
                                     {resource.description}
                                  </p>
                              )}
+
+                             {resource.type && !resource.type.toLowerCase().includes('free') && (
+                                <div className="mt-2 p-2.5 bg-amber-50/80 rounded-lg border border-amber-100 flex items-start gap-2">
+                                   <DollarSign className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                   <p className="text-xs text-amber-800 leading-tight">
+                                      <strong className="block mb-0.5">Paid Resource:</strong> 
+                                      Click the link to proceed to the provider's site to view exact pricing, enroll, and unlock full access.
+                                   </p>
+                                </div>
+                             )}
+                             
+                             <div className="mt-3 flex gap-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(resource.name + ' tutorial')}`, '_blank');
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-xs text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 rounded-lg transition-colors z-20"
+                                >
+                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                                    Watch Video Explanations
+                                </button>
+                             </div>
                         </div>
                         
-                        <div className="mt-2 md:mt-0 flex-shrink-0">
-                             <span className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-                                 Start Learning <ChevronRight className="w-4 h-4" />
+                        <div className="mt-2 md:mt-0 flex-shrink-0 flex sm:flex-col justify-end">
+                             <span className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform bg-white/50 px-3 py-1.5 rounded-lg">
+                                 {resource.type && !resource.type.toLowerCase().includes('free') ? 'View Pricing' : 'Start Learning'} <ChevronRight className="w-4 h-4" />
                              </span>
                         </div>
                     </div>
