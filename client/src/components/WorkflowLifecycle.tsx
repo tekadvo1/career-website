@@ -24,12 +24,21 @@ interface WorkflowStage {
 export default function WorkflowLifecycle() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { role, analysis } = location.state || {};
+  
+  // Try to load from localStorage if state is missing
+  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const storedData = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+  const defaultRole = storedData?.role || 'Software Engineer';
+  const defaultAnalysis = storedData?.analysis || null;
+  
+  const { role = defaultRole, analysis = defaultAnalysis } = location.state || {};
+  
   const [isDownloading, setIsDownloading] = useState(false);
   const [activeStage, setActiveStage] = useState<number | null>(null);
   
   // Custom Workflow State
   const [customTools, setCustomTools] = useState('');
+  const [promptInput, setPromptInput] = useState('');
   const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowStage[]>(analysis?.workflow || []);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [displayRole, setDisplayRole] = useState(role);
@@ -39,20 +48,30 @@ export default function WorkflowLifecycle() {
   const [stepDetails, setStepDetails] = useState<any>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  // Fallback if no analysis passed
-  if (!role || !analysis) {
-     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4">
-            <h2 className="text-xl font-bold text-gray-800">No role data found.</h2>
-            <button 
-                onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-            >
-                Return to Dashboard
-            </button>
-        </div>
-     );
-  }
+  const handleGenerateFreshWorkflow = async (prompt: string) => {
+      if (!prompt.trim()) return;
+      setIsRegenerating(true);
+      try {
+          const response = await fetch('/api/role/workflow-custom', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ role: prompt, customTools: prompt })
+          });
+          
+          const result = await response.json();
+          if (result.success && result.data && result.data.workflow) {
+              setCurrentWorkflow(result.data.workflow);
+              if (result.data.role) setDisplayRole(result.data.role);
+          } else {
+              alert('Failed to generate workflow. Please try again.');
+          }
+      } catch (error) {
+          console.error("Workflow error:", error);
+          alert('Error connecting to server.');
+      } finally {
+          setIsRegenerating(false);
+      }
+  };
 
   const handleRegenerateWorkflow = async () => {
       if (!customTools.trim()) return;
@@ -62,7 +81,7 @@ export default function WorkflowLifecycle() {
           const response = await fetch('/api/role/workflow-custom', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ role, customTools })
+              body: JSON.stringify({ role: displayRole, customTools })
           });
           
           const result = await response.json();
@@ -79,6 +98,41 @@ export default function WorkflowLifecycle() {
           setIsRegenerating(false);
       }
   };
+
+  // Fallback if no workflow data found
+  if (!currentWorkflow || currentWorkflow.length === 0) {
+     return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4 p-4">
+            <h2 className="text-2xl font-extrabold text-gray-800">Generate Your Professional Workflow</h2>
+            <p className="text-gray-600 text-center max-w-md">Our AI will create a comprehensive, step-by-step professional lifecycle tailored to your exact role or tech stack.</p>
+            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-md">
+                <input 
+                    type="text" 
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    placeholder="e.g. Frontend Developer with React"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                    onKeyDown={(e) => e.key === 'Enter' && handleGenerateFreshWorkflow(promptInput)}
+                />
+                <button 
+                    onClick={() => handleGenerateFreshWorkflow(promptInput)}
+                    disabled={isRegenerating || !promptInput.trim()}
+                    className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm"
+                >
+                    {isRegenerating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Wrench className="w-4 h-4" />}
+                    Build Lifecycle
+                </button>
+            </div>
+            
+            <button 
+                onClick={() => navigate('/dashboard')}
+                className="mt-6 text-sm text-indigo-600 hover:text-indigo-800 font-semibold"
+            >
+                Return to Dashboard
+            </button>
+        </div>
+     );
+  }
 
   const handleViewStepDetails = async (step: WorkflowStage) => {
       setSelectedStep(step);
