@@ -12,7 +12,10 @@ import {
   Radio,
   Wifi,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Edit2,
+  Trash2,
+  X
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 
@@ -37,6 +40,11 @@ export default function MyProjects() {
   const [isLive, setIsLive] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
   const [zoom, setZoom] = useState(0.85);
+
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [editForm, setEditForm] = useState({ title: '', description: '', status: '' });
+
 
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -131,6 +139,52 @@ export default function MyProjects() {
   const handleOpenProject = (project: Project) => {
     navigate('/project-workspace', { state: { project } });
   };
+
+  const handleDelete = async () => {
+    if (!deletingProject || !user) return;
+    try {
+      const res = await fetch(`/api/role/project/${deletingProject.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) {
+        setProjects(prev => prev.filter(p => p.id !== deletingProject.id));
+        setDeletingProject(null);
+      }
+    } catch (e) {
+      console.error('Delete failed:', e);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject || !user) return;
+    try {
+      const res = await fetch(`/api/role/project/${editingProject.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          title: editForm.title,
+          description: editForm.description,
+          status: editForm.status
+        })
+      });
+      if (res.ok) {
+        setProjects(prev => prev.map(p => p.id === editingProject.id ? { 
+          ...p, 
+          title: editForm.title, 
+          description: editForm.description, 
+          status: editForm.status 
+        } : p));
+        setEditingProject(null);
+      }
+    } catch (e) {
+      console.error('Edit failed:', e);
+    }
+  };
+
 
   const getDifficultyColor = (difficulty?: string) => {
     if (!difficulty) return 'bg-slate-100 text-slate-700';
@@ -331,17 +385,45 @@ export default function MyProjects() {
                  return (
                    <div key={project.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                      <div className="p-6">
-                       <div className="flex items-start justify-between mb-2">
-                         <div className="flex items-center gap-3 flex-wrap">
-                           <h3 className="text-xl font-bold text-slate-800">{project.title}</h3>
-                           <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getDifficultyColor(project.project_data?.difficulty)}`}>
-                             {project.project_data?.difficulty || 'Intermediate'}
-                           </span>
-                           <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100">
-                             {project.status === 'active' ? 'In Progress' : 'Completed'}
-                           </span>
-                         </div>
-                       </div>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <h3 className="text-xl font-bold text-slate-800">{project.title}</h3>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getDifficultyColor(project.project_data?.difficulty)}`}>
+                              {project.project_data?.difficulty || 'Intermediate'}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-100">
+                              {project.status === 'active' ? 'In Progress' : 'Completed'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1.5 ml-4">
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setEditForm({ 
+                                  title: project.title, 
+                                  description: project.description || project.project_data?.description || '', 
+                                  status: project.status 
+                                }); 
+                                setEditingProject(project); 
+                              }} 
+                              className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" 
+                              title="Edit Project"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                setDeletingProject(project); 
+                              }} 
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors" 
+                              title="Delete Project"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                        
                        <p className="text-slate-600 text-sm mb-4 line-clamp-2">
                          {project.description || project.project_data?.description || 'Build a scalable application with modern architecture.'}
@@ -442,6 +524,110 @@ export default function MyProjects() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletingProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Project?</h3>
+              <p className="text-slate-500 text-sm mb-6">
+                Are you sure you want to delete <strong className="text-slate-700">{deletingProject.title}</strong>? This action cannot be undone and you will lose all progress for this project.
+              </p>
+              <div className="flex items-center justify-end gap-3">
+                <button 
+                  onClick={() => setDeletingProject(null)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleDelete}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg transition-colors shadow-sm shadow-rose-200"
+                >
+                  Delete Project
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Project Modal */}
+      {editingProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-indigo-500" />
+                Edit Project
+              </h3>
+              <button 
+                onClick={() => setEditingProject(null)}
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="p-6">
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Project Title</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editForm.title}
+                    onChange={e => setEditForm(prev => ({...prev, title: e.target.value}))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
+                  <textarea 
+                    value={editForm.description}
+                    onChange={e => setEditForm(prev => ({...prev, description: e.target.value}))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm min-h-[100px] resize-y"
+                    placeholder="Enter project description..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Status</label>
+                  <select 
+                    value={editForm.status}
+                    onChange={e => setEditForm(prev => ({...prev, status: e.target.value}))}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm font-medium bg-white"
+                  >
+                    <option value="active">Active (In Progress)</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button 
+                  type="button"
+                  onClick={() => setEditingProject(null)}
+                  className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

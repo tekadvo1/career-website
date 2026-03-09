@@ -1024,4 +1024,52 @@ router.get('/my-projects', async (req, res) => {
     }
 });
 
+// DELETE /api/role/project/:id - Delete a project
+router.delete('/project/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!id || !userId) {
+        return res.status(400).json({ error: 'Project ID and User ID are required' });
+    }
+
+    try {
+        await pool.query(
+            "DELETE FROM user_projects WHERE id = $1 AND user_id = $2",
+            [id, userId]
+        );
+        res.json({ success: true, message: "Project deleted successfully" });
+        
+        // Notify realtime clients
+        try { realtimeRoutes.broadcast(String(userId), 'project_update', { projectId: id, action: 'deleted' }); } catch (_) {}
+    } catch (err) {
+        console.error('Error deleting project:', err);
+        res.status(500).json({ error: 'Failed to delete project' });
+    }
+});
+
+// PUT /api/role/project/:id - Edit a project
+router.put('/project/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId, title, description, status } = req.body;
+
+    if (!id || !userId) {
+        return res.status(400).json({ error: 'Project ID and User ID are required' });
+    }
+
+    try {
+        await pool.query(
+            "UPDATE user_projects SET title = COALESCE($1, title), description = COALESCE($2, description), status = COALESCE($3, status), last_updated = NOW() WHERE id = $4 AND user_id = $5",
+            [title, description, status, id, userId]
+        );
+        res.json({ success: true, message: "Project updated successfully" });
+        
+        // Notify realtime clients
+        try { realtimeRoutes.broadcast(String(userId), 'project_update', { projectId: id, action: 'updated' }); } catch (_) {}
+    } catch (err) {
+        console.error('Error updating project:', err);
+        res.status(500).json({ error: 'Failed to update project' });
+    }
+});
+
 module.exports = router;
