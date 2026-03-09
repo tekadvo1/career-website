@@ -332,7 +332,7 @@ export default function Onboarding() {
                     Drop resume here
                   </p>
                   <p className="text-[10px] text-gray-500 mb-3">
-                    Support for PDF, DOCX
+                    Support for DOCX
                   </p>
                   <button className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
                     Browse Files
