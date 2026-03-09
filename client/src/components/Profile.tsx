@@ -737,8 +737,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           <div className="lg:col-span-2 space-y-5">
             
             {/* Realtime Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 cursor-pointer">
+              <div 
+                onClick={() => navigate('/my-projects')}
+                className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md hover:-translate-y-1 transition-all"
+              >
                 <div className="text-yellow-600 mb-2 bg-yellow-50 w-8 h-8 rounded-lg flex items-center justify-center">
                    <Trophy className="w-4 h-4" />
                 </div>
@@ -748,7 +751,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+              <div 
+                onClick={() => navigate('/achievements')}
+                className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md hover:-translate-y-1 transition-all"
+              >
                 <div className="text-orange-500 mb-2 bg-orange-50 w-8 h-8 rounded-lg flex items-center justify-center relative">
                    <Sparkles className="w-4 h-4 absolute" />
                    {userData.stats.learningStreak > 0 && <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span></span>}
@@ -759,7 +765,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+              <div 
+                onClick={() => navigate('/roadmap')}
+                className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md hover:-translate-y-1 transition-all"
+              >
                 <div className="text-teal-600 mb-2 bg-teal-50 w-8 h-8 rounded-lg flex items-center justify-center">
                    <Target className="w-4 h-4" />
                 </div>
@@ -769,7 +778,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md transition-shadow">
+              <div 
+                onClick={() => navigate('/ai-assistant')}
+                className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:shadow-md hover:-translate-y-1 transition-all"
+              >
                 <div className="text-blue-500 mb-2 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center">
                    <Clock className="w-4 h-4" />
                 </div>
