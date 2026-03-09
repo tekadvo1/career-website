@@ -57,13 +57,15 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const [profileDetails, setProfileDetails] = useState({
     phone: "",
     bio: "",
-    location: "Global"
+    location: "Global",
+    role: ""
   });
 
   const [editForm, setEditForm] = useState({
     phone: "",
     bio: "",
-    location: "Global"
+    location: "Global",
+    role: ""
   });
 
   const [avatarStr, setAvatarStr] = useState("");
@@ -253,7 +255,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const activeRole = lastRoleState?.role || "Software Engineer";
+  const activeRole = profileDetails.role || lastRoleState?.role || "Software Engineer";
 
   let activeSkills = ["JavaScript", "React", "Node.js"];
   if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
@@ -301,8 +303,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const handleSaveProfile = () => {
-    setProfileDetails(editForm);
-    const updated = { ...editForm, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
+    const finalRole = editForm.role || activeRole;
+    const newDetails = { ...editForm, role: finalRole };
+    setProfileDetails(newDetails);
+    const updated = { ...newDetails, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
     localStorage.setItem('user_profile_details', JSON.stringify(updated));
     setIsEditing(false);
   };
@@ -598,7 +602,14 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </div>
                 <div className="flex items-center gap-2.5 text-[12px] text-slate-700">
                   <Briefcase className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-                  <span className="font-semibold">{userData.role}</span>
+                  {isEditing && !isPublic ? (
+                      <input 
+                         value={editForm.role}
+                         onChange={(e) => setEditForm(prev => ({...prev, role: e.target.value}))}
+                         className="flex-1 p-1 px-2 text-[12px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                         placeholder="Job Role / Designation..."
+                      />
+                  ) : <span className="font-semibold">{userData.role}</span>}
                 </div>
               </div>
 
@@ -612,7 +623,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                   </button>
                 ) : (
                   <button
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                        setEditForm(prev => ({ ...prev, role: profileDetails.role || activeRole }));
+                        setIsEditing(true);
+                    }}
                     className="w-full px-3 py-2 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-lg font-bold text-[13px] transition-all flex items-center justify-center gap-1.5 mt-2"
                   >
                     <Edit className="w-3.5 h-3.5 text-teal-500" />
