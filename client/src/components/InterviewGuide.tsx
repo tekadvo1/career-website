@@ -37,11 +37,11 @@ export default function InterviewGuide() {
     const [questionHelp, setQuestionHelp] = useState<{[key: number]: string}>({});
     const [loadingHelp, setLoadingHelp] = useState<{[key: number]: boolean}>({});
 
-    const [mockMode, setMockMode] = useState(false);
-    const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+
     const [mockAnswers, setMockAnswers] = useState<{[key: number]: string}>({});
     const [mockFeedback, setMockFeedback] = useState<{[key: number]: string}>({});
-    const [loadingFeedback, setLoadingFeedback] = useState(false);
+    const [loadingFeedback, setLoadingFeedback] = useState<{[key: number]: boolean}>({});
+    const [revealedAnswers, setRevealedAnswers] = useState<{[key: number]: boolean}>({});
 
     const saveToBackend = async (data: GuideResponse, help: {[key: number]: string}, currentRole: string) => {
         const userStr = localStorage.getItem('user');
@@ -184,25 +184,26 @@ export default function InterviewGuide() {
         }
     };
 
-    const handleSubmitMockAnswer = async () => {
-        if (!guideData || !mockAnswers[currentQuestionIdx]) return;
-        setLoadingFeedback(true);
+    const handleSubmitMockAnswer = async (idx: number) => {
+        if (!guideData || !mockAnswers[idx]) return;
+        setLoadingFeedback(prev => ({...prev, [idx]: true}));
         try {
-            const currentQ = guideData.guide[currentQuestionIdx];
+            const currentQ = guideData.guide[idx];
             const res = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: `I am doing a mock interview for a ${role} role. You are the interviewer. Your question was: "${currentQ.question}". My answer is: "${mockAnswers[currentQuestionIdx]}". Provide brief, direct feedback on my answer. Tell me what I did well and 1 thing to improve. Keep it to 3-4 sentences total.`,
+                    message: `I am doing a mock interview for a ${role} role. You are the interviewer. Your question was: "${currentQ.question}". My answer is: "${mockAnswers[idx]}". Provide brief, direct feedback on my answer. Tell me what I did well and 1 thing to improve. Keep it to 3-4 sentences total.`,
                     role: role
                 })
             });
             const data = await res.json();
-            setMockFeedback(prev => ({...prev, [currentQuestionIdx]: data.reply}));
+            setMockFeedback(prev => ({...prev, [idx]: data.reply}));
+            setRevealedAnswers(prev => ({...prev, [idx]: true}));
         } catch {
             alert("Failed to get mock feedback");
         } finally {
-            setLoadingFeedback(false);
+            setLoadingFeedback(prev => ({...prev, [idx]: false}));
         }
     };
 
@@ -217,14 +218,14 @@ export default function InterviewGuide() {
                            <div className="p-2.5 bg-teal-100 rounded-xl">
                               <MessageSquare className="w-6 h-6 text-teal-600" />
                            </div>
-                           <h1 className="text-2xl font-bold text-slate-800">AI {mockMode ? 'Mock Interview' : 'Interview Prep'}</h1>
+                           <h1 className="text-2xl font-bold text-slate-800">AI Interview Prep</h1>
                         </div>
                         <p className="text-sm text-slate-500 max-w-2xl">
-                           {mockMode ? 'Practice answering these questions as if it were a real interview, and instantly receive AI feedback on your performance.' : 'Upload your resume and get personalized interview questions, example answers, and expert tips tailored to your specific background and target role.'}
+                           Upload your resume and get personalized interview questions, example answers, and expert tips tailored to your specific background and target role.
                         </p>
                     </div>
 
-                    {!mockMode && (                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
                         <div className="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Target Role</label>
@@ -287,10 +288,8 @@ export default function InterviewGuide() {
                             </button>
                         </div>
                     </div>
-                    )}
 
-                    {!mockMode ? (
-                        guideData && (
+                        {guideData && (
                             <div className="space-y-6 pb-20 fade-in">
                             {guideData.generalTips && guideData.generalTips.length > 0 && (
                                 <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
@@ -309,7 +308,7 @@ export default function InterviewGuide() {
                                 </div>
                             )}
 
-                            <h2 className="text-xl font-bold text-slate-800 mt-8 mb-4">Your Personalized Questions</h2>
+                            <h2 className="text-xl font-bold text-slate-800 mt-8 mb-4">Your Personalized Practice Questions</h2>
                             
                             <div className="space-y-4">
                                 {guideData.guide.map((qa, idx) => (
@@ -335,32 +334,81 @@ export default function InterviewGuide() {
                                             )}
                                         </div>
                                         <div className="p-5 space-y-4">
-                                            <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-4">
-                                                <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                    <MessageSquare className="w-3.5 h-3.5" /> Optimal Answer Structure
-                                                </h4>
-                                                <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
-                                                    {qa.answer}
-                                                </p>
+                                            {/* Practice Area */}
+                                            <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4">
+                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Your Practice Answer</label>
+                                                <textarea 
+                                                     className="w-full p-3 border border-slate-200 rounded-lg min-h-[100px] focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all text-[13px] font-medium text-slate-800"
+                                                     placeholder="Type your answer here before revealing the optimal answer..."
+                                                     value={mockAnswers[idx] || ""}
+                                                     onChange={(e) => setMockAnswers(prev => ({...prev, [idx]: e.target.value}))}
+                                                     disabled={!!mockFeedback[idx] || loadingFeedback[idx]}
+                                                />
+                                                <div className="mt-3 flex items-center justify-between">
+                                                    {!revealedAnswers[idx] ? (
+                                                        <button 
+                                                            onClick={() => setRevealedAnswers(prev => ({...prev, [idx]: true}))}
+                                                            className="text-[12px] text-slate-500 font-bold hover:text-slate-700 underline underline-offset-2"
+                                                        >
+                                                            Skip & Reveal Answer
+                                                        </button>
+                                                    ) : <div/>}
+
+                                                    {!mockFeedback[idx] && (
+                                                        <button 
+                                                            onClick={() => handleSubmitMockAnswer(idx)}
+                                                            disabled={loadingFeedback[idx] || !mockAnswers[idx]}
+                                                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[12px] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                                        >
+                                                            {loadingFeedback[idx] && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                                            Submit for AI Feedback
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                {mockFeedback[idx] && (
+                                                    <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl custom-fade-in space-y-2">
+                                                        <h3 className="font-bold text-emerald-800 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
+                                                            <Bot className="w-3.5 h-3.5" /> AI Evaluation Feedback
+                                                        </h3>
+                                                        <p className="text-[13px] text-emerald-900 leading-relaxed font-medium">
+                                                            {mockFeedback[idx]}
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                                                <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                    <UserCheck className="w-3.5 h-3.5" /> Pro Tip to Stand Out
-                                                </h4>
-                                                <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
-                                                    {qa.tip}
-                                                </p>
-                                            </div>
+                                            {/* Revealed Answer & Tip */}
+                                            {revealedAnswers[idx] && (
+                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                    <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-4">
+                                                        <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                            <MessageSquare className="w-3.5 h-3.5" /> Optimal Answer Structure
+                                                        </h4>
+                                                        <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
+                                                            {qa.answer}
+                                                        </p>
+                                                    </div>
 
-                                            {questionHelp[idx] && (
-                                                <div className="bg-teal-50/50 border border-teal-200 rounded-xl p-4 mt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                    <h4 className="text-xs font-black text-teal-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                        <Bot className="w-3.5 h-3.5" /> Real-time AI Assistant Insight
-                                                    </h4>
-                                                    <p className="text-[13px] text-teal-900 leading-relaxed font-medium">
-                                                        {questionHelp[idx]}
-                                                    </p>
+                                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
+                                                        <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                            <UserCheck className="w-3.5 h-3.5" /> Pro Tip to Stand Out
+                                                        </h4>
+                                                        <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
+                                                            {qa.tip}
+                                                        </p>
+                                                    </div>
+
+                                                    {questionHelp[idx] && (
+                                                        <div className="bg-teal-50/50 border border-teal-200 rounded-xl p-4 mt-2">
+                                                            <h4 className="text-xs font-black text-teal-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                                <Bot className="w-3.5 h-3.5" /> Real-time AI Assistant Insight
+                                                            </h4>
+                                                            <p className="text-[13px] text-teal-900 leading-relaxed font-medium">
+                                                                {questionHelp[idx]}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -373,7 +421,7 @@ export default function InterviewGuide() {
                                     onClick={() => navigate('/realtime-mock-interview', { state: { guideData, role } })}
                                     className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center gap-2"
                                 >
-                                    Start Interactive Mock Interview
+                                    Start Live Mock Interview (Voice)
                                 </button>
                                 <button 
                                     onClick={handleAddMore}
@@ -385,88 +433,7 @@ export default function InterviewGuide() {
                                 </button>
                             </div>
                             </div>
-                        )
-                    ) : (
-                        guideData && (
-                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 relative">
-                           <button 
-                               onClick={() => setMockMode(false)}
-                               className="absolute top-4 right-4 text-xs font-bold text-slate-500 hover:text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                           >
-                               Exit Mock Interview
-                           </button>
-
-                           <div className="flex justify-between items-center mb-6">
-                               <div className="text-xs font-black tracking-widest text-teal-600 uppercase">
-                                   Question {currentQuestionIdx + 1} of {guideData.guide.length}
-                               </div>
-                           </div>
-
-                           <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6">
-                               "{guideData.guide[currentQuestionIdx].question}"
-                           </h2>
-
-                           <div className="space-y-4">
-                               <label className="block text-sm font-bold text-slate-700">Your Answer:</label>
-                               <textarea 
-                                    className="w-full p-4 border border-slate-200 rounded-xl min-h-[150px] focus:ring-2 focus:ring-teal-500 focus:outline-none transition-all text-sm font-medium text-slate-800"
-                                    placeholder="Type your answer here..."
-                                    value={mockAnswers[currentQuestionIdx] || ""}
-                                    onChange={(e) => setMockAnswers(prev => ({...prev, [currentQuestionIdx]: e.target.value}))}
-                                    disabled={!!mockFeedback[currentQuestionIdx] || loadingFeedback}
-                               />
-                               
-                               {!mockFeedback[currentQuestionIdx] && (
-                                   <div className="flex justify-end">
-                                        <button 
-                                            onClick={handleSubmitMockAnswer}
-                                            disabled={loadingFeedback || !mockAnswers[currentQuestionIdx]}
-                                            className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm shadow-sm transition-all flex items-center gap-2 disabled:opacity-50"
-                                        >
-                                            {loadingFeedback && <Loader2 className="w-4 h-4 animate-spin" />}
-                                            Submit for Feedback
-                                        </button>
-                                   </div>
-                               )}
-                           </div>
-
-                           {mockFeedback[currentQuestionIdx] && (
-                               <div className="mt-8 p-5 bg-emerald-50 border border-emerald-100 rounded-xl custom-fade-in space-y-3">
-                                   <h3 className="font-bold text-emerald-800 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                       <Bot className="w-4 h-4" /> AI Interviewer Feedback
-                                   </h3>
-                                   <p className="text-[14px] text-emerald-900 leading-relaxed font-medium">
-                                       {mockFeedback[currentQuestionIdx]}
-                                   </p>
-
-                                   <div className="pt-4 border-t border-emerald-100 flex justify-end gap-3">
-                                        <button
-                                            onClick={() => {
-                                                if (currentQuestionIdx > 0) setCurrentQuestionIdx(prev => prev - 1);
-                                            }}
-                                            disabled={currentQuestionIdx === 0}
-                                            className="px-4 py-2 border border-slate-300 text-slate-600 font-bold rounded-lg text-sm hover:bg-slate-50 disabled:opacity-40"
-                                        >
-                                            Previous
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                if (currentQuestionIdx < guideData.guide.length - 1) {
-                                                    setCurrentQuestionIdx(prev => prev + 1);
-                                                } else {
-                                                    setMockMode(false);
-                                                }
-                                            }}
-                                            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-sm disabled:opacity-40"
-                                        >
-                                            {currentQuestionIdx < guideData.guide.length - 1 ? 'Next Question' : 'Finish Interview'}
-                                        </button>
-                                   </div>
-                               </div>
-                           )}
-                            </div>
-                        )
-                    )}
+                        )}
                 </main>
             </div>
         </div>
