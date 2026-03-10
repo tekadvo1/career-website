@@ -31,7 +31,7 @@ import HowItWorksPage from './components/landing/HowItWorksPage';
 import AboutPage from './components/landing/AboutPage';
 import ContactPage from './components/landing/ContactPage';
 import Missions from './components/Missions';
-import NotFoundPage from './components/NotFoundPage';
+import NotFoundPage from './components/NotFoundPage'; // 404 catch-all page
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
