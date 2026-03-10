@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { Gamepad2, Sparkles, AlertCircle, ArrowRight, ShieldCheck, Zap, ZoomIn, ZoomOut, UploadCloud, FileText } from 'lucide-react';
+import { useAlert } from '../contexts/AlertContext';
 
 interface QuizQuestion {
   question: string;
@@ -11,6 +12,7 @@ interface QuizQuestion {
 }
 
 export default function QuizGame() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -88,11 +90,11 @@ export default function QuizGame() {
         setQuestions(data.questions);
         setStarted(true);
       } else {
-        alert("Failed to build quiz map. Please try again later.");
+        showAlert("Failed to build quiz map. Please try again later.", "error");
       }
     } catch (err) {
       console.error(err);
-      alert("Failed to contact the Quiz Master.");
+      showAlert("Failed to contact the Quiz Master.", "error");
     } finally {
       setLoading(false);
     }

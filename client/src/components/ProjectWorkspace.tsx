@@ -17,6 +17,7 @@ import {
 
 import { TaskGuideView } from "./TaskGuideView";
 import { RightSidebar } from "./RightSidebar";
+import { useAlert } from '../contexts/AlertContext';
 
 
 
@@ -88,6 +89,7 @@ const projectStepsMock: Step[] = [
 ];
 
 export default function ProjectWorkspace() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
   const { project, role, preLoadedCurriculum } = (location.state as any) || {};
@@ -689,7 +691,7 @@ export default function ProjectWorkspace() {
                                 if (allCompleted) {
                                   handleStepToggle(step.id);
                                 } else {
-                                  alert("Please check off all tasks above to mark the module complete.");
+                                  showAlert("Please check off all tasks above to mark the module complete.", "warning");
                                 }
                               }}
                               className={`transition-all font-bold px-5 py-2.5 rounded-lg flex items-center gap-2 text-[14px] shadow-sm ${

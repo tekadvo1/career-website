@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
+import { useAlert } from '../contexts/AlertContext';
 
 export default function Onboarding() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
   const [role, setRole] = useState('');
@@ -54,7 +56,7 @@ export default function Onboarding() {
     if (validTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
     } else {
-      alert('Please upload a PDF or DOCX file.');
+      showAlert('Please upload a PDF or DOCX file.', 'error');
     }
   };
 
@@ -81,7 +83,7 @@ export default function Onboarding() {
 
   const handleSubmit = async () => {
     if (!role && !file) {
-      alert('Please enter a desired role OR upload a PDF resume to continue.');
+      showAlert('Please enter a desired role OR upload a PDF resume to continue.', 'warning');
       return;
     }
 
@@ -117,7 +119,7 @@ export default function Onboarding() {
         setStep('choose-path');
       } catch (error: any) {
         console.error('Error analyzing resume:', error);
-        alert(`Resume Analysis Failed: ${error.message || 'Unknown error'}. \n\nPlease try entering your desired role manually instead.`);
+        showAlert(`Resume Analysis Failed: ${error.message || 'Unknown error'}. \n\nPlease try entering your desired role manually instead.`, 'error');
       } finally {
         setIsAnalyzing(false);
       }

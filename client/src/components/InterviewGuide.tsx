@@ -9,10 +9,11 @@ import {
     UserCheck, 
     MessageSquare,
     Loader2,
-    Plus,
-    Bot
+    Bot,
+    Plus
 } from 'lucide-react';
 import Sidebar from './Sidebar';
+import { useAlert } from '../contexts/AlertContext';
 
 interface QA {
   question: string;
@@ -26,6 +27,7 @@ interface GuideResponse {
 }
 
 export default function InterviewGuide() {
+    const { showAlert } = useAlert();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -120,7 +122,7 @@ export default function InterviewGuide() {
             setQuestionHelp({});
             saveToBackend(data, {}, role);
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : "An error occurred");
+            showAlert(error instanceof Error ? error.message : "An error occurred", "error");
         } finally {
             setLoading(false);
         }
@@ -153,7 +155,7 @@ export default function InterviewGuide() {
             setGuideData(newGuide);
             saveToBackend(newGuide, questionHelp, role);
         } catch (error: unknown) {
-            alert(error instanceof Error ? error.message : "An error occurred");
+            showAlert(error instanceof Error ? error.message : "An error occurred", "error");
         } finally {
             setLoadingMore(false);
         }
@@ -178,7 +180,7 @@ export default function InterviewGuide() {
                 return updated;
             });
         } catch {
-            alert("Failed to get realtime help");
+            showAlert("Failed to get realtime help", "error");
         } finally {
             setLoadingHelp(prev => ({...prev, [idx]: false}));
         }
@@ -201,7 +203,7 @@ export default function InterviewGuide() {
             setMockFeedback(prev => ({...prev, [idx]: data.reply}));
             setRevealedAnswers(prev => ({...prev, [idx]: true}));
         } catch {
-            alert("Failed to get mock feedback");
+            showAlert("Failed to get mock feedback", "error");
         } finally {
             setLoadingFeedback(prev => ({...prev, [idx]: false}));
         }

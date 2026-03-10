@@ -21,10 +21,12 @@ import {
   GitBranch,
   Sparkles
 } from 'lucide-react';
+import { useAlert } from '../contexts/AlertContext';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
 
 export default function RoleAnalysis() {
+  const { showAlert } = useAlert();
   const location = useLocation();
   const navigate = useNavigate();
   // Using location state first, but falling back to local storage if available for persistence
@@ -288,7 +290,7 @@ export default function RoleAnalysis() {
       pdf.save(`${roleDataState?.title || 'Role_Analysis'}_Roadmap.pdf`);
     } catch (error) {
       console.error('PDF generation failed:', error);
-      alert('Failed to generate PDF. Please try again.');
+      showAlert('Failed to generate PDF. Please try again.', 'error');
     } finally {
       setIsDownloading(false);
     }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAlert } from '../contexts/AlertContext';
 import {
   Target,
   Trophy,
@@ -56,6 +57,7 @@ interface Reward {
 
 
 export default function Missions() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
   const role = location.state?.role || localStorage.getItem('selectedRole') || 'Software Engineer';
@@ -257,9 +259,9 @@ export default function Missions() {
 
       if (data.success) {
         setTotalXp(data.remainingXp);
-        alert(`🎉 Reward redeemed: ${data.reward}! Remaining XP: ${data.remainingXp}`);
+        showAlert(`🎉 Reward redeemed: ${data.reward}! Remaining XP: ${data.remainingXp}`, 'success');
       } else {
-        alert(data.error || 'Failed to redeem');
+        showAlert(data.error || 'Failed to redeem', 'error');
       }
     } catch (e) {
       console.error('Failed to redeem reward:', e);

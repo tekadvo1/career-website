@@ -21,6 +21,7 @@ import {
   Activity
 } from "lucide-react";
 import Sidebar from "./Sidebar";
+import { useAlert } from '../contexts/AlertContext';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -42,6 +43,7 @@ ChartJS.register(
 );
 
 export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const { username } = useParams();
 
@@ -284,7 +286,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const handleCompleteSetup = () => {
     if (!editForm.phone || !editForm.location || !editForm.bio) {
-        alert("Please fill in all details to proceed.");
+        showAlert("Please fill in all details to proceed.", "warning");
         return;
     }
     setProfileDetails(editForm);

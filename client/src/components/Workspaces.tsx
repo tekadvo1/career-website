@@ -6,6 +6,7 @@ import {
   X, UploadCloud, FileText, Award, Pencil, Check
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
+import { useAlert } from '../contexts/AlertContext';
 
 interface Workspace {
   id: number;
@@ -25,6 +26,7 @@ const cleanRole = (role: string): string => {
 };
 
 export default function Workspaces() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -244,11 +246,11 @@ export default function Workspaces() {
           navigate('/dashboard');
         }
       } else {
-        alert('Failed to sync workspace. Please try again.');
+        showAlert('Failed to sync workspace. Please try again.', 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('Error switching workspace');
+      showAlert('Error switching workspace', 'error');
     } finally {
       setSwitchingTo(null);
     }

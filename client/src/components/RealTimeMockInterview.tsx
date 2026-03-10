@@ -14,6 +14,7 @@ import {
     Trophy
 } from 'lucide-react';
 import Sidebar from './Sidebar';
+import { useAlert } from '../contexts/AlertContext';
 
 interface LocationState {
     guideData: {
@@ -28,6 +29,7 @@ interface LocationState {
 }
 
 export default function RealTimeMockInterview() {
+    const { showAlert } = useAlert();
     const location = useLocation();
     const navigate = useNavigate();
     const state = location.state as LocationState;
@@ -93,7 +95,7 @@ export default function RealTimeMockInterview() {
 
     const toggleRecording = () => {
         if (!recognitionRef.current) {
-            alert("Speech recognition isn't supported in your browser.");
+            showAlert("Speech recognition isn't supported in your browser.", "error");
             return;
         }
 
@@ -155,7 +157,7 @@ export default function RealTimeMockInterview() {
             setFeedback({ score: data.score, text: data.feedback });
         } catch (error) {
             console.error("Failed to evaluate answer", error);
-            alert("Failed to get feedback from AI.");
+            showAlert("Failed to get feedback from AI.", "error");
         } finally {
             setLoadingFeedback(false);
         }

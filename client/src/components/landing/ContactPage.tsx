@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import { Zap, Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight } from 'lucide-react';
+import { useAlert } from '../../contexts/AlertContext';
 
 const faqs = [
   {
@@ -52,6 +53,7 @@ const contactOptions = [
 ];
 
 export default function ContactPage() {
+  const { showAlert } = useAlert();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -72,7 +74,7 @@ export default function ContactPage() {
       if (!res.ok) throw new Error('Failed');
       setSubmitted(true);
     } catch {
-      alert('Something went wrong. Please email us directly at support@findstreak.com');
+      showAlert('Something went wrong. Please email us directly at support@findstreak.com', 'error');
     } finally {
       setSending(false);
     }

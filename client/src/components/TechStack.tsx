@@ -3,8 +3,10 @@ import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, 
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { apiFetch } from '../utils/apiFetch';
+import { useAlert } from '../contexts/AlertContext';
 
 export default function TechStack() {
+    const { showAlert } = useAlert();
     const navigate = useNavigate();
     const [role, setRole] = useState("Software Engineer");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -44,11 +46,11 @@ export default function TechStack() {
             if (data.languages || data.frameworks || data.tools) {
                 setResult(data);
             } else {
-                alert("Failed to analyze. Please try again.");
+                showAlert("Failed to analyze. Please try again.", "error");
             }
         } catch (err) {
             console.error(err);
-            alert("Error connecting to AI service.");
+            showAlert("Error connecting to AI service.", "error");
         } finally {
             setIsLoading(false);
         }

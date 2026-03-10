@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useAlert } from '../contexts/AlertContext';
 
 interface WorkflowStage {
   stage: string;
@@ -22,6 +23,7 @@ interface WorkflowStage {
 }
 
 export default function WorkflowLifecycle() {
+  const { showAlert } = useAlert();
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -63,11 +65,11 @@ export default function WorkflowLifecycle() {
               setCurrentWorkflow(result.data.workflow);
               if (result.data.role) setDisplayRole(result.data.role);
           } else {
-              alert('Failed to generate workflow. Please try again.');
+              showAlert('Failed to generate workflow. Please try again.', 'error');
           }
       } catch (error) {
           console.error("Workflow error:", error);
-          alert('Error connecting to server.');
+          showAlert('Error connecting to server.', 'error');
       } finally {
           setIsRegenerating(false);
       }
@@ -89,11 +91,11 @@ export default function WorkflowLifecycle() {
               setCurrentWorkflow(result.data.workflow);
               if (result.data.role) setDisplayRole(result.data.role);
           } else {
-              alert('Failed to generate custom workflow. Please try again.');
+              showAlert('Failed to generate custom workflow. Please try again.', 'error');
           }
       } catch (error) {
           console.error("Custom workflow error:", error);
-          alert('Error connecting to server.');
+          showAlert('Error connecting to server.', 'error');
       } finally {
           setIsRegenerating(false);
       }
@@ -189,7 +191,7 @@ export default function WorkflowLifecycle() {
         pdf.save(`${role}_Workflow_Lifecycle.pdf`);
       } catch (error) {
         console.error('PDF generation failed:', error);
-        alert('Failed to generate PDF. Please try again.');
+        showAlert('Failed to generate PDF. Please try again.', 'error');
       } finally {
         setIsDownloading(false);
       }
