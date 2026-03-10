@@ -38,32 +38,17 @@ const values = [
   },
 ];
 
-const timeline = [
-  {
-    year: '2024',
-    title: 'FindStreak Founded',
-    desc: 'We started FindStreak because we were frustrated with career advice that was either too generic or completely disconnected from how companies actually hire developers.',
-  },
-  {
-    year: '2024',
-    title: 'AI Skill Gap Analysis Launched',
-    desc: 'Our first feature — analysing your resume and showing you exactly which skills you are missing for your target role — went live. It replaced hours of guessing with a clear, specific answer.',
-  },
-  {
-    year: '2025',
-    title: 'Project Dashboard and Daily Task System',
-    desc: 'We added structured, AI-recommended projects with daily task breakdowns, milestone tracking and XP. Users could finally learn by doing something real instead of just studying in theory.',
-  },
-  {
-    year: '2025',
-    title: 'Interview Coach and Tech Stack Guide',
-    desc: 'We built an interview practice system with AI feedback on answers, and a tech stack generator that tells you exactly which tools to install and how to use them for your role.',
-  },
-  {
-    year: '2026',
-    title: 'The Full Platform',
-    desc: 'FindStreak now covers the complete learning journey: skill analysis, roadmap, project building, tech stack setup, resource discovery, interview prep, and streak tracking all in one place.',
-  },
+const platformFeatures = [
+  { area: 'Career Analysis', detail: 'AI reads your resume and compares it to real hiring requirements for your chosen role. You get a precise skill gap report and a career fit score — not an estimate, but a direct comparison against actual job requirements.' },
+  { area: 'Personalised Roadmap', detail: 'A learning roadmap is generated specifically from your resume and target role. It skips what you already know and gives you a prioritised, logical sequence of topics to study — with a visual tree view of the full journey.' },
+  { area: 'Project-Based Learning', detail: 'AI recommends real-world projects matched to your skill level. Each project comes with a structured curriculum, daily tasks and milestone tracking. You build something tangible — not a tutorial clone, but a real project for your portfolio.' },
+  { area: 'Tech Stack & Tool Guides', detail: 'The platform generates a complete list of every language, framework and tool your target role requires. Every item has a dedicated step-by-step installation guide and a live AI mentor available while you follow it.' },
+  { area: 'Interview Preparation', detail: 'AI generates role-specific interview questions covering technical, behavioural and situational scenarios. You type your answers and receive immediate detailed feedback. A real-time mock interview mode simulates the pressure of an actual session.' },
+  { area: 'AI Learning Assistant', detail: 'A dedicated AI chat that knows your career context. Ask technical questions, get explanations of concepts, request guidance on what to do next — anything. Chat history is saved and synced across all your devices.' },
+  { area: 'Daily Missions & Streak Tracking', detail: 'Every day you get one focused mission linked to your active project. Completing it earns XP and extends your daily streak. Missing a day resets your streak to zero — the accountability is intentionally real.' },
+  { area: 'Achievements & XP', detail: 'Every meaningful action on the platform earns XP. Completing projects, finishing interviews, maintaining streaks and hitting milestones unlock achievements and badges that appear on your public profile.' },
+  { area: 'Career Workspaces', detail: 'You can run completely separate learning environments for different career paths simultaneously. Each workspace has its own roadmap, projects, analysis and progress — fully independent and switchable at any time.' },
+  { area: 'Public Developer Profile', detail: 'Your profile page is publicly shareable with a unique URL. It shows your target role, skills, completed projects and badges. Share it in job applications or on LinkedIn as evidence of structured, consistent work.' },
 ];
 
 export default function AboutPage() {
@@ -173,27 +158,25 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Timeline */}
+      {/* What the platform actually has today */}
       <section className="py-20 px-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">How We Got Here</h2>
-            <p className="text-slate-500 text-lg">A brief history of what we built and why.</p>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">What FindStreak Contains Right Now</h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">Here is a straightforward description of every area of the platform that is currently live and available to you.</p>
           </div>
-          <div className="relative">
-            <div className="absolute left-7 top-0 bottom-0 w-0.5 bg-gradient-to-b from-teal-400 to-emerald-400" />
-            <div className="space-y-10 pl-16">
-              {timeline.map((m, i) => (
-                <div key={i} className="relative">
-                  <div className="absolute -left-12 w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center shadow-md top-1">
-                    <div className="w-3 h-3 bg-white rounded-full" />
-                  </div>
-                  <span className="text-xs font-extrabold text-teal-600 uppercase tracking-widest">{m.year}</span>
-                  <h3 className="text-lg font-black text-slate-900 mt-1 mb-2">{m.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed">{m.desc}</p>
+          <div className="space-y-4">
+            {platformFeatures.map((f, i) => (
+              <div key={i} className="flex gap-5 items-start bg-slate-50 border border-slate-100 rounded-2xl p-5 hover:border-teal-200 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center flex-shrink-0 text-white text-xs font-black mt-0.5">
+                  {String(i + 1).padStart(2, '0')}
                 </div>
-              ))}
-            </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base mb-1">{f.area}</h3>
+                  <p className="text-slate-500 text-sm leading-relaxed">{f.detail}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
