@@ -49,12 +49,15 @@ export default function Dashboard() {
   const navigate     = useNavigate();
   const location     = useLocation();
 
-  const selectedRole = location.state?.role || (() => {
+  const _rawRole = location.state?.role || (() => {
     try {
       const saved = localStorage.getItem('lastRoleAnalysis');
       return saved ? JSON.parse(saved).role : 'Software Engineer';
     } catch { return 'Software Engineer'; }
   })();
+  // Strip qualifiers like "(beginner - usa)" from the role string
+  const selectedRole = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
+
 
   /* ---------- cache helpers ------------------------------------------------- */
   const getCachedProjects = () => {

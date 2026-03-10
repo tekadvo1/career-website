@@ -34,7 +34,9 @@ export default function RoleAnalysis() {
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   
-  const role = location.state?.role || lastRoleState?.role || "Software Engineer";
+  const _rawRole = location.state?.role || lastRoleState?.role || "Software Engineer";
+  const role = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+
   const hasResume = location.state?.hasResume || false;
   const resumeFileName = location.state?.resumeFileName || null;
   const aiAnalysis = location.state?.analysis;
