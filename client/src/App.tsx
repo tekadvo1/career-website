@@ -26,6 +26,10 @@ import InterviewGuide from './components/InterviewGuide';
 import RealTimeMockInterview from './components/RealTimeMockInterview';
 import TechStack from './components/TechStack';
 import TechGuideView from './components/TechGuideView';
+import LandingHome from './components/landing/LandingHome';
+import HowItWorksPage from './components/landing/HowItWorksPage';
+import AboutPage from './components/landing/AboutPage';
+import ContactPage from './components/landing/ContactPage';
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -52,7 +56,11 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-100">
         <Routes>
-          <Route path="/" element={
+          <Route path="/" element={<LandingHome />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/signup" element={
             <RedirectIfLoggedIn>
               <SignUp />
             </RedirectIfLoggedIn>
