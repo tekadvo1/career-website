@@ -30,6 +30,8 @@ import LandingHome from './components/landing/LandingHome';
 import HowItWorksPage from './components/landing/HowItWorksPage';
 import AboutPage from './components/landing/AboutPage';
 import ContactPage from './components/landing/ContactPage';
+import Missions from './components/Missions';
+import NotFoundPage from './components/NotFoundPage';
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -56,7 +58,11 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-100">
         <Routes>
-          <Route path="/" element={<LandingHome />} />
+          <Route path="/" element={
+            <RedirectIfLoggedIn>
+              <LandingHome />
+            </RedirectIfLoggedIn>
+          } />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/about-us" element={<AboutPage />} />
@@ -100,6 +106,8 @@ function App() {
           <Route path="/realtime-mock-interview" element={<RealTimeMockInterview />} />
           <Route path="/tech-stack" element={<TechStack />} />
           <Route path="/tech-guide" element={<TechGuideView />} />
+          <Route path="/missions" element={<Missions />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </BrowserRouter>

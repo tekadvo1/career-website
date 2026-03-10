@@ -78,4 +78,46 @@ const sendPasswordResetEmail = async (email, token) => {
   }
 };
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail };
+
+const sendContactEmail = async ({ name, email, subject, message }) => {
+  if (!resend) {
+    console.warn("Skipping contact email: RESEND_API_KEY is missing.");
+    return false;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'FindStreak <onboarding@resend.dev>',
+      to: [process.env.CONTACT_EMAIL || 'support@findstreak.com'],
+      reply_to: email,
+      subject: `[FindStreak Contact] ${subject || 'New Message'} — from ${name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #0d9488;">New Contact Form Submission</h2>
+          <table style="width:100%; border-collapse:collapse; margin-top:16px;">
+            <tr><td style="padding:8px; font-weight:bold; color:#555; width:100px;">Name</td><td style="padding:8px;">${name}</td></tr>
+            <tr style="background:#f9fafb;"><td style="padding:8px; font-weight:bold; color:#555;">Email</td><td style="padding:8px;"><a href="mailto:${email}">${email}</a></td></tr>
+            <tr><td style="padding:8px; font-weight:bold; color:#555;">Topic</td><td style="padding:8px;">${subject || 'Not specified'}</td></tr>
+          </table>
+          <div style="margin-top:20px; padding:16px; background:#f9fafb; border-left:4px solid #0d9488; border-radius:4px;">
+            <p style="font-weight:bold; color:#555; margin:0 0 8px;">Message:</p>
+            <p style="margin:0; white-space:pre-wrap; color:#333;">${message}</p>
+          </div>
+          <p style="margin-top:20px; font-size:12px; color:#999;">Reply directly to this email to respond to ${name}.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Error sending contact email:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Contact email failed:', err);
+    return false;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendContactEmail };
+
