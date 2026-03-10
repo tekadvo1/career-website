@@ -66,7 +66,7 @@ export default function Achievements() {
     fetchAchievements();
 
     // ── Real-time SSE Connection ──
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
 
     es.addEventListener('snapshot', () => {
       fetchAchievements(); // Sync achievements whenever a fresh snapshot hits

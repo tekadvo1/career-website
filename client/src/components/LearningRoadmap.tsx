@@ -233,7 +233,7 @@ export default function LearningRoadmap() {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       if (user?.id) {
-          es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+          es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
           es.addEventListener('snapshot', (e: MessageEvent) => {
               try {
                   const snap = JSON.parse(e.data);

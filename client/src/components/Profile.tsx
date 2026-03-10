@@ -139,7 +139,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     if (!user?.id) return;
 
     // Real-time EventSource connection
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
     
     const handleSnapshot = (e: MessageEvent) => {
       try {

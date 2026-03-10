@@ -128,7 +128,7 @@ export default function Dashboard() {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!user.id) return;
 
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
     sseRef.current = es;
 
     es.addEventListener('snapshot', (e: MessageEvent) => {

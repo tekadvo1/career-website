@@ -173,7 +173,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     let es: EventSource | null = null;
 
     if (!isPublic && user?.id) {
-        es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+        es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
         es.addEventListener('snapshot', (e: MessageEvent) => {
             try {
                 const snap = JSON.parse(e.data);

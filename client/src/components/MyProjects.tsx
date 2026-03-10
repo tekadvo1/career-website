@@ -55,7 +55,7 @@ export default function MyProjects() {
       return;
     }
 
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
 
     es.addEventListener('snapshot', (e: MessageEvent) => {
       try {
