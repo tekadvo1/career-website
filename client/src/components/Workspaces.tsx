@@ -87,16 +87,22 @@ export default function Workspaces() {
       if (last) {
         try {
           const parsed = JSON.parse(last);
-          if (parsed.role && !fetchedWorkspaces.some((w: Workspace) => w.role === parsed.role)) {
-            const createRes = await apiFetch('/api/workspaces', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user?.id, name: 'My Workspace', role: parsed.role })
-            });
-            const createData = await createRes.json();
-            if (createData.success) {
-              fetchedWorkspaces = [createData.workspace, ...fetchedWorkspaces];
-            }
+          if (parsed.role) {
+             // Case-insensitive check ignoring qualifiers to prevent duplicates
+             const roleExists = fetchedWorkspaces.some(
+                (w: Workspace) => cleanRole(w.role).toLowerCase() === cleanRole(parsed.role).toLowerCase()
+             );
+             if (!roleExists) {
+               const createRes = await apiFetch('/api/workspaces', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ userId: user?.id, name: 'My Workspace', role: parsed.role })
+               });
+               const createData = await createRes.json();
+               if (createData.success) {
+                 fetchedWorkspaces = [createData.workspace, ...fetchedWorkspaces];
+               }
+             }
           }
         } catch (e) {}
       }
