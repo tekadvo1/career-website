@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import {
   ArrowRight, Upload, Brain, Map, Code, Briefcase, MessageSquare,
-  CheckCircle, Zap, ChevronRight, Star, Users, BookOpen
+  CheckCircle, Zap, Star, Users, BookOpen
 } from 'lucide-react';
 
 const steps = [
