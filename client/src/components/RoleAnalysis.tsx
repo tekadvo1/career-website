@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
@@ -180,9 +181,8 @@ export default function RoleAnalysis() {
         const userStr = localStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
         
-        const response = await fetch('/api/role/analyze', {
+        const response = await apiFetch('/api/role/analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             role: role, 
             userId: user.id || null, // Pass userId if logged in
