@@ -59,7 +59,11 @@ function App() {
           <Route path="/" element={<LandingHome />} />
           <Route path="/how-it-works" element={<HowItWorksPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/about-us" element={<AboutPage />} />
+          <Route path="/about-us/" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/contact-us" element={<ContactPage />} />
+          <Route path="/contact-us/" element={<ContactPage />} />
           <Route path="/signup" element={
             <RedirectIfLoggedIn>
               <SignUp />

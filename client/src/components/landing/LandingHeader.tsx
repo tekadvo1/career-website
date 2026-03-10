@@ -10,8 +10,8 @@ export default function LandingHeader() {
   const navLinks = [
     { label: 'Home', path: '/' },
     { label: 'How It Works', path: '/how-it-works' },
-    { label: 'About', path: '/about' },
-    { label: 'Contact', path: '/contact' },
+    { label: 'About', path: '/about-us' },
+    { label: 'Contact', path: '/contact-us' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
