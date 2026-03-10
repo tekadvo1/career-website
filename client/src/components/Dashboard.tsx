@@ -34,6 +34,7 @@ interface Project {
   recruiterAppeal?: string[];
   progress_data?: any;
   project_data?: any;
+  role?: string;
 }
 
 /* ─── Real-time snapshot from SSE ─────────────────────────────────────────── */
@@ -112,16 +113,21 @@ export default function Dashboard() {
 
   /* ── Apply SSE snapshot ───────────────────────────────────────────────────── */
   const applySnapshot = useCallback((snap: DashSnapshot) => {
-    const mapped = snap.projects.map(mapDbProject);
+    const workspaceProjects = snap.projects.filter(
+      p => !p.role || p.role.toLowerCase() === selectedRole.toLowerCase() || p.role.toLowerCase() === _rawRole.toLowerCase()
+    );
+    const mapped = workspaceProjects.map(mapDbProject);
     setUserProjects(mapped);
+    
+    // Compute stats for current workspace since backend sends global snapshot
     setRtStats({
-      totalXP:        snap.totalXP,
-      activeCount:    snap.activeCount,
-      completedCount: snap.completedCount,
-      savedCount:     snap.savedCount,
+      totalXP:        snap.totalXP, // keep global totalXP or adapt to workspace
+      activeCount:    mapped.filter(p => p.status === 'active').length,
+      completedCount: mapped.filter(p => p.status === 'completed').length,
+      savedCount:     mapped.filter(p => p.status === 'saved').length,
     });
     setLastSync(new Date());
-  }, []);
+  }, [selectedRole, _rawRole]);
 
   /* ── SSE connection ───────────────────────────────────────────────────────── */
   useEffect(() => {

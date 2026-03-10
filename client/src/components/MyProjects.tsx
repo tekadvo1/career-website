@@ -49,6 +49,15 @@ export default function MyProjects() {
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   
+  // Extract active workspace role to filter projects
+  const _rawRole = (() => {
+    try {
+      const saved = localStorage.getItem('lastRoleAnalysis');
+      return saved ? JSON.parse(saved).role : 'Software Engineer';
+    } catch { return 'Software Engineer'; }
+  })();
+  const selectedRole = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
+
   useEffect(() => {
     if (!user) {
       navigate('/signin');
@@ -61,7 +70,10 @@ export default function MyProjects() {
       try {
         const snap = JSON.parse(e.data);
         if (snap && snap.projects) {
-          const parsedProjects = snap.projects.map((p: any) => ({
+          // Only show projects matching the active workspace role
+          const workspaceProjects = snap.projects.filter((p: any) => !p.role || p.role.toLowerCase() === selectedRole.toLowerCase() || p.role.toLowerCase() === _rawRole.toLowerCase());
+
+          const parsedProjects = workspaceProjects.map((p: any) => ({
             ...p,
             project_data: typeof p.project_data === 'string' ? JSON.parse(p.project_data) : p.project_data,
             progress_data: typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data,
