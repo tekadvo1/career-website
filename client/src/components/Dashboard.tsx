@@ -62,7 +62,7 @@ export default function Dashboard() {
   /* ---------- cache helpers ------------------------------------------------- */
   const getCachedProjects = () => {
     try {
-      const c = localStorage.getItem(`dashboard_projects_v2_${selectedRole}`);
+      const c = localStorage.getItem(`dashboard_projects_v2_${_rawRole}`);
       if (c) { const p = JSON.parse(c); if (Array.isArray(p) && p.length > 0) return p; }
     } catch { /* ignore */ }
     return [];
@@ -165,24 +165,24 @@ export default function Dashboard() {
         if (analysis) {
           const skills = analysis.skills?.map((s: any) => s.name).join(', ') || '';
           const tools  = analysis.tools?.map((t: any) => t.name).join(', ') || '';
-          resumeData = `Target Role: ${selectedRole}, Skills: ${skills}, Tools: ${tools}`;
+          resumeData = `Target Role: ${_rawRole}, Skills: ${skills}, Tools: ${tools}`;
         }
         const res  = await fetch('/api/role/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: selectedRole, resumeData }),
+          body: JSON.stringify({ role: _rawRole, resumeData }),
         });
         if (!res.ok) throw new Error('fetch failed');
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setRecommendedProjects(data.data);
-          localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(data.data));
+          localStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(data.data));
         }
       } catch { /* silently fail */ }
       finally { setIsLoading(false); }
     };
     load();
-  }, [selectedRole]);
+  }, [_rawRole]);
 
   /* ── Find Trending (OpenAI) ──────────────────────────────────────────────── */
   const handleGenerateTrending = async () => {
@@ -191,14 +191,14 @@ export default function Dashboard() {
       const res  = await fetch('/api/role/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: selectedRole, type: 'trending' }),
+        body: JSON.stringify({ role: _rawRole, type: 'trending' }),
       });
       const data = await res.json();
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
         const p = { ...data.data[0], trending: true };
         const updated = [p, ...recommendedProjects];
         setRecommendedProjects(updated);
-        localStorage.setItem(`dashboard_projects_v2_${selectedRole}`, JSON.stringify(updated));
+        localStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
         setActiveTab('trending');
         setSelectedProject(null); // Just switch tab, don't open modal yet
         showToast(`🔥 Trending: "${p.title}" added!`);
@@ -301,7 +301,7 @@ export default function Dashboard() {
               </div>
 
               {/* Refresh */}
-              <button onClick={() => { localStorage.removeItem(`dashboard_projects_v2_${selectedRole}`); window.location.reload(); }}
+              <button onClick={() => { localStorage.removeItem(`dashboard_projects_v2_${_rawRole}`); window.location.reload(); }}
                 className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors" title="Refresh AI projects">
                 <RotateCcw className="w-4 h-4" />
               </button>

@@ -7,7 +7,7 @@
  *   import { apiFetch } from '../utils/apiFetch';
  *   const res = await apiFetch('/api/ai/chat', { method: 'POST', body: ... });
  */
-export const apiFetch = (url: string, options: RequestInit = {}): Promise<Response> => {
+export const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = localStorage.getItem('token');
 
   const headers: Record<string, string> = {
@@ -19,9 +19,32 @@ export const apiFetch = (url: string, options: RequestInit = {}): Promise<Respon
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   }
 
-  if (token) {
+  // Security Feature 1: Prevent token leakage to external domains
+  // We only attach the JWT token if the request is going to our own backend (e.g., relative URLs starting with '/' or same origin)
+  const isLocalRequest = url.startsWith('/') || url.startsWith(window.location.origin);
+
+  if (token && isLocalRequest) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return fetch(url, { ...options, headers });
+  const response = await fetch(url, { ...options, headers });
+
+  // Security Feature 2: Handle Unauthorized/Forbidden responses
+  // If the token is invalid or expired, automatically log the user out and redirect to login
+  if ((response.status === 401 || response.status === 403) && isLocalRequest) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Avoid redirect loops if already on the login page or registering
+    if (
+      !window.location.pathname.startsWith('/login') && 
+      !window.location.pathname.startsWith('/signup') &&
+      !url.includes('/login') && 
+      !url.includes('/signup')
+    ) {
+      window.location.href = '/login';
+    }
+  }
+
+  return response;
 };
