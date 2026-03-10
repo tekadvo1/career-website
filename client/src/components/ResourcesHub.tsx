@@ -74,8 +74,8 @@ export default function ResourcesHub() {
   };
 
   // Get relevant skills for the user's role (case-insensitive match)
-  const roleKey = Object.keys(roleToSkills).find(k => k.toLowerCase() === userRole.toLowerCase()) || "Software Engineer";
-  const relevantSkills = roleToSkills[roleKey];
+  const roleKey = Object.keys(roleToSkills).find(k => k.toLowerCase() === userRole.toLowerCase());
+  const relevantSkills = roleKey ? roleToSkills[roleKey] : [userRole];
 
   // Fetch resources on mount
   useEffect(() => {
@@ -100,15 +100,16 @@ export default function ResourcesHub() {
     fetchResources();
   }, []);
 
-  const handleAiSearch = async () => {
-    if (!searchQuery) return;
+  const handleAiSearch = async (override?: string | React.MouseEvent) => {
+    const q = typeof override === 'string' ? override : searchQuery;
+    if (!q) return;
     setIsAiSearching(true);
     setShowAiResults(true);
     try {
       const response = await apiFetch('/api/resources/search', {
         method: 'POST',
         body: JSON.stringify({ 
-          query: searchQuery, 
+          query: q, 
           role: userRole,
           filters: {
             type: selectedType,
@@ -254,30 +255,38 @@ export default function ResourcesHub() {
           </div>
 
           {/* Personalization Info Banner */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-3 mb-4">
-            <div className="flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-3 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-indigo-900 font-medium text-sm mb-1">
+                <p className="text-indigo-900 font-bold text-[15px] mb-1">
                   Resources tailored for you
                 </p>
-                <p className="text-xs text-indigo-700">
-                  Based on your role as <strong>{userRole}</strong>, we've curated {filteredResources.length} relevant resources including {freeCount} free and {paidCount} premium options
+                <p className="text-sm text-indigo-700">
+                  Based on your role as <strong className="font-extrabold">{userRole}</strong>, we've curated {filteredResources.length} relevant resources including {freeCount} free and {paidCount} premium options
                 </p>
-                <div className="flex flex-wrap gap-1.5 mt-2">
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
                   {relevantSkills.slice(0, 5).map((skill, index) => (
-                    <span key={index} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium">
+                    <span key={index} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[11px] font-bold uppercase tracking-wider">
                       {skill}
                     </span>
                   ))}
                   {relevantSkills.length > 5 && (
-                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium">
+                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[11px] font-bold uppercase tracking-wider">
                       +{relevantSkills.length - 5} more
                     </span>
                   )}
                 </div>
               </div>
             </div>
+            <button 
+              onClick={() => handleAiSearch(userRole)}
+              disabled={isAiSearching}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-indigo-700 border border-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 disabled:opacity-50"
+            >
+              <Sparkles className={`w-4 h-4 ${isAiSearching ? 'animate-pulse' : ''}`} />
+              {isAiSearching ? 'Generating AI Resources...' : 'Force AI Refresh'}
+            </button>
           </div>
           {/* Search */}
           <div className="flex gap-2 mb-3">
