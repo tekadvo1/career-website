@@ -255,7 +255,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const activeRole = profileDetails.role || lastRoleState?.role || "Software Engineer";
+  const activeRole = lastRoleState?.role || profileDetails.role || "Software Engineer";
 
   let activeSkills = ["JavaScript", "React", "Node.js"];
   if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
