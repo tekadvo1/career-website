@@ -8,6 +8,7 @@ import {
   Target, Zap, Clock, CheckCircle,
   Layers, RotateCcw, Wifi, Sparkles, Radio
 } from 'lucide-react';
+import { apiFetch } from '../utils/apiFetch';
 
 /* ─── Project type ─────────────────────────────────────────────────────────── */
 interface Project {
@@ -137,9 +138,8 @@ export default function Dashboard() {
     es.addEventListener('project_update', (_e: MessageEvent) => {
       try {
         // A project was started/updated elsewhere — re-fetch the full snapshot
-        fetch(`/api/realtime/notify`, {
+        apiFetch(`/api/realtime/notify`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id }),
         });
         showToast('📡 Project update received — dashboard synced!');
@@ -167,9 +167,8 @@ export default function Dashboard() {
           const tools  = analysis.tools?.map((t: any) => t.name).join(', ') || '';
           resumeData = `Target Role: ${_rawRole}, Skills: ${skills}, Tools: ${tools}`;
         }
-        const res  = await fetch('/api/role/projects', {
+        const res  = await apiFetch('/api/role/projects', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: _rawRole, resumeData }),
         });
         if (!res.ok) throw new Error('fetch failed');
@@ -188,9 +187,8 @@ export default function Dashboard() {
   const handleGenerateTrending = async () => {
     setIsTrendLoading(true);
     try {
-      const res  = await fetch('/api/role/projects', {
+      const res  = await apiFetch('/api/role/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: _rawRole, type: 'trending' }),
       });
       const data = await res.json();
