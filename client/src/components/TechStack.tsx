@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, Sparkles, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
 export default function TechStack() {
+    const navigate = useNavigate();
     const [role, setRole] = useState("Software Engineer");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -191,6 +193,12 @@ export default function TechStack() {
                                                         </div>
                                                         <p className="text-[12px] text-slate-600">{lang.reason}</p>
                                                     </div>
+                                                    <button 
+                                                        onClick={() => navigate('/tech-guide', { state: { techName: lang.name, role: role, category: 'Programming Language' } })}
+                                                        className="px-3 py-1.5 mt-2 sm:mt-0 bg-white border border-slate-200 text-slate-600 hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 rounded-lg text-[11px] font-bold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                                                    >
+                                                        View Guide
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
@@ -214,6 +222,12 @@ export default function TechStack() {
                                                         </div>
                                                         <p className="text-[12px] text-slate-600">{fw.reason}</p>
                                                     </div>
+                                                    <button 
+                                                        onClick={() => navigate('/tech-guide', { state: { techName: fw.name, role: role, category: 'Framework' } })}
+                                                        className="px-3 py-1.5 mt-2 sm:mt-0 bg-white border border-slate-200 text-slate-600 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 rounded-lg text-[11px] font-bold shadow-sm transition-all whitespace-nowrap flex-shrink-0"
+                                                    >
+                                                        View Guide
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
@@ -228,11 +242,21 @@ export default function TechStack() {
                                         <div className="p-4 grid gap-3 sm:grid-cols-2">
                                             {result.tools && result.tools.map((tm: any, i: number) => (
                                                 <div key={i} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className="font-bold text-[13px] text-slate-800">{tm.name}</span>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-bold text-[13px] text-slate-800">{tm.name}</span>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-500 mb-2 font-medium uppercase">{tm.category}</p>
+                                                        <p className="text-[12px] text-slate-600 leading-snug">{tm.reason}</p>
                                                     </div>
-                                                    <p className="text-[11px] text-slate-500 mb-2 font-medium uppercase">{tm.category}</p>
-                                                    <p className="text-[12px] text-slate-600 leading-snug">{tm.reason}</p>
+                                                    <div className="pt-3 mt-3 border-t border-slate-100 flex justify-end">
+                                                        <button 
+                                                            onClick={() => navigate('/tech-guide', { state: { techName: tm.name, role: role, category: tm.category } })}
+                                                            className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:text-orange-600 hover:border-orange-300 hover:bg-orange-50 rounded-lg text-[11px] font-bold shadow-sm transition-all whitespace-nowrap"
+                                                        >
+                                                            View Guide
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

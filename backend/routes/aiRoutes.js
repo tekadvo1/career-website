@@ -532,33 +532,33 @@ router.post('/tech-stack', upload.single('resume'), async (req, res) => {
 
         let systemPrompt = `You are an expert ${role} Engineering Manager and Tech Lead.
         
-        The user wants to know the exact, most up-to-date and trending Tech Stack, Tools, and Frameworks they need to learn and use for a "${role}" position right now.
-        ${resumeText ? 'The user has uploaded their resume. Analyze their existing skills. If they already know a foundational skill, focus on advanced or modern trending alternatives they should learn next.' : 'No resume was provided. Provide a comprehensive modern stack from scratch.'}
+        The user wants a highly detailed, comprehensive, and up-to-date breakdown of the exact Tech Stack, Tools, and Frameworks they need to learn and use for a "${role}" position right now. 
+        ${resumeText ? 'The user has uploaded their resume. Thoroughly analyze their existing skills. Skip basic foundational skills they already have, and focus strictly on advanced, modern, or trending alternatives to level up their career.' : 'No resume was provided. Provide a comprehensive modern stack from scratch.'}
         
-        Please act as an AI with web search capabilities and provide the absolute latest and trending technologies in the industry for this role.
+        Please act as an AI with web search capabilities and provide the absolute latest, industry-standard, and rapidly trending technologies. DO NOT give generic answers; give specific tools (e.g., "Docker", "Kubernetes", "Next.js", "GraphQL", "Terraform"). For every item, provide a very detailed explanation of why it is used professionally.
         
         You MUST return your response as a valid JSON object matching this schema exactly:
         {
           "languages": [
-            { "name": "Language Name", "reason": "Why learn this?", "status": "Trending" }
+            { "name": "Language Name", "reason": "Detailed explanation of why this language is critical for professional use.", "status": "Trending or Core" }
           ],
           "frameworks": [
-             { "name": "Framework Name", "reason": "Why learn this?", "status": "Industry Standard" }
+             { "name": "Framework Name", "reason": "Deep dive into what problems this framework solves structurally.", "status": "Industry Standard" }
           ],
           "tools": [
-             { "name": "Tool Name", "reason": "Why this tool?", "category": "CI/CD or Design or Database etc" }
+             { "name": "Tool Name", "reason": "Explicit justification for this tool in a production workflow.", "category": "CI/CD, DevOps, DB, IDE, etc." }
           ],
           "trending": ["Rapidly growing tech 1", "Rapidly growing tech 2"],
-          "summary": "A brief 2-sentence summary of what their priority should be."
+          "summary": "A comprehensive 3-sentence summary of what their strategic learning priority should be."
         }`;
 
         const requestOptions = {
             model: "gpt-4o-mini",
             messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease recommend the tech stack.` : `Please recommend the latest tech stack.` }
+                { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease recommend a highly detailed tech stack.` : `Please recommend the latest and highly detailed tech stack.` }
             ],
-            max_tokens: 1500,
+            max_tokens: 2500,
             temperature: 0.7,
             response_format: { type: "json_object" }
         };
