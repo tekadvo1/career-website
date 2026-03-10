@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { apiFetch } from '../utils/apiFetch';
 import {
   Search,
   Video,
@@ -53,11 +54,29 @@ export default function ResourcesHub() {
   const [isLoading, setIsLoading] = useState(true);
   const [enhancingId, setEnhancingId] = useState<string | null>(null);
 
+  // Get user's role from location state
+  const rawRole = location.state?.role || "Software Engineer";
+  const userRole = rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+
+  // Map roles to relevant skills/technologies
+  const roleToSkills: Record<string, string[]> = {
+    "Software Engineer": ["JavaScript", "React", "Node.js", "Python", "TypeScript", "Web Development", "Algorithms"],
+    "Frontend Developer": ["JavaScript", "React", "CSS", "Web Development", "TypeScript"],
+    "Backend Developer": ["Node.js", "Python", "MongoDB", "REST API"],
+    "Full Stack Developer": ["JavaScript", "React", "Node.js", "Web Development"],
+    "Data Scientist": ["Python", "Data Science", "Machine Learning"],
+    "software developer": ["JavaScript", "React", "Node.js", "Python", "TypeScript", "Web Development"],
+  };
+
+  // Get relevant skills for the user's role (case-insensitive match)
+  const roleKey = Object.keys(roleToSkills).find(k => k.toLowerCase() === userRole.toLowerCase()) || "Software Engineer";
+  const relevantSkills = roleToSkills[roleKey];
+
   // Fetch resources on mount
   useEffect(() => {
     const fetchResources = async () => {
       try {
-        const response = await fetch('/api/resources');
+        const response = await apiFetch('/api/resources');
         const data = await response.json();
         if (data.success) {
           // Map backend 'resource_type' to frontend 'type'
@@ -81,9 +100,8 @@ export default function ResourcesHub() {
     setIsAiSearching(true);
     setShowAiResults(true);
     try {
-      const response = await fetch('/api/resources/search', {
+      const response = await apiFetch('/api/resources/search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           query: searchQuery, 
           role: userRole,
@@ -112,7 +130,7 @@ export default function ResourcesHub() {
   const handleEnhanceResource = async (id: string) => {
     setEnhancingId(id);
     try {
-      const response = await fetch(`/api/resources/${id}/enhance`, {
+      const response = await apiFetch(`/api/resources/${id}/enhance`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -127,21 +145,6 @@ export default function ResourcesHub() {
       setEnhancingId(null);
     }
   };
-
-  // Get user's role from location state
-  const userRole = location.state?.role || "Software Engineer";
-
-  // Map roles to relevant skills/technologies
-  const roleToSkills: Record<string, string[]> = {
-    "Software Engineer": ["JavaScript", "React", "Node.js", "Python", "TypeScript", "Web Development", "Algorithms"],
-    "Frontend Developer": ["JavaScript", "React", "CSS", "Web Development", "TypeScript"],
-    "Backend Developer": ["Node.js", "Python", "MongoDB", "REST API"],
-    "Full Stack Developer": ["JavaScript", "React", "Node.js", "Web Development"],
-    "Data Scientist": ["Python", "Data Science", "Machine Learning"],
-  };
-
-  // Get relevant skills for the user's role
-  const relevantSkills = roleToSkills[userRole] || roleToSkills["Software Engineer"];
 
   // Filter resources based on user's role and skills
   const getRelevanceScore = (resource: Resource): number => {
