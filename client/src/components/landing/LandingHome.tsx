@@ -3,57 +3,92 @@ import LandingHeader from './LandingHeader';
 import {
   Zap, ArrowRight, CheckCircle, Code, Award,
   MessageSquare, BookOpen, Rocket, Target,
-  BrainCircuit, Layers, Sparkles
+  BrainCircuit, Layers, Sparkles, Map, BarChart3,
+  Gamepad2, Wrench, Terminal, Briefcase, User,
+  GitBranch, FileText, Brain, FlameKindling, Trophy
 } from 'lucide-react';
 
-const features = [
+const toolkitCategories = [
   {
-    icon: <BrainCircuit className="w-6 h-6" />,
-    title: 'AI Skill Gap Analysis',
-    desc: 'Upload your resume and select your target role. The AI identifies exactly which skills you are missing and what you need to focus on.',
+    category: 'Career Planning & Analysis',
+    color: 'teal',
+    tools: [
+      { icon: <BrainCircuit className="w-5 h-5" />, title: 'AI Skill Gap Analysis', desc: 'Upload your resume. AI reads your current skills and tells you exactly what is missing for your chosen role — with a priority order.' },
+      { icon: <BarChart3 className="w-5 h-5" />, title: 'Role Analysis Report', desc: 'A full breakdown of your career fitness: strengths, weaknesses, skill matches, and a percentage score of how ready you are to apply.' },
+      { icon: <Briefcase className="w-5 h-5" />, title: 'Career Workspaces', desc: 'Exploring more than one career path? Each workspace holds its own roadmap, projects and progress — all completely separate and saved.' },
+    ],
   },
   {
-    icon: <Target className="w-6 h-6" />,
-    title: 'Personalised Learning Roadmap',
-    desc: 'Get a step-by-step roadmap built around your current level and your goal. No generic advice — every step is specific to you.',
+    category: 'Learning Roadmap',
+    color: 'emerald',
+    tools: [
+      { icon: <Map className="w-5 h-5" />, title: 'Personalised Roadmap', desc: 'A custom learning path based on your resume and target role. Skips what you already know. Focuses only on what you actually need.' },
+      { icon: <GitBranch className="w-5 h-5" />, title: 'Visual Roadmap Tree', desc: 'See your full learning journey laid out as an interactive visual tree so you always know the big picture and where you are in it.' },
+      { icon: <BookOpen className="w-5 h-5" />, title: 'Topic Deep-Dive Guides', desc: 'Click any module in your roadmap and get a complete AI-generated guide explaining that topic, how it works, and why it matters.' },
+    ],
   },
   {
-    icon: <Code className="w-6 h-6" />,
-    title: 'Real Project-Based Learning',
-    desc: 'Learn by building. Each AI-recommended project comes with a structured curriculum, daily tasks, and guided milestones so you actually finish.',
+    category: 'Project-Based Learning',
+    color: 'teal',
+    tools: [
+      { icon: <Code className="w-5 h-5" />, title: 'AI Project Recommendations', desc: 'FindStreak recommends real-world projects perfectly matched to your role and skill level — not toy exercises, but things you can put on your portfolio.' },
+      { icon: <Layers className="w-5 h-5" />, title: 'Structured Project Workspace', desc: 'Every project comes with a full curriculum broken into modules and daily tasks. Open the workspace and always know exactly what to work on next.' },
+      { icon: <BarChart3 className="w-5 h-5" />, title: 'Live Project Dashboard', desc: 'Track all your active, completed and saved projects in one real-time dashboard. See your progress and XP at a glance.' },
+      { icon: <FileText className="w-5 h-5" />, title: 'Task Step-by-Step Guides', desc: 'Stuck on a specific task? Click View Guide and get a detailed walkthrough for that exact task — written for your project context.' },
+      { icon: <Target className="w-5 h-5" />, title: 'Daily Mission System', desc: 'Each day you get a structured mission linked to your active project. Complete it to earn XP and keep your learning streak alive.' },
+    ],
   },
   {
-    icon: <Sparkles className="w-6 h-6" />,
-    title: 'Tech Stack Guide',
-    desc: 'Know exactly which languages, frameworks and tools your target role requires — with step-by-step installation guides for each one.',
+    category: 'Tech Stack & Tools',
+    color: 'emerald',
+    tools: [
+      { icon: <Terminal className="w-5 h-5" />, title: 'Tech Stack Generator', desc: 'Upload your resume and role. AI tells you every programming language, framework, library and tool you need to learn — ranked by importance.' },
+      { icon: <Rocket className="w-5 h-5" />, title: 'Tool Installation Guides', desc: 'For each tool in your stack, click View Guide and get a step-by-step installation walkthrough with configuration instructions and common errors.' },
+      { icon: <Brain className="w-5 h-5" />, title: 'FindStreak AI Mentor (In Guide)', desc: 'While reading any tech guide, a live AI mentor is on the right side ready to answer your questions about that specific tool in real time.' },
+    ],
   },
   {
-    icon: <MessageSquare className="w-6 h-6" />,
-    title: 'AI Interview Preparation',
-    desc: 'Practice answering real interview questions for your role. Get instant AI feedback on your answers so you walk into interviews prepared.',
+    category: 'Interview Preparation',
+    color: 'teal',
+    tools: [
+      { icon: <MessageSquare className="w-5 h-5" />, title: 'Interview Question Guide', desc: 'AI generates a full set of role-specific interview questions — technical, behavioural and situational — tailored to your target job.' },
+      { icon: <Sparkles className="w-5 h-5" />, title: 'AI Answer Feedback', desc: 'Type your answer to any interview question and get instant, detailed AI feedback on quality, completeness, clarity and what to improve.' },
+      { icon: <Zap className="w-5 h-5" />, title: 'Real-Time Mock Interview', desc: 'Simulate a real interview under pressure. Questions are timed, answers are evaluated, and you get a full performance report at the end.' },
+    ],
   },
   {
-    icon: <BookOpen className="w-6 h-6" />,
-    title: 'Curated Learning Resources',
-    desc: 'AI-searched courses, tutorials and documentation ranked by relevance to your role. No more searching through random results.',
+    category: 'Resources & Learning Support',
+    color: 'emerald',
+    tools: [
+      { icon: <BookOpen className="w-5 h-5" />, title: 'AI Resources Hub', desc: 'Search for courses, tutorials, documentation and articles by topic or technology. AI ranks results by relevance to your specific role.' },
+      { icon: <Brain className="w-5 h-5" />, title: 'AI Learning Assistant', desc: 'A dedicated chat assistant that knows your career goals. Ask any career or tech question and get a contextual, helpful answer instantly.' },
+      { icon: <Wrench className="w-5 h-5" />, title: 'Workflow Lifecycle Tools', desc: 'Professional productivity tools to help you plan sprints, manage your learning workflow and structure your development process like a real engineer.' },
+    ],
   },
   {
-    icon: <Award className="w-6 h-6" />,
-    title: 'Progress & Streak Tracking',
-    desc: 'Stay consistent with daily tasks, XP points and streak tracking. Small daily progress compounds into real career growth over time.',
+    category: 'Progress & Motivation',
+    color: 'teal',
+    tools: [
+      { icon: <Award className="w-5 h-5" />, title: 'Achievements & Badges', desc: 'Earn badges for completing projects, maintaining streaks, finishing interview prep and hitting career milestones. Progress you can see and feel.' },
+      { icon: <FlameKindling className="w-5 h-5" />, title: 'Daily Streak Tracking', desc: 'Your streak tracks consecutive days of learning activity. Stay consistent and watch your streak grow — lose a day and you restart from zero.' },
+      { icon: <Trophy className="w-5 h-5" />, title: 'XP Point System', desc: 'Everything you complete earns XP. Complete tasks, finish projects, pass mock interviews and hit milestones — XP quantifies your real progress.' },
+      { icon: <Gamepad2 className="w-5 h-5" />, title: 'Quiz & Learning Games', desc: 'Test your knowledge with role-specific quiz games. A fun and competitive way to reinforce what you are building and learning each week.' },
+    ],
   },
   {
-    icon: <Layers className="w-6 h-6" />,
-    title: 'Multiple Career Workspaces',
-    desc: 'Exploring more than one career path? Keep separate roadmaps, projects and progress for each without losing anything.',
+    category: 'Your Profile & Portfolio',
+    color: 'emerald',
+    tools: [
+      { icon: <User className="w-5 h-5" />, title: 'Public Developer Profile', desc: 'Your FindStreak profile shows your target role, active skills, completed projects and achievements. Share it with recruiters via a unique link.' },
+    ],
   },
 ];
 
 const howItLooks = [
-  { step: '01', title: 'You upload your resume and choose your target role', desc: 'FindStreak reads your current skills and compares them against what real companies are hiring for.' },
-  { step: '02', title: 'AI generates your personal skill gap report', desc: 'You see exactly what you already know, what is missing, and what to learn next — in priority order.' },
-  { step: '03', title: 'You get a structured project to build right now', desc: 'Not a tutorial to watch. A real project with tasks, milestones and guided steps to build something tangible.' },
-  { step: '04', title: 'You practice interviews and track your growth', desc: 'AI-powered mock interviews show you where to improve. Your XP and streak keep you consistent day to day.' },
+  { step: '01', title: 'Upload your resume and choose your target role', desc: 'FindStreak reads your current skills and compares them against what real companies are hiring for right now.' },
+  { step: '02', title: 'AI generates your personal skill gap report', desc: 'You see exactly what you already know, what is missing, and what to learn next in priority order.' },
+  { step: '03', title: 'A project is recommended that you build right now', desc: 'Not a tutorial to watch. A real structured project with daily tasks, milestones and guided steps built for your level.' },
+  { step: '04', title: 'Practice interviews and track your growth', desc: 'AI-powered mock interviews with feedback. Your XP and streak keep you consistent and progressing every single day.' },
 ];
 
 export default function LandingHome() {
@@ -104,11 +139,7 @@ export default function LandingHome() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-4">
-            {[
-              'No credit card required',
-              'Free to start',
-              'Project-based learning from day one',
-            ].map(t => (
+            {['No credit card required', 'Free to start', 'Project-based learning from day one'].map(t => (
               <div key={t} className="flex items-center gap-1.5 text-sm text-slate-500 font-medium">
                 <CheckCircle className="w-4 h-4 text-emerald-500" />
                 {t}
@@ -118,15 +149,15 @@ export default function LandingHome() {
         </div>
       </section>
 
-      {/* How It Looks - Quick Steps */}
+      {/* Quick Steps */}
       <section className="py-20 px-4 bg-gradient-to-r from-teal-700 to-emerald-700">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-black text-white">Here Is Exactly What Happens When You Join</h2>
-            <p className="text-teal-100 mt-3 text-lg">No fluff. Just a clear, guided path from where you are now to where you want to be.</p>
+            <p className="text-teal-100 mt-3 text-lg">No fluff. A clear guided path from where you are now to where you want to be.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {howItLooks.map((h) => (
+            {howItLooks.map(h => (
               <div key={h.step} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-5">
                 <div className="text-4xl font-black text-white/20 mb-3 leading-none">{h.step}</div>
                 <h3 className="font-bold text-white text-sm mb-2 leading-snug">{h.title}</h3>
@@ -134,26 +165,49 @@ export default function LandingHome() {
               </div>
             ))}
           </div>
+          <div className="text-center mt-8">
+            <button onClick={() => navigate('/how-it-works')} className="inline-flex items-center gap-2 text-white font-bold text-sm border border-white/30 rounded-xl px-5 py-2.5 hover:bg-white/10 transition-all">
+              See the full step-by-step breakdown <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Features */}
+      {/* Complete Feature Toolkit */}
       <section className="py-24 px-4 bg-slate-50">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-teal-600 font-bold text-sm uppercase tracking-widest">What Is Included</span>
-            <h2 className="text-4xl md:text-5xl font-black mt-3 text-slate-900">Everything You Need to Go From Learning to Hired</h2>
-            <p className="text-slate-500 text-lg mt-4 max-w-2xl mx-auto">Every tool on this platform exists to help you build real things and develop real skills — not just to look impressive.</p>
+            <span className="text-teal-600 font-bold text-sm uppercase tracking-widest">Complete Toolkit</span>
+            <h2 className="text-4xl md:text-5xl font-black mt-3 text-slate-900">Every Feature. Every Tool. All in One Place.</h2>
+            <p className="text-slate-500 text-lg mt-4 max-w-2xl mx-auto">
+              FindStreak covers every stage of the developer learning journey. Here is everything the platform includes — nothing hidden, nothing extra to pay for.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((f, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-lg hover:border-teal-200 transition-all group">
-                <div className="w-12 h-12 bg-gradient-to-br from-teal-50 to-emerald-100 rounded-xl flex items-center justify-center mb-4 text-teal-600 group-hover:from-teal-500 group-hover:to-emerald-500 group-hover:text-white transition-all">
-                  {f.icon}
+          <div className="space-y-14">
+            {toolkitCategories.map((cat) => (
+              <div key={cat.category}>
+                {/* Category Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <div className={`h-0.5 w-6 rounded-full bg-${cat.color}-500`} />
+                  <h3 className={`text-xs font-black uppercase tracking-widest text-${cat.color}-600`}>{cat.category}</h3>
+                  <div className={`h-0.5 flex-1 rounded-full bg-${cat.color}-100`} />
                 </div>
-                <h3 className="font-bold text-slate-900 mb-2 text-[15px]">{f.title}</h3>
-                <p className="text-slate-500 text-[13px] leading-relaxed">{f.desc}</p>
+
+                {/* Tool Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cat.tools.map((tool, j) => (
+                    <div key={j} className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-200 transition-all group flex gap-4 items-start">
+                      <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0 group-hover:bg-teal-600 group-hover:text-white transition-all">
+                        {tool.icon}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm mb-1">{tool.title}</h4>
+                        <p className="text-slate-500 text-xs leading-relaxed">{tool.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -203,22 +257,22 @@ export default function LandingHome() {
                   'Guess what skills employers actually want',
                   'Apply to jobs with nothing concrete to show',
                   'Fail interviews because practise was not structured',
-                  'Lose motivation after a few days with no progress',
+                  'Lose motivation after a few days with no direction',
                 ],
                 bad: true,
               },
               {
                 label: 'With FindStreak',
                 items: [
-                  'Build real projects guided step by step every day',
-                  'Know exactly what skills to learn and in what order',
+                  'Build real guided projects from your very first day',
+                  'Know exactly which skills to learn and in what order',
                   'Walk into interviews with a portfolio of real work',
                   'Practise with AI feedback on real interview questions',
                   'Stay consistent with daily tasks and streak tracking',
                 ],
                 bad: false,
               },
-            ].map((col) => (
+            ].map(col => (
               <div key={col.label} className={`rounded-2xl border p-6 ${col.bad ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
                 <p className={`font-black text-sm mb-4 uppercase tracking-wide ${col.bad ? 'text-red-600' : 'text-emerald-700'}`}>{col.label}</p>
                 <div className="space-y-2">
