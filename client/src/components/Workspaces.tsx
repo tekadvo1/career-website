@@ -418,7 +418,8 @@ export default function Workspaces() {
             {/* Workspace Cards */}
             {!loading && workspaces.map(ws => {
               const isSwitching = switchingTo === ws.id;
-              const isActive = currentRoleActive === ws.role;
+              // Make active check case-insensitive and ignore qualifiers
+              const isActive = !!currentRoleActive && cleanRole(currentRoleActive).toLowerCase() === cleanRole(ws.role).toLowerCase();
               const isEditing = editingId === ws.id;
 
               return (
