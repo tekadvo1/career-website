@@ -1,23 +1,54 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
-import {
-  Zap, Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight
-} from 'lucide-react';
+import { Zap, Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight } from 'lucide-react';
 
 const faqs = [
-  { q: 'Is FindStreak really free to use?', a: 'Yes. The core features — role analysis, roadmap generation, tech stack guide, and AI assistant — are completely free. We believe career acceleration tools should be accessible to everyone.' },
-  { q: 'What career roles does FindStreak support?', a: 'FindStreak supports 50+ tech career roles including Software Engineer, Frontend Developer, Backend Developer, Full Stack Developer, Data Scientist, ML Engineer, DevOps Engineer, Cloud Architect, Product Manager, and many more.' },
-  { q: 'Can I upload any type of resume?', a: 'Yes. We accept PDF, Microsoft Word (.doc, .docx), and plain text resumes. Our AI parses all standard resume formats to extract your skills, experience, and education.' },
-  { q: 'How accurate is the AI skill gap analysis?', a: 'Our AI is trained on real job postings and continuously updated with the latest hiring requirements. It\'s highly accurate for most mainstream tech roles, though it works best for clearly defined technical positions.' },
-  { q: 'Can I explore multiple career paths at the same time?', a: 'Absolutely. The Career Workspaces feature allows you to run separate roadmaps, projects, and analysis for as many different career goals as you want — all in one account.' },
-  { q: 'Do I need any coding experience to use FindStreak?', a: 'No. FindStreak works for complete beginners as well as experienced professionals. The AI adapts all recommendations to your current level.' },
+  {
+    q: 'Who is FindStreak designed for?',
+    a: 'FindStreak is built for developers who want to learn by doing. Whether you are trying to break into tech for the first time, switch specialisations, or level up from junior to senior, the platform is designed around your specific goal and current skills.',
+  },
+  {
+    q: 'What exactly happens when I upload my resume?',
+    a: 'The AI reads your resume and extracts your current skills, tools, and experience level. It then compares them to what employers are actually hiring for in your chosen role. You get a clear gap analysis showing what you already know and what to learn next.',
+  },
+  {
+    q: 'How are the projects chosen for me?',
+    a: 'Projects are recommended by AI based on your target role and current skill level. Each project comes with a structured curriculum broken into daily tasks and milestones, so you have a clear path to completion rather than staring at a blank editor.',
+  },
+  {
+    q: 'Do I need to already know how to code?',
+    a: 'FindStreak works best for people who have at least some exposure to coding — even self-taught basics. It is not a from-scratch beginner platform, but if you understand fundamentals and want to grow into a specific tech role, it will guide you clearly.',
+  },
+  {
+    q: 'Is FindStreak free to use?',
+    a: 'The core features are free to access — this includes the skill gap analysis, learning roadmap, project recommendations, and AI learning assistant. We believe the tools that help you get a job should not themselves cost money you do not yet have.',
+  },
+  {
+    q: 'What if I am already employed but want to grow my career?',
+    a: 'FindStreak is equally useful for experienced developers who want to move into a new specialisation, prepare for senior roles, or just keep their skills aligned with what the industry actually values right now.',
+  },
 ];
 
 const contactOptions = [
-  { icon: <Mail className="w-5 h-5" />, label: 'Email Support', value: 'support@findstreak.com', desc: 'For account issues, bug reports, or feature requests.' },
-  { icon: <MessageSquare className="w-5 h-5" />, label: 'Live Chat', value: 'Available in-app', desc: 'Chat directly with our team from inside your FindStreak dashboard.' },
-  { icon: <Clock className="w-5 h-5" />, label: 'Response Time', value: 'Within 24 hours', desc: 'We respond to all messages within one business day, Monday–Friday.' },
+  {
+    icon: <Mail className="w-5 h-5" />,
+    label: 'Email Us',
+    value: 'support@findstreak.com',
+    desc: 'For questions about your account, technical issues, or feature suggestions.',
+  },
+  {
+    icon: <MessageSquare className="w-5 h-5" />,
+    label: 'In-App Chat',
+    value: 'Available when logged in',
+    desc: 'If you are a registered user, you can message us directly from inside your FindStreak dashboard.',
+  },
+  {
+    icon: <Clock className="w-5 h-5" />,
+    label: 'Response Time',
+    value: 'Within 24 hours',
+    desc: 'We read every message and reply within one business day, Monday through Friday.',
+  },
 ];
 
 export default function ContactPage() {
@@ -47,22 +78,22 @@ export default function ContactPage() {
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <span className="inline-block px-4 py-1.5 bg-teal-50 border border-teal-200 text-teal-700 text-sm font-bold rounded-full mb-6">
-            Contact Us
+            Contact
           </span>
           <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-5 leading-tight">
-            We're Here to{' '}
+            Get in{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">
-              Help
+              Touch
             </span>
           </h1>
           <p className="text-xl text-slate-600 leading-relaxed">
-            Have a question, found a bug, or want to share feedback? We'd love to hear from you. Our team typically responds within 24 hours.
+            Have a question about how FindStreak works, a bug to report, or feedback on your experience? We read every message and take it seriously.
           </p>
         </div>
       </section>
 
       {/* Contact Options */}
-      <section className="py-16 px-4 border-b border-slate-100">
+      <section className="py-14 px-4 border-b border-slate-100">
         <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-5">
           {contactOptions.map((opt, i) => (
             <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm text-center hover:border-teal-200 hover:shadow-md transition-all">
@@ -81,19 +112,19 @@ export default function ContactPage() {
       <section className="py-20 px-4">
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-14">
 
-          {/* Contact Form */}
+          {/* Form */}
           <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Send Us a Message</h2>
-            <p className="text-slate-500 mb-8 text-[15px]">Fill in the form and we'll get back to you as soon as possible.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Send a Message</h2>
+            <p className="text-slate-500 mb-8 text-[15px]">We will get back to you within one business day.</p>
 
             {submitted ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-10 text-center">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-5">
                   <CheckCircle className="w-8 h-8 text-emerald-600" />
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mb-2">Message Received!</h3>
+                <h3 className="text-xl font-black text-slate-900 mb-2">Message Sent</h3>
                 <p className="text-slate-600 text-sm leading-relaxed">
-                  Thank you for reaching out, <strong>{form.name}</strong>. We've received your message and will respond to <strong>{form.email}</strong> within 24 hours.
+                  Thank you <strong>{form.name}</strong>. We will reply to <strong>{form.email}</strong> within 24 hours.
                 </p>
                 <button
                   onClick={() => { setSubmitted(false); setForm({ name: '', email: '', subject: '', message: '' }); }}
@@ -112,8 +143,8 @@ export default function ContactPage() {
                       required
                       value={form.name}
                       onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all bg-slate-50 hover:bg-white"
-                      placeholder="Your full name"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 hover:bg-white transition-all"
+                      placeholder="Your name"
                     />
                   </div>
                   <div>
@@ -123,27 +154,29 @@ export default function ContactPage() {
                       required
                       value={form.email}
                       onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all bg-slate-50 hover:bg-white"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 hover:bg-white transition-all"
                       placeholder="your@email.com"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Subject</label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Topic</label>
                   <select
                     value={form.subject}
                     onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all bg-slate-50 hover:bg-white"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 hover:bg-white transition-all"
                   >
-                    <option value="">Select a subject...</option>
+                    <option value="">Select a topic...</option>
                     <option>General Question</option>
-                    <option>Technical Issue / Bug Report</option>
-                    <option>Feature Request</option>
+                    <option>Bug or Technical Issue</option>
+                    <option>Feature Suggestion</option>
                     <option>Account Help</option>
-                    <option>Partnership / Business Enquiry</option>
-                    <option>Feedback & Suggestions</option>
+                    <option>Feedback on My Experience</option>
+                    <option>Other</option>
                   </select>
                 </div>
+
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Message *</label>
                   <textarea
@@ -151,17 +184,18 @@ export default function ContactPage() {
                     rows={5}
                     value={form.message}
                     onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-400 transition-all bg-slate-50 hover:bg-white resize-none"
-                    placeholder="Describe your question or issue in detail..."
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 hover:bg-white transition-all resize-none"
+                    placeholder="Tell us what you need help with or share your feedback..."
                   />
                 </div>
+
                 <button
                   type="submit"
                   disabled={sending}
                   className="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {sending ? (
-                    <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending…</>
+                    <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending...</>
                   ) : (
                     <><Send className="w-4 h-4" /> Send Message</>
                   )}
@@ -172,8 +206,9 @@ export default function ContactPage() {
 
           {/* FAQ */}
           <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-2">Frequently Asked Questions</h2>
-            <p className="text-slate-500 mb-8 text-[15px]">Quick answers to the most common questions about FindStreak.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Common Questions</h2>
+            <p className="text-slate-500 mb-8 text-[15px]">Answers to the questions we hear most often.</p>
+
             <div className="space-y-3">
               {faqs.map((faq, i) => (
                 <div key={i} className="border border-slate-200 rounded-xl overflow-hidden hover:border-teal-200 transition-colors">
@@ -199,9 +234,9 @@ export default function ContactPage() {
       {/* CTA */}
       <section className="py-20 px-4 bg-gradient-to-r from-teal-700 to-emerald-700">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl font-black text-white mb-5">Haven't Started Yet?</h2>
+          <h2 className="text-4xl font-black text-white mb-5">Not a User Yet?</h2>
           <p className="text-teal-100 text-lg mb-8 leading-relaxed">
-            Create your free account and get your personalised AI career analysis in minutes.
+            Create your free account and get a personalised learning plan based on your actual resume and target role — no generic advice.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
@@ -228,7 +263,7 @@ export default function ContactPage() {
           </div>
           <span className="text-white font-bold text-lg">FindStreak</span>
         </div>
-        <p className="text-sm">© 2026 FindStreak. Empowering tech careers worldwide.</p>
+        <p className="text-sm">© 2026 FindStreak. Build real skills through real projects.</p>
       </footer>
     </div>
   );
