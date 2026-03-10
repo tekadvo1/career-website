@@ -67,6 +67,33 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// PATCH /api/workspaces/:id - Rename a workspace
+router.patch('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId, name } = req.body;
+
+        if (!userId || !name || !name.trim()) {
+            return res.status(400).json({ error: 'userId and name are required' });
+        }
+
+        const result = await pool.query(
+            'UPDATE workspaces SET name = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+            [name.trim(), id, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Workspace not found or unauthorized' });
+        }
+
+        res.json({ success: true, workspace: result.rows[0] });
+    } catch (error) {
+        console.error('Error renaming workspace:', error);
+        res.status(500).json({ error: 'Failed to rename workspace' });
+    }
+});
+
+
 // POST /api/workspaces/sync-role - Generate/Fetch analysis for the selected workspace role
 router.post('/sync-role', async (req, res) => {
     try {

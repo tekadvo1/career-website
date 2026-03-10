@@ -256,6 +256,9 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const activeRole = lastRoleState?.role || profileDetails.role || "Software Engineer";
+  // Strip qualifiers like "(beginner - usa)" from role display
+  const cleanRole = (role: string) => role ? role.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : role;
+  const displayRole = cleanRole(activeRole);
 
   let activeSkills = ["JavaScript", "React", "Node.js"];
   if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
@@ -270,11 +273,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const userData = {
     name: displayName,
     email: user?.email || "No email provided",
-    role: activeRole,
+    role: displayRole,
     location: profileDetails.location || "Global",
     phone: profileDetails.phone || "Not set",
     joinDate: "Recently",
-    bio: profileDetails.bio || `Tracking career progress and mastering skills for ${activeRole} via FindStreak.`,
+    bio: profileDetails.bio || `Tracking career progress and mastering skills for ${displayRole} via FindStreak.`,
     skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
     stats: { ...stats, learningStreak: liveStreak },
   };
