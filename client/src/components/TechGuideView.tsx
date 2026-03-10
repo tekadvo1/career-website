@@ -109,17 +109,17 @@ export default function TechGuideView() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
-                 <h1 className="font-extrabold text-slate-900 leading-tight text-lg">Mastering {techName}</h1>
+                 <h1 className="font-extrabold text-slate-900 leading-tight text-lg">FindStreak Guide: {techName}</h1>
                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{category}</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-xs font-bold shadow-inner">
-             <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Professional AI Guide Active
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 border border-teal-100 rounded-full text-teal-700 text-xs font-bold shadow-inner">
+             <Sparkles className="w-3.5 h-3.5 text-teal-500" /> FindStreak AI Active
           </div>
         </div>
       </div>
@@ -132,25 +132,25 @@ export default function TechGuideView() {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 min-h-full relative">
                 
                 <h2 className="text-2xl font-black text-slate-900 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-                    <Terminal className="w-6 h-6 text-indigo-500" />
+                    <Terminal className="w-6 h-6 text-teal-500" />
                     Complete Installation & Usage Guide
                 </h2>
 
                 {isGuideLoading ? (
                     <div className="flex flex-col items-center justify-center py-20">
-                         <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-                         <p className="text-slate-500 font-medium">AI is writing your professional custom guide...</p>
+                         <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mb-4"></div>
+                         <p className="text-slate-500 font-medium">FindStreak AI is writing your professional guide...</p>
                     </div>
                 ) : (
-                    <div className="prose prose-slate prose-indigo max-w-none text-[15px] leading-relaxed">
+                    <div className="prose prose-slate prose-teal max-w-none text-[15px] leading-relaxed">
                         <ReactMarkdown
                             components={{
                                 h1: ({node, ...props}) => <h1 className="text-2xl font-extrabold text-slate-900 mt-8 mb-4 border-b pb-2" {...props} />,
                                 h2: ({node, ...props}) => <h2 className="text-xl font-bold text-slate-800 mt-6 mb-3 flex items-center gap-2" {...props} />,
                                 h3: ({node, ...props}) => <h3 className="text-lg font-bold text-slate-800 mt-5 mb-2" {...props} />,
                                 p: ({node, ...props}) => <p className="mb-4 text-slate-700" {...props} />,
-                                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1.5 text-slate-700 marker:text-indigo-500" {...props} />,
-                                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1.5 text-slate-700 marker:font-bold marker:text-indigo-600" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1.5 text-slate-700 marker:text-teal-500" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1.5 text-slate-700 marker:font-bold marker:text-teal-600" {...props} />,
                                 li: ({node, ...props}) => <li className="pl-1" {...props} />,
                                 code({node, inline, className, children, ...props}: any) {
                                   const match = /language-(\w+)/.exec(className || '')
@@ -164,7 +164,7 @@ export default function TechGuideView() {
                                       </pre>
                                     </div>
                                   ) : (
-                                    <code className="bg-indigo-50 text-indigo-700 border border-indigo-100 px-1.5 py-0.5 rounded text-[13px] font-mono font-bold" {...props}>
+                                    <code className="bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded text-[13px] font-mono font-bold" {...props}>
                                       {children}
                                     </code>
                                   )
@@ -186,7 +186,7 @@ export default function TechGuideView() {
                     <Bot className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                    <h3 className="font-bold text-sm text-slate-900 leading-tight">AI Mentor: {techName}</h3>
+                    <h3 className="font-bold text-sm text-slate-900 leading-tight">FindStreak AI Mentor</h3>
                     <p className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Online
                     </p>
@@ -199,14 +199,14 @@ export default function TechGuideView() {
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[85%] p-3 rounded-2xl text-[14px] leading-relaxed ${
                             msg.role === 'user' 
-                                ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' 
+                                ? 'bg-teal-600 text-white rounded-br-sm shadow-md' 
                                 : 'bg-white border border-slate-200 text-slate-700 rounded-bl-sm shadow-sm'
                         }`}>
                             <ReactMarkdown
                               components={{
                                 p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
                                 code: ({node, inline, className, children, ...props}: any) => (
-                                    <code className={`${msg.role === 'user' ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-indigo-600'} px-1 py-0.5 rounded text-[12px] font-mono`} {...props}>
+                                    <code className={`${msg.role === 'user' ? 'bg-teal-700 text-teal-100' : 'bg-slate-100 text-teal-600'} px-1 py-0.5 rounded text-[12px] font-mono`} {...props}>
                                         {children}
                                     </code>
                                 )
@@ -238,12 +238,12 @@ export default function TechGuideView() {
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage() }}
                         placeholder="Ask how to solve issues, command lines..."
-                        className="w-full bg-slate-100 border-none rounded-xl py-3 pl-4 pr-12 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all font-medium"
+                        className="w-full bg-slate-100 border-none rounded-xl py-3 pl-4 pr-12 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 transition-all font-medium"
                     />
                     <button 
                         onClick={handleSendMessage}
                         disabled={!chatInput.trim() || isChatLoading}
-                        className="absolute right-2 p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:bg-slate-400"
+                        className="absolute right-2 p-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:bg-slate-400"
                     >
                         <Send className="w-4 h-4 -mr-[1px] mt-[1px]" />
                     </button>

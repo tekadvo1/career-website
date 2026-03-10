@@ -58,17 +58,17 @@ export default function TechStack() {
             <div className="z-50"><Sidebar activePage="tech-stack" /></div>
             
             <div className="flex-1 overflow-y-auto relative w-full lg:ml-0">
-                <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-indigo-50 via-slate-50/50 to-transparent pointer-events-none" />
+                <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-teal-50 via-slate-50/50 to-transparent pointer-events-none" />
                 
                 <div className="max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10 relative z-10 w-full">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5 bg-white p-5 md:p-6 rounded-2xl shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] border border-slate-100">
                         <div>
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2.5 shadow-sm bg-gradient-to-br from-indigo-500 to-blue-500 text-white rounded-xl">
+                                <div className="p-2.5 shadow-sm bg-gradient-to-br from-teal-500 to-emerald-500 text-white rounded-xl">
                                     <Terminal className="w-5 h-5" />
                                 </div>
                                 <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
-                                    Tools & Tech Stack Generator
+                                    FindStreak Tech Stack
                                 </h1>
                             </div>
                             <p className="text-slate-500 max-w-2xl text-[14px] leading-relaxed">
@@ -82,8 +82,8 @@ export default function TechStack() {
                         <div className="lg:col-span-1 space-y-4">
                             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
                                 <h2 className="text-[13px] font-bold text-slate-700 uppercase mb-4 flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                    <Settings className="w-4 h-4 text-indigo-500" />
-                                    AI Search Configuration
+                                    <Settings className="w-4 h-4 text-teal-500" />
+                                    FindStreak AI Search
                                 </h2>
                                 
                                 <div className="space-y-4">
@@ -92,10 +92,10 @@ export default function TechStack() {
                                         <input 
                                             value={role}
                                             onChange={(e) => setRole(e.target.value)}
-                                            className="w-full text-sm p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-slate-50 hover:bg-white"
+                                            className="w-full text-sm p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all bg-slate-50 hover:bg-white"
                                             placeholder="e.g. Software Engineer"
                                         />
-                                        <div className="flex items-start gap-1 p-1.5 bg-indigo-50 rounded text-[10px] text-indigo-700 border border-indigo-100 mt-1">
+                                        <div className="flex items-start gap-1 p-1.5 bg-teal-50 rounded text-[10px] text-teal-700 border border-teal-100 mt-1">
                                             <BrainCircuit className="w-3 h-3 flex-shrink-0 mt-0.5" />
                                             <p>Automatically synced with your currently active Career Workspace.</p>
                                         </div>
@@ -121,18 +121,18 @@ export default function TechStack() {
                                         <div 
                                             onClick={() => fileInputRef.current?.click()}
                                             className={`w-full border-2 border-dashed transition-all duration-200 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer group ${
-                                                selectedFile ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 bg-slate-50'
+                                                selectedFile ? 'border-teal-400 bg-teal-50/50' : 'border-slate-300 hover:border-teal-400 hover:bg-teal-50/30 bg-slate-50'
                                             }`}
                                         >
                                             {selectedFile ? (
-                                                <div className="flex flex-col items-center text-indigo-700">
-                                                    <FileText className="w-6 h-6 text-indigo-500 mb-2" />
+                                                <div className="flex flex-col items-center text-teal-700">
+                                                    <FileText className="w-6 h-6 text-teal-500 mb-2" />
                                                     <span className="font-bold text-[12px] text-center line-clamp-1 truncate w-[180px]">{selectedFile.name}</span>
-                                                    <span className="text-[10px] mt-1 text-indigo-500 font-medium">Click to change</span>
+                                                    <span className="text-[10px] mt-1 text-teal-500 font-medium">Click to change</span>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center">
-                                                    <UploadCloud className="w-6 h-6 mb-2 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                                    <UploadCloud className="w-6 h-6 mb-2 text-slate-400 group-hover:text-teal-500 transition-colors" />
                                                     <span className="font-bold text-slate-700 text-[12px]">Upload PDF/Word</span>
                                                 </div>
                                             )}
@@ -150,7 +150,7 @@ export default function TechStack() {
                                     <button 
                                         onClick={handleAnalyze}
                                         disabled={isLoading || !role}
-                                        className="w-full mt-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                        className="w-full mt-4 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                     >
                                         {isLoading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
                                         {isLoading ? 'Searching live trends...' : 'Generate Tech Stack'}
@@ -163,14 +163,14 @@ export default function TechStack() {
                         <div className="lg:col-span-2 space-y-4">
                             {isLoading ? (
                                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200">
-                                    <BrainCircuit className="w-12 h-12 text-indigo-400 animate-pulse mb-4" />
-                                    <h3 className="text-lg font-bold text-slate-700">AI is searching industry trends...</h3>
-                                    <p className="text-sm text-slate-500 mt-2">Analyzing your specific role across recent job descriptions.</p>
+                                    <BrainCircuit className="w-12 h-12 text-teal-400 animate-pulse mb-4" />
+                                    <h3 className="text-lg font-bold text-slate-700">FindStreak AI is analyzing...</h3>
+                                    <p className="text-sm text-slate-500 mt-2">Connecting to live industry data for {role}.</p>
                                 </div>
                             ) : result ? (
                                 <div className="space-y-4">
-                                    <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5 bg-gradient-to-r from-indigo-50/50 to-transparent">
-                                        <p className="text-sm font-semibold text-indigo-900 leading-relaxed italic">
+                                    <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-5 bg-gradient-to-r from-teal-50/50 to-transparent">
+                                        <p className="text-sm font-semibold text-teal-900 leading-relaxed italic">
                                             "{result.summary}"
                                         </p>
                                     </div>
@@ -282,7 +282,7 @@ export default function TechStack() {
                                 </div>
                             ) : (
                                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200 border-dashed">
-                                    <div className="w-16 h-16 bg-indigo-50 text-indigo-200 rounded-full flex items-center justify-center mb-4">
+                                    <div className="w-16 h-16 bg-teal-50 text-teal-200 rounded-full flex items-center justify-center mb-4">
                                         <Rocket className="w-8 h-8" />
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-400">Ready to discover your optimal stack</h3>
