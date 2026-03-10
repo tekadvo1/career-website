@@ -54,8 +54,13 @@ export default function ResourcesHub() {
   const [isLoading, setIsLoading] = useState(true);
   const [enhancingId, setEnhancingId] = useState<string | null>(null);
 
-  // Get user's role from location state
-  const rawRole = location.state?.role || "Software Engineer";
+  // Get user's role from location state or workspace
+  const rawRole = location.state?.role || (() => {
+    try {
+      const saved = localStorage.getItem('lastRoleAnalysis');
+      return saved ? JSON.parse(saved).role : 'Software Engineer';
+    } catch { return 'Software Engineer'; }
+  })();
   const userRole = rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
 
   // Map roles to relevant skills/technologies
