@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, Sparkles, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { apiFetch } from '../utils/apiFetch';
 
 export default function TechStack() {
     const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function TechStack() {
         }
 
         try {
-            const res = await fetch('/api/ai/tech-stack', {
+            const res = await apiFetch('/api/ai/tech-stack', {
                 method: 'POST',
                 body: formData
             });
