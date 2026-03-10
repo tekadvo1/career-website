@@ -5,6 +5,7 @@ import {
   Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2,
   X, UploadCloud, FileText, Award, Pencil, Check
 } from 'lucide-react';
+import { apiFetch } from '../utils/apiFetch';
 
 interface Workspace {
   id: number;
@@ -78,7 +79,7 @@ export default function Workspaces() {
   const fetchWorkspaces = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/workspaces?userId=${user?.id}`);
+      const res = await apiFetch(`/api/workspaces?userId=${user?.id}`);
       const data = await res.json();
       let fetchedWorkspaces = data.workspaces || [];
 
@@ -87,7 +88,7 @@ export default function Workspaces() {
         try {
           const parsed = JSON.parse(last);
           if (parsed.role && !fetchedWorkspaces.some((w: Workspace) => w.role === parsed.role)) {
-            const createRes = await fetch('/api/workspaces', {
+            const createRes = await apiFetch('/api/workspaces', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId: user?.id, name: 'My Workspace', role: parsed.role })
@@ -131,14 +132,14 @@ export default function Workspaces() {
         const formData = new FormData();
         formData.append('resume', selectedFile);
         formData.append('userId', user?.id?.toString() || '');
-        const analyzeRes = await fetch('/api/resume/analyze', { method: 'POST', body: formData });
+        const analyzeRes = await apiFetch('/api/resume/analyze', { method: 'POST', body: formData });
         const analyzeData = await analyzeRes.json();
         if (analyzeData.success && analyzeData.analysis?.suggestedRole) {
           // could override: finalRole = analyzeData.analysis.suggestedRole
         }
       }
 
-      const res = await fetch('/api/workspaces', {
+      const res = await apiFetch('/api/workspaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, name: newName, role: finalRole })
@@ -162,7 +163,7 @@ export default function Workspaces() {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this workspace?')) return;
     try {
-      const res = await fetch(`/api/workspaces/${id}`, {
+      const res = await apiFetch(`/api/workspaces/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id })
@@ -195,7 +196,7 @@ export default function Workspaces() {
     }
     setSaving(true);
     try {
-      const res = await fetch(`/api/workspaces/${ws.id}`, {
+      const res = await apiFetch(`/api/workspaces/${ws.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, name: editingName.trim() })
@@ -214,7 +215,7 @@ export default function Workspaces() {
   const handleSwitchContext = async (workspace: Workspace) => {
     setSwitchingTo(workspace.id);
     try {
-      const response = await fetch('/api/role/analyze', {
+      const response = await apiFetch('/api/role/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: workspace.role, userId: user?.id || null, forceRefresh: false })

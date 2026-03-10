@@ -32,7 +32,25 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(cors());
+// CORS — only allow requests from findstreak.com and local dev
+const allowedOrigins = [
+  'https://www.findstreak.com',
+  'https://findstreak.com',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    }
+  },
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Passport middleware
@@ -80,16 +98,21 @@ const realtimeRoutes = require('./routes/realtimeRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
+const { protect } = require('./middleware/authMiddleware');
+
+// --- Public routes (no auth required) ---
 app.use('/api/auth', authRoutes);
-app.use('/api/resume', resumeRoutes);
-app.use('/api/role', roleRoutes);
 app.use('/api/resources', resourceRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/missions', missionRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api/realtime', realtimeRoutes);
-app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/contact', contactRoutes);
+
+// --- Protected routes (JWT required) ---
+app.use('/api/ai',          protect, aiRoutes);
+app.use('/api/resume',      protect, resumeRoutes);
+app.use('/api/role',        protect, roleRoutes);
+app.use('/api/missions',    protect, missionRoutes);
+app.use('/api/achievements',protect, achievementRoutes);
+app.use('/api/realtime',    protect, realtimeRoutes);
+app.use('/api/workspaces',  protect, workspaceRoutes);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {
