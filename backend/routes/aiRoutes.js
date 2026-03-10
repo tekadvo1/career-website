@@ -514,4 +514,63 @@ router.post('/mock-interview-evaluate', async (req, res) => {
     }
 });
 
+// POST /api/ai/tech-stack - Generates trending tech stack based on role and resume
+router.post('/tech-stack', upload.single('resume'), async (req, res) => {
+    try {
+        const role = req.body.role || 'Software Engineering';
+        
+        let resumeText = '';
+        if (req.file) {
+            if (req.file.mimetype === 'application/pdf') {
+                 const pdfData = await pdfParse(req.file.buffer);
+                 resumeText = pdfData.text;
+            } else {
+                 resumeText = req.file.buffer.toString('utf-8');
+            }
+            if (resumeText.length > 3000) resumeText = resumeText.substring(0, 3000);
+        }
+
+        let systemPrompt = `You are an expert ${role} Engineering Manager and Tech Lead.
+        
+        The user wants to know the exact, most up-to-date and trending Tech Stack, Tools, and Frameworks they need to learn and use for a "${role}" position right now.
+        ${resumeText ? 'The user has uploaded their resume. Analyze their existing skills. If they already know a foundational skill, focus on advanced or modern trending alternatives they should learn next.' : 'No resume was provided. Provide a comprehensive modern stack from scratch.'}
+        
+        Please act as an AI with web search capabilities and provide the absolute latest and trending technologies in the industry for this role.
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+          "languages": [
+            { "name": "Language Name", "reason": "Why learn this?", "status": "Trending" }
+          ],
+          "frameworks": [
+             { "name": "Framework Name", "reason": "Why learn this?", "status": "Industry Standard" }
+          ],
+          "tools": [
+             { "name": "Tool Name", "reason": "Why this tool?", "category": "CI/CD or Design or Database etc" }
+          ],
+          "trending": ["Rapidly growing tech 1", "Rapidly growing tech 2"],
+          "summary": "A brief 2-sentence summary of what their priority should be."
+        }`;
+
+        const requestOptions = {
+            model: "gpt-4o-mini",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease recommend the tech stack.` : `Please recommend the latest tech stack.` }
+            ],
+            max_tokens: 1500,
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        };
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        res.json(JSON.parse(reply));
+    } catch (error) {
+        console.error('Tech Stack Generation Error:', error);
+        res.status(500).json({ error: 'Failed to generate tech stack recommendations' });
+    }
+});
+
 module.exports = router;

@@ -1,0 +1,274 @@
+import { useState, useRef, useEffect } from 'react';
+import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, Sparkles, X } from 'lucide-react';
+import Sidebar from './Sidebar';
+
+export default function TechStack() {
+    const [role, setRole] = useState("Software Engineer");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const [result, setResult] = useState<any>(null);
+
+    useEffect(() => {
+        const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+        if (lastStateRaw) {
+            try {
+                const lastRoleState = JSON.parse(lastStateRaw);
+                if (lastRoleState?.role) {
+                    setRole(lastRoleState.role);
+                }
+            } catch (e) {}
+        }
+    }, []);
+
+    const handleAnalyze = async () => {
+        setIsLoading(true);
+        setResult(null);
+
+        const formData = new FormData();
+        formData.append('role', role);
+        if (selectedFile) {
+            formData.append('resume', selectedFile);
+        }
+
+        try {
+            const res = await fetch('/api/ai/tech-stack', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (data.languages || data.frameworks || data.tools) {
+                setResult(data);
+            } else {
+                alert("Failed to analyze. Please try again.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error connecting to AI service.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-slate-900">
+            <div className="z-50"><Sidebar activePage="tech-stack" /></div>
+            
+            <div className="flex-1 overflow-y-auto relative w-full lg:ml-0">
+                <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-indigo-50 via-slate-50/50 to-transparent pointer-events-none" />
+                
+                <div className="max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10 relative z-10 w-full">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-5 bg-white p-5 md:p-6 rounded-2xl shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] border border-slate-100">
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="p-2.5 shadow-sm bg-gradient-to-br from-indigo-500 to-blue-500 text-white rounded-xl">
+                                    <Terminal className="w-5 h-5" />
+                                </div>
+                                <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">
+                                    Tools & Tech Stack Generator
+                                </h1>
+                            </div>
+                            <p className="text-slate-500 max-w-2xl text-[14px] leading-relaxed">
+                                Get a real-time, AI-powered breakdown of the exact programming languages, frameworks, and modern tools you need based on the absolute latest industry trends for your role.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Configuration Sidebar */}
+                        <div className="lg:col-span-1 space-y-4">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                <h2 className="text-[13px] font-bold text-slate-700 uppercase mb-4 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                                    <Settings className="w-4 h-4 text-indigo-500" />
+                                    AI Search Configuration
+                                </h2>
+                                
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[12px] font-bold text-slate-600">Target Role</label>
+                                        <input 
+                                            value={role}
+                                            onChange={(e) => setRole(e.target.value)}
+                                            className="w-full text-sm p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all bg-slate-50 hover:bg-white"
+                                            placeholder="e.g. Software Engineer"
+                                        />
+                                        <div className="flex items-start gap-1 p-1.5 bg-indigo-50 rounded text-[10px] text-indigo-700 border border-indigo-100 mt-1">
+                                            <BrainCircuit className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                                            <p>Automatically synced with your currently active Career Workspace.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[12px] font-bold text-slate-600 flex items-center justify-between">
+                                            Resume <span className="text-[10px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded">Optional</span>
+                                        </label>
+                                        <p className="text-[11px] text-slate-500 mb-2 leading-tight">
+                                            Upload your resume so the AI can skip foundational tech you already know and focus on trending tools to push you forward.
+                                        </p>
+                                        <input 
+                                            type="file" 
+                                            accept=".pdf,.doc,.docx" 
+                                            ref={fileInputRef} 
+                                            className="hidden" 
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files.length > 0) setSelectedFile(e.target.files[0]);
+                                            }} 
+                                        />
+                                        
+                                        <div 
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={`w-full border-2 border-dashed transition-all duration-200 rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer group ${
+                                                selectedFile ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 bg-slate-50'
+                                            }`}
+                                        >
+                                            {selectedFile ? (
+                                                <div className="flex flex-col items-center text-indigo-700">
+                                                    <FileText className="w-6 h-6 text-indigo-500 mb-2" />
+                                                    <span className="font-bold text-[12px] text-center line-clamp-1 truncate w-[180px]">{selectedFile.name}</span>
+                                                    <span className="text-[10px] mt-1 text-indigo-500 font-medium">Click to change</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <UploadCloud className="w-6 h-6 mb-2 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                                    <span className="font-bold text-slate-700 text-[12px]">Upload PDF/Word</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {selectedFile && (
+                                            <button 
+                                                onClick={() => setSelectedFile(null)}
+                                                className="w-full mt-2 py-1 flex items-center justify-center gap-1 text-[11px] font-semibold text-red-500 hover:bg-red-50 rounded"
+                                            >
+                                                <X className="w-3 h-3" /> Remove File
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={handleAnalyze}
+                                        disabled={isLoading || !role}
+                                        className="w-full mt-4 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                    >
+                                        {isLoading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                                        {isLoading ? 'Searching live trends...' : 'Generate Tech Stack'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Results View */}
+                        <div className="lg:col-span-2 space-y-4">
+                            {isLoading ? (
+                                <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200">
+                                    <BrainCircuit className="w-12 h-12 text-indigo-400 animate-pulse mb-4" />
+                                    <h3 className="text-lg font-bold text-slate-700">AI is searching industry trends...</h3>
+                                    <p className="text-sm text-slate-500 mt-2">Analyzing your specific role across recent job descriptions.</p>
+                                </div>
+                            ) : result ? (
+                                <div className="space-y-4">
+                                    <div className="bg-white rounded-2xl shadow-sm border border-indigo-100 p-5 bg-gradient-to-r from-indigo-50/50 to-transparent">
+                                        <p className="text-sm font-semibold text-indigo-900 leading-relaxed italic">
+                                            "{result.summary}"
+                                        </p>
+                                    </div>
+
+                                    {/* Programming Languages */}
+                                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                                            <Code className="w-4 h-4 text-emerald-600" />
+                                            <h3 className="font-bold text-sm text-slate-800">Programming Languages</h3>
+                                        </div>
+                                        <div className="p-4 grid gap-3">
+                                            {result.languages && result.languages.map((lang: any, i: number) => (
+                                                <div key={i} className="flex flex-col sm:flex-row sm:items-start gap-2 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-bold text-[14px] text-slate-800">{lang.name}</span>
+                                                            {lang.status && (
+                                                                <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">{lang.status}</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[12px] text-slate-600">{lang.reason}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Frameworks */}
+                                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                                            <Terminal className="w-4 h-4 text-blue-600" />
+                                            <h3 className="font-bold text-sm text-slate-800">Frameworks</h3>
+                                        </div>
+                                        <div className="p-4 grid gap-3">
+                                            {result.frameworks && result.frameworks.map((fw: any, i: number) => (
+                                                <div key={i} className="flex flex-col sm:flex-row sm:items-start gap-2 bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <span className="font-bold text-[14px] text-slate-800">{fw.name}</span>
+                                                            {fw.status && (
+                                                                <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{fw.status}</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[12px] text-slate-600">{fw.reason}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Modern Tools */}
+                                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+                                            <Settings className="w-4 h-4 text-orange-500" />
+                                            <h3 className="font-bold text-sm text-slate-800">Essential Developer Tools</h3>
+                                        </div>
+                                        <div className="p-4 grid gap-3 sm:grid-cols-2">
+                                            {result.tools && result.tools.map((tm: any, i: number) => (
+                                                <div key={i} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="font-bold text-[13px] text-slate-800">{tm.name}</span>
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-500 mb-2 font-medium uppercase">{tm.category}</p>
+                                                    <p className="text-[12px] text-slate-600 leading-snug">{tm.reason}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Trending Keywords */}
+                                    {result.trending && result.trending.length > 0 && (
+                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                                            <h3 className="font-bold text-sm text-slate-800 mb-3 flex items-center gap-2">
+                                                <Sparkles className="w-4 h-4 text-purple-500" />
+                                                Trending "Buzzwords" to mention in interviews
+                                            </h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {result.trending.map((t: string, i: number) => (
+                                                    <span key={i} className="px-3 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-full text-[12px] font-bold">
+                                                        #{t}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                </div>
+                            ) : (
+                                <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200 border-dashed">
+                                    <div className="w-16 h-16 bg-indigo-50 text-indigo-200 rounded-full flex items-center justify-center mb-4">
+                                        <Rocket className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-slate-400">Ready to discover your optimal stack</h3>
+                                    <p className="text-sm text-slate-400 mt-1">Upload your optional resume and click Generate.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

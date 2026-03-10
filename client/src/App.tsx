@@ -24,6 +24,7 @@ import Workspaces from './components/Workspaces';
 import Portfolio from './components/Portfolio';
 import InterviewGuide from './components/InterviewGuide';
 import RealTimeMockInterview from './components/RealTimeMockInterview';
+import TechStack from './components/TechStack';
 // Helper component to redirect authenticated users
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -84,6 +85,7 @@ function App() {
           <Route path="/portfolio/:username" element={<Portfolio isPublic={true} />} />
           <Route path="/interview-guide" element={<InterviewGuide />} />
           <Route path="/realtime-mock-interview" element={<RealTimeMockInterview />} />
+          <Route path="/tech-stack" element={<TechStack />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -16,6 +16,7 @@ import {
   Wrench,
   Code,
   MessageSquare,
+  Terminal
 } from 'lucide-react';
 
 interface NavItem {
@@ -106,6 +107,13 @@ const navItems: NavItem[] = [
     subtitle: 'Productivity tools',
     icon: <Wrench className="w-5 h-5 text-emerald-600" />,
     route: '/workflow-lifecycle',
+    badge: 'NEW',
+  },
+  {
+    label: 'Tech Stack & Tools',
+    subtitle: 'AI trending analysis',
+    icon: <Terminal className="w-5 h-5 text-emerald-600" />,
+    route: '/tech-stack',
     badge: 'NEW',
   },
   // {
