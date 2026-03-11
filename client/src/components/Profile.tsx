@@ -54,6 +54,27 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const [isSyncingAI, setIsSyncingAI] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(true);
 
+  // Public profile data fetched from backend (used when isPublic=true)
+  const [publicProfileData, setPublicProfileData] = useState<any>(null);
+  const [publicProfileLoading, setPublicProfileLoading] = useState(isPublic);
+  const [publicProfileError, setPublicProfileError] = useState('');
+
+  useEffect(() => {
+    if (!isPublic || !username) return;
+    setPublicProfileLoading(true);
+    fetch(`/api/auth/public-profile/${encodeURIComponent(username)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          setPublicProfileData(data);
+        } else {
+          setPublicProfileError(data.message || 'Profile not found');
+        }
+      })
+      .catch(() => setPublicProfileError('Could not load profile'))
+      .finally(() => setPublicProfileLoading(false));
+  }, [isPublic, username]);
+
   const [dynamicSkills, setDynamicSkills] = useState<{name: string, level: number}[]>([]);
   const [timeline, setTimeline] = useState<any[]>([]);
 
@@ -320,19 +341,38 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       activeSkills = lastRoleState.analysis.existingSkills.map((s: any) => s.name);
   }
 
-  // Display user name override if public
-  const displayName = isPublic ? username : (user?.username || "Guest User");
+  // Display user name override if public - use real data from API when available
+  const displayName = isPublic
+    ? (publicProfileData?.username || username || 'User')
+    : (user?.username || "Guest User");
   
+  // For public profiles, use real data from backend API
+  const publicRole = publicProfileData?.role || displayRole;
+  const publicSkills = publicProfileData?.skills?.length > 0
+    ? publicProfileData.skills
+    : activeSkills;
+  const publicStats = isPublic && publicProfileData ? {
+    projectsCompleted: publicProfileData.projectsCompleted || 0,
+    totalProjects: Math.max(publicProfileData.projectsCompleted || 1, 1),
+    skillsMastered: publicProfileData.skillsMastered || 0,
+    totalLearningHours: (publicProfileData.skillsMastered || 0) * 2,
+    achievementsUnlocked: Math.floor((publicProfileData.skillsMastered || 0) / 3),
+    currentProjectName: 'FindStreak Project',
+    learningStreak: publicProfileData.streak || 0,
+  } : { ...stats, learningStreak: liveStreak };
+
   const userData = {
     name: displayName,
-    email: user?.email || "No email provided",
-    role: displayRole,
-    location: profileDetails.location || "Global",
-    phone: profileDetails.phone || "Not set",
-    joinDate: "Recently",
-    bio: profileDetails.bio || `Tracking career progress and mastering skills for ${displayRole} via FindStreak.`,
-    skills: activeSkills.slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
-    stats: { ...stats, learningStreak: liveStreak },
+    email: isPublic ? '' : (user?.email || "No email provided"),
+    role: isPublic ? publicRole : displayRole,
+    location: isPublic ? 'Global' : (profileDetails.location || "Global"),
+    phone: isPublic ? '' : (profileDetails.phone || "Not set"),
+    joinDate: publicProfileData?.memberSince ? new Date(publicProfileData.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently",
+    bio: isPublic
+      ? `${displayName} is a ${publicRole} tracking career growth on FindStreak.`
+      : (profileDetails.bio || `Tracking career progress and mastering skills for ${displayRole} via FindStreak.`),
+    skills: (isPublic ? publicSkills : activeSkills).slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
+    stats: publicStats,
   };
 
   const handleCompleteSetup = () => {
@@ -449,6 +489,31 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         setIsSyncingAI(false);
     }
   };
+
+  // Public profile loading/error states
+  if (isPublic && publicProfileLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 font-medium">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isPublic && publicProfileError) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="text-center bg-white p-10 rounded-2xl shadow border border-slate-200 max-w-md">
+          <div className="text-5xl mb-4">🔍</div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Profile Not Found</h2>
+          <p className="text-slate-500 text-sm">{publicProfileError}</p>
+          <a href="/" className="mt-6 inline-block px-5 py-2.5 bg-teal-600 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 transition">Go to FindStreak</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-teal-100 selection:text-teal-900 font-sans">

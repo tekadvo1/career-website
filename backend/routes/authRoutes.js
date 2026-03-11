@@ -88,4 +88,86 @@ router.post('/complete-onboarding', protect, async (req, res) => {
   }
 });
 
+// @route   GET /api/auth/public-profile/:username
+// @desc    Get public profile data for a user by username (no auth required)
+// @access  Public
+router.get('/public-profile/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+
+    // Find user by username (case-insensitive)
+    const userRes = await pool.query(
+      'SELECT id, username, email, created_at FROM users WHERE LOWER(username) = LOWER($1)',
+      [username]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const user = userRes.rows[0];
+
+    // Get their most recent role analysis (skills, role title)
+    const roleRes = await pool.query(
+      'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [user.id]
+    );
+
+    // Get their active workspace role
+    const wsRes = await pool.query(
+      'SELECT role FROM workspaces WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+      [user.id]
+    );
+
+    // Get roadmap progress count
+    const roadmapRes = await pool.query(
+      'SELECT COUNT(*) as count FROM roadmap_progress WHERE user_id = $1',
+      [user.id]
+    );
+
+    // Get completed projects count
+    const projectRes = await pool.query(
+      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND status = 'completed'",
+      [user.id]
+    );
+
+    // Get streak from users table
+    const streakRes = await pool.query(
+      'SELECT current_streak FROM users WHERE id = $1',
+      [user.id]
+    );
+
+    let roleTitle = 'Software Engineer';
+    let skills = ['JavaScript', 'React', 'Node.js'];
+
+    if (roleRes.rows.length > 0) {
+      roleTitle = roleRes.rows[0].role_title || roleTitle;
+      const analysis = typeof roleRes.rows[0].analysis_data === 'string'
+        ? JSON.parse(roleRes.rows[0].analysis_data)
+        : roleRes.rows[0].analysis_data;
+      if (analysis?.technicalSkills?.length > 0) skills = analysis.technicalSkills.slice(0, 5);
+      else if (analysis?.existingSkills?.length > 0) skills = analysis.existingSkills.map((s) => s.name).slice(0, 5);
+    } else if (wsRes.rows.length > 0) {
+      roleTitle = wsRes.rows[0].role || roleTitle;
+    }
+
+    // Clean role name
+    roleTitle = roleTitle.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
+
+    res.json({
+      success: true,
+      username: user.username,
+      role: roleTitle,
+      skills,
+      skillsMastered: parseInt(roadmapRes.rows[0]?.count || 0),
+      projectsCompleted: parseInt(projectRes.rows[0]?.count || 0),
+      streak: parseInt(streakRes.rows[0]?.current_streak || 0),
+      memberSince: user.created_at,
+    });
+  } catch (error) {
+    console.error('Error fetching public profile:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 module.exports = router;
