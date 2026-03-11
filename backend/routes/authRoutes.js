@@ -95,11 +95,20 @@ router.get('/public-profile/:username', async (req, res) => {
   try {
     const { username } = req.params;
 
-    // Find user by username (case-insensitive)
-    const userRes = await pool.query(
+    // Find user by username - try exact, then case-insensitive, then prefix match
+    // prefix match handles "Rakesh Vejendla" finding "rakesh vejendla33"
+    let userRes = await pool.query(
       'SELECT id, username, email, created_at FROM users WHERE LOWER(username) = LOWER($1)',
       [username]
     );
+
+    // If no exact match, try prefix: "Rakesh Vejendla" → finds "rakesh vejendla33"
+    if (userRes.rows.length === 0) {
+      userRes = await pool.query(
+        'SELECT id, username, email, created_at FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
+        [`${username}%`]
+      );
+    }
 
     if (userRes.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });

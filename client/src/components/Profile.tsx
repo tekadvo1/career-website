@@ -392,7 +392,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const shareProfile = () => {
-    const link = `${window.location.origin}/p/${user?.username || 'user'}`;
+    const link = `${window.location.origin}/p/${encodeURIComponent(user?.username || 'user')}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
