@@ -188,10 +188,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (!user?.id) return;
+    const token = localStorage.getItem('token');
+    if (!user?.id || !token) return;
 
     // Real-time EventSource connection
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${token}`);
     
     const handleSnapshot = (e: MessageEvent) => {
       try {
