@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
+import LandingFooter from './LandingFooter';
 import { Zap, Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight } from 'lucide-react';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -177,20 +178,7 @@ export default function ContactPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 bg-black/30">
-        <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg flex items-center justify-center"><Zap className="w-4 h-4 text-white" /></div>
-            <span className="text-white font-black text-lg">FindStreak</span>
-          </div>
-          <nav className="flex items-center gap-6">
-            {[{ label: 'Home', path: '/' }, { label: 'About', path: '/about-us' }, { label: 'How It Works', path: '/how-it-works' }, { label: 'Privacy', path: '/privacy' }, { label: 'Cookies', path: '/cookies' }].map(l => (
-              <button key={l.label} onClick={() => navigate(l.path)} className="text-sm text-slate-500 hover:text-teal-400 transition-colors font-medium">{l.label}</button>
-            ))}
-          </nav>
-          <p className="text-xs text-slate-600">© 2026 FindStreak.</p>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

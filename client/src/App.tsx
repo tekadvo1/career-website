@@ -32,6 +32,7 @@ import AboutPage from './components/landing/AboutPage';
 import ContactPage from './components/landing/ContactPage';
 import PrivacyPolicy from './components/landing/PrivacyPolicy';
 import CookiePolicy from './components/landing/CookiePolicy';
+import TermsAndConditions from './components/landing/TermsAndConditions';
 import Missions from './components/Missions';
 import NotFoundPage from './components/NotFoundPage'; // 404 catch-all page
 // Helper component to redirect authenticated users
@@ -113,6 +114,8 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
