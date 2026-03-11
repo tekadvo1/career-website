@@ -94,22 +94,19 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-        try {
+                try {
           const { latitude, longitude } = pos.coords;
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
           );
+          if (!res.ok) throw new Error('Geocoding HTTP error ' + res.status);
           const data = await res.json();
-          const city =
-            data.address?.city ||
-            data.address?.town ||
-            data.address?.village ||
-            data.address?.county ||
-            '';
-          const country = data.address?.country || '';
+          const city = data.city || data.locality || '';
+          const country = data.countryName || '';
           const locationStr = city && country ? `${city}, ${country}` : country || 'Unknown';
           formSetter((prev: any) => ({ ...prev, location: locationStr }));
-        } catch {
+        } catch (err: any) {
+          console.error("Geocoding failed:", err);
           showAlert('Could not reverse-geocode your location. Please type it manually.', 'error');
         } finally {
           setIsDetectingLocation(false);
