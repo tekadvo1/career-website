@@ -614,34 +614,45 @@ router.post('/workflow-step-details', async (req, res) => {
         messages: [
           {
             role: 'system',
-            content: `You are a senior developer mentor. Provide technical implementation details for a specific workflow stage.`
+            content: `You are a senior developer mentor. You MUST always respond with a single valid JSON object only — no markdown, no explanation, no code fences. Always populate every field with real, specific content.`
           },
           {
             role: 'user',
-            content: `
-            Role: ${role}
-            Stage: ${stage}
-            Tools Used: ${tools ? tools.join(', ') : 'Standard tools'}
+            content: `Generate a technical deep-dive for the following workflow stage.
 
-            Task: Provide a technical deep-dive for this specific stage.
-            1. **Code Snippet**: A relevant code example (e.g., config file, API route, SQL query). 
-            2. **Best Practices**: 3-4 bullet points of critical do's/don'ts.
-            3. **Checklist**: 3-4 items to verify before moving to the next stage.
+Role: ${role}
+Stage: ${stage}
+Tools Used: ${tools ? tools.join(', ') : 'Standard industry tools'}
 
-            Return the response in this JSON format:
-            {
-               "code_snippet": {
-                  "language": "javascript/python/sql/yaml",
-                  "code": "..."
-               },
-               "best_practices": ["Practice 1", "Practice 2"],
-               "checklist": ["Item 1", "Item 2"]
-            }
-            Return ONLY valid JSON.
-            `
+You MUST return a single valid JSON object with this exact structure. Do NOT wrap in markdown. Do NOT use code fences. Return ONLY the raw JSON:
+
+{
+  "code_snippet": {
+    "language": "javascript",
+    "code": "// Write a real, practical code example for the ${stage} stage\\n// using typical ${role} tools"
+  },
+  "best_practices": [
+    "First specific best practice for ${stage} in ${role} work",
+    "Second specific best practice for ${stage}",
+    "Third specific best practice for ${stage}",
+    "Fourth specific best practice for ${stage}"
+  ],
+  "checklist": [
+    "First verification item before completing ${stage}",
+    "Second verification item for ${stage}",
+    "Third verification item for ${stage}",
+    "Fourth specific verification item for ${stage}"
+  ]
+}
+
+CRITICAL RULES:
+- best_practices array MUST have at least 3 real, specific items
+- checklist array MUST have at least 3 real, specific items
+- code_snippet.code MUST be a real working example (not a placeholder)
+- Return ONLY the raw JSON object, no other text`
           }
         ],
-        temperature: 0.7
+        temperature: 0.3
       })
     });
 

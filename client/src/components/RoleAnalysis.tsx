@@ -1,8 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+
 import { 
 
   TrendingUp, 
@@ -10,7 +9,7 @@ import {
   ChevronRight, 
   Code, 
   BookOpen, 
-  Download,
+
   Wrench, 
   Clock, 
   Award, 
@@ -21,13 +20,11 @@ import {
   GitBranch,
   Sparkles
 } from 'lucide-react';
-import { useAlert } from '../contexts/AlertContext';
 import Sidebar from './Sidebar';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
 
 export default function RoleAnalysis() {
-  const { showAlert } = useAlert();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -61,7 +58,7 @@ export default function RoleAnalysis() {
   const resumeSkills = location.state?.resumeSkills;
   /* New Tab State */
   const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
-  const [isDownloading, setIsDownloading] = useState(false);
+
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   
@@ -277,36 +274,7 @@ export default function RoleAnalysis() {
     markOnboardingComplete();
   }, [isLoading, roleDataState]);
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById('role-analysis-content');
-    if (!element) return;
-    
-    setIsDownloading(true);
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false
-      });
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      pdf.save(`${roleDataState?.title || 'Role_Analysis'}_Roadmap.pdf`);
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      showAlert('Failed to generate PDF. Please try again.', 'error');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+
 
   // Guard clause while loading
   if (isLoading) {
@@ -419,23 +387,7 @@ export default function RoleAnalysis() {
               )}
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-                <button 
-                  onClick={handleDownloadPDF}
-                  disabled={isDownloading}
-                  className="flex items-center justify-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium w-full md:w-auto disabled:opacity-50"
-                >
-                  {isDownloading ? (
-                    <span>Generating...</span>
-                  ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5" />
-                      Download PDF
-                    </>
-                  )}
-                </button>
-            {/* Button Removed */}
-            </div>
+
           </div>
 
           {/* Enhanced Stats Grid */}
