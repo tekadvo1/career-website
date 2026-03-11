@@ -358,7 +358,7 @@ export default function RoleAnalysis() {
              <p className="text-gray-600 mb-6">{error}</p>
              <button 
                 onClick={() => navigate('/onboarding')}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
              >
                 Try Again
              </button>
@@ -393,7 +393,7 @@ export default function RoleAnalysis() {
         <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4">
           <div className="flex flex-col md:flex-row md:items-start justify-between mb-2 md:mb-3 gap-2">
             <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-600 text-white rounded-full text-[10px] font-bold mb-1.5 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-600 text-white rounded-full text-[10px] font-bold mb-1.5 shadow-sm">
                 <Award className="w-3 h-3" />
                 <span>AI-Powered Career Guide</span>
               </div>
@@ -413,7 +413,7 @@ export default function RoleAnalysis() {
               )}
 
               {hasResume && resumeFileName && (
-                <p className="text-[10px] text-indigo-600 font-medium mt-1 flex items-center gap-1">
+                <p className="text-[10px] text-teal-600 font-medium mt-1 flex items-center gap-1">
                   ✓ Resume analyzed: <span className="truncate max-w-[200px]">{resumeFileName}</span>
                 </p>
               )}
@@ -464,9 +464,9 @@ export default function RoleAnalysis() {
             </div>
 
             {/* Senior Salary */}
-            <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-200">
+            <div className="p-2 bg-teal-50 rounded-lg border border-teal-200">
                <div className="flex items-center gap-1.5 mb-0.5">
-                  <div className="p-1 bg-indigo-100 rounded text-indigo-600">
+                  <div className="p-1 bg-teal-100 rounded text-teal-600">
                      <DollarSign className="w-3 h-3" />
                   </div>
                   <span className="text-[10px] font-bold text-gray-500 uppercase">Senior Level</span>
@@ -542,7 +542,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('workflow')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'workflow' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'workflow' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <GitBranch className="w-3 h-3" /> Workflow
@@ -550,7 +550,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('skills')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'skills' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'skills' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <Award className="w-3 h-3" /> Skills
@@ -558,7 +558,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('daylife')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'daylife' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'daylife' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <Clock className="w-3 h-3" /> Day in Life
@@ -566,7 +566,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('interview')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'interview' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'interview' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <User className="w-3 h-3" /> Interview
@@ -574,7 +574,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('tools')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'tools' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'tools' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <Wrench className="w-3 h-3" /> Tools
@@ -582,7 +582,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('languages')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'languages' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'languages' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <Code className="w-3 h-3" /> Tech
@@ -590,7 +590,7 @@ export default function RoleAnalysis() {
               <button
                 onClick={() => setActiveTab('resources')}
                 className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'resources' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === 'resources' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <BookOpen className="w-3 h-3" /> Resources
@@ -625,7 +625,7 @@ export default function RoleAnalysis() {
                 {roleData.soft_skills && roleData.soft_skills.length > 0 && (
                    <div className="mb-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                         <User className="w-5 h-5 text-indigo-500" />
+                         <User className="w-5 h-5 text-teal-500" />
                          Crucial Soft Skills
                       </h3>
                       <div className="grid md:grid-cols-2 gap-3">
@@ -649,10 +649,10 @@ export default function RoleAnalysis() {
                        return (
                        <div key={index} 
                             onClick={() => toggleSkill(index)}
-                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all shadow-sm cursor-pointer group ${isExpanded ? 'bg-indigo-50/30 border-indigo-200' : 'bg-white border-gray-200 hover:border-indigo-300'}`}
+                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all shadow-sm cursor-pointer group ${isExpanded ? 'bg-teal-50/30 border-teal-200' : 'bg-white border-gray-200 hover:border-teal-300'}`}
                        >
                          <div className="flex items-center gap-4">
-                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${skill.priority?.includes('High') ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'}`}>
+                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${skill.priority?.includes('High') ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-600'}`}>
                                <Award className="w-5 h-5" />
                              </div>
                              <div className="flex-1">
@@ -673,8 +673,8 @@ export default function RoleAnalysis() {
                              <div className="overflow-hidden">
                                   <div className="pt-3 border-t border-gray-100 mt-1">
                                     {skill.reason && (
-                                       <div className="mb-3 pl-3 border-l-2 border-indigo-200">
-                                          <p className="text-sm text-gray-700 leading-relaxed"><span className="font-bold text-indigo-700 block mb-1">Why it matters:</span> {skill.reason}</p>
+                                       <div className="mb-3 pl-3 border-l-2 border-teal-200">
+                                          <p className="text-sm text-gray-700 leading-relaxed"><span className="font-bold text-teal-700 block mb-1">Why it matters:</span> {skill.reason}</p>
                                        </div>
                                     )}
                                     {skill.practical_application && (
@@ -699,22 +699,22 @@ export default function RoleAnalysis() {
            {activeTab === 'skills' && skillPreference && (
               <div className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
                  <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <Code className="w-5 h-5 text-indigo-500" />
+                    <Code className="w-5 h-5 text-teal-500" />
                     {skillPreference === 'master' ? 'Advanced Mastery Projects' : 'Projects to Learn New Skills'}
                  </h3>
                  <p className="text-sm text-slate-600 mb-4">
                     Apply your AI-generated {skillPreference === 'master' ? 'deep dive' : 'expansion'} knowledge.
                  </p>
                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-indigo-300 transition-colors">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-teal-300 transition-colors">
                         <h4 className="font-bold text-slate-800 mb-2">Build a Production-Ready System</h4>
                         <p className="text-xs text-slate-500 mb-2">Take the core technical skills from above and implement them with full CI/CD, testing, and optimization.</p>
-                        <span className="text-xs font-bold text-indigo-600">{skillPreference === 'master' ? 'Focus: Architecture' : 'Focus: Implementation'}</span>
+                        <span className="text-xs font-bold text-teal-600">{skillPreference === 'master' ? 'Focus: Architecture' : 'Focus: Implementation'}</span>
                     </div>
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-indigo-300 transition-colors">
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-teal-300 transition-colors">
                         <h4 className="font-bold text-slate-800 mb-2">Open Source Contribution</h4>
                         <p className="text-xs text-slate-500 mb-2">Contribute to a major repository utilizing the primary skills listed in your personalized guide.</p>
-                        <span className="text-xs font-bold text-indigo-600">Focus: Collaboration</span>
+                        <span className="text-xs font-bold text-teal-600">Focus: Collaboration</span>
                     </div>
                  </div>
               </div>
@@ -726,7 +726,7 @@ export default function RoleAnalysis() {
                  <h2 className="text-xl font-bold text-gray-900 mb-2">A Day in the Life</h2>
                  <p className="text-gray-500 mb-6">What you can expect on a typical day in this role. Click on an item to see details.</p>
 
-                 <div className="space-y-0 relative border-l-2 border-indigo-100 ml-3 md:ml-6">
+                 <div className="space-y-0 relative border-l-2 border-teal-100 ml-3 md:ml-6">
                     {roleData.day_in_the_life && roleData.day_in_the_life.length > 0 ? (
                        roleData.day_in_the_life.map((item: any, i: number) => {
                           const isExpanded = expandedDayItems.includes(i);
@@ -734,22 +734,22 @@ export default function RoleAnalysis() {
                           return (
                           <div key={i} className="mb-8 ml-6 relative">
                              {/* Timeline Dot */}
-                             <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 border-white shadow-sm transition-colors ${isExpanded ? 'bg-indigo-600' : 'bg-gray-300'}`}></div>
+                             <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 border-white shadow-sm transition-colors ${isExpanded ? 'bg-teal-600' : 'bg-gray-300'}`}></div>
                              
                              <div 
-                                className={`group p-4 bg-white rounded-xl border transition-all cursor-pointer ${isExpanded ? 'border-indigo-200 shadow-md' : 'border-gray-200 hover:border-indigo-300'}`}
+                                className={`group p-4 bg-white rounded-xl border transition-all cursor-pointer ${isExpanded ? 'border-teal-200 shadow-md' : 'border-gray-200 hover:border-teal-300'}`}
                                 onClick={() => toggleDayItem(i)}
                              >
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className={`inline-block px-2 py-1 font-bold text-xs rounded ${isExpanded ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    <span className={`inline-block px-2 py-1 font-bold text-xs rounded ${isExpanded ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-600'}`}>
                                        {item.time}
                                     </span>
-                                    <button className="text-xs text-indigo-600 font-medium hover:underline focus:outline-none">
+                                    <button className="text-xs text-teal-600 font-medium hover:underline focus:outline-none">
                                         {isExpanded ? 'Show Less' : 'Show Details'}
                                     </button>
                                 </div>
                                 
-                                <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-indigo-900' : 'text-gray-900'}`}>{item.activity}</h3>
+                                <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-teal-900' : 'text-gray-900'}`}>{item.activity}</h3>
                                 
                                 <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-3 border-t border-indigo-50 pt-3' : 'grid-rows-[0fr] opacity-0'}`}>
                                     <div className="overflow-hidden">
@@ -779,12 +779,12 @@ export default function RoleAnalysis() {
                        roleData.interview_prep.map((item: any, i: number) => (
                           <div key={i} className="p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
                              <h3 className="font-bold text-lg text-gray-900 mb-3 flex items-start gap-2">
-                                <span className="bg-indigo-100 text-indigo-700 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm">Q</span>
+                                <span className="bg-teal-100 text-teal-700 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm">Q</span>
                                 {item.question}
                              </h3>
-                             <div className="bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
-                                <div className="font-bold text-indigo-800 text-xs uppercase mb-1">How to Answer</div>
-                                <p className="text-indigo-900 leading-relaxed text-sm">
+                             <div className="bg-teal-50/50 p-4 rounded-lg border border-teal-100">
+                                <div className="font-bold text-teal-800 text-xs uppercase mb-1">How to Answer</div>
+                                <p className="text-teal-900 leading-relaxed text-sm">
                                    {item.answer_tip}
                                 </p>
                              </div>
@@ -823,7 +823,7 @@ export default function RoleAnalysis() {
                       <div
                         key={index}
                         onClick={() => toggleTool(index)}
-                        className={`p-5 rounded-xl border transition-all cursor-pointer flex flex-col h-full ${isExpanded ? 'bg-white border-indigo-300 shadow-md ring-1 ring-indigo-100' : 'bg-white border-gray-200 hover:border-indigo-200 hover:shadow-sm'}`}
+                        className={`p-5 rounded-xl border transition-all cursor-pointer flex flex-col h-full ${isExpanded ? 'bg-white border-teal-300 shadow-md ring-1 ring-teal-100' : 'bg-white border-gray-200 hover:border-teal-200 hover:shadow-sm'}`}
                       >
                         <div className="flex items-start justify-between mb-2">
                           <div>
@@ -890,11 +890,11 @@ export default function RoleAnalysis() {
                              const langUsage = typeof lang === 'string' ? '' : lang.usage;
 
                              return (
-                                <div key={index} className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100">
-                                    <div className="font-bold text-indigo-900 text-lg mb-1">{langName}</div>
-                                    {langDesc && <p className="text-sm text-indigo-800 mb-2">{langDesc}</p>}
+                                <div key={index} className="p-4 rounded-xl bg-teal-50/50 border border-teal-100">
+                                    <div className="font-bold text-teal-900 text-lg mb-1">{langName}</div>
+                                    {langDesc && <p className="text-sm text-teal-800 mb-2">{langDesc}</p>}
                                     {langUsage && (
-                                        <div className="text-xs text-indigo-700 bg-indigo-100/50 p-2 rounded mt-2">
+                                        <div className="text-xs text-teal-700 bg-teal-100/50 p-2 rounded mt-2">
                                             <strong>Why:</strong> {langUsage}
                                         </div>
                                     )}
@@ -964,17 +964,17 @@ export default function RoleAnalysis() {
                     className="block p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all group relative overflow-hidden"
                   >
                     <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <ExternalLink className="w-24 h-24 text-indigo-900 transform rotate-12 -translate-y-4 translate-x-4" />
+                        <ExternalLink className="w-24 h-24 text-teal-900 transform rotate-12 -translate-y-4 translate-x-4" />
                     </div>
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-4 items-start">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                           <BookOpen className="w-6 h-6 text-indigo-600" />
+                        <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                           <BookOpen className="w-6 h-6 text-teal-600" />
                         </div>
                         
                         <div className="flex-1">
                              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-700 transition-colors">
+                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-teal-700 transition-colors">
                                     {resource.name}
                                 </h3>
                                 <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
@@ -1029,7 +1029,7 @@ export default function RoleAnalysis() {
                         </div>
                         
                         <div className="mt-2 md:mt-0 flex-shrink-0 flex sm:flex-col justify-end">
-                             <span className="flex items-center gap-1.5 text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform bg-white/50 px-3 py-1.5 rounded-lg">
+                             <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 group-hover:translate-x-1 transition-transform bg-white/50 px-3 py-1.5 rounded-lg">
                                  {resource.type && !resource.type.toLowerCase().includes('free') ? 'View Pricing' : 'Start Learning'} <ChevronRight className="w-4 h-4" />
                              </span>
                         </div>
@@ -1040,7 +1040,7 @@ export default function RoleAnalysis() {
                 
                 <button
                     onClick={() => navigate('/resources', { state: { role } })}
-                    className="w-full py-3 mt-4 bg-gray-50 border border-gray-200 text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 mt-4 bg-gray-50 border border-gray-200 text-teal-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
                 >
                     See More Resources <ArrowRight className="w-4 h-4" />
                 </button>
@@ -1063,10 +1063,10 @@ export default function RoleAnalysis() {
                <div className="space-y-6">
                  {roleData.workflow && roleData.workflow.length > 0 ? (
                    <>
-                     <div className="relative border-l-2 border-indigo-100 ml-3 space-y-8 py-2">
+                     <div className="relative border-l-2 border-teal-100 ml-3 space-y-8 py-2">
                        {roleData.workflow.slice(0, 3).map((step: any, index: number) => (
                          <div key={index} className="ml-6 relative">
-                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-indigo-600 border-4 border-white shadow-sm"></div>
+                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-teal-600 border-4 border-white shadow-sm"></div>
                            <h3 className="font-bold text-lg text-gray-900 mb-1">{step.stage}</h3>
                            <p className="text-sm text-gray-600">{step.description}</p>
                          </div>
@@ -1079,7 +1079,7 @@ export default function RoleAnalysis() {
 
                      <button
                        onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4"
+                       className="w-full py-4 bg-teal-600 text-white font-bold rounded-xl shadow-md hover:bg-teal-700 transition-all flex items-center justify-center gap-2 mt-4"
                      >
                        <GitBranch className="w-5 h-5" />
                        View Full Workflow & Lifecycle Details
@@ -1090,7 +1090,7 @@ export default function RoleAnalysis() {
                       <p className="text-gray-500 mb-4">Detailed workflow data is being generated.</p>
                       <button
                        onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="px-6 py-2 bg-white border border-gray-300 text-indigo-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+                       className="px-6 py-2 bg-white border border-gray-300 text-teal-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
                      >
                        Check Full View
                      </button>
@@ -1105,7 +1105,7 @@ export default function RoleAnalysis() {
         <div className="flex justify-end mt-4 mb-8">
           <button
             onClick={() => navigate('/dashboard', { state: { role, analysis: roleData } })}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
           >
             Continue <ChevronRight className="w-4 h-4" />
           </button>

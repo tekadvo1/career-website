@@ -648,19 +648,36 @@ router.post('/workflow-step-details', async (req, res) => {
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    // Parse JSON
+    // Parse JSON — robust multi-pattern parsing
     let stepData;
     try {
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
-      const jsonText = jsonMatch ? jsonMatch[1] : content;
+      const jsonMatch =
+        content.match(/```json\r?\n([\s\S]*?)\r?\n```/) ||
+        content.match(/```\r?\n([\s\S]*?)\r?\n```/) ||
+        content.match(/```json([\s\S]*?)```/) ||
+        content.match(/```([\s\S]*?)```);
+      const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim();
       stepData = JSON.parse(jsonText);
     } catch (e) {
-       stepData = null;
+      // Deep fallback — extract first { ... } block
+      const startIndex = content.indexOf('{');
+      const endIndex = content.lastIndexOf('}');
+      if (startIndex !== -1 && endIndex !== -1) {
+        try {
+          stepData = JSON.parse(content.substring(startIndex, endIndex + 1));
+        } catch (e2) {
+          stepData = null;
+        }
+      }
     }
 
     if (!stepData) {
         throw new Error("Failed to generate step details");
     }
+
+    // Ensure arrays exist even if AI omits them
+    stepData.best_practices = Array.isArray(stepData.best_practices) ? stepData.best_practices : [];
+    stepData.checklist = Array.isArray(stepData.checklist) ? stepData.checklist : [];
 
     res.json({
       success: true,

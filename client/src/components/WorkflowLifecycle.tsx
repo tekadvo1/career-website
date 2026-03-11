@@ -444,35 +444,43 @@ export default function WorkflowLifecycle() {
                             {/* Two Column Layout */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Best Practices */}
-                                <div className="bg-green-50 rounded-xl p-5 border border-green-100">
-                                    <h4 className="font-bold text-green-800 mb-3 flex items-center gap-2">
+                                <div className="bg-teal-50 rounded-xl p-5 border border-teal-100">
+                                    <h4 className="font-bold text-teal-800 mb-3 flex items-center gap-2">
                                         <CheckCircle className="w-4 h-4" /> Best Practices
                                     </h4>
+                                    {stepDetails.best_practices && stepDetails.best_practices.length > 0 ? (
                                     <ul className="space-y-2">
                                         {stepDetails.best_practices?.map((practice: string, i: number) => (
-                                            <li key={i} className="text-sm text-green-900 flex items-start gap-2">
-                                                <span className="mt-1.5 w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></span>
+                                            <li key={i} className="text-sm text-teal-900 flex items-start gap-2">
+                                                <span className="mt-1.5 w-1.5 h-1.5 bg-teal-500 rounded-full flex-shrink-0"></span>
                                                 {practice}
                                             </li>
                                         ))}
                                     </ul>
+                                    ) : (
+                                        <p className="text-sm text-teal-700 italic">No specific best practices listed for this stage.</p>
+                                    )}
                                 </div>
 
                                 {/* Checklist */}
-                                <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-                                    <h4 className="font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                                <div className="bg-teal-50 rounded-xl p-5 border border-teal-200">
+                                    <h4 className="font-bold text-teal-800 mb-3 flex items-center gap-2">
                                         <Layers className="w-4 h-4" /> Validation Checklist
                                     </h4>
+                                    {stepDetails.checklist && stepDetails.checklist.length > 0 ? (
                                     <ul className="space-y-2">
                                         {stepDetails.checklist?.map((item: string, i: number) => (
-                                            <li key={i} className="text-sm text-indigo-900 flex items-start gap-2">
-                                                <div className="mt-0.5 w-4 h-4 border-2 border-indigo-300 rounded flex items-center justify-center bg-white flex-shrink-0 text-indigo-500">
+                                            <li key={i} className="text-sm text-teal-900 flex items-start gap-2">
+                                                <div className="mt-0.5 w-4 h-4 border-2 border-teal-300 rounded flex items-center justify-center bg-white flex-shrink-0 text-teal-500">
                                                     <CheckCircle className="w-3 h-3" />
                                                 </div>
                                                 <span className="flex-1">{item}</span>
                                             </li>
                                         ))}
                                     </ul>
+                                    ) : (
+                                        <p className="text-sm text-teal-700 italic">No checklist items available for this stage.</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
