@@ -838,7 +838,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                       ></div>
                     </div>
                   </div>
-                )) : userData.skills.map((skill, index) => (
+                )) : userData.skills.map((skill: {name: string, level: number}, index: number) => (
                   <div key={index}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[12px] font-bold text-slate-700">{skill.name}</span>
@@ -861,10 +861,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                     {dynamicSkills.length > 2 || userData.skills.length > 2 ? (
                         <Radar 
                             data={{
-                                labels: dynamicSkills.length > 0 ? dynamicSkills.map(s => s.name) : userData.skills.map(s => s.name),
+                                labels: dynamicSkills.length > 0 ? dynamicSkills.map((s: {name: string, level: number}) => s.name) : userData.skills.map((s: {name: string, level: number}) => s.name),
                                 datasets: [{
                                     label: 'Current Level',
-                                    data: dynamicSkills.length > 0 ? dynamicSkills.map(s => s.level) : userData.skills.map(s => s.level),
+                                    data: dynamicSkills.length > 0 ? dynamicSkills.map((s: {name: string, level: number}) => s.level) : userData.skills.map((s: {name: string, level: number}) => s.level),
                                     backgroundColor: 'rgba(20, 184, 166, 0.2)',
                                     borderColor: 'rgba(20, 184, 166, 0.8)',
                                     pointBackgroundColor: 'rgba(20, 184, 166, 1)',
