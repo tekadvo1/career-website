@@ -34,25 +34,49 @@ import PrivacyPolicy from './components/landing/PrivacyPolicy';
 import CookiePolicy from './components/landing/CookiePolicy';
 import TermsAndConditions from './components/landing/TermsAndConditions';
 import Missions from './components/Missions';
-import NotFoundPage from './components/NotFoundPage'; // 404 catch-all page
-// Helper component to redirect authenticated users
+import NotFoundPage from './components/NotFoundPage';
+
+// ── Redirect logged-in users away from auth/landing pages ─────────────────────
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
-  
+
   if (token && userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user.onboarding_completed) {
-        return <Navigate to="/dashboard" replace />;
-      }
+      if (user.onboarding_completed) return <Navigate to="/dashboard" replace />;
       return <Navigate to="/onboarding" replace />;
     } catch {
-      // If parsing fails, allow access to public route (and maybe clear bad storage)
       localStorage.removeItem('user');
       localStorage.removeItem('token');
     }
   }
+  return children;
+};
+
+// ── Block unauthenticated users from private app pages ────────────────────────
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+
+  if (!token || !userStr) {
+    // Remember where they were trying to go so we can redirect back after login
+    sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+    return <Navigate to="/signin" replace />;
+  }
+
+  try {
+    const user = JSON.parse(userStr);
+    // Logged in but hasn't finished onboarding → send them there first
+    if (!user.onboarding_completed && window.location.pathname !== '/onboarding') {
+      return <Navigate to="/onboarding" replace />;
+    }
+  } catch {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    return <Navigate to="/signin" replace />;
+  }
+
   return children;
 };
 
@@ -61,62 +85,61 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-100">
         <Routes>
-          <Route path="/" element={
-            <RedirectIfLoggedIn>
-              <LandingHome />
-            </RedirectIfLoggedIn>
-          } />
-          <Route path="/how-it-works" element={<HowItWorksPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/about-us" element={<AboutPage />} />
-          <Route path="/about-us/" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/contact-us" element={<ContactPage />} />
-          <Route path="/contact-us/" element={<ContactPage />} />
-          <Route path="/signup" element={
-            <RedirectIfLoggedIn>
-              <SignUp />
-            </RedirectIfLoggedIn>
-          } />
-          <Route path="/signin" element={
-            <RedirectIfLoggedIn>
-              <SignIn />
-            </RedirectIfLoggedIn>
-          } />
-          <Route path="/verify" element={<VerifyEmail />} />
-          <Route path="/google-callback" element={<GoogleCallback />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/role-analysis" element={<RoleAnalysis />} />
-          <Route path="/roadmap" element={<LearningRoadmap />} />
-          <Route path="/resources" element={<ResourcesHub />} />
-          <Route path="/ai-assistant" element={<AILearningAssistant />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/p/:username" element={<Profile isPublic={true} />} />
-          <Route path="/workflow-lifecycle" element={<WorkflowLifecycle />} />
-          <Route path="/project-workspace" element={<ProjectWorkspace />} />
-          <Route path="/quiz-game" element={<QuizGame />} />
-          <Route path="/workspaces" element={<Workspaces />} />
-          <Route path="/achievements" element={<Achievements />} />
-          <Route path="/my-projects" element={<MyProjects />} />
-          <Route path="/roadmap-guide" element={<RoadmapGuideView />} />
-          <Route path="/roadmap-tree" element={<RoadmapTree />} />
-          <Route path="/portfolio" element={<Portfolio />} />
-          <Route path="/portfolio/:username" element={<Portfolio isPublic={true} />} />
-          <Route path="/interview-guide" element={<InterviewGuide />} />
-          <Route path="/realtime-mock-interview" element={<RealTimeMockInterview />} />
-          <Route path="/tech-stack" element={<TechStack />} />
-          <Route path="/tech-guide" element={<TechGuideView />} />
-          <Route path="/missions" element={<Missions />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/cookies" element={<CookiePolicy />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/terms" element={<TermsAndConditions />} />
+
+          {/* ── Public / Landing pages ───────────────────────────────────── */}
+          <Route path="/"                     element={<RedirectIfLoggedIn><LandingHome /></RedirectIfLoggedIn>} />
+          <Route path="/how-it-works"         element={<HowItWorksPage />} />
+          <Route path="/about"                element={<AboutPage />} />
+          <Route path="/about-us"             element={<AboutPage />} />
+          <Route path="/about-us/"            element={<AboutPage />} />
+          <Route path="/contact"              element={<ContactPage />} />
+          <Route path="/contact-us"           element={<ContactPage />} />
+          <Route path="/contact-us/"          element={<ContactPage />} />
+          <Route path="/privacy"              element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy"       element={<PrivacyPolicy />} />
+          <Route path="/cookies"              element={<CookiePolicy />} />
+          <Route path="/cookie-policy"        element={<CookiePolicy />} />
+          <Route path="/terms"                element={<TermsAndConditions />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+
+          {/* ── Auth pages (redirect away if already logged in) ──────────── */}
+          <Route path="/signup"          element={<RedirectIfLoggedIn><SignUp /></RedirectIfLoggedIn>} />
+          <Route path="/signin"          element={<RedirectIfLoggedIn><SignIn /></RedirectIfLoggedIn>} />
+          <Route path="/verify"          element={<VerifyEmail />} />
+          <Route path="/google-callback" element={<GoogleCallback />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password"  element={<ResetPassword />} />
+
+          {/* ── Public profile pages (no login needed) ───────────────────── */}
+          <Route path="/profile"              element={<Profile />} />
+          <Route path="/p/:username"          element={<Profile isPublic={true} />} />
+          <Route path="/portfolio/:username"  element={<Portfolio isPublic={true} />} />
+
+          {/* ── Protected app features (login required) ──────────────────── */}
+          <Route path="/onboarding"              element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/dashboard"               element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/role-analysis"           element={<ProtectedRoute><RoleAnalysis /></ProtectedRoute>} />
+          <Route path="/roadmap"                 element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
+          <Route path="/resources"               element={<ProtectedRoute><ResourcesHub /></ProtectedRoute>} />
+          <Route path="/ai-assistant"            element={<ProtectedRoute><AILearningAssistant /></ProtectedRoute>} />
+          <Route path="/workflow-lifecycle"      element={<ProtectedRoute><WorkflowLifecycle /></ProtectedRoute>} />
+          <Route path="/project-workspace"       element={<ProtectedRoute><ProjectWorkspace /></ProtectedRoute>} />
+          <Route path="/quiz-game"               element={<ProtectedRoute><QuizGame /></ProtectedRoute>} />
+          <Route path="/workspaces"              element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
+          <Route path="/achievements"            element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+          <Route path="/my-projects"             element={<ProtectedRoute><MyProjects /></ProtectedRoute>} />
+          <Route path="/roadmap-guide"           element={<ProtectedRoute><RoadmapGuideView /></ProtectedRoute>} />
+          <Route path="/roadmap-tree"            element={<ProtectedRoute><RoadmapTree /></ProtectedRoute>} />
+          <Route path="/portfolio"               element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+          <Route path="/interview-guide"         element={<ProtectedRoute><InterviewGuide /></ProtectedRoute>} />
+          <Route path="/realtime-mock-interview" element={<ProtectedRoute><RealTimeMockInterview /></ProtectedRoute>} />
+          <Route path="/tech-stack"              element={<ProtectedRoute><TechStack /></ProtectedRoute>} />
+          <Route path="/tech-guide"              element={<ProtectedRoute><TechGuideView /></ProtectedRoute>} />
+          <Route path="/missions"                element={<ProtectedRoute><Missions /></ProtectedRoute>} />
+
+          {/* ── 404 ─────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFoundPage />} />
+
         </Routes>
       </div>
     </BrowserRouter>
