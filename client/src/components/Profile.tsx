@@ -58,6 +58,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const [profileDetails, setProfileDetails] = useState({
     phone: "",
+    countryCode: "+1",
     bio: "",
     location: "Global",
     role: ""
@@ -65,10 +66,61 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const [editForm, setEditForm] = useState({
     phone: "",
+    countryCode: "+1",
     bio: "",
     location: "Global",
     role: ""
   });
+
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  const COUNTRY_CODES = [
+    { code: "+1",   flag: "🇺🇸", name: "USA" },
+    { code: "+1c",  flag: "🇨🇦", name: "Canada" },
+    { code: "+61",  flag: "🇦🇺", name: "Australia" },
+    { code: "+91",  flag: "🇮🇳", name: "India" },
+    { code: "+44",  flag: "🇬🇧", name: "UK" },
+  ];
+
+  // Returns the dialling code (stripping the 'c' we use to distinguish CA from US)
+  const getDialCode = (code: string) => code.replace('c', '');
+
+  const handleDetectLocation = (formSetter: React.Dispatch<React.SetStateAction<any>>) => {
+    if (!navigator.geolocation) {
+      showAlert('Geolocation is not supported by your browser.', 'error');
+      return;
+    }
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await res.json();
+          const city =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.county ||
+            '';
+          const country = data.address?.country || '';
+          const locationStr = city && country ? `${city}, ${country}` : country || 'Unknown';
+          formSetter((prev: any) => ({ ...prev, location: locationStr }));
+        } catch {
+          showAlert('Could not reverse-geocode your location. Please type it manually.', 'error');
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      () => {
+        showAlert('Location permission denied. Please type your location manually.', 'warning');
+        setIsDetectingLocation(false);
+      },
+      { timeout: 10000 }
+    );
+  };
 
   const [avatarStr, setAvatarStr] = useState("");
   const [isPublicProfile, setIsPublicProfile] = useState(false);
@@ -426,21 +478,46 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                   <div className="grid grid-cols-2 gap-4">
                      <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1"><Phone className="w-3.5 h-3.5 text-teal-600" /> Phone</label>
-                        <input 
+                        <div className="flex gap-1">
+                          <select
+                            value={editForm.countryCode}
+                            onChange={e => setEditForm(prev => ({ ...prev, countryCode: e.target.value }))}
+                            className="p-2.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none bg-slate-50 font-semibold max-w-[100px]"
+                          >
+                            {COUNTRY_CODES.map(c => (
+                              <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                            ))}
+                          </select>
+                          <input
                             value={editForm.phone}
-                            onChange={(e) => setEditForm(prev => ({...prev, phone: e.target.value}))}
-                            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                            placeholder="Your contact number"
-                        />
+                            onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                            className="flex-1 w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                            placeholder="Number"
+                            type="tel"
+                          />
+                        </div>
                      </div>
                      <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-teal-600" /> Location</label>
-                        <input 
+                        <div className="flex gap-1 items-center">
+                          <input
                             value={editForm.location}
-                            onChange={(e) => setEditForm(prev => ({...prev, location: e.target.value}))}
-                            className="w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                            onChange={e => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                            className="flex-1 w-full p-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
                             placeholder="City, Country"
-                        />
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDetectLocation(setEditForm)}
+                            disabled={isDetectingLocation}
+                            title="Auto-detect my location"
+                            className="p-2.5 bg-teal-50 text-teal-600 border border-teal-200 rounded-lg hover:bg-teal-100 transition disabled:opacity-60 flex-shrink-0"
+                          >
+                            {isDetectingLocation
+                              ? <span className="w-4 h-4 border-2 border-teal-400/40 border-t-teal-600 rounded-full animate-spin inline-block" />
+                              : <MapPin className="w-4 h-4" />}
+                          </button>
+                        </div>
                      </div>
                   </div>
                </div>
@@ -586,23 +663,55 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 <div className="flex items-center gap-2.5 text-[12px] text-slate-700">
                   <Phone className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
                   {isEditing && !isPublic ? (
-                      <input 
-                         value={editForm.phone}
-                         onChange={(e) => setEditForm(prev => ({...prev, phone: e.target.value}))}
-                         className="flex-1 p-1 px-2 text-[12px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                         placeholder="Add phone..."
+                    <div className="flex flex-1 gap-1">
+                      <select
+                        value={editForm.countryCode}
+                        onChange={e => setEditForm(prev => ({ ...prev, countryCode: e.target.value }))}
+                        className="p-1 text-[11px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none bg-slate-50 font-semibold"
+                      >
+                        {COUNTRY_CODES.map(c => (
+                          <option key={c.code} value={c.code}>{c.flag} {c.name} ({getDialCode(c.code)})</option>
+                        ))}
+                      </select>
+                      <input
+                        value={editForm.phone}
+                        onChange={e => setEditForm(prev => ({ ...prev, phone: e.target.value }))}
+                        className="flex-1 p-1 px-2 text-[12px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        placeholder="Phone number"
+                        type="tel"
                       />
-                  ) : <span className="font-semibold">{userData.phone}</span>}
+                    </div>
+                  ) : (
+                    <span className="font-semibold">
+                      {profileDetails.phone
+                        ? `${getDialCode(profileDetails.countryCode || '+1')} ${profileDetails.phone}`
+                        : 'Not set'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2.5 text-[12px] text-slate-700">
                   <MapPin className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
                   {isEditing && !isPublic ? (
-                      <input 
-                         value={editForm.location}
-                         onChange={(e) => setEditForm(prev => ({...prev, location: e.target.value}))}
-                         className="flex-1 p-1 px-2 text-[12px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none"
-                         placeholder="Location..."
+                    <div className="flex flex-1 gap-1">
+                      <input
+                        value={editForm.location}
+                        onChange={e => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                        className="flex-1 p-1 px-2 text-[12px] border border-slate-300 rounded focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        placeholder="City, Country"
                       />
+                      <button
+                        type="button"
+                        onClick={() => handleDetectLocation(setEditForm)}
+                        disabled={isDetectingLocation}
+                        className="p-1 px-2 text-[11px] bg-teal-50 text-teal-600 border border-teal-200 rounded hover:bg-teal-100 transition font-bold whitespace-nowrap flex items-center gap-1 disabled:opacity-60"
+                        title="Auto-detect location"
+                      >
+                        {isDetectingLocation
+                          ? <span className="w-3 h-3 border-2 border-teal-400/40 border-t-teal-600 rounded-full animate-spin" />
+                          : <MapPin className="w-3 h-3" />}
+                        {isDetectingLocation ? '' : 'Detect'}
+                      </button>
+                    </div>
                   ) : <span className="font-semibold">{userData.location}</span>}
                 </div>
                 <div className="flex items-start gap-2.5 text-[12px] text-slate-700">
