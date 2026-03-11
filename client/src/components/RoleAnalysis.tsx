@@ -22,6 +22,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
+import Sidebar from './Sidebar';
 
   /* Removed hardcoded roleDatabase and getDefaultRoleData */
 
@@ -29,6 +30,17 @@ export default function RoleAnalysis() {
   const { showAlert } = useAlert();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Detect if this is a returning user (onboarding already completed)
+  const isReturningUser = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return !!user.onboarding_completed;
+    } catch {
+      return false;
+    }
+  })();
+
   // Using location state first, but falling back to local storage if available for persistence
   const [roleDataState, setRoleDataState] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -300,6 +312,7 @@ export default function RoleAnalysis() {
   if (isLoading) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+          {isReturningUser && <Sidebar activePage="role-analysis" />}
           <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center">
             {/* Animated Icon */}
             <div className="relative mb-8">
@@ -338,6 +351,7 @@ export default function RoleAnalysis() {
   if (error) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          {isReturningUser && <Sidebar activePage="role-analysis" />}
           <div className="text-center p-6 max-w-md bg-white rounded-xl shadow-lg border border-gray-100">
              <div className="text-red-500 mb-4 text-4xl">⚠️</div>
              <h3 className="text-xl font-bold text-gray-900 mb-2">Analysis Failed</h3>
@@ -371,6 +385,7 @@ export default function RoleAnalysis() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-2 md:p-4" id="role-analysis-content">
+      {isReturningUser && <Sidebar activePage="role-analysis" />}
       <div className="max-w-5xl mx-auto">
         
 
