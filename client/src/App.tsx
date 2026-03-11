@@ -80,6 +80,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
+// ── Smart profile: public view for guests, private view for logged-in users ───
+const ProfileRoute = () => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  const isLoggedIn = !!(token && userStr);
+  // Pass isPublic=true for unauthenticated visitors → read-only public view
+  // Pass isPublic=false for logged-in users → full private profile
+  return <Profile isPublic={!isLoggedIn} />;
+};
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -110,8 +121,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password"  element={<ResetPassword />} />
 
-          {/* ── Public profile pages (no login needed) ───────────────────── */}
-          <Route path="/profile"              element={<Profile />} />
+          {/* ── Profile: public view for guests, full view for logged-in users ── */}
+          <Route path="/profile"              element={<ProfileRoute />} />
           <Route path="/p/:username"          element={<Profile isPublic={true} />} />
           <Route path="/portfolio/:username"  element={<Portfolio isPublic={true} />} />
 
