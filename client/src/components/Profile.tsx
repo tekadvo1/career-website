@@ -67,6 +67,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       .then(data => {
         if (data.success) {
           setPublicProfileData(data);
+        } else if (data.isPrivate) {
+          setPublicProfileError('__PRIVATE__');
         } else {
           setPublicProfileError(data.message || 'Profile not found');
         }
@@ -198,13 +200,27 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       setProfileDetails(parsed);
       setEditForm(parsed);
       if (parsed.avatar) setAvatarStr(parsed.avatar);
-      if (parsed.isPublic) setIsPublicProfile(parsed.isPublic);
       if (parsed.customSkills) setCustomSkills(parsed.customSkills);
 
       if (parsed.bio && parsed.phone && parsed.location) {
         setShowSetupModal(false);
       }
     }
+  }, [isPublic]);
+
+  // Load public visibility state from backend (so it persists across devices)
+  useEffect(() => {
+    if (isPublic) return; // Only for the owner's private profile page
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    apiFetch('/api/auth/me')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user?.is_public !== undefined) {
+          setIsPublicProfile(!!data.user.is_public);
+        }
+      })
+      .catch(() => {});
   }, [isPublic]);
 
   useEffect(() => {
@@ -424,7 +440,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const togglePublicProfile = () => {
-      setIsPublicProfile(!isPublicProfile);
+      const newValue = !isPublicProfile;
+      setIsPublicProfile(newValue);
+      // Save to backend so it persists and controls public URL access
+      apiFetch('/api/auth/visibility', {
+        method: 'PUT',
+        body: JSON.stringify({ isPublic: newValue }),
+      }).catch(() => {});
       const savedDetails = localStorage.getItem('user_profile_details');
       if (savedDetails) {
           const parsed = JSON.parse(savedDetails);
@@ -503,13 +525,22 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   }
 
   if (isPublic && publicProfileError) {
+    const isPrivate = publicProfileError === '__PRIVATE__';
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center bg-white p-10 rounded-2xl shadow border border-slate-200 max-w-md">
-          <div className="text-5xl mb-4">🔍</div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Profile Not Found</h2>
-          <p className="text-slate-500 text-sm">{publicProfileError}</p>
-          <a href="/" className="mt-6 inline-block px-5 py-2.5 bg-teal-600 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 transition">Go to FindStreak</a>
+          <div className="text-5xl mb-4">{isPrivate ? '🔒' : '🔍'}</div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">
+            {isPrivate ? 'This Profile is Private' : 'Profile Not Found'}
+          </h2>
+          <p className="text-slate-500 text-sm">
+            {isPrivate
+              ? 'The owner has set this profile to private. Only they can view it when logged in.'
+              : publicProfileError}
+          </p>
+          <a href="/signin" className="mt-6 inline-block px-5 py-2.5 bg-teal-600 text-white rounded-lg font-semibold text-sm hover:bg-teal-700 transition">
+            {isPrivate ? 'Sign In' : 'Go to FindStreak'}
+          </a>
         </div>
       </div>
     );

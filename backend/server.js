@@ -192,6 +192,16 @@ const updateSchema = async () => {
       END $$;
     `);
 
+    // Add is_public flag to users - controls public profile visibility
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_public') THEN
+          ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT FALSE;
+        END IF;
+      END $$;
+    `);
+
     client.release();
     console.log('Schema updated for role caching');
   } catch (err) {

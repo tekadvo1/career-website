@@ -98,14 +98,14 @@ router.get('/public-profile/:username', async (req, res) => {
     // Find user by username - try exact, then case-insensitive, then prefix match
     // prefix match handles "Rakesh Vejendla" finding "rakesh vejendla33"
     let userRes = await pool.query(
-      'SELECT id, username, email, created_at FROM users WHERE LOWER(username) = LOWER($1)',
+      'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) = LOWER($1)',
       [username]
     );
 
     // If no exact match, try prefix: "Rakesh Vejendla" → finds "rakesh vejendla33"
     if (userRes.rows.length === 0) {
       userRes = await pool.query(
-        'SELECT id, username, email, created_at FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
+        'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
         [`${username}%`]
       );
     }
@@ -115,6 +115,11 @@ router.get('/public-profile/:username', async (req, res) => {
     }
 
     const user = userRes.rows[0];
+
+    // Respect public visibility toggle - if profile is private, block access
+    if (!user.is_public) {
+      return res.status(403).json({ success: false, message: 'This profile is private', isPrivate: true });
+    }
 
     // Get their most recent role analysis (skills, role title)
     const roleRes = await pool.query(
@@ -175,6 +180,20 @@ router.get('/public-profile/:username', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching public profile:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/visibility
+// @desc    Update public visibility toggle for logged-in user
+// @access  Private
+router.put('/visibility', protect, async (req, res) => {
+  try {
+    const { isPublic } = req.body;
+    await pool.query('UPDATE users SET is_public = $1 WHERE id = $2', [!!isPublic, req.user.id]);
+    res.json({ success: true, isPublic: !!isPublic });
+  } catch (error) {
+    console.error('Error updating visibility:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
