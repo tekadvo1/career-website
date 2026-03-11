@@ -2,11 +2,22 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
+import Sidebar from './Sidebar';
 
 export default function Onboarding() {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Show sidebar only for returning users (already completed onboarding before)
+  const isReturningUser = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return !!user.onboarding_completed;
+    } catch {
+      return false;
+    }
+  })();
   const [role, setRole] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('Beginner');
   const [country, setCountry] = useState('USA'); // New state for country
@@ -145,6 +156,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen w-screen overflow-y-auto flex items-center justify-center bg-gray-100 p-4 md:py-6">
+      {isReturningUser && <Sidebar activePage="onboarding" />}
       <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 my-auto">
         
         {step === 'input' && (
