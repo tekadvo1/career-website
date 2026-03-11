@@ -32,7 +32,7 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   // Security Feature 2: Handle Unauthorized/Forbidden responses
   // If the token is invalid or expired, automatically log the user out and redirect to login
   // BUT skip this on public pages that don't require login
-  const publicRoutes = ['/login', '/signup', '/signin', '/profile', '/p/', '/portfolio', '/about', '/contact', '/privacy', '/terms', '/cookies'];
+  const publicRoutes = ['/login', '/signup', '/signin', '/p/', '/portfolio/', '/about', '/contact', '/privacy', '/terms', '/cookies'];
   const isPublicPage = publicRoutes.some(route => window.location.pathname.startsWith(route));
 
   if ((response.status === 401 || response.status === 403) && isLocalRequest && !isPublicPage) {

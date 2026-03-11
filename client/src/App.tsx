@@ -80,16 +80,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
-// ── Smart profile: public view for guests, private view for logged-in users ───
-const ProfileRoute = () => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
-  const isLoggedIn = !!(token && userStr);
-  // Pass isPublic=true for unauthenticated visitors → read-only public view
-  // Pass isPublic=false for logged-in users → full private profile
-  return <Profile isPublic={!isLoggedIn} />;
-};
-
 
 function App() {
   return (
@@ -121,8 +111,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password"  element={<ResetPassword />} />
 
-          {/* ── Profile: public view for guests, full view for logged-in users ── */}
-          <Route path="/profile"              element={<ProfileRoute />} />
+          {/* ── Public share links (no login needed) ─── */}
           <Route path="/p/:username"          element={<Profile isPublic={true} />} />
           <Route path="/portfolio/:username"  element={<Portfolio isPublic={true} />} />
 
@@ -130,6 +119,7 @@ function App() {
           <Route path="/onboarding"              element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/dashboard"               element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/role-analysis"           element={<ProtectedRoute><RoleAnalysis /></ProtectedRoute>} />
+          <Route path="/profile"               element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/roadmap"                 element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
           <Route path="/resources"               element={<ProtectedRoute><ResourcesHub /></ProtectedRoute>} />
           <Route path="/ai-assistant"            element={<ProtectedRoute><AILearningAssistant /></ProtectedRoute>} />
