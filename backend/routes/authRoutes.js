@@ -94,19 +94,28 @@ router.post('/complete-onboarding', protect, async (req, res) => {
 router.get('/public-profile/:username', async (req, res) => {
   try {
     const { username } = req.params;
+    // Convert slug format back to username: "rakesh-vejendla33" → "rakesh vejendla33"
+    const usernameFromSlug = username.replace(/-/g, ' ');
 
-    // Find user by username - try exact, then case-insensitive, then prefix match
-    // prefix match handles "Rakesh Vejendla" finding "rakesh vejendla33"
+    // Step 1: exact match on raw username
     let userRes = await pool.query(
       'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) = LOWER($1)',
       [username]
     );
 
-    // If no exact match, try prefix: "Rakesh Vejendla" → finds "rakesh vejendla33"
+    // Step 2: try slug-decoded version ("rakesh-vejendla33" → "rakesh vejendla33")
+    if (userRes.rows.length === 0 && usernameFromSlug !== username) {
+      userRes = await pool.query(
+        'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) = LOWER($1)',
+        [usernameFromSlug]
+      );
+    }
+
+    // Step 3: prefix match fallback (handles any suffix like numbers)
     if (userRes.rows.length === 0) {
       userRes = await pool.query(
         'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
-        [`${username}%`]
+        [`${usernameFromSlug}%`]
       );
     }
 
