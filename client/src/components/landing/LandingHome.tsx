@@ -396,12 +396,14 @@ export default function LandingHome() {
               <span className="text-white font-black text-lg tracking-tight">FindStreak</span>
             </div>
 
-            <nav className="flex items-center gap-6">
+            <nav className="flex items-center gap-6 flex-wrap justify-center">
               {[
                 { label: 'Home', path: '/' },
                 { label: 'How It Works', path: '/how-it-works' },
                 { label: 'About', path: '/about-us' },
                 { label: 'Contact', path: '/contact-us' },
+                { label: 'Privacy', path: '/privacy' },
+                { label: 'Cookies', path: '/cookies' },
               ].map(l => (
                 <button
                   key={l.label}

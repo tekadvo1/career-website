@@ -30,6 +30,8 @@ import LandingHome from './components/landing/LandingHome';
 import HowItWorksPage from './components/landing/HowItWorksPage';
 import AboutPage from './components/landing/AboutPage';
 import ContactPage from './components/landing/ContactPage';
+import PrivacyPolicy from './components/landing/PrivacyPolicy';
+import CookiePolicy from './components/landing/CookiePolicy';
 import Missions from './components/Missions';
 import NotFoundPage from './components/NotFoundPage'; // 404 catch-all page
 // Helper component to redirect authenticated users
@@ -107,6 +109,10 @@ function App() {
           <Route path="/tech-stack" element={<TechStack />} />
           <Route path="/tech-guide" element={<TechGuideView />} />
           <Route path="/missions" element={<Missions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
