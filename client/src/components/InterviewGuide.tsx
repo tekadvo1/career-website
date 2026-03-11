@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -50,7 +51,7 @@ export default function InterviewGuide() {
         if (!userStr) return;
         const user = JSON.parse(userStr);
         try {
-            await fetch('/api/ai/interview-guides', {
+            await apiFetch('/api/ai/interview-guides', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -107,7 +108,7 @@ export default function InterviewGuide() {
             if (notes) formData.append('notes', notes);
             if (selectedFile) formData.append('resume', selectedFile);
 
-            const res = await fetch('/api/ai/generate-interview-guide', {
+            const res = await apiFetch('/api/ai/generate-interview-guide', {
                 method: 'POST',
                 body: formData
             });
@@ -140,7 +141,7 @@ export default function InterviewGuide() {
             const existingQs = guideData.guide.map(q => q.question);
             formData.append('existingQuestions', JSON.stringify(existingQs));
 
-            const res = await fetch('/api/ai/generate-interview-guide', {
+            const res = await apiFetch('/api/ai/generate-interview-guide', {
                 method: 'POST',
                 body: formData
             });
@@ -165,7 +166,7 @@ export default function InterviewGuide() {
         if (questionHelp[idx]) return; // Already fetched
         setLoadingHelp(prev => ({...prev, [idx]: true}));
         try {
-            const res = await fetch('/api/ai/chat', {
+            const res = await apiFetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -191,7 +192,7 @@ export default function InterviewGuide() {
         setLoadingFeedback(prev => ({...prev, [idx]: true}));
         try {
             const currentQ = guideData.guide[idx];
-            const res = await fetch('/api/ai/chat', {
+            const res = await apiFetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

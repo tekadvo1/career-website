@@ -1,3 +1,4 @@
+import { apiFetch } from '../../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { BrainCircuit, Trophy, X } from 'lucide-react';
 
@@ -44,7 +45,7 @@ export default function QuizModal({ isOpen, onClose, phaseName, topics, role }: 
     const generateQuiz = async () => {
         setQuizLoading(true);
         try {
-            const response = await fetch('/api/ai/chat', { 
+            const response = await apiFetch('/api/ai/chat', { 
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

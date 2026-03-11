@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -95,7 +96,7 @@ export default function Achievements() {
   const fetchAchievements = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/achievements', {
+      const res = await apiFetch('/api/achievements', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to load achievements');

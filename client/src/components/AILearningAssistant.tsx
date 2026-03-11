@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
@@ -208,7 +209,7 @@ export default function AILearningAssistant() {
             timestamp: new Date(),
           }]);
 
-          const res = await fetch("/api/ai/chat", {
+          const res = await apiFetch("/api/ai/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -295,7 +296,7 @@ export default function AILearningAssistant() {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
 
       if (user?.id) {
-         fetch('/api/ai/chat-history', {
+         apiFetch('/api/ai/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: user.id, role, chatHistory })
@@ -574,7 +575,7 @@ export default function AILearningAssistant() {
         timestamp: new Date(),
       }]);
 
-      const res = await fetch("/api/ai/chat", {
+      const res = await apiFetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

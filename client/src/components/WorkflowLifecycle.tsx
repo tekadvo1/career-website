@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -61,7 +62,7 @@ export default function WorkflowLifecycle() {
     if (!prompt.trim()) return;
     setIsRegenerating(true);
     try {
-      const response = await fetch('/api/role/workflow-custom', {
+      const response = await apiFetch('/api/role/workflow-custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: prompt, customTools: prompt })
@@ -85,7 +86,7 @@ export default function WorkflowLifecycle() {
     if (!customTools.trim()) return;
     setIsRegenerating(true);
     try {
-      const response = await fetch('/api/role/workflow-custom', {
+      const response = await apiFetch('/api/role/workflow-custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: displayRole, customTools })
@@ -142,7 +143,7 @@ export default function WorkflowLifecycle() {
     setStepDetails(null);
     setIsLoadingDetails(true);
     try {
-      const response = await fetch('/api/role/workflow-step-details', {
+      const response = await apiFetch('/api/role/workflow-step-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: displayRole, stage: step.stage, tools: step.tools_used })

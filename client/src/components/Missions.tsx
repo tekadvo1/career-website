@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAlert } from '../contexts/AlertContext';
@@ -90,7 +91,7 @@ export default function Missions() {
       try {
         const [missionsRes, rewardsRes] = await Promise.all([
           fetch(`/api/missions?role=${encodeURIComponent(role)}&userId=${user?.id || ''}`),
-          fetch('/api/missions/rewards')
+          apiFetch('/api/missions/rewards')
         ]);
         
         const missionsData = await missionsRes.json();
@@ -225,7 +226,7 @@ export default function Missions() {
     setStartingMission(mission.id);
 
     try {
-      await fetch('/api/missions/start', {
+      await apiFetch('/api/missions/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, missionId: mission.id })
@@ -250,7 +251,7 @@ export default function Missions() {
     if (!user.id) return;
 
     try {
-      const res = await fetch('/api/missions/redeem', {
+      const res = await apiFetch('/api/missions/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, rewardId })
@@ -271,7 +272,7 @@ export default function Missions() {
   const handleGenerateMore = async () => {
     setIsGenerating(true);
     try {
-      const res = await fetch('/api/missions/generate-more', {
+      const res = await apiFetch('/api/missions/generate-more', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role, category: categoryFilter !== 'all' ? categoryFilter : undefined })

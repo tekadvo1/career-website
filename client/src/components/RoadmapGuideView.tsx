@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Sparkles, Lightbulb, CheckCircle2, MessageSquare, Terminal } from "lucide-react";
@@ -28,7 +29,7 @@ export default function RoadmapGuideView() {
         }
         promptText += `Explain the fundamental concepts clearly, provide real-world examples, and list the best practices. Keep it highly readable, structured, and engaging. Use emojis appropriately to make it visually appealing.`;
 
-        const res = await fetch("/api/ai/chat", {
+        const res = await apiFetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

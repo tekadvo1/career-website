@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -273,7 +274,7 @@ export default function LearningRoadmap() {
          try {
            const userStr = localStorage.getItem('user');
            const user = userStr ? JSON.parse(userStr) : {};
-           const response = await fetch('/api/role/analyze', {
+           const response = await apiFetch('/api/role/analyze', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ role: targetRole, userId: user.id || null })
@@ -323,7 +324,7 @@ export default function LearningRoadmap() {
           const userStr = localStorage.getItem('user');
           if (userStr) {
              const user = JSON.parse(userStr);
-             fetch('/api/role/progress', {
+             apiFetch('/api/role/progress', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
@@ -361,7 +362,7 @@ export default function LearningRoadmap() {
     try {
       const userStr = localStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : {};
-      const response = await fetch('/api/role/analyze', {
+      const response = await apiFetch('/api/role/analyze', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ role: role, userId: user.id || null, forceRefresh: true })

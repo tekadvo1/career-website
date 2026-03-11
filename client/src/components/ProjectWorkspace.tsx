@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -172,7 +173,7 @@ export default function ProjectWorkspace() {
     }));
 
     try {
-        await fetch('/api/role/update-project-progress', {
+        await apiFetch('/api/role/update-project-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,7 +306,7 @@ export default function ProjectWorkspace() {
     setIsTyping(true);
 
     try {
-        const res = await fetch('/api/ai/chat', {
+        const res = await apiFetch('/api/ai/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

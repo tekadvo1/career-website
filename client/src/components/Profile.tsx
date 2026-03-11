@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -422,7 +423,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setIsSyncingAI(true);
     
     try {
-        const response = await fetch('/api/ai/chat', {
+        const response = await apiFetch('/api/ai/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

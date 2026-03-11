@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 
 import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle2, FileText, Info, BookOpen, Lightbulb, Zap, AlertTriangle, X, Code, Loader2 } from 'lucide-react';
@@ -9,7 +10,7 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
   const fetchGuide = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/ai/guide', {
+      const response = await apiFetch('/api/ai/guide', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

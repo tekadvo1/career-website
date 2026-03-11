@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
@@ -72,13 +73,13 @@ export default function QuizGame() {
          formData.append('role', role);
          formData.append('topic', topic);
          
-         res = await fetch('/api/ai/generate-resume-quiz', {
+         res = await apiFetch('/api/ai/generate-resume-quiz', {
             method: 'POST',
             body: formData
          });
       } else {
          // Standard Mode
-         res = await fetch('/api/ai/generate-quiz', {
+         res = await apiFetch('/api/ai/generate-quiz', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ role, topic })

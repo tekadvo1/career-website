@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Sparkles, BookOpen, Terminal, Bot } from "lucide-react";
@@ -33,7 +34,7 @@ export default function TechGuideView() {
         4. **Real-world Example/Scenario**: Provide a quick code/cli snippet or concrete example of how it's used daily.
         Use markdown, keep it highly readable, and format it beautifully.`;
 
-        const res = await fetch("/api/ai/chat", {
+        const res = await apiFetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -72,7 +73,7 @@ export default function TechGuideView() {
     try {
       const promptContext = `You are an expert AI mentor specializing in ${techName}. The user is learning this via your step by step guide. Answer their specific questions professionally and concisely.`;
       
-      const res = await fetch("/api/ai/chat", {
+      const res = await apiFetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

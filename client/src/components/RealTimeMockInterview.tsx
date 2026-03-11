@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -115,7 +116,7 @@ export default function RealTimeMockInterview() {
         
         setLoadingInsight(true);
         try {
-            const res = await fetch('/api/ai/chat', {
+            const res = await apiFetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -143,7 +144,7 @@ export default function RealTimeMockInterview() {
         setLoadingFeedback(true);
         try {
             const currentQ = state.guideData.guide[currentIdx];
-            const res = await fetch('/api/ai/mock-interview-evaluate', {
+            const res = await apiFetch('/api/ai/mock-interview-evaluate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

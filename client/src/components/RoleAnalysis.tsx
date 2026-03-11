@@ -251,7 +251,7 @@ export default function RoleAnalysis() {
         const user = JSON.parse(userStr);
         if (!user.onboarding_completed) {
           try {
-             const res = await fetch('/api/auth/complete-onboarding', {
+             const res = await apiFetch('/api/auth/complete-onboarding', {
                method: 'POST',
                headers: {
                  'Authorization': `Bearer ${token}`,

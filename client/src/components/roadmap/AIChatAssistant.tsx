@@ -1,3 +1,4 @@
+import { apiFetch } from '../../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { Bot, X, Sparkles, MessageSquare } from 'lucide-react';
 
@@ -45,7 +46,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbe
         setIsChatLoading(true);
 
         try {
-            const response = await fetch('/api/ai/chat', {
+            const response = await apiFetch('/api/ai/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

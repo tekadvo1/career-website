@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
@@ -108,7 +109,7 @@ export default function Onboarding() {
       if (userId) formData.append('userId', userId);
 
       try {
-        const response = await fetch('/api/resume/analyze', {
+        const response = await apiFetch('/api/resume/analyze', {
           method: 'POST',
           body: formData,
         });

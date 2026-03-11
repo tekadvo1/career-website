@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
 import {
   X, Calendar, Bell, Mail, Check,
@@ -62,7 +63,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
   const handleContinue = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/role/project-details', {
+      const response = await apiFetch('/api/role/project-details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,7 +96,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
 
     if (user.id) {
       try {
-        const res = await fetch('/api/role/start-project', {
+        const res = await apiFetch('/api/role/start-project', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userId: user.id, project, role, curriculum }),
