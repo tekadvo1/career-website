@@ -648,14 +648,15 @@ router.post('/workflow-step-details', async (req, res) => {
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    // Parse JSON — robust multi-pattern parsing
+    // Parse JSON - robust multi-pattern parsing
     let stepData;
     try {
+      const t = String.fromCharCode(96,96,96);
       const jsonMatch =
-        content.match(/```json\r?\n([\s\S]*?)\r?\n```/) ||
-        content.match(/```\r?\n([\s\S]*?)\r?\n```/) ||
-        content.match(/```json([\s\S]*?)```/) ||
-        content.match(/```([\s\S]*?)```);
+        content.match(new RegExp(t + 'json[\\r\\n]+([\\s\\S]*?)[\\r\\n]+' + t)) ||
+        content.match(new RegExp(t + '[\\r\\n]+([\\s\\S]*?)[\\r\\n]+' + t)) ||
+        content.match(new RegExp(t + 'json([\\s\\S]*?)' + t)) ||
+        content.match(new RegExp(t + '([\\s\\S]*?)' + t));
       const jsonText = jsonMatch ? jsonMatch[1].trim() : content.trim();
       stepData = JSON.parse(jsonText);
     } catch (e) {
