@@ -18,7 +18,8 @@ export default function QuizGame() {
   const location = useLocation();
 
   // Default fallback context
-  const [role, setRole] = useState(location.state?.role || "Software Engineer");
+  const cleanRoleName = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
+  const [role, setRole] = useState(cleanRoleName(location.state?.role || "Software Engineer"));
   const [topic] = useState(location.state?.topic || "Full Stack Basics");
   
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -56,7 +57,7 @@ export default function QuizGame() {
         const saved = localStorage.getItem('lastRoleAnalysis');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.role) setRole(parsed.role);
+          if (parsed.role) setRole(cleanRoleName(parsed.role));
         }
       } catch (e) {}
     }

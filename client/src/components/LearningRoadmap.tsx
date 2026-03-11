@@ -181,7 +181,8 @@ export default function LearningRoadmap() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const initialRole = location.state?.role || "Software Engineer";
+  const _cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
+  const initialRole = _cleanRole(location.state?.role || "Software Engineer");
 
   const [role, setRole] = useState(initialRole);
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>([]);

@@ -43,7 +43,10 @@ export default function WorkflowLifecycle() {
   const defaultAnalysis = storedData?.analysis || null;
   
   const { role = defaultRole, analysis = defaultAnalysis } = location.state || {};
-  
+
+  // Strip parenthetical qualifiers like "(beginner - usa)" from role names
+  const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
+
   const [activeStage, setActiveStage] = useState<number | null>(null);
   
   // Custom Workflow State
@@ -51,7 +54,7 @@ export default function WorkflowLifecycle() {
   const [promptInput, setPromptInput] = useState('');
   const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowStage[]>(analysis?.workflow || []);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [displayRole, setDisplayRole] = useState(role);
+  const [displayRole, setDisplayRole] = useState(cleanRole(role));
   
   // Step Details Modal State
   const [selectedStep, setSelectedStep] = useState<WorkflowStage | null>(null);
@@ -70,7 +73,7 @@ export default function WorkflowLifecycle() {
       const result = await response.json();
       if (result.success && result.data && result.data.workflow) {
         setCurrentWorkflow(result.data.workflow);
-        if (result.data.role) setDisplayRole(result.data.role);
+        if (result.data.role) setDisplayRole(cleanRole(result.data.role));
       } else {
         showAlert('Failed to generate workflow. Please try again.', 'error');
       }
@@ -94,7 +97,7 @@ export default function WorkflowLifecycle() {
       const result = await response.json();
       if (result.success && result.data && result.data.workflow) {
         setCurrentWorkflow(result.data.workflow);
-        if (result.data.role) setDisplayRole(result.data.role);
+        if (result.data.role) setDisplayRole(cleanRole(result.data.role));
       } else {
         showAlert('Failed to generate custom workflow. Please try again.', 'error');
       }

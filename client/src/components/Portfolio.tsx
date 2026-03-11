@@ -181,7 +181,8 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                    const completedProjCount = snap.projects?.filter((p: any) => p.status === 'completed')?.length || 0;
                    const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
                    const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-                   const activeRole = lastRoleState?.role || "Software Engineer";
+                   const _rawInnerRole = lastRoleState?.role || "Software Engineer";
+                   const activeRole = _rawInnerRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
                    
                    const mr = snap.roadmapProgress?.filter((r: any) => r.role === activeRole) || [];
                    setStats({
@@ -204,7 +205,8 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const activeRole = lastRoleState?.role || "Software Engineer";
+  const _rawActiveRole = lastRoleState?.role || "Software Engineer";
+  const activeRole = _rawActiveRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
 
   const displayName = isPublic ? username : (user?.username || "Guest User");
   const t = THEMES[portfolioData.theme] || THEMES.minimalist;

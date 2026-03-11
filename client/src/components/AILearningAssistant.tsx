@@ -86,7 +86,8 @@ export default function AILearningAssistant() {
   const location = useLocation();
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const role = location.state?.role || lastRoleState?.role || "Software Engineer";
+  const _rawAIRole = location.state?.role || lastRoleState?.role || "Software Engineer";
+  const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const LOCAL_STORAGE_KEY = `findstreak_ai_chat_history_${role.replace(/\s+/g, '_').toLowerCase()}`;

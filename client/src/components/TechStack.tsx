@@ -15,13 +15,15 @@ export default function TechStack() {
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
 
+    const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
+
     useEffect(() => {
         const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
             try {
                 const lastRoleState = JSON.parse(lastStateRaw);
                 if (lastRoleState?.role) {
-                    setRole(lastRoleState.role);
+                    setRole(cleanRole(lastRoleState.role));
                 }
             } catch (e) {}
         }

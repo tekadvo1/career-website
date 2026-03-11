@@ -61,7 +61,8 @@ export default function Missions() {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
-  const role = location.state?.role || localStorage.getItem('selectedRole') || 'Software Engineer';
+  const _rawRole = location.state?.role || localStorage.getItem('selectedRole') || 'Software Engineer';
+  const role = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
   const initialTab = location.state?.tab || 'missions';
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 

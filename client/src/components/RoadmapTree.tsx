@@ -58,7 +58,8 @@ export default function RoadmapTree() {
 
   // Get real-time AI roadmap data passed via location
   const roadmap: RoadmapPhase[] = location.state?.roadmap || [];
-  const selectedRole: string = location.state?.role || "Software Engineer";
+  const _rawRole: string = location.state?.role || "Software Engineer";
+  const selectedRole: string = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
