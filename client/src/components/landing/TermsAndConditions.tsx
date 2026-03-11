@@ -1,7 +1,6 @@
-import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-import { Zap, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 const sections = [
   {
@@ -140,7 +139,6 @@ Website: www.findstreak.com/contact-us`
 ];
 
 export default function TermsAndConditions() {
-  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-[#0a0f0d] text-white font-sans antialiased">
