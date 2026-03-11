@@ -1,12 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import {
-  ArrowRight, CheckCircle, Code2, Award,
-  MessageSquare, BookOpen, Target,
-  BrainCircuit, Layers, Sparkles, Map, BarChart3,
-  Gamepad2, Wrench, Terminal, Briefcase, User,
-  GitBranch, FileText, Brain, Trophy, Zap,
-  TrendingUp, Shield, Clock, Star, ChevronRight
+  ArrowRight, CheckCircle, Code2,
+  MessageSquare, BrainCircuit, Sparkles, Map,
+  Wrench, Terminal, GitBranch, Trophy, Zap,
+  Shield, ChevronRight
 } from 'lucide-react';
 
 const stats = [
