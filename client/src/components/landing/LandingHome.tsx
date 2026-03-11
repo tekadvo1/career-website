@@ -4,7 +4,7 @@ import LandingFooter from './LandingFooter';
 import {
   ArrowRight, CheckCircle, Code2,
   MessageSquare, BrainCircuit, Sparkles, Map,
-  Wrench, Terminal, GitBranch, Trophy, Zap,
+  Wrench, Terminal, GitBranch, Trophy,
   Shield, ChevronRight
 } from 'lucide-react';
 

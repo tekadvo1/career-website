@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-import { Zap, Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight } from 'lucide-react';
+import { Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight } from 'lucide-react';
 import { useAlert } from '../../contexts/AlertContext';
 
 const faqs = [
