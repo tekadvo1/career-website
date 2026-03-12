@@ -281,10 +281,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         let roleProjects: any[] = [];
 
         if (Array.isArray(data.missions)) {
-            const completedMissions = data.missions.filter((m: any) => m.status === 'completed');
+            const activeRoleForFilter = currentRoleRef.current || getActiveRole();
+            const roleMissions = data.missions.filter((m: any) => 
+               !m.role || 
+               m.role.toLowerCase().includes(activeRoleForFilter.toLowerCase()) || 
+               activeRoleForFilter.toLowerCase().includes(m.role.toLowerCase())
+            );
+
+            const completedMissions = roleMissions.filter((m: any) => m.status === 'completed');
             completedMissions.forEach((m:any) => newActivity.push({ action: "Finished Mission", item: m.title || `Mission from ${m.category}`, date: new Date(m.last_updated_at || m.updated_at || m.created_at).toLocaleDateString(), icon: Trophy, ts: new Date(m.last_updated_at || m.updated_at || m.created_at).getTime() }));
             
-            const activeMissions = data.missions.filter((m: any) => m.status === 'in_progress');
+            const activeMissions = roleMissions.filter((m: any) => m.status === 'in_progress');
             activeMissions.forEach((m:any) => newActivity.push({ action: "Started Mission", item: m.title || `Mission from ${m.category}`, date: "Recently", icon: Activity, ts: new Date().getTime() - 10000 }));
         }
 
