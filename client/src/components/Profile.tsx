@@ -82,7 +82,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const currentRoleRef = React.useRef(currentRole);
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncingAI, setIsSyncingAI] = useState(false);
-  const [showSetupModal, setShowSetupModal] = useState(true);
+  // Start hidden — we only show the modal AFTER we've confirmed from the backend
+  // that the profile is incomplete. This prevents a false-positive on re-login.
+  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [profileCheckDone, setProfileCheckDone] = useState(false);
 
   // Public profile data fetched from backend (used when isPublic=true)
   const [publicProfileData, setPublicProfileData] = useState<any>(null);
@@ -225,26 +228,25 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   useEffect(() => {
-    if (isPublic) {
-      setShowSetupModal(false);
-    }
-    // Load persisted profile options
+    // Load any cached profile options from localStorage (avatar, customSkills, etc.)
     const savedDetails = localStorage.getItem('user_profile_details');
     if (savedDetails) {
-      const parsed = JSON.parse(savedDetails);
-      setProfileDetails(parsed);
-      setEditForm(parsed);
-      if (parsed.avatar) setAvatarStr(parsed.avatar);
-      if (parsed.customSkills) setCustomSkills(parsed.customSkills);
-      if (parsed.isPublic !== undefined) setIsPublicProfile(!!parsed.isPublic);
-
-      if (parsed.bio && parsed.phone && parsed.location) {
-        setShowSetupModal(false);
-      }
+      try {
+        const parsed = JSON.parse(savedDetails);
+        setProfileDetails(parsed);
+        setEditForm(parsed);
+        if (parsed.avatar) setAvatarStr(parsed.avatar);
+        if (parsed.customSkills) setCustomSkills(parsed.customSkills);
+        if (parsed.isPublic !== undefined) setIsPublicProfile(!!parsed.isPublic);
+      } catch {}
     }
+    // Modal visibility is determined by the /api/auth/me fetch below.
+    // Do NOT call setShowSetupModal here based on localStorage — that data may be
+    // stale after a logout/login (localStorage.clear() wipes it on logout).
   }, [isPublic]);
 
-  // Load public visibility state from backend (so it persists across devices)
+  // Load profile from backend — this determines whether the setup modal should show.
+  // This is the authoritative check: localStorage is unreliable after logout (cleared).
   useEffect(() => {
     if (isPublic) return; // Only for the owner's private profile page
     const token = localStorage.getItem('token');
@@ -257,9 +259,9 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           if (u.is_public !== undefined) {
             setIsPublicProfile(!!u.is_public);
           }
-          
+
           if (u.bio && u.phone && u.location && u.location !== 'Global') {
-            setShowSetupModal(false);
+            // Profile is complete — keep modal hidden and hydrate state from DB
             const fetchedDetails = {
               bio: u.bio,
               phone: u.phone,
@@ -271,13 +273,20 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             setProfileDetails(prev => ({...prev, ...fetchedDetails}));
             setEditForm(prev => ({...prev, ...fetchedDetails}));
             if (u.avatar) setAvatarStr(u.avatar);
-            
-            // Re-sync local storage so switching workspaces doesn't flash the modal
+            // Re-sync localStorage so future loads are instant
             localStorage.setItem('user_profile_details', JSON.stringify(fetchedDetails));
+            setShowSetupModal(false);
+          } else {
+            // Profile is incomplete — show the setup modal
+            setShowSetupModal(true);
           }
         }
+        setProfileCheckDone(true);
       })
-      .catch((err) => console.error("Could not sync profile metadata:", err));
+      .catch((err) => {
+        console.error("Could not sync profile metadata:", err);
+        setProfileCheckDone(true);
+      });
   }, [isPublic]);
 
   useEffect(() => {
@@ -663,7 +672,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] selection:bg-teal-100 selection:text-teal-900 font-sans">
-      {!isPublic && showSetupModal && (
+      {!isPublic && profileCheckDone && showSetupModal && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
             <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                <div className="p-6 border-b border-slate-100 bg-teal-600">
