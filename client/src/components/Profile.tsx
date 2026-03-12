@@ -64,8 +64,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     try {
       const raw = localStorage.getItem('lastRoleAnalysis');
       const parsed = raw ? JSON.parse(raw) : null;
-      if (parsed?.analysis?.technicalSkills?.length > 0) return parsed.analysis.technicalSkills;
-      if (parsed?.analysis?.existingSkills?.length > 0) return parsed.analysis.existingSkills.map((s: any) => s.name);
+      const a = parsed?.analysis;
+      if (!a) return [];
+      // Role analysis from /api/role/analyze stores: skills (objects), languages, frameworks
+      // Resume analysis from /api/resume/analyze stores: technicalSkills (strings), existingSkills (objects)
+      if (a.technicalSkills?.length > 0) return a.technicalSkills.filter((s: any) => typeof s === 'string');
+      if (a.skills?.length > 0) return a.skills.slice(0, 8).map((s: any) => typeof s === 'string' ? s : s.name).filter(Boolean);
+      if (a.existingSkills?.length > 0) return a.existingSkills.slice(0, 8).map((s: any) => typeof s === 'string' ? s : s.name).filter(Boolean);
+      // Fallback: combine languages + frameworks from role analysis
+      const langs = (a.languages || []).slice(0, 4).map((s: any) => typeof s === 'string' ? s : s.name).filter(Boolean);
+      const fwks  = (a.frameworks || []).slice(0, 4).map((s: any) => typeof s === 'string' ? s : s.name).filter(Boolean);
+      if (langs.length > 0 || fwks.length > 0) return [...langs, ...fwks].slice(0, 8);
     } catch {}
     return [];
   };
@@ -266,10 +275,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           setLiveStreak(data.totalStreak);
         }
         
-        const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
-        const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-        const activeRole = lastRoleState?.role || "Software Engineer";
-
         let newActivity: any[] = [];
         let completedArr: any[] = [];
         let inProgressProject: any = null;
@@ -284,8 +289,15 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         }
 
         if (Array.isArray(data.roadmapProgress)) {
-            const rp = data.roadmapProgress;
-            rp.forEach((p:any) => newActivity.push({ action: "Mastered", item: `Topic: ${p.topic_name || p.topic_id || 'skill'}`, date: new Date(p.completed_at || Date.now()).toLocaleDateString(), icon: Target, ts: new Date(p.completed_at || Date.now()).getTime() }));
+            const activeRoleForFilter = currentRoleRef.current || getActiveRole();
+            // Filter: only show roadmap progress for the CURRENT workspace role
+            const rp = data.roadmapProgress.filter((p: any) => {
+              if (!p.role) return true; // include if no role tag (legacy data)
+              const pr = p.role.toLowerCase();
+              const ar = activeRoleForFilter.toLowerCase();
+              return pr === ar || pr.includes(ar) || ar.includes(pr);
+            });
+            rp.forEach((p: any) => newActivity.push({ action: "Mastered", item: `Topic: ${p.topic_name || p.topic_id || 'skill'}`, date: new Date(p.completed_at || Date.now()).toLocaleDateString(), icon: Target, ts: new Date(p.completed_at || Date.now()).getTime() }));
         }
 
         if (data.projects && Array.isArray(data.projects)) {
@@ -295,7 +307,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                  return { ...pd, status: p.status, role: p.role, title: p.title };
              });
              
-             roleProjects = realProjects.filter((p: any) => !p.role || p.role === activeRole);
+             const activeRoleNow = currentRoleRef.current || getActiveRole();
+             roleProjects = realProjects.filter((p: any) => !p.role || p.role.toLowerCase().includes(activeRoleNow.toLowerCase()) || activeRoleNow.toLowerCase().includes(p.role.toLowerCase()));
              completedArr = roleProjects.filter((p: any) => p.status === 'completed' || p.status === 'done');
              inProgressProject = roleProjects.find((p: any) => p.status === 'active');
              
@@ -303,9 +316,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
              const totalProjects = roleProjects.length > 0 ? roleProjects.length : 1;
              const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
              
-             const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
-             const roadmapProgress = data.roadmapProgress || (roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : []);
-             const skillsMastered = roadmapProgress.length;
+             // Count mastered topics filtered to active role
+             const activeRoleProgress = Array.isArray(data.roadmapProgress)
+               ? data.roadmapProgress.filter((p: any) => !p.role || p.role.toLowerCase().includes(activeRoleNow.toLowerCase()) || activeRoleNow.toLowerCase().includes(p.role.toLowerCase()))
+               : [];
+             const skillsMastered = activeRoleProgress.length;
              
              setStats(prev => ({
                  ...prev,
@@ -332,16 +347,18 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         if (liveStreak > 0 || data.totalStreak > 0) {
             newActivity.push({ action: "Achieved", item: `${data.totalStreak || liveStreak}-Day Daily Tasks Streak`, date: "Today", icon: Sparkles, ts: new Date().getTime() - 20000 });
         }
-        newActivity.push({ action: "Started", item: `Career Path setup as ${activeRole}`, date: "Recently", icon: Code, ts: 0 });
+        newActivity.push({ action: "Started", item: `Career Path setup as ${currentRoleRef.current || getActiveRole()}`, date: "Recently", icon: Code, ts: 0 });
         
-        // Sort and Set Timeline
-        newActivity.sort((a,b) => b.ts - a.ts);
+        // Sort and Set Timeline (only keep top 5 most recent)
+        newActivity.sort((a, b) => b.ts - a.ts);
         setTimeline(newActivity.slice(0, 5));
 
-        // Dynamic Skills Calculation — always read fresh from localStorage for current workspace
+        // Dynamic Skills — always read fresh from localStorage for current workspace
         const freshSkills = getActiveSkills();
-        setWsSkills(freshSkills.length > 0 ? freshSkills : wsSkillsRef.current);
-        const baseSkills = freshSkills.length > 0 ? freshSkills : ["JavaScript", "React", "Node.js"];
+        const roleForDefaults = currentRoleRef.current || getActiveRole();
+        // Use role-based defaults if no analysis data yet (e.g. new workspace)
+        const baseSkills = freshSkills.length > 0 ? freshSkills : defaultSkillsByRole(roleForDefaults);
+        setWsSkills(baseSkills);
         const calculatedSkills = baseSkills.slice(0, 5).map((skillName: string) => {
            const mentions = completedArr.filter((p:any) => JSON.stringify(p).includes(skillName)).length;
            const roadmapMentions = Array.isArray(data.roadmapProgress) ? data.roadmapProgress.filter((r:any) => JSON.stringify(r).includes(skillName)).length : 0;
@@ -360,12 +377,12 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       if (!e || e.key === 'lastRoleAnalysis' || e.key === null) {
         const newRole = getActiveRole();
         const newSkills = getActiveSkills();
+        // Use role-based defaults immediately if analysis data not yet loaded
+        const roleSkills = newSkills.length > 0 ? newSkills : defaultSkillsByRole(newRole);
         setCurrentRole(newRole);
-        setWsSkills(newSkills.length > 0 ? newSkills : wsSkillsRef.current);
-        // Reset dynamic skills immediately so stale skills don't show
-        setDynamicSkills(
-          (newSkills.length > 0 ? newSkills : wsSkillsRef.current).slice(0, 5).map((s: string, i: number) => ({ name: s, level: Math.max(30, 70 - i * 8) }))
-        );
+        setWsSkills(roleSkills);
+        // Reset dynamic skills immediately so stale workspace skills don't linger
+        setDynamicSkills(roleSkills.slice(0, 5).map((s: string, i: number) => ({ name: s, level: Math.max(30, 70 - i * 8) })));
       }
       loadRealtimeStats();
     };
