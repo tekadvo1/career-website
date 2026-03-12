@@ -47,8 +47,7 @@ const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
       if (user.onboarding_completed) return <Navigate to="/dashboard" replace />;
       return <Navigate to="/onboarding" replace />;
     } catch {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      localStorage.clear();
     }
   }
   return children;
@@ -72,8 +71,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       return <Navigate to="/onboarding" replace />;
     }
   } catch {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.clear();
     return <Navigate to="/signin" replace />;
   }
 

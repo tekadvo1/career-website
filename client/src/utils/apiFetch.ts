@@ -36,8 +36,7 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   const isPublicPage = publicRoutes.some(route => window.location.pathname.startsWith(route));
 
   if ((response.status === 401 || response.status === 403) && isLocalRequest && !isPublicPage) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.clear();
     window.location.href = '/signin';
   }
 

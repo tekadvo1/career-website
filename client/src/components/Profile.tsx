@@ -482,8 +482,9 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/signin');
+    localStorage.clear();
+    // Use window.location to ensure all React states (like contexts) reset fully.
+    window.location.href = '/signin';
   };
 
   const shareProfile = () => {
