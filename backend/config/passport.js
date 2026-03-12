@@ -15,46 +15,40 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user already exists
         const email = profile.emails[0].value;
         const googleId = profile.id;
         const username = profile.displayName || email.split('@')[0];
-        
-        // Find user by email
-        const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        
+
+        // Find user by email OR google_id (covers all re-login cases)
+        const existingUser = await pool.query(
+          'SELECT * FROM users WHERE email = $1 OR google_id = $2',
+          [email, googleId]
+        );
+
         if (existingUser.rows.length > 0) {
-          // User exists
+          // User exists — update google_id if missing
           let user = existingUser.rows[0];
-          
-          // Optionally update google_id here if null
           if (!user.google_id) {
-             await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, user.id]);
-             user.google_id = googleId;
+            await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [googleId, user.id]);
+            user.google_id = googleId;
           }
-          
           return done(null, user);
         }
-        
-        // Provide random password if creating account via Google
-        const randomPassword = uuidv4(); 
-        // Hash it? Usually we don't need password for OAuth users, but db schema might enforce `password_hash` NOT NULL.
-        // I will assume db allows null password or check schema.
-        // My previous schema says password_hash is NOT NULL. So I need to hash a random password or update schema.
-        // Let's hash a random password for now to satisfy constraints.
+
+        // New Google user — hash a random password to satisfy NOT NULL constraint
         const bcrypt = require('bcryptjs');
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(randomPassword, salt);
-        
-        // Create new user
-        // Note: is_verified = true since Google verified their email
+        const hashedPassword = await bcrypt.hash(uuidv4(), salt);
+
+        // Create new user; is_verified = true since Google has verified their email
+        // Explicitly set onboarding_completed = false and return it so googleCallback can use it
         const newUser = await pool.query(
-          'INSERT INTO users (username, email, password_hash, google_id, is_verified) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-          [username, email, hashedPassword, googleId, true]
+          'INSERT INTO users (username, email, password_hash, google_id, is_verified, onboarding_completed) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, email, is_verified, onboarding_completed, google_id',
+          [username, email, hashedPassword, googleId, true, false]
         );
-        
+
         return done(null, newUser.rows[0]);
-        
+
       } catch (err) {
         console.error('Google Auth Error:', err);
         return done(err, null);

@@ -166,7 +166,7 @@ export default function SignIn() {
             <p className="text-sm text-slate-600">
               Don't have an account?
             </p>
-            <a href="/" className="inline-block mt-2 font-bold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
+            <a href="/signup" className="inline-block mt-2 font-bold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors">
               Create an account
             </a>
           </div>

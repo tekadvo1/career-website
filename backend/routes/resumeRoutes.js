@@ -5,6 +5,7 @@ const mammoth = require('mammoth');
 let pdfParse = require('pdf-parse');
 
 const pool = require('../config/db');
+const { protect } = require('../middleware/authMiddleware');
 
 // Debug PDF Parse Import
 console.log('PDF Parse Import Type:', typeof pdfParse);
@@ -38,19 +39,22 @@ const upload = multer({
 });
 
 // POST /api/resume/analyze - Analyze uploaded resume with OpenAI
-router.post('/analyze', upload.single('resume'), async (req, res) => {
+// Uses protect middleware for authenticated users; falls back to userId in body for safety
+router.post('/analyze', protect, upload.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    
-    const { userId } = req.body;
+
+    // Primary: get userId from JWT token (set by protect middleware)
+    // Fallback: get userId from request body (backwards compat)
+    const userId = req.user?.id || req.body.userId;
     if (userId) {
-       try {
-         await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
-       } catch (e) {
-         console.error("Failed to update onboarding status", e);
-       }
+      try {
+        await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
+      } catch (e) {
+        console.error("Failed to update onboarding status", e);
+      }
     }
 
     let resumeText = '';

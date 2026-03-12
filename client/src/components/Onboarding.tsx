@@ -99,14 +99,22 @@ export default function Onboarding() {
       return;
     }
 
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    if (!user.id) {
+      showAlert('Session expired. Please sign in again.', 'error');
+      navigate('/signin');
+      return;
+    }
+
     if (file) {
       setIsAnalyzing(true);
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = user.id;
 
       const formData = new FormData();
       formData.append('resume', file);
-      if (userId) formData.append('userId', userId);
+      // userId is now sent via JWT token (Authorization header added by apiFetch)
+      // Keep it in body as a fallback too
+      formData.append('userId', user.id);
 
       try {
         const response = await apiFetch('/api/resume/analyze', {
@@ -120,13 +128,14 @@ export default function Onboarding() {
         }
 
         const data = await response.json();
-        
-        // Update local user state
-        if (userId) {
-            const updatedUser = { ...user, onboarding_completed: true };
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-        }
-        
+
+        // Mark onboarding complete in localStorage
+        const updatedUser = { ...user, onboarding_completed: true };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+
+        // Also persist to DB via dedicated endpoint (belt-and-suspenders)
+        apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
+
         setAnalysisData(data.analysis);
         setStep('choose-path');
       } catch (error: any) {
@@ -136,12 +145,13 @@ export default function Onboarding() {
         setIsAnalyzing(false);
       }
     } else {
-      // Navigate immediately and let RoleAnalysis handle the fetching
-      
-      // We don't mark onboarding complete here because RoleAnalysis API will do it (if we passed userId)
-      // Wait, RoleAnalysis API handles it, but we need to pass userId later?
-      // RoleAnalysis extracts user from localStorage anyway.
-      
+      // Role-only path — mark onboarding complete in localStorage before navigating
+      const updatedUser = { ...user, onboarding_completed: true };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Persist to DB
+      apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
+
       navigate('/role-analysis', {
         state: {
           role: role || 'General Career Path',
