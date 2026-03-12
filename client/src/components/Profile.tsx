@@ -1058,24 +1058,42 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 Daily Task Updates & Activity
               </h3>
               <div className="space-y-3">
-                {timeline.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all"
-                  >
-                    <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center flex-shrink-0 text-teal-600">
-                      <activity.icon className="w-4 h-4" />
+                {(isPublic && publicProfileData?.timeline ? publicProfileData.timeline : timeline).map((activity: any, index: number) => {
+                  const MyIcon = () => {
+                    const iconName = activity.icon;
+                    if (typeof iconName === "string") {
+                      switch (iconName) {
+                        case "Trophy": return <Trophy className="w-4 h-4" />;
+                        case "Sparkles": return <Sparkles className="w-4 h-4" />;
+                        case "Target": return <Target className="w-4 h-4" />;
+                        case "Activity": return <Activity className="w-4 h-4" />;
+                        case "Code": return <Code className="w-4 h-4" />;
+                        default: return <TrendingUp className="w-4 h-4" />;
+                      }
+                    }
+                    const IconComp = activity.icon;
+                    return <IconComp className="w-4 h-4" />;
+                  };
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-white hover:border-slate-300 hover:shadow-sm transition-all"
+                    >
+                      <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center flex-shrink-0 text-teal-600">
+                        <MyIcon />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] text-slate-800 leading-snug">
+                          <span className="font-extrabold">{activity.action}</span> <span className="font-medium text-slate-600">{activity.item}</span>
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">{activity.date}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] text-slate-800 leading-snug">
-                        <span className="font-extrabold">{activity.action}</span> <span className="font-medium text-slate-600">{activity.item}</span>
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">{activity.date}</p>
-                    </div>
-                  </div>
-                ))}
-                
-                {timeline.length === 0 && (
+                  );
+                })}
+
+                {(isPublic && publicProfileData?.timeline ? publicProfileData.timeline : timeline).length === 0 && (
                   <div className="text-center p-5 text-slate-500 text-[12px]">No recent activity found. Start a project!</div>
                 )}
               </div>

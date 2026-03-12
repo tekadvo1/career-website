@@ -169,43 +169,37 @@ router.get('/public-profile/:username', async (req, res) => {
     );
 
     // We need the role first to query the counts accurately
-    let roleTitle = 'Software Engineer';
+    let roleTitle = (workspaceRole ? workspaceRole.replace(/-/g, ' ') : null) || (wsRes.rows.length > 0 ? wsRes.rows[0].role : 'Software Engineer');
     let skills = ['JavaScript', 'React', 'Node.js'];
 
     if (roleRes && roleRes.rows.length > 0) {
-      roleTitle = roleRes.rows[0].role_title || roleTitle;
+      // Use the analysis title only if we don't have a more specific workspaceRole
+      if (!roleTitle || roleTitle === 'Software Engineer') {
+        roleTitle = roleRes.rows[0].role_title || roleTitle;
+      }
+      
       const analysis = typeof roleRes.rows[0].analysis_data === 'string'
         ? JSON.parse(roleRes.rows[0].analysis_data)
         : roleRes.rows[0].analysis_data;
       if (analysis?.technicalSkills?.length > 0) skills = analysis.technicalSkills.slice(0, 5);
       else if (analysis?.existingSkills?.length > 0) skills = analysis.existingSkills.map((s) => s.name).slice(0, 5);
-    } else if (wsRes.rows.length > 0) {
-      roleTitle = wsRes.rows[0].role || roleTitle;
     }
 
     // Get roadmap progress count specifically for this role
     const roadmapRes = await pool.query(
-      'SELECT COUNT(*) as count FROM roadmap_progress WHERE user_id = $1 AND LOWER(role) = LOWER($2)',
+      'SELECT topic_name, completed_at FROM roadmap_progress WHERE user_id = $1 AND LOWER(role) = LOWER($2) ORDER BY completed_at DESC',
       [user.id, roleTitle]
     );
 
     // Get completed projects count for this role
     const projectRes = await pool.query(
-      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND status = 'completed' AND LOWER(role) = LOWER($2)",
+      "SELECT title, status, created_at FROM user_projects WHERE user_id = $1 AND LOWER(role) = LOWER($2) ORDER BY created_at DESC",
       [user.id, roleTitle]
     );
 
-    // Get total projects count for this role to avoid hardcoding `1`
-    const totalProjectRes = await pool.query(
-      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND LOWER(role) = LOWER($2)",
-      [user.id, roleTitle]
-    );
-
-    // Get the most recent active project for this role
-    const activeProjectRes = await pool.query(
-      "SELECT title FROM user_projects WHERE user_id = $1 AND status != 'completed' AND LOWER(role) = LOWER($2) ORDER BY created_at DESC LIMIT 1",
-      [user.id, roleTitle]
-    );
+    const completedProjects = projectRes.rows.filter(p => p.status === 'completed' || p.status === 'done');
+    const inProgressProjects = projectRes.rows.filter(p => p.status !== 'completed' && p.status !== 'done');
+    const activeProjectName = inProgressProjects.length > 0 ? inProgressProjects[0].title : 'No Active Project';
 
     // Get streak from users table
     const streakRes = await pool.query(
@@ -213,22 +207,54 @@ router.get('/public-profile/:username', async (req, res) => {
       [user.id]
     );
 
+    const currentStreak = parseInt(streakRes.rows[0]?.current_streak || 0);
 
+    // Build timeline for public profile
+    let timeline = [];
 
-    // Clean role name
-    roleTitle = roleTitle.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
+    if (currentStreak > 0) {
+      timeline.push({ action: "Achieved", item: `${currentStreak}-Day Daily Tasks Streak`, date: "Today", icon: "Sparkles", ts: Date.now() - 20000 });
+    }
+
+    projectRes.rows.forEach(p => {
+      const isCompleted = p.status === 'completed' || p.status === 'done';
+      timeline.push({
+        action: isCompleted ? "Completed Project" : "Working on",
+        item: p.title,
+        date: isCompleted ? new Date(p.created_at || Date.now()).toLocaleDateString() : 'Currently',
+        icon: isCompleted ? "Trophy" : "Activity",
+        ts: new Date(p.created_at || Date.now()).getTime()
+      });
+    });
+
+    roadmapRes.rows.slice(0, 10).forEach(r => {
+      timeline.push({
+        action: "Mastered",
+        item: `Topic: ${r.topic_name}`,
+        date: new Date(r.completed_at || Date.now()).toLocaleDateString(),
+        icon: "Target",
+        ts: new Date(r.completed_at || Date.now()).getTime()
+      });
+    });
+    
+    // Final clean of the roleTitle for display
+    const optimizedRoleTitle = roleTitle.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
+    timeline.push({ action: "Started", item: `Career Path setup as ${optimizedRoleTitle}`, date: "Recently", icon: "Code", ts: 0 });
+
+    timeline.sort((a,b) => b.ts - a.ts);
 
     res.json({
       success: true,
       username: user.username,
-      role: roleTitle,
+      role: optimizedRoleTitle,
       skills,
-      skillsMastered: parseInt(roadmapRes.rows[0]?.count || 0),
-      projectsCompleted: parseInt(projectRes.rows[0]?.count || 0),
-      totalProjects: parseInt(totalProjectRes.rows[0]?.count || 0) || 1,
-      currentProjectName: activeProjectRes.rows.length > 0 ? activeProjectRes.rows[0].title : 'No Active Project',
-      streak: parseInt(streakRes.rows[0]?.current_streak || 0),
+      skillsMastered: roadmapRes.rows.length,
+      projectsCompleted: completedProjects.length,
+      totalProjects: projectRes.rows.length || 1,
+      currentProjectName: activeProjectName,
+      streak: currentStreak,
       memberSince: user.created_at,
+      timeline: timeline.slice(0, 5)
     });
   } catch (error) {
     console.error('Error fetching public profile:', error);
