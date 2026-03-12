@@ -100,14 +100,14 @@ router.get('/public-profile/:username', async (req, res) => {
 
     // Step 1: exact match on raw username
     let userRes = await pool.query(
-      'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) = LOWER($1)',
+      'SELECT id, username, email, created_at, is_public, bio, phone, location, country_code, avatar FROM users WHERE LOWER(username) = LOWER($1)',
       [username]
     );
 
     // Step 2: try slug-decoded version ("rakesh-vejendla33" → "rakesh vejendla33")
     if (userRes.rows.length === 0 && usernameFromSlug !== username) {
       userRes = await pool.query(
-        'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) = LOWER($1)',
+        'SELECT id, username, email, created_at, is_public, bio, phone, location, country_code, avatar FROM users WHERE LOWER(username) = LOWER($1)',
         [usernameFromSlug]
       );
     }
@@ -115,7 +115,7 @@ router.get('/public-profile/:username', async (req, res) => {
     // Step 3: prefix match fallback (handles any suffix like numbers)
     if (userRes.rows.length === 0) {
       userRes = await pool.query(
-        'SELECT id, username, email, created_at, is_public FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
+        'SELECT id, username, email, created_at, is_public, bio, phone, location, country_code, avatar FROM users WHERE LOWER(username) LIKE LOWER($1) ORDER BY created_at DESC LIMIT 1',
         [`${usernameFromSlug}%`]
       );
     }
@@ -299,6 +299,7 @@ router.get('/public-profile/:username', async (req, res) => {
     res.json({
       success: true,
       username: user.username,
+      email: user.email,
       role: optimizedRoleTitle,
       skills,
       skillsMastered: roadmapRes.rows.length,
@@ -307,6 +308,11 @@ router.get('/public-profile/:username', async (req, res) => {
       currentProjectName: activeProjectName,
       streak: currentStreak,
       memberSince: user.created_at,
+      bio: user.bio,
+      phone: user.phone,
+      location: user.location,
+      countryCode: user.country_code,
+      avatar: user.avatar,
       timeline: timeline.slice(0, 5)
     });
   } catch (error) {
@@ -325,6 +331,23 @@ router.put('/visibility', protect, async (req, res) => {
     res.json({ success: true, isPublic: !!isPublic });
   } catch (error) {
     console.error('Error updating visibility:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/auth/profile
+// @desc    Update profile details for logged-in user
+// @access  Private
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const { bio, phone, location, countryCode, avatar } = req.body;
+    await pool.query(
+      'UPDATE users SET bio = $1, phone = $2, location = $3, country_code = $4, avatar = $5 WHERE id = $6',
+      [bio, phone, location, countryCode, avatar, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating profile:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

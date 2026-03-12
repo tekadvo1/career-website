@@ -384,13 +384,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const userData = {
     name: displayName,
-    email: isPublic ? '' : (user?.email || "No email provided"),
+    email: isPublic ? (publicProfileData?.email || '') : (user?.email || "No email provided"),
     role: isPublic ? publicRole : displayRole,
-    location: isPublic ? 'Global' : (profileDetails.location || "Global"),
-    phone: isPublic ? '' : (profileDetails.phone || "Not set"),
+    location: isPublic ? (publicProfileData?.location || 'Global') : (profileDetails.location || "Global"),
+    phone: isPublic ? (publicProfileData?.phone || '') : (profileDetails.phone || "Not set"),
     joinDate: publicProfileData?.memberSince ? new Date(publicProfileData.memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "Recently",
     bio: isPublic
-      ? `${displayName} is a ${publicRole} tracking career growth on FindStreak.`
+      ? (publicProfileData?.bio || `${displayName} is a ${publicRole} tracking career growth on FindStreak.`)
       : (profileDetails.bio || `Tracking career progress and mastering skills for ${displayRole} via FindStreak.`),
     skills: (isPublic ? publicSkills : activeSkills).slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(70, 95 - (idx * 5)) })),
     stats: publicStats,
@@ -404,6 +404,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setProfileDetails(editForm);
     const updated = { ...editForm, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
     localStorage.setItem('user_profile_details', JSON.stringify(updated));
+    apiFetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bio: editForm.bio,
+        phone: editForm.phone,
+        location: editForm.location,
+        countryCode: editForm.countryCode,
+        avatar: avatarStr
+      })
+    }).catch(err => console.error("Failed to sync profile:", err));
     setShowSetupModal(false);
   };
 
@@ -428,6 +439,17 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setProfileDetails(newDetails);
     const updated = { ...newDetails, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
     localStorage.setItem('user_profile_details', JSON.stringify(updated));
+    apiFetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bio: editForm.bio,
+        phone: editForm.phone,
+        location: editForm.location,
+        countryCode: editForm.countryCode,
+        avatar: avatarStr
+      })
+    }).catch(err => console.error("Failed to sync profile:", err));
     setIsEditing(false);
   };
 
