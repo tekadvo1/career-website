@@ -413,8 +413,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const shareProfile = () => {
     // Slugify: "Rakesh Vejendla33" -> "rakesh-vejendla33" (no %20 in URL)
     const slug = (user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
-    const safeRole = displayRole.toLowerCase().replace(/\s+/g, '-');
-    const link = `${window.location.origin}/p/${slug}?workspace=${safeRole}`;
+    const link = `${window.location.origin}/p/${slug}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
