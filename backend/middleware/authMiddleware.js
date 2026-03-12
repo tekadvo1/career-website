@@ -15,8 +15,11 @@ const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
 
-      // Get user from the token
-      const result = await pool.query('SELECT id, username, email, is_verified, onboarding_completed, is_public FROM users WHERE id = $1', [decoded.id]);
+      // Get user from the token including full profile
+      const result = await pool.query(
+        'SELECT id, username, email, is_verified, onboarding_completed, is_public, bio, phone, location, country_code, avatar FROM users WHERE id = $1', 
+        [decoded.id]
+      );
       
       if (result.rows.length === 0) {
           return res.status(401).json({ status: 'error', message: 'Not authorized, user not found' });

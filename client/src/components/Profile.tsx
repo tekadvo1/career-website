@@ -252,11 +252,32 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     apiFetch('/api/auth/me')
       .then(r => r.json())
       .then(data => {
-        if (data?.user?.is_public !== undefined) {
-          setIsPublicProfile(!!data.user.is_public);
+        if (data?.user) {
+          const u = data.user;
+          if (u.is_public !== undefined) {
+            setIsPublicProfile(!!u.is_public);
+          }
+          
+          if (u.bio && u.phone && u.location && u.location !== 'Global') {
+            setShowSetupModal(false);
+            const fetchedDetails = {
+              bio: u.bio,
+              phone: u.phone,
+              location: u.location,
+              countryCode: u.country_code || '+1',
+              avatar: u.avatar || '',
+              isPublic: !!u.is_public
+            };
+            setProfileDetails(prev => ({...prev, ...fetchedDetails}));
+            setEditForm(prev => ({...prev, ...fetchedDetails}));
+            if (u.avatar) setAvatarStr(u.avatar);
+            
+            // Re-sync local storage so switching workspaces doesn't flash the modal
+            localStorage.setItem('user_profile_details', JSON.stringify(fetchedDetails));
+          }
         }
       })
-      .catch(() => {});
+      .catch((err) => console.error("Could not sync profile metadata:", err));
   }, [isPublic]);
 
   useEffect(() => {
