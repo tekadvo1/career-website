@@ -204,6 +204,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       setEditForm(parsed);
       if (parsed.avatar) setAvatarStr(parsed.avatar);
       if (parsed.customSkills) setCustomSkills(parsed.customSkills);
+      if (parsed.isPublic !== undefined) setIsPublicProfile(!!parsed.isPublic);
 
       if (parsed.bio && parsed.phone && parsed.location) {
         setShowSetupModal(false);
