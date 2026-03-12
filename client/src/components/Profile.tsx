@@ -62,7 +62,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   useEffect(() => {
     if (!isPublic || !username) return;
     setPublicProfileLoading(true);
-    fetch(`/api/auth/public-profile/${encodeURIComponent(username)}`)
+    const searchParams = new URLSearchParams(window.location.search);
+    const workspaceParam = searchParams.get('workspace');
+    const query = workspaceParam ? `?workspace=${encodeURIComponent(workspaceParam)}` : '';
+    fetch(`/api/auth/public-profile/${encodeURIComponent(username)}${query}`)
       .then(r => r.json())
       .then(data => {
         if (data.success) {
@@ -345,7 +348,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const activeRole = lastRoleState?.role || profileDetails.role || "Software Engineer";
+  const activeRole = lastRoleState?.role || "Software Engineer";
   // Strip qualifiers like "(beginner - usa)" from role display
   const cleanRole = (role: string) => role ? role.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : role;
   const displayRole = cleanRole(activeRole);
@@ -369,11 +372,11 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     : activeSkills;
   const publicStats = isPublic && publicProfileData ? {
     projectsCompleted: publicProfileData.projectsCompleted || 0,
-    totalProjects: Math.max(publicProfileData.projectsCompleted || 1, 1),
+    totalProjects: Math.max(publicProfileData.totalProjects || 1, 1),
     skillsMastered: publicProfileData.skillsMastered || 0,
     totalLearningHours: (publicProfileData.skillsMastered || 0) * 2,
     achievementsUnlocked: Math.floor((publicProfileData.skillsMastered || 0) / 3),
-    currentProjectName: 'FindStreak Project',
+    currentProjectName: publicProfileData.currentProjectName || 'No Active Project',
     learningStreak: publicProfileData.streak || 0,
   } : { ...stats, learningStreak: liveStreak };
 
@@ -410,7 +413,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const shareProfile = () => {
     // Slugify: "Rakesh Vejendla33" -> "rakesh-vejendla33" (no %20 in URL)
     const slug = (user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
-    const link = `${window.location.origin}/p/${slug}`;
+    const link = `${window.location.origin}/p/${slug}?workspace=${encodeURIComponent(activeRole)}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);

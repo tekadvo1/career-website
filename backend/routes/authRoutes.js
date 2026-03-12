@@ -94,6 +94,7 @@ router.post('/complete-onboarding', protect, async (req, res) => {
 router.get('/public-profile/:username', async (req, res) => {
   try {
     const { username } = req.params;
+    let workspaceRole = req.query.workspace;
     // Convert slug format back to username: "rakesh-vejendla33" → "rakesh vejendla33"
     const usernameFromSlug = username.replace(/-/g, ' ');
 
@@ -131,10 +132,33 @@ router.get('/public-profile/:username', async (req, res) => {
     }
 
     // Get their most recent role analysis (skills, role title)
-    const roleRes = await pool.query(
-      'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
-      [user.id]
-    );
+    // Step 4: Get their active workspace role (either from query or most recent)
+    if (!workspaceRole) {
+      const wsRes = await pool.query(
+        'SELECT role FROM workspaces WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [user.id]
+      );
+      if (wsRes.rows.length > 0) {
+        workspaceRole = wsRes.rows[0].role;
+      }
+    }
+
+    // Get their most recent role analysis for this specific role
+    let roleRes;
+    if (workspaceRole) {
+      roleRes = await pool.query(
+        'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) = LOWER($2) ORDER BY created_at DESC LIMIT 1',
+        [user.id, workspaceRole]
+      );
+    }
+    
+    // Fallback if not found
+    if (!roleRes || roleRes.rows.length === 0) {
+      roleRes = await pool.query(
+        'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+        [user.id]
+      );
+    }
 
     // Get their active workspace role
     const wsRes = await pool.query(
@@ -142,28 +166,11 @@ router.get('/public-profile/:username', async (req, res) => {
       [user.id]
     );
 
-    // Get roadmap progress count
-    const roadmapRes = await pool.query(
-      'SELECT COUNT(*) as count FROM roadmap_progress WHERE user_id = $1',
-      [user.id]
-    );
-
-    // Get completed projects count
-    const projectRes = await pool.query(
-      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND status = 'completed'",
-      [user.id]
-    );
-
-    // Get streak from users table
-    const streakRes = await pool.query(
-      'SELECT current_streak FROM users WHERE id = $1',
-      [user.id]
-    );
-
+    // We need the role first to query the counts accurately
     let roleTitle = 'Software Engineer';
     let skills = ['JavaScript', 'React', 'Node.js'];
 
-    if (roleRes.rows.length > 0) {
+    if (roleRes && roleRes.rows.length > 0) {
       roleTitle = roleRes.rows[0].role_title || roleTitle;
       const analysis = typeof roleRes.rows[0].analysis_data === 'string'
         ? JSON.parse(roleRes.rows[0].analysis_data)
@@ -173,6 +180,38 @@ router.get('/public-profile/:username', async (req, res) => {
     } else if (wsRes.rows.length > 0) {
       roleTitle = wsRes.rows[0].role || roleTitle;
     }
+
+    // Get roadmap progress count specifically for this role
+    const roadmapRes = await pool.query(
+      'SELECT COUNT(*) as count FROM roadmap_progress WHERE user_id = $1 AND LOWER(role) = LOWER($2)',
+      [user.id, roleTitle]
+    );
+
+    // Get completed projects count for this role
+    const projectRes = await pool.query(
+      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND status = 'completed' AND LOWER(role) = LOWER($2)",
+      [user.id, roleTitle]
+    );
+
+    // Get total projects count for this role to avoid hardcoding `1`
+    const totalProjectRes = await pool.query(
+      "SELECT COUNT(*) as count FROM user_projects WHERE user_id = $1 AND LOWER(role) = LOWER($2)",
+      [user.id, roleTitle]
+    );
+
+    // Get the most recent active project for this role
+    const activeProjectRes = await pool.query(
+      "SELECT title FROM user_projects WHERE user_id = $1 AND status != 'completed' AND LOWER(role) = LOWER($2) ORDER BY created_at DESC LIMIT 1",
+      [user.id, roleTitle]
+    );
+
+    // Get streak from users table
+    const streakRes = await pool.query(
+      'SELECT current_streak FROM users WHERE id = $1',
+      [user.id]
+    );
+
+
 
     // Clean role name
     roleTitle = roleTitle.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
@@ -184,6 +223,8 @@ router.get('/public-profile/:username', async (req, res) => {
       skills,
       skillsMastered: parseInt(roadmapRes.rows[0]?.count || 0),
       projectsCompleted: parseInt(projectRes.rows[0]?.count || 0),
+      totalProjects: parseInt(totalProjectRes.rows[0]?.count || 0) || 1,
+      currentProjectName: activeProjectRes.rows.length > 0 ? activeProjectRes.rows[0].title : 'No Active Project',
       streak: parseInt(streakRes.rows[0]?.current_streak || 0),
       memberSince: user.created_at,
     });
