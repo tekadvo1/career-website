@@ -1,5 +1,5 @@
 import { apiFetch } from '../utils/apiFetch';
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Mail,
@@ -50,6 +50,27 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const [liveStreak, setLiveStreak] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // currentRole state — re-reads from localStorage whenever workspace switches
+  const getActiveRole = () => {
+    try {
+      const raw = localStorage.getItem('lastRoleAnalysis');
+      const parsed = raw ? JSON.parse(raw) : null;
+      const cleanR = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
+      return cleanR(parsed?.role || 'Software Engineer');
+    } catch { return 'Software Engineer'; }
+  };
+  const getActiveSkills = (): string[] => {
+    try {
+      const raw = localStorage.getItem('lastRoleAnalysis');
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed?.analysis?.technicalSkills?.length > 0) return parsed.analysis.technicalSkills;
+      if (parsed?.analysis?.existingSkills?.length > 0) return parsed.analysis.existingSkills.map((s: any) => s.name);
+    } catch {}
+    return [];
+  };
+  const [currentRole, setCurrentRole] = useState<string>(getActiveRole);
+  const currentRoleRef = React.useRef(currentRole);
   const [isEditing, setIsEditing] = useState(false);
   const [isSyncingAI, setIsSyncingAI] = useState(false);
   const [showSetupModal, setShowSetupModal] = useState(true);
@@ -82,6 +103,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const [dynamicSkills, setDynamicSkills] = useState<{name: string, level: number}[]>([]);
   const [timeline, setTimeline] = useState<any[]>([]);
+  const [wsSkills, setWsSkills] = useState<string[]>(getActiveSkills);
 
   const [profileDetails, setProfileDetails] = useState({
     phone: "",
@@ -161,23 +183,24 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     currentProjectName: "No Active Project"
   });
 
-  // Calculate standard stats based on memory
-  const loadRealtimeStats = () => {
-    const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
-    const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-    const activeRole = lastRoleState?.role || "Software Engineer";
+  // Keep ref in sync with state so callbacks always read the latest role
+  React.useEffect(() => { currentRoleRef.current = currentRole; }, [currentRole]);
 
-    const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${activeRole}`);
+  // Calculate standard stats based on current workspace role
+  const loadRealtimeStats = () => {
+    const role = currentRoleRef.current || getActiveRole();
+
+    const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${role}`);
     const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
-    
+
     const totalProjects = projectsData.length > 0 ? projectsData.length : 1;
     const completedArr = projectsData.filter((p: any) => p.status === 'done');
     const projectsCompleted = completedArr.length;
-    
+
     const inProgressProject = projectsData.find((p: any) => p.status !== 'done');
     const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
 
-    const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${activeRole}`);
+    const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${role}`);
     const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
     const skillsMastered = roadmapProgress.length;
 
@@ -262,7 +285,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
         if (Array.isArray(data.roadmapProgress)) {
             const rp = data.roadmapProgress;
-            rp.forEach((p:any) => newActivity.push({ action: "Mastered", item: `Topic: ${p.topic_id}`, date: new Date(p.completed_at || Date.now()).toLocaleDateString(), icon: Target, ts: new Date(p.completed_at || Date.now()).getTime() }));
+            rp.forEach((p:any) => newActivity.push({ action: "Mastered", item: `Topic: ${p.topic_name || p.topic_id || 'skill'}`, date: new Date(p.completed_at || Date.now()).toLocaleDateString(), icon: Target, ts: new Date(p.completed_at || Date.now()).getTime() }));
         }
 
         if (data.projects && Array.isArray(data.projects)) {
@@ -315,12 +338,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         newActivity.sort((a,b) => b.ts - a.ts);
         setTimeline(newActivity.slice(0, 5));
 
-        // Dynamic Skills Calculation
-        const baseSkills = lastRoleState?.analysis?.technicalSkills || ["JavaScript", "React", "Node.js"];
+        // Dynamic Skills Calculation — always read fresh from localStorage for current workspace
+        const freshSkills = getActiveSkills();
+        setWsSkills(freshSkills.length > 0 ? freshSkills : wsSkillsRef.current);
+        const baseSkills = freshSkills.length > 0 ? freshSkills : ["JavaScript", "React", "Node.js"];
         const calculatedSkills = baseSkills.slice(0, 5).map((skillName: string) => {
            const mentions = completedArr.filter((p:any) => JSON.stringify(p).includes(skillName)).length;
            const roadmapMentions = Array.isArray(data.roadmapProgress) ? data.roadmapProgress.filter((r:any) => JSON.stringify(r).includes(skillName)).length : 0;
-           
            const totalBoost = (mentions + roadmapMentions) * 20;
            return { name: skillName, level: Math.min(95, 30 + totalBoost) };
         });
@@ -331,12 +355,24 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     es.addEventListener('snapshot', handleSnapshot);
     es.addEventListener('refresh', handleSnapshot);
 
-    // Also support multi-tab sync locally
-    const handleStorageChange = () => loadRealtimeStats();
+    // Listen for workspace switches (Workspaces.tsx writes lastRoleAnalysis to localStorage)
+    const handleStorageChange = (e?: StorageEvent) => {
+      if (!e || e.key === 'lastRoleAnalysis' || e.key === null) {
+        const newRole = getActiveRole();
+        const newSkills = getActiveSkills();
+        setCurrentRole(newRole);
+        setWsSkills(newSkills.length > 0 ? newSkills : wsSkillsRef.current);
+        // Reset dynamic skills immediately so stale skills don't show
+        setDynamicSkills(
+          (newSkills.length > 0 ? newSkills : wsSkillsRef.current).slice(0, 5).map((s: string, i: number) => ({ name: s, level: Math.max(30, 70 - i * 8) }))
+        );
+      }
+      loadRealtimeStats();
+    };
     window.addEventListener('storage', handleStorageChange);
-    
+
     loadRealtimeStats();
-    
+
     // Fallback interval for local realtime
     const interval = setInterval(loadRealtimeStats, 2000);
 
@@ -348,19 +384,22 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   }, [liveStreak]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
-  const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const activeRole = lastRoleState?.role || "Software Engineer";
-  // Strip qualifiers like "(beginner - usa)" from role display
-  const cleanRole = (role: string) => role ? role.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : role;
-  const displayRole = cleanRole(activeRole);
+  // Use reactive currentRole state (updates immediately on workspace switch via storage event)
+  const displayRole = currentRole;
+  // wsSkills ref so callbacks always have the latest value  
+  const wsSkillsRef = React.useRef(wsSkills);
+  React.useEffect(() => { wsSkillsRef.current = wsSkills; }, [wsSkills]);
 
-  let activeSkills = ["JavaScript", "React", "Node.js"];
-  if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
-      activeSkills = lastRoleState.analysis.technicalSkills;
-  } else if (lastRoleState?.analysis?.existingSkills?.length > 0) {
-      activeSkills = lastRoleState.analysis.existingSkills.map((s: any) => s.name);
-  }
+  // Active skills: prefer dynamicSkills (from SSE), then wsSkills (from localStorage), then role-based defaults
+  const defaultSkillsByRole = (role: string): string[] => {
+    const r = role.toLowerCase();
+    if (r.includes('mainframe') || r.includes('cobol')) return ['COBOL', 'JCL', 'DB2', 'VSAM', 'z/OS'];
+    if (r.includes('java')) return ['Java', 'Spring Boot', 'Hibernate', 'Maven', 'REST APIs'];
+    if (r.includes('python') || r.includes('data')) return ['Python', 'Pandas', 'SQL', 'NumPy', 'Scikit-learn'];
+    if (r.includes('devops') || r.includes('cloud')) return ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Terraform'];
+    return ['JavaScript', 'React', 'Node.js', 'TypeScript', 'PostgreSQL'];
+  };
+  const activeSkills = wsSkills.length > 0 ? wsSkills : defaultSkillsByRole(displayRole);
 
   // Display user name override if public - use real data from API when available
   const displayName = isPublic
@@ -434,7 +473,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const handleSaveProfile = () => {
-    const finalRole = editForm.role || activeRole;
+    const finalRole = editForm.role || displayRole;
     const newDetails = { ...editForm, role: finalRole };
     setProfileDetails(newDetails);
     const updated = { ...newDetails, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
@@ -517,13 +556,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                messages: [{ role: 'user', content: `Please refine this professional bio for a ${activeRole}. Make it sound professional, engaging, and highlight skills and FindStreak achievements. Current manual details: "${editForm.bio}" or fallback info: ${stats.skillsMastered} topics mastered, ${stats.projectsCompleted} projects completed. Limit to 3 short sentences.` }],
-                role: activeRole,
+                messages: [{ role: 'user', content: `Please refine this professional bio for a ${displayRole}. Make it sound professional, engaging, and highlight skills and FindStreak achievements. Current manual details: "${editForm.bio}" or fallback info: ${stats.skillsMastered} topics mastered, ${stats.projectsCompleted} projects completed. Limit to 3 short sentences.` }],
+                role: displayRole,
             }),
         });
 
         const data = await response.json();
-        const refinedBio = data.success ? data.response.replace(/["*]/g, '').trim() : `Driven ${activeRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
+        const refinedBio = data.success ? data.response.replace(/["*]/g, '').trim() : `Driven ${displayRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
 
         const newDetails = { ...profileDetails, ...editForm, bio: refinedBio };
         setProfileDetails(newDetails);
@@ -532,7 +571,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     } catch (e) {
         console.error(e);
         // Fallback
-        const newBio = `Driven ${activeRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
+        const newBio = `Driven ${displayRole} focused on continuous growth. Has mastered ${stats.skillsMastered} topics and successfully delivered ${stats.projectsCompleted} projects on FindStreak. Actively improving proficiency in ${activeSkills.slice(0, 2).join(" and ")}.`;
         const newDetails = { ...profileDetails, ...editForm, bio: newBio };
         setProfileDetails(newDetails);
         setEditForm(newDetails);
