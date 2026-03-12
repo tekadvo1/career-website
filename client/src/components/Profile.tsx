@@ -228,6 +228,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   }, [isPublic]);
 
   useEffect(() => {
+    if (isPublic) return; // Prevent local sync on public profile
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const token = localStorage.getItem('token');
     if (!user?.id || !token) return;
@@ -391,7 +392,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     bio: isPublic
       ? `${displayName} is a ${publicRole} tracking career growth on FindStreak.`
       : (profileDetails.bio || `Tracking career progress and mastering skills for ${displayRole} via FindStreak.`),
-    skills: (isPublic ? publicSkills : activeSkills).slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(50, 95 - (idx * 5)) })),
+    skills: (isPublic ? publicSkills : activeSkills).slice(0, 5).map((s: string, idx: number) => ({ name: s, level: Math.max(70, 95 - (idx * 5)) })),
     stats: publicStats,
   };
 
@@ -863,7 +864,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </h3>
               </div>
               <div className="space-y-3.5 mb-5">
-                {dynamicSkills.length > 0 ? dynamicSkills.map((skill, index) => (
+                {(!isPublic && dynamicSkills.length > 0) ? dynamicSkills.map((skill, index) => (
                   <div key={index}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[12px] font-bold text-slate-700">{skill.name}</span>
@@ -896,13 +897,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
               <div className="mt-8 border-t border-slate-100 pt-5">
                   <h4 className="text-[12px] font-bold text-slate-700 mb-4 text-center">Skill Balance Analysis</h4>
                   <div className="relative w-full aspect-square max-w-[280px] mx-auto">
-                    {dynamicSkills.length > 2 || userData.skills.length > 2 ? (
+                    {((!isPublic && dynamicSkills.length > 2) || userData.skills.length > 2) ? (
                         <Radar 
                             data={{
-                                labels: dynamicSkills.length > 0 ? dynamicSkills.map((s: {name: string, level: number}) => s.name) : userData.skills.map((s: {name: string, level: number}) => s.name),
+                                labels: (!isPublic && dynamicSkills.length > 0) ? dynamicSkills.map((s: {name: string, level: number}) => s.name) : userData.skills.map((s: {name: string, level: number}) => s.name),
                                 datasets: [{
                                     label: 'Current Level',
-                                    data: dynamicSkills.length > 0 ? dynamicSkills.map((s: {name: string, level: number}) => s.level) : userData.skills.map((s: {name: string, level: number}) => s.level),
+                                    data: (!isPublic && dynamicSkills.length > 0) ? dynamicSkills.map((s: {name: string, level: number}) => s.level) : userData.skills.map((s: {name: string, level: number}) => s.level),
                                     backgroundColor: 'rgba(20, 184, 166, 0.2)',
                                     borderColor: 'rgba(20, 184, 166, 0.8)',
                                     pointBackgroundColor: 'rgba(20, 184, 166, 1)',
