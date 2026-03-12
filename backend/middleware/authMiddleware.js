@@ -17,7 +17,7 @@ const protect = async (req, res, next) => {
 
       // Get user from the token including full profile
       const result = await pool.query(
-        'SELECT id, username, email, is_verified, onboarding_completed, is_public, bio, phone, location, country_code, avatar FROM users WHERE id = $1', 
+        'SELECT id, username, email, is_verified, onboarding_completed, is_public, bio, phone, location, country_code, avatar, custom_skills FROM users WHERE id = $1', 
         [decoded.id]
       );
       

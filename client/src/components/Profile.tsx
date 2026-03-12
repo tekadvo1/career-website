@@ -228,26 +228,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   useEffect(() => {
-    // Load any cached profile options from localStorage (avatar, customSkills, etc.)
-    const savedDetails = localStorage.getItem('user_profile_details');
-    if (savedDetails) {
-      try {
-        const parsed = JSON.parse(savedDetails);
-        setProfileDetails(parsed);
-        setEditForm(parsed);
-        if (parsed.avatar) setAvatarStr(parsed.avatar);
-        if (parsed.customSkills) setCustomSkills(parsed.customSkills);
-        if (parsed.isPublic !== undefined) setIsPublicProfile(!!parsed.isPublic);
-      } catch {}
-    }
-    // Modal visibility is determined by the /api/auth/me fetch below.
-    // Do NOT call setShowSetupModal here based on localStorage — that data may be
-    // stale after a logout/login (localStorage.clear() wipes it on logout).
+    // No localStorage read for profile details — DB is the source of truth.
+    // The /api/auth/me fetch below loads everything from the database.
   }, [isPublic]);
 
-  // Load profile from backend — authoritative source of truth for modal visibility.
-  // Runs once per session (cached in sessionStorage) to avoid re-triggering on
-  // workspace switches or re-renders.
+  // Load entire profile from the database — single source of truth.
+  // This runs on every mount so workspace switches and re-logins always
+  // hydrate fresh data from the DB, not from localStorage.
   useEffect(() => {
     if (isPublic) return;
     const token = localStorage.getItem('token');
@@ -258,13 +245,9 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       .then(data => {
         if (data?.user) {
           const u = data.user;
-          if (u.is_public !== undefined) {
-            setIsPublicProfile(!!u.is_public);
-          }
 
-          // Always hydrate profile state from the DB — this restores details after
-          // logout/login (localStorage is cleared on logout) and after workspace switches.
-          const fetchedDetails = {
+          // Hydrate all profile state directly from DB
+          const dbDetails = {
             bio: u.bio || '',
             phone: u.phone || '',
             location: u.location || 'Global',
@@ -272,14 +255,19 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             avatar: u.avatar || '',
             isPublic: !!u.is_public
           };
-          setProfileDetails(prev => ({ ...prev, ...fetchedDetails }));
-          setEditForm(prev => ({ ...prev, ...fetchedDetails }));
+          setProfileDetails(prev => ({ ...prev, ...dbDetails }));
+          setEditForm(prev => ({ ...prev, ...dbDetails }));
           if (u.avatar) setAvatarStr(u.avatar);
-          // Persist to localStorage so sidebar/other pages can read it
-          localStorage.setItem('user_profile_details', JSON.stringify(fetchedDetails));
+          if (u.is_public !== undefined) setIsPublicProfile(!!u.is_public);
 
-          // Only show the setup modal if bio is missing — phone & location are optional.
-          // This is the single gate: once bio is saved to DB, the modal never re-appears.
+          // Load custom skills from DB (JSONB column)
+          if (Array.isArray(u.custom_skills) && u.custom_skills.length > 0) {
+            setCustomSkills(u.custom_skills);
+          } else if (typeof u.custom_skills === 'string') {
+            try { setCustomSkills(JSON.parse(u.custom_skills)); } catch {}
+          }
+
+          // Only show setup modal if bio is missing — the single gate
           if (!u.bio || u.bio.trim() === '') {
             setShowSetupModal(true);
           } else {
@@ -289,8 +277,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         setProfileCheckDone(true);
       })
       .catch((err) => {
-        console.error("Could not sync profile metadata:", err);
-        // On network error, don't show the modal — avoid blocking the user
+        console.error("Could not load profile from DB:", err);
         setShowSetupModal(false);
         setProfileCheckDone(true);
       });
@@ -502,8 +489,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         return;
     }
     setProfileDetails(editForm);
-    const updated = { ...editForm, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
-    localStorage.setItem('user_profile_details', JSON.stringify(updated));
+    // Save to DB only — no localStorage
     apiFetch('/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -512,7 +498,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         phone: editForm.phone,
         location: editForm.location,
         countryCode: editForm.countryCode,
-        avatar: avatarStr
+        avatar: avatarStr,
+        customSkills
       })
     }).catch(err => console.error("Failed to sync profile:", err));
     setShowSetupModal(false);
@@ -538,8 +525,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     const finalRole = editForm.role || displayRole;
     const newDetails = { ...editForm, role: finalRole };
     setProfileDetails(newDetails);
-    const updated = { ...newDetails, avatar: avatarStr, isPublic: isPublicProfile, customSkills };
-    localStorage.setItem('user_profile_details', JSON.stringify(updated));
+    // Save to DB only — no localStorage
     apiFetch('/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -548,7 +534,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         phone: editForm.phone,
         location: editForm.location,
         countryCode: editForm.countryCode,
-        avatar: avatarStr
+        avatar: avatarStr,
+        customSkills
       })
     }).catch(err => console.error("Failed to sync profile:", err));
     setIsEditing(false);
@@ -559,12 +546,21 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
       if (file) {
           const reader = new FileReader();
           reader.onloadend = () => {
-              setAvatarStr(reader.result as string);
-              const savedDetails = localStorage.getItem('user_profile_details');
-              if (savedDetails) {
-                 const parsed = JSON.parse(savedDetails);
-                 localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, avatar: reader.result as string }));
-              }
+              const base64 = reader.result as string;
+              setAvatarStr(base64);
+              // Immediately persist avatar to DB
+              apiFetch('/api/auth/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bio: profileDetails.bio,
+                  phone: profileDetails.phone,
+                  location: profileDetails.location,
+                  countryCode: profileDetails.countryCode,
+                  avatar: base64,
+                  customSkills
+                })
+              }).catch(err => console.error("Failed to save avatar:", err));
           };
           reader.readAsDataURL(file);
       }
@@ -573,28 +569,30 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const togglePublicProfile = () => {
       const newValue = !isPublicProfile;
       setIsPublicProfile(newValue);
-      // Save to backend so it persists and controls public URL access
+      // Save visibility to DB only
       apiFetch('/api/auth/visibility', {
         method: 'PUT',
         body: JSON.stringify({ isPublic: newValue }),
       }).catch(() => {});
-      const savedDetails = localStorage.getItem('user_profile_details');
-      if (savedDetails) {
-          const parsed = JSON.parse(savedDetails);
-          localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, isPublic: !isPublicProfile }));
-      }
   };
 
   const handleAddCustomSkill = () => {
       if (newSkillInput.trim() && !customSkills.includes(newSkillInput.trim())) {
           const updatedSkills = [...customSkills, newSkillInput.trim()];
           setCustomSkills(updatedSkills);
-          
-          const savedDetails = localStorage.getItem('user_profile_details');
-          if (savedDetails) {
-             const parsed = JSON.parse(savedDetails);
-             localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, customSkills: updatedSkills }));
-          }
+          // Persist updated skills to DB immediately
+          apiFetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bio: profileDetails.bio,
+              phone: profileDetails.phone,
+              location: profileDetails.location,
+              countryCode: profileDetails.countryCode,
+              avatar: avatarStr,
+              customSkills: updatedSkills
+            })
+          }).catch(err => console.error("Failed to save custom skills:", err));
       }
       setNewSkillInput("");
       setShowAddSkill(false);
@@ -603,11 +601,19 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const removeCustomSkill = (skillToRemove: string) => {
       const updatedSkills = customSkills.filter(s => s !== skillToRemove);
       setCustomSkills(updatedSkills);
-      const savedDetails = localStorage.getItem('user_profile_details');
-      if (savedDetails) {
-          const parsed = JSON.parse(savedDetails);
-          localStorage.setItem('user_profile_details', JSON.stringify({ ...parsed, customSkills: updatedSkills }));
-      }
+      // Persist updated skills to DB immediately
+      apiFetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bio: profileDetails.bio,
+          phone: profileDetails.phone,
+          location: profileDetails.location,
+          countryCode: profileDetails.countryCode,
+          avatar: avatarStr,
+          customSkills: updatedSkills
+        })
+      }).catch(err => console.error("Failed to save custom skills:", err));
   };
 
   const handleAISync = async () => {
@@ -629,7 +635,19 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         const newDetails = { ...profileDetails, ...editForm, bio: refinedBio };
         setProfileDetails(newDetails);
         setEditForm(newDetails);
-        localStorage.setItem('user_profile_details', JSON.stringify(newDetails));
+        // Save AI-generated bio to DB immediately
+        apiFetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bio: refinedBio,
+            phone: newDetails.phone,
+            location: newDetails.location,
+            countryCode: newDetails.countryCode,
+            avatar: avatarStr,
+            customSkills
+          })
+        }).catch(() => {});
     } catch (e) {
         console.error(e);
         // Fallback
@@ -637,7 +655,18 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         const newDetails = { ...profileDetails, ...editForm, bio: newBio };
         setProfileDetails(newDetails);
         setEditForm(newDetails);
-        localStorage.setItem('user_profile_details', JSON.stringify(newDetails));
+        apiFetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bio: newBio,
+            phone: newDetails.phone,
+            location: newDetails.location,
+            countryCode: newDetails.countryCode,
+            avatar: avatarStr,
+            customSkills
+          })
+        }).catch(() => {});
     } finally {
         setIsSyncingAI(false);
     }

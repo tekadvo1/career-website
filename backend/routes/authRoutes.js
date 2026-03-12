@@ -340,10 +340,19 @@ router.put('/visibility', protect, async (req, res) => {
 // @access  Private
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { bio, phone, location, countryCode, avatar } = req.body;
+    const { bio, phone, location, countryCode, avatar, customSkills } = req.body;
+    // Ensure custom_skills column exists (safe to run every time — idempotent)
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='custom_skills') THEN
+          ALTER TABLE users ADD COLUMN custom_skills JSONB DEFAULT '[]';
+        END IF;
+      END $$;
+    `).catch(() => {}); // Ignore if already exists or permission issue
+
     await pool.query(
-      'UPDATE users SET bio = $1, phone = $2, location = $3, country_code = $4, avatar = $5 WHERE id = $6',
-      [bio, phone, location, countryCode, avatar, req.user.id]
+      'UPDATE users SET bio = $1, phone = $2, location = $3, country_code = $4, avatar = $5, custom_skills = $6 WHERE id = $7',
+      [bio, phone, location, countryCode, avatar, JSON.stringify(customSkills || []), req.user.id]
     );
     res.json({ success: true });
   } catch (error) {
