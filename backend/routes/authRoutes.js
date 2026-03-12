@@ -170,19 +170,64 @@ router.get('/public-profile/:username', async (req, res) => {
 
     // We need the role first to query the counts accurately
     let roleTitle = (workspaceRole ? workspaceRole.replace(/-/g, ' ') : null) || (wsRes.rows.length > 0 ? wsRes.rows[0].role : 'Software Engineer');
-    let skills = ['JavaScript', 'React', 'Node.js'];
+    let skills = [];
+
+    // Step 5: Extract skills from matched analysis
+    const getSkillsFromAnalysis = (analysisData) => {
+      const analysis = typeof analysisData === 'string' ? JSON.parse(analysisData) : analysisData;
+      if (!analysis) return [];
+      
+      let rawSkills = [];
+      if (analysis.technicalSkills && Array.isArray(analysis.technicalSkills)) {
+        rawSkills = analysis.technicalSkills;
+      } else if (analysis.skills && Array.isArray(analysis.skills)) {
+        rawSkills = analysis.skills.map(s => typeof s === 'string' ? s : (s.name || s.skill));
+      } else if (analysis.existingSkills && Array.isArray(analysis.existingSkills)) {
+        rawSkills = analysis.existingSkills.map(s => typeof s === 'string' ? s : (s.name || s.skill));
+      }
+      return rawSkills.filter(Boolean).slice(0, 5);
+    };
 
     if (roleRes && roleRes.rows.length > 0) {
-      // Use the analysis title only if we don't have a more specific workspaceRole
+      // Use the analysis title if we don't have a more specific one
       if (!roleTitle || roleTitle === 'Software Engineer') {
         roleTitle = roleRes.rows[0].role_title || roleTitle;
       }
+      skills = getSkillsFromAnalysis(roleRes.rows[0].analysis_data);
+    }
+
+    // Step 6: If no skills found yet, try extracting from roadmap progress or projects for THIS role
+    if (skills.length === 0) {
+      const projectSkillsRes = await pool.query(
+        "SELECT project_data FROM user_projects WHERE user_id = $1 AND LOWER(role) = LOWER($2) LIMIT 10",
+        [user.id, roleTitle]
+      );
       
-      const analysis = typeof roleRes.rows[0].analysis_data === 'string'
-        ? JSON.parse(roleRes.rows[0].analysis_data)
-        : roleRes.rows[0].analysis_data;
-      if (analysis?.technicalSkills?.length > 0) skills = analysis.technicalSkills.slice(0, 5);
-      else if (analysis?.existingSkills?.length > 0) skills = analysis.existingSkills.map((s) => s.name).slice(0, 5);
+      const projectSkills = new Set();
+      projectSkillsRes.rows.forEach(row => {
+        const data = typeof row.project_data === 'string' ? JSON.parse(row.project_data) : row.project_data;
+        if (data?.skills_impact) {
+          data.skills_impact.forEach(s => projectSkills.add(s.skill || s.name));
+        }
+      });
+      
+      if (projectSkills.size > 0) {
+        skills = Array.from(projectSkills).slice(0, 5);
+      }
+    }
+
+    // Fallback: Default skills based on role name keywords if still empty
+    if (skills.length === 0) {
+      const rt = roleTitle.toLowerCase();
+      if (rt.includes('mainframe') || rt.includes('cobol')) {
+        skills = ['COBOL', 'JCL', 'DB2', 'Mainframe', 'z/OS'];
+      } else if (rt.includes('java')) {
+        skills = ['Java', 'Spring Boot', 'Hibernate', 'Maven', 'MySQL'];
+      } else if (rt.includes('python')) {
+        skills = ['Python', 'Django', 'Flask', 'Pandas', 'NumPy'];
+      } else {
+        skills = ['JavaScript', 'React', 'Node.js', 'PostgreSQL', 'Tailwind CSS'];
+      }
     }
 
     // Get roadmap progress count specifically for this role
