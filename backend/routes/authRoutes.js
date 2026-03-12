@@ -146,9 +146,11 @@ router.get('/public-profile/:username', async (req, res) => {
     // Get their most recent role analysis for this specific role
     let roleRes;
     if (workspaceRole) {
+      // Decode the slugified role name (e.g. senior-full-stack-engineer -> senior full stack engineer)
+      const queryRole = workspaceRole.replace(/-/g, ' ').toLowerCase();
       roleRes = await pool.query(
-        'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) = LOWER($2) ORDER BY created_at DESC LIMIT 1',
-        [user.id, workspaceRole]
+        'SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) LIKE $2 ORDER BY created_at DESC LIMIT 1',
+        [user.id, `${queryRole}%`]
       );
     }
     
