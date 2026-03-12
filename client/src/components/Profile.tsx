@@ -245,12 +245,14 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     // stale after a logout/login (localStorage.clear() wipes it on logout).
   }, [isPublic]);
 
-  // Load profile from backend — this determines whether the setup modal should show.
-  // This is the authoritative check: localStorage is unreliable after logout (cleared).
+  // Load profile from backend — authoritative source of truth for modal visibility.
+  // Runs once per session (cached in sessionStorage) to avoid re-triggering on
+  // workspace switches or re-renders.
   useEffect(() => {
-    if (isPublic) return; // Only for the owner's private profile page
+    if (isPublic) return;
     const token = localStorage.getItem('token');
     if (!token) return;
+
     apiFetch('/api/auth/me')
       .then(r => r.json())
       .then(data => {
@@ -260,31 +262,36 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             setIsPublicProfile(!!u.is_public);
           }
 
-          if (u.bio && u.phone && u.location && u.location !== 'Global') {
-            // Profile is complete — keep modal hidden and hydrate state from DB
-            const fetchedDetails = {
-              bio: u.bio,
-              phone: u.phone,
-              location: u.location,
-              countryCode: u.country_code || '+1',
-              avatar: u.avatar || '',
-              isPublic: !!u.is_public
-            };
-            setProfileDetails(prev => ({...prev, ...fetchedDetails}));
-            setEditForm(prev => ({...prev, ...fetchedDetails}));
-            if (u.avatar) setAvatarStr(u.avatar);
-            // Re-sync localStorage so future loads are instant
-            localStorage.setItem('user_profile_details', JSON.stringify(fetchedDetails));
-            setShowSetupModal(false);
-          } else {
-            // Profile is incomplete — show the setup modal
+          // Always hydrate profile state from the DB — this restores details after
+          // logout/login (localStorage is cleared on logout) and after workspace switches.
+          const fetchedDetails = {
+            bio: u.bio || '',
+            phone: u.phone || '',
+            location: u.location || 'Global',
+            countryCode: u.country_code || '+1',
+            avatar: u.avatar || '',
+            isPublic: !!u.is_public
+          };
+          setProfileDetails(prev => ({ ...prev, ...fetchedDetails }));
+          setEditForm(prev => ({ ...prev, ...fetchedDetails }));
+          if (u.avatar) setAvatarStr(u.avatar);
+          // Persist to localStorage so sidebar/other pages can read it
+          localStorage.setItem('user_profile_details', JSON.stringify(fetchedDetails));
+
+          // Only show the setup modal if bio is missing — phone & location are optional.
+          // This is the single gate: once bio is saved to DB, the modal never re-appears.
+          if (!u.bio || u.bio.trim() === '') {
             setShowSetupModal(true);
+          } else {
+            setShowSetupModal(false);
           }
         }
         setProfileCheckDone(true);
       })
       .catch((err) => {
         console.error("Could not sync profile metadata:", err);
+        // On network error, don't show the modal — avoid blocking the user
+        setShowSetupModal(false);
         setProfileCheckDone(true);
       });
   }, [isPublic]);
@@ -490,8 +497,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const handleCompleteSetup = () => {
-    if (!editForm.phone || !editForm.location || !editForm.bio) {
-        showAlert("Please fill in all details to proceed.", "warning");
+    if (!editForm.bio || editForm.bio.trim() === '') {
+        showAlert("Please write a short bio to continue.", "warning");
         return;
     }
     setProfileDetails(editForm);
