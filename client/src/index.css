@@ -9,3 +9,9 @@
     scrollbar-width: none; /* Firefox */
   }
 }
+
+@layer base {
+  button, a {
+    cursor: pointer;
+  }
+}

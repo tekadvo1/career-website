@@ -36,6 +36,7 @@ import TermsAndConditions from './components/landing/TermsAndConditions';
 import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import NotFoundPage from './components/NotFoundPage';
+import ScrollToTop from './components/ScrollToTop';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -83,6 +84,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="min-h-screen bg-gray-100">
         <Routes>
 

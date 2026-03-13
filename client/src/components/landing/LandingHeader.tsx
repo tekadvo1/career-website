@@ -25,10 +25,10 @@ export default function LandingHeader() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#0a0f0d]/90 backdrop-blur-xl ${
         scrolled
-          ? 'bg-[#0a0f0d]/90 backdrop-blur-xl border-b border-white/[0.06] shadow-2xl shadow-black/30'
-          : 'bg-transparent border-b border-transparent'
+          ? 'border-b border-white/[0.06] shadow-2xl shadow-black/30 py-1'
+          : 'border-b border-transparent shadow-none py-2'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
