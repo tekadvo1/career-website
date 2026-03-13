@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { getToken, getUser } from '../utils/auth';
 import {
   Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2,
   X, UploadCloud, FileText, Award, Pencil, Check
@@ -135,7 +134,7 @@ export default function Workspaces() {
     if (!newName || !newRole) return;
     try {
       setIsCreating(true);
-      let finalRole = newRole;
+      const finalRole = newRole;
 
       if (selectedFile) {
         const formData = new FormData();
@@ -250,7 +249,7 @@ export default function Workspaces() {
         
         // Remove individual workspace caching when switching
         const visitedStr = sessionStorage.getItem('visitedWorkspaces');
-        let visited = visitedStr ? JSON.parse(visitedStr) : [];
+        const visited = visitedStr ? JSON.parse(visitedStr) : [];
         if (!visited.includes(workspace.id)) {
           visited.push(workspace.id);
           sessionStorage.setItem('visitedWorkspaces', JSON.stringify(visited));

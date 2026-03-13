@@ -1,7 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getToken, getUser } from '../utils/auth';
+import { getToken } from '../utils/auth';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare,

@@ -2,7 +2,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { getToken, getUser } from '../utils/auth';
+import { getToken } from '../utils/auth';
 import {
   Trophy,
   Star,

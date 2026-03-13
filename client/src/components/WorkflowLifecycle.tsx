@@ -1,7 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getToken, getUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 import { 
   ArrowLeft, 
   GitBranch, 

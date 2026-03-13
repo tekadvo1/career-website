@@ -1,7 +1,6 @@
 import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getToken, getUser } from '../utils/auth';
 import {
   ArrowLeft,
   CheckCircle2,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getToken, getUser } from '../utils/auth';
+import { getToken } from '../utils/auth';
 import {
   Search,
   Trophy,

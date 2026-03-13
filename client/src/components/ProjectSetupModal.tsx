@@ -1,6 +1,6 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
-import { getToken, getUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 import {
   X, Calendar, Bell, Mail, Check,
   ChevronRight, BarChart3, Clock

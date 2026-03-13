@@ -2,7 +2,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
-import { getToken, getUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 import {
   Send,
   Sparkles,
