@@ -524,12 +524,12 @@ export default function ProjectStructurePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white flex" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="h-screen bg-[#0d1117] text-white flex overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Global Sidebar */}
       <Sidebar activePage="project-structure" />
 
       {/* ───────────────────── MAIN 3-PANE LAYOUT ─────────────────────── */}
-      <div className="flex-1 flex flex-col ml-10 md:ml-12 min-h-screen">
+      <div className="flex-1 flex flex-col ml-10 md:ml-12 h-screen overflow-hidden">
 
         {/* ── Top Header ─────────────────────────────────────────────────── */}
         <header className="sticky top-0 z-20 bg-[#0d1117]/95 backdrop-blur-sm border-b border-white/5 px-5 py-2.5 flex items-center justify-between">
