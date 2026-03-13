@@ -286,7 +286,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   useEffect(() => {
     if (isPublic) return; // Prevent local sync on public profile
-    const user = (getUser() ?? {});
+    const user: any = (getUser() ?? {});
     const token = getToken();
     if (!user?.id || !token) return;
 
@@ -432,7 +432,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     };
   }, [liveStreak]);
 
-  const user = (getUser() ?? {});
+  const user: any = (getUser() ?? {});
   // Use reactive currentRole state (updates immediately on workspace switch via storage event)
   const displayRole = currentRole;
   // wsSkills ref so callbacks always have the latest value  
@@ -514,8 +514,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   const shareProfile = () => {
     // Slugify: "Rakesh Vejendla33" -> "rakesh-vejendla33" (no %20 in URL)
-    const slug = (user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
-    const safeRole = displayRole.toLowerCase().replace(/\s+/g, '-');
+    const slug = String(user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
+    const safeRole = String(displayRole || '').toLowerCase().replace(/\s+/g, '-');
     const link = `${window.location.origin}/p/${slug}?workspace=${safeRole}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
