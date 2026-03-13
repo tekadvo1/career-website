@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
 import Sidebar from './Sidebar';
-import { getToken, getUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 
 export default function Onboarding() {
   const { showAlert } = useAlert();
@@ -115,7 +115,7 @@ export default function Onboarding() {
       formData.append('resume', file);
       // userId is now sent via JWT token (Authorization header added by apiFetch)
       // Keep it in body as a fallback too
-      formData.append('userId', user.id);
+      formData.append('userId', (user as any).id);
 
       try {
         const response = await apiFetch('/api/resume/analyze', {

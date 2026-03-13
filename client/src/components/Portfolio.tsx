@@ -203,13 +203,13 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     };
   }, [isPublic]);
 
-  const user = (getUser() ?? {});
+  const user: any = (getUser() ?? {});
   const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawActiveRole = lastRoleState?.role || "Software Engineer";
   const activeRole = _rawActiveRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
 
-  const displayName = isPublic ? username : (user?.username || "Guest User");
+  const displayName: string = isPublic ? (username || "Guest User") : (user?.username || "Guest User");
   const t = THEMES[portfolioData.theme] || THEMES.minimalist;
 
   const shareProfile = () => {
