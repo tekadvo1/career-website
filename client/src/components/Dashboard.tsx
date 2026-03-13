@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import ProjectSetupModal  from './ProjectSetupModal';
 import ProjectDetailModal from './ProjectDetailModal';
 import Sidebar from './Sidebar';
+import { getToken, getUser } from '../utils/auth';
 import {
   Search, Flame, ChevronRight,
   Target, Zap, Clock, CheckCircle,
@@ -131,10 +132,10 @@ export default function Dashboard() {
 
   /* ── SSE connection ───────────────────────────────────────────────────────── */
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (getUser() ?? {});
     if (!user.id) return;
 
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
     sseRef.current = es;
 
     es.addEventListener('snapshot', (e: MessageEvent) => {

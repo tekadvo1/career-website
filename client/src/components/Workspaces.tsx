@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { getToken, getUser } from '../utils/auth';
 import {
   Briefcase, Plus, Trash2, ArrowRight, Sparkles, CheckCircle2,
   X, UploadCloud, FileText, Award, Pencil, Check
@@ -28,7 +29,7 @@ const cleanRole = (role: string): string => {
 export default function Workspaces() {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
-  const userStr = localStorage.getItem('user');
+  const userStr = sessionStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);

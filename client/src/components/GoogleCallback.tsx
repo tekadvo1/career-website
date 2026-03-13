@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { setToken, setUser } from '../utils/auth';
 
 export default function GoogleCallback() {
   const [searchParams] = useSearchParams();
@@ -8,7 +9,8 @@ export default function GoogleCallback() {
   useEffect(() => {
     const fetchUser = async () => {
       if (token) {
-        localStorage.setItem('token', token);
+        // sessionStorage is tab-isolated — keeps this tab's session independent
+        setToken(token);
         try {
           const res = await fetch('/api/auth/me', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -16,7 +18,7 @@ export default function GoogleCallback() {
           const data = await res.json();
           
           if (data.status === 'success') {
-            localStorage.setItem('user', JSON.stringify(data.user));
+            setUser(data.user);
 
             if (data.user.lastRoleAnalysis) {
                 localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));

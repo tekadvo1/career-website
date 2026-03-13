@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getToken, getUser } from '../utils/auth';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -95,7 +96,7 @@ export default function ProjectWorkspace() {
   const location = useLocation();
   const { project, role, preLoadedCurriculum } = (location.state as any) || {};
 
-  const userString = localStorage.getItem('user');
+  const userString = sessionStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : {};
 
   const [projectId, setProjectId] = useState<string | null>(project?.projectId || project?.id || null);

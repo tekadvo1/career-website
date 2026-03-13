@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getToken, getUser } from '../utils/auth';
 import {
   ArrowLeft,
   Briefcase,
@@ -168,12 +169,12 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     loadRealtimeStats();
     
     // SETUP REAL-TIME STREAM
-    const userStr = localStorage.getItem('user');
+    const userStr = sessionStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
     let es: EventSource | null = null;
 
     if (!isPublic && user?.id) {
-        es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+        es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
         es.addEventListener('snapshot', (e: MessageEvent) => {
             try {
                 const snap = JSON.parse(e.data);
@@ -202,7 +203,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     };
   }, [isPublic]);
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = (getUser() ?? {});
   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawActiveRole = lastRoleState?.role || "Software Engineer";

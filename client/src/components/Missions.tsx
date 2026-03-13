@@ -2,6 +2,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAlert } from '../contexts/AlertContext';
+import { getToken, getUser } from '../utils/auth';
 import {
   Target,
   Trophy,
@@ -64,7 +65,7 @@ export default function Missions() {
   const _rawRole = location.state?.role || localStorage.getItem('selectedRole') || 'Software Engineer';
   const role = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || 'Software Engineer';
   const initialTab = location.state?.tab || 'missions';
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = (getUser() ?? {});
 
   const [activeTab, setActiveTab] = useState<'missions' | 'workspace' | 'rewards' | 'how_it_works'>(initialTab);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -119,7 +120,7 @@ export default function Missions() {
     fetchInitial();
 
     if (user?.id) {
-       es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+       es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
        es.addEventListener('snapshot', (e: MessageEvent) => {
            try {
                const snap = JSON.parse(e.data);

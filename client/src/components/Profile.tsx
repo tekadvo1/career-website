@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { getToken, getUser } from '../utils/auth';
 import {
   Mail,
   MapPin,
@@ -237,7 +238,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   // hydrate fresh data from the DB, not from localStorage.
   useEffect(() => {
     if (isPublic) return;
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (!token) return;
 
     apiFetch('/api/auth/me')
@@ -285,8 +286,8 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
 
   useEffect(() => {
     if (isPublic) return; // Prevent local sync on public profile
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const token = localStorage.getItem('token');
+    const user = (getUser() ?? {});
+    const token = getToken();
     if (!user?.id || !token) return;
 
     // Real-time EventSource connection
@@ -431,7 +432,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     };
   }, [liveStreak]);
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = (getUser() ?? {});
   // Use reactive currentRole state (updates immediately on workspace switch via storage event)
   const displayRole = currentRole;
   // wsSkills ref so callbacks always have the latest value  
@@ -506,7 +507,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.removeItem('token'); sessionStorage.removeItem('user');
     // Use window.location to ensure all React states (like contexts) reset fully.
     window.location.href = '/signin';
   };

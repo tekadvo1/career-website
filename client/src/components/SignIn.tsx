@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { setToken, setUser } from '../utils/auth';
 
 export default function SignIn() {
   const navigate = useNavigate();
@@ -38,8 +39,9 @@ export default function SignIn() {
       }
 
       // Handle successful login
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
+      // sessionStorage is tab-isolated → each tab keeps its own session
+      setToken(data.token);
+      setUser(data.user);
 
       // Cache the active workspace analysis locally for synchronous component rendering (DB is source of truth via current_workspace_id)
       if (data.user.lastRoleAnalysis) {

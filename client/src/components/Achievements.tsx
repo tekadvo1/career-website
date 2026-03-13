@@ -2,6 +2,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import { getToken, getUser } from '../utils/auth';
 import {
   Trophy,
   Star,
@@ -54,8 +55,8 @@ export default function Achievements() {
   const [isLive, setIsLive] = useState(false);
   const [lastSync, setLastSync] = useState(new Date());
 
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const token = getToken();
+  const userStr = sessionStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function Achievements() {
     fetchAchievements();
 
     // ── Real-time SSE Connection ──
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
 
     es.addEventListener('snapshot', () => {
       fetchAchievements(); // Sync achievements whenever a fresh snapshot hits

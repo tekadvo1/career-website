@@ -1,5 +1,6 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
+import { getToken, getUser } from '../utils/auth';
 import {
   X, Calendar, Bell, Mail, Check,
   ChevronRight, BarChart3, Clock
@@ -91,7 +92,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
 
   const handleStart = async () => {
     setLoading(true);
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (getUser() ?? {});
     let dbProjectId = project.id;
 
     if (user.id) {

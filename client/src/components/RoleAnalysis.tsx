@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getToken, getUser } from '../utils/auth';
 
 import { 
 
@@ -31,7 +32,7 @@ export default function RoleAnalysis() {
   // Detect if this is a returning user (onboarding already completed)
   const isReturningUser = (() => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = (getUser() ?? {});
       return !!user.onboarding_completed;
     } catch {
       return false;
@@ -189,7 +190,7 @@ export default function RoleAnalysis() {
               return Math.min(95, prev + increment);
            });
         }, 800);
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
         
         const response = await apiFetch('/api/role/analyze', {
@@ -244,8 +245,8 @@ export default function RoleAnalysis() {
     const markOnboardingComplete = async () => {
       if (isLoading || !roleDataState) return;
 
-      const userStr = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
+      const userStr = sessionStorage.getItem('user');
+      const token = getToken();
       
       if (userStr && token) {
         const user = JSON.parse(userStr);
@@ -262,7 +263,7 @@ export default function RoleAnalysis() {
              if (res.ok) {
                console.log("Marked onboarding as complete.");
                user.onboarding_completed = true;
-               localStorage.setItem('user', JSON.stringify(user));
+               sessionStorage.setItem('user', JSON.stringify(user));
              }
           } catch (e) {
              console.error("Failed to mark onboarding complete silently", e);

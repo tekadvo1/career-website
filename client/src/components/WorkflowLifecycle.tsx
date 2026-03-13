@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getToken, getUser } from '../utils/auth';
 import { 
   ArrowLeft, 
   GitBranch, 
@@ -29,7 +30,7 @@ export default function WorkflowLifecycle() {
   // Detect returning user (onboarding already completed)
   const isReturningUser = (() => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = (getUser() ?? {});
       return !!user.onboarding_completed;
     } catch {
       return false;

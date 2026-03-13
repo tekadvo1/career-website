@@ -37,19 +37,19 @@ import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import NotFoundPage from './components/NotFoundPage';
 import ScrollToTop from './components/ScrollToTop';
+import { getToken, getUser, clearSession } from './utils/auth';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const token = getToken();
+  const user = getUser<{ onboarding_completed?: boolean }>();
 
-  if (token && userStr) {
+  if (token && user) {
     try {
-      const user = JSON.parse(userStr);
       if (user.onboarding_completed) return <Navigate to="/dashboard" replace />;
       return <Navigate to="/onboarding" replace />;
     } catch {
-      localStorage.clear();
+      clearSession();
     }
   }
   return children;
@@ -57,23 +57,22 @@ const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
 
 // ── Block unauthenticated users from private app pages ────────────────────────
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const token = getToken();
+  const user = getUser<{ onboarding_completed?: boolean }>();
 
-  if (!token || !userStr) {
+  if (!token || !user) {
     // Remember where they were trying to go so we can redirect back after login
     sessionStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
     return <Navigate to="/signin" replace />;
   }
 
   try {
-    const user = JSON.parse(userStr);
     // Logged in but hasn't finished onboarding → send them there first
     if (!user.onboarding_completed && window.location.pathname !== '/onboarding') {
       return <Navigate to="/onboarding" replace />;
     }
   } catch {
-    localStorage.clear();
+    clearSession();
     return <Navigate to="/signin" replace />;
   }
 

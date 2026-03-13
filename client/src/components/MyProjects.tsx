@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getToken, getUser } from '../utils/auth';
 import {
   Search,
   Trophy,
@@ -46,7 +47,7 @@ export default function MyProjects() {
   const [editForm, setEditForm] = useState({ title: '', description: '', status: '' });
 
 
-  const userStr = localStorage.getItem('user');
+  const userStr = sessionStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
   
   // Extract active workspace role to filter projects
@@ -64,7 +65,7 @@ export default function MyProjects() {
       return;
     }
 
-    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+    const es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
 
     es.addEventListener('snapshot', (e: MessageEvent) => {
       try {

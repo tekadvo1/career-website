@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch';
 import { useLocation } from 'react-router-dom';
+import { getToken } from '../utils/auth';
 
 type WorkspaceContextType = {
   activeRole: string | null;
@@ -37,7 +38,7 @@ export const WorkspaceProvider: React.FC<{children: React.ReactNode}> = ({ child
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     if (token) {
         refreshWorkspace();
     } else {

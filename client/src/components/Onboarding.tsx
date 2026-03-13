@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
 import Sidebar from './Sidebar';
+import { getToken, getUser } from '../utils/auth';
 
 export default function Onboarding() {
   const { showAlert } = useAlert();
@@ -13,7 +14,7 @@ export default function Onboarding() {
   // Show sidebar only for returning users (already completed onboarding before)
   const isReturningUser = (() => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const user = (getUser() ?? {});
       return !!user.onboarding_completed;
     } catch {
       return false;
@@ -32,7 +33,7 @@ export default function Onboarding() {
   const [analysisData, setAnalysisData] = useState<any>(null);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (getUser() ?? {});
     if (user && user.onboarding_completed && !location.state?.force) {
       navigate('/dashboard');
     }
@@ -99,7 +100,7 @@ export default function Onboarding() {
       return;
     }
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = (getUser() ?? {});
 
     if (!user.id) {
       showAlert('Session expired. Please sign in again.', 'error');
@@ -131,7 +132,7 @@ export default function Onboarding() {
 
         // Mark onboarding complete in localStorage
         const updatedUser = { ...user, onboarding_completed: true };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        sessionStorage.setItem('user', JSON.stringify(updatedUser));
 
         // Also persist to DB via dedicated endpoint (belt-and-suspenders)
         apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
@@ -147,7 +148,7 @@ export default function Onboarding() {
     } else {
       // Role-only path — mark onboarding complete in localStorage before navigating
       const updatedUser = { ...user, onboarding_completed: true };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      sessionStorage.setItem('user', JSON.stringify(updatedUser));
 
       // Persist to DB
       apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});

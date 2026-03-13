@@ -2,6 +2,7 @@ import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
+import { getToken, getUser } from '../utils/auth';
 import {
   Send,
   Sparkles,
@@ -88,7 +89,7 @@ export default function AILearningAssistant() {
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawAIRole = location.state?.role || lastRoleState?.role || "Software Engineer";
   const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = (getUser() ?? {});
 
   const LOCAL_STORAGE_KEY = `findstreak_ai_chat_history_${role.replace(/\s+/g, '_').toLowerCase()}`;
 

@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getToken, getUser } from '../utils/auth';
 import { 
     Briefcase, 
     UploadCloud, 
@@ -47,7 +48,7 @@ export default function InterviewGuide() {
     const [revealedAnswers, setRevealedAnswers] = useState<{[key: number]: boolean}>({});
 
     const saveToBackend = async (data: GuideResponse, help: {[key: number]: string}, currentRole: string) => {
-        const userStr = localStorage.getItem('user');
+        const userStr = sessionStorage.getItem('user');
         if (!userStr) return;
         const user = JSON.parse(userStr);
         try {
@@ -76,7 +77,7 @@ export default function InterviewGuide() {
         setRole(initialRole);
 
         const fetchSavedGuide = async () => {
-             const userStrLocal = localStorage.getItem('user');
+             const userStrLocal = sessionStorage.getItem('user');
              if (!userStrLocal) return;
              const user = JSON.parse(userStrLocal);
              try {

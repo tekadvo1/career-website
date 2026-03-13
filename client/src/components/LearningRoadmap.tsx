@@ -1,6 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { getToken, getUser } from '../utils/auth';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare,
@@ -219,7 +220,7 @@ export default function LearningRoadmap() {
 
       // Load progress from backend immediately as backup, but SSE takes over
       try {
-          const userStr = localStorage.getItem('user');
+          const userStr = sessionStorage.getItem('user');
           if (userStr) {
               const user = JSON.parse(userStr);
               fetch(`/api/role/progress?role=${encodeURIComponent(role)}&userId=${user.id}`)
@@ -232,10 +233,10 @@ export default function LearningRoadmap() {
           }
       } catch (e) {}
 
-      const userStr = localStorage.getItem('user');
+      const userStr = sessionStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
       if (user?.id) {
-          es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${localStorage.getItem('token')}`);
+          es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
           es.addEventListener('snapshot', (e: MessageEvent) => {
               try {
                   const snap = JSON.parse(e.data);
@@ -273,7 +274,7 @@ export default function LearningRoadmap() {
       } else {
          console.log("Fetching fresh roadmap for:", targetRole);
          try {
-           const userStr = localStorage.getItem('user');
+           const userStr = sessionStorage.getItem('user');
            const user = userStr ? JSON.parse(userStr) : {};
            const response = await apiFetch('/api/role/analyze', {
               method: 'POST',
@@ -322,7 +323,7 @@ export default function LearningRoadmap() {
       });
 
       try {
-          const userStr = localStorage.getItem('user');
+          const userStr = sessionStorage.getItem('user');
           if (userStr) {
              const user = JSON.parse(userStr);
              apiFetch('/api/role/progress', {
@@ -361,7 +362,7 @@ export default function LearningRoadmap() {
   const handleRefreshRoadmap = async () => {
     setIsLoading(true);
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = sessionStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : {};
       const response = await apiFetch('/api/role/analyze', {
          method: 'POST',
