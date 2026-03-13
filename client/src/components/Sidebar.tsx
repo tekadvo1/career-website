@@ -16,7 +16,8 @@ import {
   Wrench,
   Code,
   MessageSquare,
-  Terminal
+  Terminal,
+  FolderTree
 } from 'lucide-react';
 
 interface NavItem {
@@ -128,6 +129,13 @@ const navItems: NavItem[] = [
     subtitle: 'AI Prep & Q&A',
     icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
     route: '/interview-guide',
+    badge: 'NEW',
+  },
+  {
+    label: 'Project Structure',
+    subtitle: 'AI architecture guide',
+    icon: <FolderTree className="w-5 h-5 text-emerald-600" />,
+    route: '/project-structure',
     badge: 'NEW',
   },
 ];

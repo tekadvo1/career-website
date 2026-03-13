@@ -97,6 +97,7 @@ const achievementRoutes = require('./routes/achievementRoutes');
 const realtimeRoutes = require('./routes/realtimeRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const projectStructureRoutes = require('./routes/projectStructureRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 
@@ -113,6 +114,7 @@ app.use('/api/missions',    protect, missionRoutes);
 app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
+app.use('/api/project-structure', protect, projectStructureRoutes);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {
@@ -200,6 +202,28 @@ const updateSchema = async () => {
           ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT FALSE;
         END IF;
       END $$;
+    `);
+
+    // Create project_structures table for caching AI-generated structures per role
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS project_structures (
+        id SERIAL PRIMARY KEY,
+        role VARCHAR(255) NOT NULL UNIQUE,
+        structure_data JSONB NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Create project_structures_custom for user-specific custom descriptions
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS project_structures_custom (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        structure_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     client.release();

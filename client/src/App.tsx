@@ -34,6 +34,7 @@ import PrivacyPolicy from './components/landing/PrivacyPolicy';
 import CookiePolicy from './components/landing/CookiePolicy';
 import TermsAndConditions from './components/landing/TermsAndConditions';
 import Missions from './components/Missions';
+import ProjectStructurePage from './components/ProjectStructurePage';
 import NotFoundPage from './components/NotFoundPage';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
@@ -135,6 +136,7 @@ function App() {
           <Route path="/tech-stack"              element={<ProtectedRoute><TechStack /></ProtectedRoute>} />
           <Route path="/tech-guide"              element={<ProtectedRoute><TechGuideView /></ProtectedRoute>} />
           <Route path="/missions"                element={<ProtectedRoute><Missions /></ProtectedRoute>} />
+          <Route path="/project-structure"       element={<ProtectedRoute><ProjectStructurePage /></ProtectedRoute>} />
 
           {/* ── 404 ─────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFoundPage />} />
