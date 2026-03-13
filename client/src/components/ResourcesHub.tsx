@@ -57,7 +57,7 @@ export default function ResourcesHub() {
   // Get user's role from location state or workspace
   const rawRole = location.state?.role || (() => {
     try {
-      const saved = localStorage.getItem('lastRoleAnalysis');
+      const saved = sessionStorage.getItem('lastRoleAnalysis');
       return saved ? JSON.parse(saved).role : 'Software Engineer';
     } catch { return 'Software Engineer'; }
   })();

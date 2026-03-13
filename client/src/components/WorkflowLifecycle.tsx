@@ -37,8 +37,8 @@ export default function WorkflowLifecycle() {
     }
   })();
   
-  // Try to load from localStorage if state is missing
-  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  // Try to load from sessionStorage if state is missing
+  const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const storedData = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const defaultRole = storedData?.role || 'Software Engineer';
   const defaultAnalysis = storedData?.analysis || null;

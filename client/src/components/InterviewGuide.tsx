@@ -69,7 +69,7 @@ export default function InterviewGuide() {
 
     useEffect(() => {
         let initialRole = "Software Engineer";
-        const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+        const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
              const parsed = JSON.parse(lastStateRaw);
              if (parsed.role) initialRole = parsed.role;

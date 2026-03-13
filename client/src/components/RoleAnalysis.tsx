@@ -44,7 +44,7 @@ export default function RoleAnalysis() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   
   const _rawRole = location.state?.role || lastRoleState?.role || "Software Engineer";
@@ -153,7 +153,7 @@ export default function RoleAnalysis() {
           console.log("Using analysis from location state");
           setRoleDataState(getAiRoleData(aiAnalysis, role));
           // Save to local storage for persistence on refresh
-          localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+          sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
             role,
             analysis: aiAnalysis,
             hasResume,
@@ -165,7 +165,7 @@ export default function RoleAnalysis() {
         }
 
         // Try to recover from local storage
-        const saved = localStorage.getItem('lastRoleAnalysis');
+        const saved = sessionStorage.getItem('lastRoleAnalysis');
         // bypass storage if user explicitly chose a "learningPath"
         if (saved && !location.state?.learningPath) {
           const parsed = JSON.parse(saved);
@@ -217,7 +217,7 @@ export default function RoleAnalysis() {
         if (data.success && data.data) {
            setRoleDataState(getAiRoleData(data.data, role));
            // Save this new fetch to local storage
-           localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+           sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
              role,
              analysis: data.data,
              hasResume: false,

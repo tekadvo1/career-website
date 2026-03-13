@@ -18,7 +18,7 @@ export default function TechStack() {
     const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
 
     useEffect(() => {
-        const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+        const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
             try {
                 const lastRoleState = JSON.parse(lastStateRaw);

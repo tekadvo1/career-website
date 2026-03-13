@@ -85,7 +85,7 @@ interface DebugIssue {
 export default function AILearningAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
-  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawAIRole = location.state?.role || lastRoleState?.role || "Software Engineer";
   const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
@@ -95,7 +95,7 @@ export default function AILearningAssistant() {
 
   const loadChatHistory = (): ChatSession[] => {
     try {
-      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const saved = sessionStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         return parsed.map((session: any) => ({
@@ -291,11 +291,11 @@ export default function AILearningAssistant() {
     }
   }, [messages, currentChatId]);
 
-  // Persist chatHistory to localStorage AND backend whenever it changes
+  // Persist chatHistory to sessionStorage AND backend whenever it changes
   useEffect(() => {
     if (!syncRef.current) return; // Prevent overwriting DB before initial GET finishes
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
+      sessionStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
 
       if (user?.id) {
          apiFetch('/api/ai/chat-history', {
@@ -544,9 +544,9 @@ export default function AILearningAssistant() {
             errorType: "Common Dashboard Issues",
             commonIssues: [
               {
-                issue: "Tasks not saving to localStorage",
+                issue: "Tasks not saving to sessionStorage",
                 solution: "Make sure you're using useEffect correctly and stringifying/parsing JSON data. Check browser console for quota errors.",
-                code: "// ✅ Correct way\nuseEffect(() => {\n  localStorage.setItem('tasks', JSON.stringify(tasks))\n}, [tasks])",
+                code: "// ✅ Correct way\nuseEffect(() => {\n  sessionStorage.setItem('tasks', JSON.stringify(tasks))\n}, [tasks])",
               },
               {
                 issue: "State not updating immediately",

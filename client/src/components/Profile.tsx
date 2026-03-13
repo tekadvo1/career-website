@@ -52,10 +52,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const [liveStreak, setLiveStreak] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // currentRole state — re-reads from localStorage whenever workspace switches
+  // currentRole state — re-reads from sessionStorage whenever workspace switches
   const getActiveRole = () => {
     try {
-      const raw = localStorage.getItem('lastRoleAnalysis');
+      const raw = sessionStorage.getItem('lastRoleAnalysis');
       const parsed = raw ? JSON.parse(raw) : null;
       const cleanR = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
       return cleanR(parsed?.role || 'Software Engineer');
@@ -63,7 +63,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
   const getActiveSkills = (): string[] => {
     try {
-      const raw = localStorage.getItem('lastRoleAnalysis');
+      const raw = sessionStorage.getItem('lastRoleAnalysis');
       const parsed = raw ? JSON.parse(raw) : null;
       const a = parsed?.analysis;
       if (!a) return [];
@@ -203,7 +203,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const loadRealtimeStats = () => {
     const role = currentRoleRef.current || getActiveRole();
 
-    const projectsDataRaw = localStorage.getItem(`dashboard_projects_v2_${role}`);
+    const projectsDataRaw = sessionStorage.getItem(`dashboard_projects_v2_${role}`);
     const projectsData = projectsDataRaw ? JSON.parse(projectsDataRaw) : [];
 
     const totalProjects = projectsData.length > 0 ? projectsData.length : 1;
@@ -213,7 +213,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     const inProgressProject = projectsData.find((p: any) => p.status !== 'done');
     const currentProjectName = inProgressProject ? inProgressProject.title : "No Active Project";
 
-    const roadmapProgressRaw = localStorage.getItem(`roadmap_progress_${role}`);
+    const roadmapProgressRaw = sessionStorage.getItem(`roadmap_progress_${role}`);
     const roadmapProgress = roadmapProgressRaw ? JSON.parse(roadmapProgressRaw) : [];
     const skillsMastered = roadmapProgress.length;
 
@@ -229,13 +229,13 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   useEffect(() => {
-    // No localStorage read for profile details — DB is the source of truth.
+    // No sessionStorage read for profile details — DB is the source of truth.
     // The /api/auth/me fetch below loads everything from the database.
   }, [isPublic]);
 
   // Load entire profile from the database — single source of truth.
   // This runs on every mount so workspace switches and re-logins always
-  // hydrate fresh data from the DB, not from localStorage.
+  // hydrate fresh data from the DB, not from sessionStorage.
   useEffect(() => {
     if (isPublic) return;
     const token = getToken();
@@ -385,7 +385,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         newActivity.sort((a, b) => b.ts - a.ts);
         setTimeline(newActivity.slice(0, 5));
 
-        // Dynamic Skills — always read fresh from localStorage for current workspace
+        // Dynamic Skills — always read fresh from sessionStorage for current workspace
         const freshSkills = getActiveSkills();
         const roleForDefaults = currentRoleRef.current || getActiveRole();
         // Use role-based defaults if no analysis data yet (e.g. new workspace)
@@ -404,7 +404,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     es.addEventListener('snapshot', handleSnapshot);
     es.addEventListener('refresh', handleSnapshot);
 
-    // Listen for workspace switches (Workspaces.tsx writes lastRoleAnalysis to localStorage)
+    // Listen for workspace switches (Workspaces.tsx writes lastRoleAnalysis to sessionStorage)
     const handleStorageChange = (e?: StorageEvent) => {
       if (!e || e.key === 'lastRoleAnalysis' || e.key === null) {
         const newRole = getActiveRole();
@@ -439,7 +439,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const wsSkillsRef = React.useRef(wsSkills);
   React.useEffect(() => { wsSkillsRef.current = wsSkills; }, [wsSkills]);
 
-  // Active skills: prefer dynamicSkills (from SSE), then wsSkills (from localStorage), then role-based defaults
+  // Active skills: prefer dynamicSkills (from SSE), then wsSkills (from sessionStorage), then role-based defaults
   const defaultSkillsByRole = (role: string): string[] => {
     const r = role.toLowerCase();
     if (r.includes('mainframe') || r.includes('cobol')) return ['COBOL', 'JCL', 'DB2', 'VSAM', 'z/OS'];
@@ -490,7 +490,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         return;
     }
     setProfileDetails(editForm);
-    // Save to DB only — no localStorage
+    // Save to DB only — no sessionStorage
     apiFetch('/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -526,7 +526,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     const finalRole = editForm.role || displayRole;
     const newDetails = { ...editForm, role: finalRole };
     setProfileDetails(newDetails);
-    // Save to DB only — no localStorage
+    // Save to DB only — no sessionStorage
     apiFetch('/api/auth/profile', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

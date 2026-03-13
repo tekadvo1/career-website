@@ -54,7 +54,7 @@ export default function QuizGame() {
     // Attempt to load role from lastRoleAnalysis
     if (!location.state?.role) {
       try {
-        const saved = localStorage.getItem('lastRoleAnalysis');
+        const saved = sessionStorage.getItem('lastRoleAnalysis');
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.role) setRole(cleanRoleName(parsed.role));

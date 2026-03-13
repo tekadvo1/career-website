@@ -130,7 +130,7 @@ export default function Onboarding() {
 
         const data = await response.json();
 
-        // Mark onboarding complete in localStorage
+        // Mark onboarding complete in sessionStorage
         const updatedUser = { ...user, onboarding_completed: true };
         sessionStorage.setItem('user', JSON.stringify(updatedUser));
 
@@ -146,7 +146,7 @@ export default function Onboarding() {
         setIsAnalyzing(false);
       }
     } else {
-      // Role-only path — mark onboarding complete in localStorage before navigating
+      // Role-only path — mark onboarding complete in sessionStorage before navigating
       const updatedUser = { ...user, onboarding_completed: true };
       sessionStorage.setItem('user', JSON.stringify(updatedUser));
 

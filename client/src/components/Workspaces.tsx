@@ -86,7 +86,7 @@ export default function Workspaces() {
       const data = await res.json();
       let fetchedWorkspaces = data.workspaces || [];
 
-      const last = localStorage.getItem('lastRoleAnalysis');
+      const last = sessionStorage.getItem('lastRoleAnalysis');
       if (last) {
         try {
           const parsed = JSON.parse(last);
@@ -122,7 +122,7 @@ export default function Workspaces() {
 
   const currentActiveTarget = () => {
     try {
-      const last = localStorage.getItem('lastRoleAnalysis');
+      const last = sessionStorage.getItem('lastRoleAnalysis');
       if (last) {
         const parsed = JSON.parse(last);
         return parsed.role;
@@ -241,7 +241,7 @@ export default function Workspaces() {
       }
 
       if (response.ok && data.success) {
-        localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+        sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
           role: workspace.role,
           analysis: data.data,
           timestamp: new Date().getTime(),
@@ -249,11 +249,11 @@ export default function Workspaces() {
         }));
         
         // Remove individual workspace caching when switching
-        const visitedStr = localStorage.getItem('visitedWorkspaces');
+        const visitedStr = sessionStorage.getItem('visitedWorkspaces');
         let visited = visitedStr ? JSON.parse(visitedStr) : [];
         if (!visited.includes(workspace.id)) {
           visited.push(workspace.id);
-          localStorage.setItem('visitedWorkspaces', JSON.stringify(visited));
+          sessionStorage.setItem('visitedWorkspaces', JSON.stringify(visited));
           navigate('/roadmap', { state: { role: workspace.role, fromWorkspaceSwitch: true } });
         } else {
           navigate('/dashboard');

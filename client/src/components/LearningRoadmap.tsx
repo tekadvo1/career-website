@@ -256,7 +256,7 @@ export default function LearningRoadmap() {
 
       if (!analysis || !analysis.roadmap) {
          try {
-           const saved = localStorage.getItem('lastRoleAnalysis');
+           const saved = sessionStorage.getItem('lastRoleAnalysis');
            if (saved) {
              const parsed = JSON.parse(saved);
              if (parsed.role === targetRole || parsed.role) {
@@ -286,7 +286,7 @@ export default function LearningRoadmap() {
              const data = await response.json();
              if (data.data && data.data.roadmap) {
                setRoadmap(data.data.roadmap);
-               localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+               sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
                  role: targetRole,
                  analysis: data.data,
                  timestamp: new Date().getTime()
@@ -374,7 +374,7 @@ export default function LearningRoadmap() {
         const data = await response.json();
         if (data.data && data.data.roadmap) {
           setRoadmap(data.data.roadmap);
-          localStorage.setItem('lastRoleAnalysis', JSON.stringify({
+          sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
             role: role,
             analysis: data.data,
             timestamp: new Date().getTime()

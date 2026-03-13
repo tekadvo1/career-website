@@ -21,9 +21,9 @@ export default function GoogleCallback() {
             setUser(data.user);
 
             if (data.user.lastRoleAnalysis) {
-                localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+                sessionStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
             } else {
-                localStorage.removeItem('lastRoleAnalysis');
+                sessionStorage.removeItem('lastRoleAnalysis');
             }
 
             if (data.user.onboarding_completed) {

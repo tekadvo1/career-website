@@ -53,7 +53,7 @@ export default function MyProjects() {
   // Extract active workspace role to filter projects
   const _rawRole = (() => {
     try {
-      const saved = localStorage.getItem('lastRoleAnalysis');
+      const saved = sessionStorage.getItem('lastRoleAnalysis');
       return saved ? JSON.parse(saved).role : 'Software Engineer';
     } catch { return 'Software Engineer'; }
   })();

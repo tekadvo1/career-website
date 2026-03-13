@@ -107,7 +107,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [builderStep, setBuilderStep] = useState<'landing' | 'editor'>('landing');
 
-  // Use localStorage or database for these config options
+  // Use sessionStorage or database for these config options
   const [portfolioData, setPortfolioData] = useState({
     linkedin: "https://linkedin.com/in/username",
     website: "https://yourportfolio.com",
@@ -129,7 +129,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [skillsList, setSkillsList] = useState<any[]>([]);
 
   const loadRealtimeStats = () => {
-    const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+    const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
     const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
 
     // We still load initial config from local storage as a fallback
@@ -146,7 +146,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     setSkillsList(activeSkills.slice(0, 8).map((s: string, idx: number) => ({ name: s, level: Math.max(60, 95 - (idx * 5)) })));
 
     // Load saved portfolio config
-    const savedPortfolio = localStorage.getItem('user_portfolio_details');
+    const savedPortfolio = sessionStorage.getItem('user_portfolio_details');
     if (savedPortfolio) {
       const parsed = JSON.parse(savedPortfolio);
       if (!parsed.theme) parsed.theme = "minimalist";
@@ -180,7 +180,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                 const snap = JSON.parse(e.data);
                 if (snap) {
                    const completedProjCount = snap.projects?.filter((p: any) => p.status === 'completed')?.length || 0;
-                   const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+                   const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
                    const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
                    const _rawInnerRole = lastRoleState?.role || "Software Engineer";
                    const activeRole = _rawInnerRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
@@ -204,7 +204,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   }, [isPublic]);
 
   const user = (getUser() ?? {});
-  const lastStateRaw = localStorage.getItem('lastRoleAnalysis');
+  const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawActiveRole = lastRoleState?.role || "Software Engineer";
   const activeRole = _rawActiveRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
@@ -221,7 +221,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
   const handleSavePortfolio = () => {
     setPortfolioData(editForm);
-    localStorage.setItem('user_portfolio_details', JSON.stringify(editForm));
+    sessionStorage.setItem('user_portfolio_details', JSON.stringify(editForm));
     setIsEditing(false);
   };
 
@@ -229,7 +229,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       const newDetails = { ...portfolioData, theme: themeId };
       setPortfolioData(newDetails);
       setEditForm(newDetails);
-      localStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
+      sessionStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
   };
 
   const handleGenerateAI = async () => {
@@ -241,7 +241,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
         const newDetails = { ...portfolioData, about: newAbout };
         setPortfolioData(newDetails);
         setEditForm(newDetails);
-        localStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
+        sessionStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
         setIsGeneratingAI(false);
     }, 2000);
   };
@@ -289,7 +289,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       const newDetails = { ...portfolioData, isPrivate: newState };
       setPortfolioData(newDetails);
       setEditForm(newDetails);
-      localStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
+      sessionStorage.setItem('user_portfolio_details', JSON.stringify(newDetails));
   };
 
   if (isPublic && portfolioData.isPrivate) {

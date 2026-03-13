@@ -45,9 +45,9 @@ export default function SignIn() {
 
       // Cache the active workspace analysis locally for synchronous component rendering (DB is source of truth via current_workspace_id)
       if (data.user.lastRoleAnalysis) {
-          localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+          sessionStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
       } else {
-          localStorage.removeItem('lastRoleAnalysis');
+          sessionStorage.removeItem('lastRoleAnalysis');
       }
 
       console.log('User logged in:', data);

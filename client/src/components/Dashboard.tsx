@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   const _rawRole = location.state?.role || (() => {
     try {
-      const saved = localStorage.getItem('lastRoleAnalysis');
+      const saved = sessionStorage.getItem('lastRoleAnalysis');
       return saved ? JSON.parse(saved).role : 'Software Engineer';
     } catch { return 'Software Engineer'; }
   })();
@@ -65,7 +65,7 @@ export default function Dashboard() {
   /* ---------- cache helpers ------------------------------------------------- */
   const getCachedProjects = () => {
     try {
-      const c = localStorage.getItem(`dashboard_projects_v2_${_rawRole}`);
+      const c = sessionStorage.getItem(`dashboard_projects_v2_${_rawRole}`);
       if (c) { const p = JSON.parse(c); if (Array.isArray(p) && p.length > 0) return p; }
     } catch { /* ignore */ }
     return [];
@@ -182,7 +182,7 @@ export default function Dashboard() {
         const data = await res.json();
         if (data.success && Array.isArray(data.data)) {
           setRecommendedProjects(data.data);
-          localStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(data.data));
+          sessionStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(data.data));
         }
       } catch { /* silently fail */ }
       finally { setIsLoading(false); }
@@ -203,7 +203,7 @@ export default function Dashboard() {
         const p = { ...data.data[0], trending: true };
         const updated = [p, ...recommendedProjects];
         setRecommendedProjects(updated);
-        localStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
+        sessionStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
         setActiveTab('trending');
         setSelectedProject(null); // Just switch tab, don't open modal yet
         showToast(`🔥 Trending: "${p.title}" added!`);
@@ -306,7 +306,7 @@ export default function Dashboard() {
               </div>
 
               {/* Refresh */}
-              <button onClick={() => { localStorage.removeItem(`dashboard_projects_v2_${_rawRole}`); window.location.reload(); }}
+              <button onClick={() => { sessionStorage.removeItem(`dashboard_projects_v2_${_rawRole}`); window.location.reload(); }}
                 className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors" title="Refresh AI projects">
                 <RotateCcw className="w-4 h-4" />
               </button>
