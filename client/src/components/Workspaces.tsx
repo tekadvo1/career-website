@@ -229,6 +229,16 @@ export default function Workspaces() {
         body: JSON.stringify({ role: workspace.role, userId: user?.id || null, forceRefresh: false })
       });
       const data = await response.json();
+
+      // Persist active context to database
+      if (user?.id) {
+          await apiFetch('/api/workspaces/set-active', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id, workspaceId: workspace.id })
+          });
+      }
+
       if (response.ok && data.success) {
         localStorage.setItem('lastRoleAnalysis', JSON.stringify({
           role: workspace.role,
@@ -236,6 +246,8 @@ export default function Workspaces() {
           timestamp: new Date().getTime(),
           workspaceId: workspace.id
         }));
+        
+        // Remove individual workspace caching when switching
         const visitedStr = localStorage.getItem('visitedWorkspaces');
         let visited = visitedStr ? JSON.parse(visitedStr) : [];
         if (!visited.includes(workspace.id)) {

@@ -17,9 +17,11 @@ export default function GoogleCallback() {
           
           if (data.status === 'success') {
             localStorage.setItem('user', JSON.stringify(data.user));
-            
+
             if (data.user.lastRoleAnalysis) {
                 localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+            } else {
+                localStorage.removeItem('lastRoleAnalysis');
             }
 
             if (data.user.onboarding_completed) {

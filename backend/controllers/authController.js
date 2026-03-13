@@ -110,8 +110,33 @@ const loginUser = async (req, res) => {
       { expiresIn: '30d' }
     );
 
-    // Fetch most recent role analysis to sync across mobile and laptop
-    const roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [user.id]);
+    // Fetch most recent role analysis based on ACTIVE workspace
+    let current_workspace_id = user.current_workspace_id;
+    let targetRole = null;
+
+    if (current_workspace_id) {
+        const wsRes = await pool.query('SELECT role FROM workspaces WHERE id = $1', [current_workspace_id]);
+        if (wsRes.rows.length > 0) targetRole = wsRes.rows[0].role;
+    }
+
+    if (!targetRole) {
+        const wsRes = await pool.query('SELECT id, role FROM workspaces WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [user.id]);
+        if (wsRes.rows.length > 0) {
+           targetRole = wsRes.rows[0].role;
+           await pool.query('UPDATE users SET current_workspace_id = $1 WHERE id = $2', [wsRes.rows[0].id, user.id]);
+        }
+    }
+
+    let roleRes = { rows: [] };
+    if (targetRole) {
+        roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND role_title = $2 ORDER BY created_at DESC LIMIT 1', [user.id, targetRole]);
+        if (roleRes.rows.length === 0) {
+            roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE LOWER(role_title) = LOWER($1) ORDER BY created_at DESC LIMIT 1', [targetRole]);
+        }
+    } else {
+        roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [user.id]);
+    }
+
     let lastRoleAnalysis = null;
     if (roleRes.rows.length > 0) {
       lastRoleAnalysis = {

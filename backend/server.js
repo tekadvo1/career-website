@@ -133,6 +133,10 @@ const updateSchema = async () => {
           ALTER TABLE users ADD COLUMN longest_streak INTEGER DEFAULT 0;
           ALTER TABLE users ADD COLUMN last_active_date DATE;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'current_workspace_id') THEN
+          ALTER TABLE users ADD COLUMN current_workspace_id INTEGER REFERENCES workspaces(id) ON DELETE SET NULL;
+        END IF;
+
       END $$;
     `);
 

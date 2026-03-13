@@ -40,9 +40,12 @@ export default function SignIn() {
       // Handle successful login
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user)); // Store user info
-      
+
+      // Cache the active workspace analysis locally for synchronous component rendering (DB is source of truth via current_workspace_id)
       if (data.user.lastRoleAnalysis) {
           localStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+      } else {
+          localStorage.removeItem('lastRoleAnalysis');
       }
 
       console.log('User logged in:', data);

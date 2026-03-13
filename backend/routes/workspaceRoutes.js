@@ -59,11 +59,25 @@ router.delete('/:id', async (req, res) => {
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Workspace not found or unauthorized' });
         }
-
         res.json({ success: true, message: 'Workspace deleted successfully', deletedWorkspace: result.rows[0] });
     } catch (error) {
         console.error('Error deleting workspace:', error);
         res.status(500).json({ error: 'Failed to delete workspace' });
+    }
+});
+
+// POST /api/workspaces/set-active
+router.post('/set-active', async (req, res) => {
+    try {
+        const { userId, workspaceId } = req.body;
+        if (!userId || !workspaceId) {
+            return res.status(400).json({ error: 'userId and workspaceId are required' });
+        }
+        await pool.query('UPDATE users SET current_workspace_id = $1 WHERE id = $2', [workspaceId, userId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error setting active workspace:', error);
+        res.status(500).json({ error: 'Failed to set active workspace' });
     }
 });
 
