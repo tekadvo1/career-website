@@ -16,7 +16,6 @@ import {
   Target,
   GraduationCap,
   Phone,
-  Share2,
   CheckCircle2,
   Bot,
   Activity
@@ -47,9 +46,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
   const { username } = useParams();
-
   const [liveStreak, setLiveStreak] = useState(0);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // currentRole state — re-reads from sessionStorage whenever workspace switches
   const getActiveRole = () => {
@@ -181,7 +178,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   };
 
   const [avatarStr, setAvatarStr] = useState("");
-  const [isPublicProfile, setIsPublicProfile] = useState(false);
   const [customSkills, setCustomSkills] = useState<string[]>([]);
   const [newSkillInput, setNewSkillInput] = useState("");
   const [showAddSkill, setShowAddSkill] = useState(false);
@@ -258,7 +254,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           setProfileDetails(prev => ({ ...prev, ...dbDetails }));
           setEditForm(prev => ({ ...prev, ...dbDetails }));
           if (u.avatar) setAvatarStr(u.avatar);
-          if (u.is_public !== undefined) setIsPublicProfile(!!u.is_public);
 
           // Load custom skills from DB (JSONB column)
           if (Array.isArray(u.custom_skills) && u.custom_skills.length > 0) {
@@ -505,17 +500,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setShowSetupModal(false);
   };
 
-
-  const shareProfile = () => {
-    // Slugify: "Rakesh Vejendla33" -> "rakesh-vejendla33" (no %20 in URL)
-    const slug = String(user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
-    const safeRole = String(displayRole || '').toLowerCase().replace(/\s+/g, '-');
-    const link = `${window.location.origin}/p/${slug}?workspace=${safeRole}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   const handleSaveProfile = () => {
     const finalRole = editForm.role || displayRole;
     const newDetails = { ...editForm, role: finalRole };
@@ -559,16 +543,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           };
           reader.readAsDataURL(file);
       }
-  };
-
-  const togglePublicProfile = () => {
-      const newValue = !isPublicProfile;
-      setIsPublicProfile(newValue);
-      // Save visibility to DB only
-      apiFetch('/api/auth/visibility', {
-        method: 'PUT',
-        body: JSON.stringify({ isPublic: newValue }),
-      }).catch(() => {});
   };
 
   const handleAddCustomSkill = () => {
@@ -801,26 +775,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
             </div>
             
             <div className="flex items-center gap-2">
-              {!isPublic && (
-                <div className="flex items-center gap-2 mr-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                    <span className="text-[11px] font-bold text-slate-600">Public visibility:</span>
-                    <button 
-                       onClick={togglePublicProfile}
-                       className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${isPublicProfile ? 'bg-teal-500' : 'bg-slate-300'}`}
-                    >
-                        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${isPublicProfile ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-                    </button>
-                </div>
-              )}
-              {!isPublic && isPublicProfile && (
-                <button 
-                  onClick={shareProfile}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors font-semibold text-xs mr-1"
-                >
-                  {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-                  {copiedLink ? 'Link Copied!' : 'Share'}
-                </button>
-              )}
             </div>
           </div>
         </div>
