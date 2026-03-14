@@ -90,7 +90,8 @@ export default function Sidebar({ activePage }: SidebarProps) {
   const location = useLocation();
 
   const user: any = (getUser() ?? {});
-  const initials = user?.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G";
+  const displayName = user?.name || user?.username || "";
+  const initials = displayName ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G";
 
   const isActive = (route: string) => {
     if (activePage) {
