@@ -8,7 +8,7 @@ import {
   Briefcase,
   Target,
   BarChart3,
-  LayoutDashboard,
+  FolderKanban,
   Sparkles,
   LayoutGrid,
   Bot,
@@ -66,7 +66,7 @@ const navItems: NavItem[] = [
   {
     label: 'My Projects',
     subtitle: 'View ongoing projects',
-    icon: <LayoutDashboard className="w-5 h-5 text-emerald-600" />,
+    icon: <FolderKanban className="w-5 h-5 text-emerald-600" />,
     route: '/my-projects',
   },
   {
