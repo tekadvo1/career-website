@@ -150,19 +150,19 @@ export default function QuizGame() {
 
          {/* Background Elements */}
          <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[120px] rounded-full"></div>
+             <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-600/20 blur-[120px] rounded-full"></div>
              <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/20 blur-[120px] rounded-full"></div>
          </div>
 
          <div className="max-w-3xl w-full z-10 transition-transform origin-top" style={{ transform: `scale(${zoom / 100})` }}>
             {!started && !finished && (
                <div className="bg-slate-800/80 backdrop-blur-xl rounded-2xl p-8 border border-slate-700 shadow-2xl text-center">
-                   <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30">
+                   <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-teal-500/30">
                        <Gamepad2 className="w-10 h-10 text-white" />
                    </div>
                    <h1 className="text-3xl font-extrabold text-white mb-2">FindStreak Arcade</h1>
                    <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-                      Test your knowledge on <span className="text-indigo-400 font-bold">{topic}</span>.
+                      Test your knowledge on <span className="text-teal-400 font-bold">{topic}</span>.
                       Earn XP automatically synced to your FindStreak profile and level up your {role} journey.
                    </p>
                    <input 
@@ -181,12 +181,12 @@ export default function QuizGame() {
                      {loading ? (
                         <div className="w-full max-w-sm mx-auto">
                            <div className="mb-2 flex justify-between text-xs font-semibold">
-                              <span className="text-indigo-400 flex items-center gap-2"><Sparkles className="w-4 h-4 animate-pulse"/> Generating Level...</span>
+                              <span className="text-teal-400 flex items-center gap-2"><Sparkles className="w-4 h-4 animate-pulse"/> Generating Level...</span>
                               <span className="text-slate-400">{loadingProgress}%</span>
                            </div>
                            <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden shadow-inner">
                               <div 
-                                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-300 ease-out" 
+                                className="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all duration-300 ease-out" 
                                 style={{ width: `${loadingProgress}%` }}
                               />
                            </div>
@@ -196,9 +196,9 @@ export default function QuizGame() {
                            {selectedFile ? (
                                <button 
                                  onClick={() => fileInputRef.current?.click()}
-                                 className="px-6 py-4 border-2 border-indigo-500 bg-indigo-500/10 text-indigo-300 font-bold rounded-xl transition-all hover:bg-indigo-500/20 flex items-center justify-center gap-2"
+                                 className="px-6 py-4 border-2 border-teal-500 bg-teal-500/10 text-teal-300 font-bold rounded-xl transition-all hover:bg-teal-500/20 flex items-center justify-center gap-2"
                                >
-                                 <FileText className="w-5 h-5 text-indigo-400" /> 
+                                 <FileText className="w-5 h-5 text-teal-400" /> 
                                  <span className="truncate max-w-[150px]">{selectedFile.name}</span>
                                </button>
                            ) : (
@@ -212,7 +212,7 @@ export default function QuizGame() {
                            
                            <button 
                              onClick={fetchQuiz} 
-                             className="px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+                             className="px-8 py-4 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-teal-500/25 flex items-center justify-center gap-2"
                            >
                              <Zap className="w-5 h-5 text-amber-300" /> Start {selectedFile ? 'Mock Interview' : 'Game'}
                            </button>
@@ -250,7 +250,7 @@ export default function QuizGame() {
                                   else if (isWrongSelection) btnClass = "border-red-500 bg-red-500/20 text-red-300";
                                   else btnClass = "border-slate-700 bg-slate-800/30 text-slate-500 opacity-50";
                               } else if (isSelected) {
-                                  btnClass = "border-indigo-500 bg-indigo-500/20 text-indigo-300";
+                                  btnClass = "border-teal-500 bg-teal-500/20 text-teal-300";
                               }
 
                               return (
@@ -312,7 +312,7 @@ export default function QuizGame() {
                        </button>
                        <button 
                          onClick={() => navigate('/roadmap')}
-                         className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors"
+                         className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl transition-colors"
                        >
                          Back to Roadmap
                        </button>
