@@ -81,12 +81,14 @@ router.get('/me', protect, async (req, res) => {
         roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
     }
     let lastRoleAnalysis = null;
-    if (roleRes.rows.length > 0) {
+    if (targetRole || roleRes.rows.length > 0) {
       lastRoleAnalysis = {
-        role: roleRes.rows[0].role_title,
-        analysis: typeof roleRes.rows[0].analysis_data === 'string' 
-          ? JSON.parse(roleRes.rows[0].analysis_data) 
-          : roleRes.rows[0].analysis_data
+        role: targetRole || (roleRes.rows.length > 0 ? roleRes.rows[0].role_title : null),
+        analysis: roleRes.rows.length > 0 
+          ? (typeof roleRes.rows[0].analysis_data === 'string' 
+            ? JSON.parse(roleRes.rows[0].analysis_data) 
+            : roleRes.rows[0].analysis_data)
+          : null
       };
     }
 

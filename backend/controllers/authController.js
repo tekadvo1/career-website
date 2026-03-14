@@ -138,12 +138,14 @@ const loginUser = async (req, res) => {
     }
 
     let lastRoleAnalysis = null;
-    if (roleRes.rows.length > 0) {
+    if (targetRole || roleRes.rows.length > 0) {
       lastRoleAnalysis = {
-        role: roleRes.rows[0].role_title,
-        analysis: typeof roleRes.rows[0].analysis_data === 'string' 
-          ? JSON.parse(roleRes.rows[0].analysis_data) 
-          : roleRes.rows[0].analysis_data
+        role: targetRole || (roleRes.rows.length > 0 ? roleRes.rows[0].role_title : null),
+        analysis: roleRes.rows.length > 0 
+          ? (typeof roleRes.rows[0].analysis_data === 'string' 
+            ? JSON.parse(roleRes.rows[0].analysis_data) 
+            : roleRes.rows[0].analysis_data)
+          : null
       };
     }
 
