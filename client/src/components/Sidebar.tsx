@@ -205,7 +205,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                       {item.label}
                     </span>
                     {item.badge && (
-                      <span className="flex-shrink-0 px-1 py-[2px] bg-red-500 text-white text-[9px] font-bold rounded leading-none">
+                      <span className={`flex-shrink-0 px-1 py-[2px] bg-red-500 text-white text-[9px] font-bold rounded leading-none transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-0 w-0 h-0 overflow-hidden'}`}>
                         {item.badge}
                       </span>
                     )}
