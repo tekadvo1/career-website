@@ -20,7 +20,8 @@ import {
   Settings,
   LogOut,
   ChevronUp,
-  Shield
+  Shield,
+  AlertTriangle
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
@@ -141,6 +142,7 @@ const navItems: NavItem[] = [
 export default function Sidebar({ activePage }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -298,7 +300,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                  </button>
                  <div className="h-px bg-slate-200 my-1 mx-2" />
                  <button 
-                   onClick={handleLogout}
+                   onClick={(e) => { e.stopPropagation(); setShowLogoutModal(true); setIsOpen(false); }}
                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
                  >
                    <LogOut className="w-4 h-4 text-red-500" />
@@ -327,6 +329,37 @@ export default function Sidebar({ activePage }: SidebarProps) {
            </button>
         </div>
       </div>
+
+      {/* Sidebar Logout Modal Overlay */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowLogoutModal(false)}>
+           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
+             <div className="p-6 text-center">
+               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <AlertTriangle className="w-8 h-8 text-red-500" />
+               </div>
+               <h3 className="text-xl font-bold text-slate-800 mb-2">Ready to leave?</h3>
+               <p className="text-sm text-slate-500 px-4">
+                 Are you sure you want to log out of your FindStreak account? You will need to sign in again to access your learning workspaces.
+               </p>
+             </div>
+             <div className="flex border-t border-slate-100">
+                <button 
+                  onClick={() => setShowLogoutModal(false)}
+                  className="flex-1 p-4 font-semibold text-slate-600 hover:bg-slate-50 transition-colors border-r border-slate-100"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleLogout}
+                  className="flex-1 p-4 font-bold text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  Yes, Log Out
+                </button>
+             </div>
+           </div>
+        </div>
+      )}
     </>
   );
 }
