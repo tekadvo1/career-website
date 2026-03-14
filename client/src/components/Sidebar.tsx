@@ -9,15 +9,10 @@ import {
   Target,
   BarChart3,
   LayoutDashboard,
-  Award,
-  Gamepad2,
   Sparkles,
-  BookOpen,
   Wrench,
-  Code,
-  MessageSquare,
-  Terminal,
   Settings,
+  Code,
   ChevronUp
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
@@ -35,6 +30,12 @@ interface SidebarProps {
 }
 
 const navItems: NavItem[] = [
+  {
+    label: 'Project Dashboard',
+    subtitle: 'Browse AI projects',
+    icon: <BarChart3 className="w-5 h-5 text-emerald-600" />,
+    route: '/dashboard',
+  },
   {
     label: 'Start New Journey',
     subtitle: 'Analyze new resume',
@@ -62,78 +63,17 @@ const navItems: NavItem[] = [
     route: '/roadmap',
   },
   {
-    label: 'Project Dashboard',
-    subtitle: 'Browse AI projects',
-    icon: <BarChart3 className="w-5 h-5 text-emerald-600" />,
-    route: '/dashboard',
-  },
-  {
     label: 'My Projects',
     subtitle: 'View ongoing projects',
     icon: <LayoutDashboard className="w-5 h-5 text-emerald-600" />,
     route: '/my-projects',
   },
   {
-    label: 'Achievements',
-    subtitle: 'View your milestones',
-    icon: <Award className="w-5 h-5 text-emerald-600" />,
-    route: '/achievements',
-    badge: 'NEW',
-  },
-  {
-    label: 'Quiz & Games',
-    subtitle: 'Play learning games',
-    icon: <Gamepad2 className="w-5 h-5 text-emerald-600" />,
-    route: '/quiz-game',
-    badge: 'NEW',
-  },
-  {
-    label: 'AI Assistant',
-    subtitle: 'Get learning help',
-    icon: <Sparkles className="w-5 h-5 text-emerald-600" />,
-    route: '/ai-assistant',
-  },
-  {
-    label: 'Learning Resources',
-    subtitle: 'Browse materials',
-    icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
-    route: '/resources',
-  },
-  {
-    label: 'Workflow Lifecycle',
-    subtitle: 'Productivity tools',
+    label: 'Tools & Utilities',
+    subtitle: 'All extra features',
     icon: <Wrench className="w-5 h-5 text-emerald-600" />,
-    route: '/workflow-lifecycle',
-    badge: 'NEW',
-  },
-  {
-    label: 'Tech Stack & Tools',
-    subtitle: 'AI trending analysis',
-    icon: <Terminal className="w-5 h-5 text-emerald-600" />,
-    route: '/tech-stack',
-    badge: 'NEW',
-  },
-  // {
-  //   label: 'AI Portfolio Builder',
-  //   subtitle: 'Recruiter ready site',
-  //   icon: <Globe className="w-5 h-5 text-emerald-600" />,
-  //   route: '/portfolio',
-  //   badge: 'NEW',
-  // },
-  {
-    label: 'Interview Guide',
-    subtitle: 'AI Prep & Q&A',
-    icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
-    route: '/interview-guide',
-    badge: 'NEW',
-  },
-  // {
-  //   label: 'Project Structure',
-  //   subtitle: 'AI architecture guide',
-  //   icon: <FolderTree className="w-5 h-5 text-emerald-600" />,
-  //   route: '/project-structure',
-  //   badge: 'NEW',
-  // },
+    route: '/tools',
+  }
 ];
 
 export default function Sidebar({ activePage }: SidebarProps) {

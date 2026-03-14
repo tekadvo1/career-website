@@ -36,6 +36,7 @@ import TermsAndConditions from './components/landing/TermsAndConditions';
 import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
+import ToolsPage from './components/ToolsPage';
 import NotFoundPage from './components/NotFoundPage';
 import ScrollToTop from './components/ScrollToTop';
 import { getToken, getUser, clearSession } from './utils/auth';
@@ -140,6 +141,7 @@ function App() {
           <Route path="/missions"                element={<ProtectedRoute><Missions /></ProtectedRoute>} />
           <Route path="/project-structure"       element={<ProtectedRoute><ProjectStructurePage /></ProtectedRoute>} />
           <Route path="/settings"                element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/tools"                   element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
 
           {/* ── 404 ─────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFoundPage />} />
