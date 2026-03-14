@@ -89,7 +89,7 @@ export default function Settings() {
                    <User className="w-5 h-5 text-slate-500" />
                  </div>
                  <div className="text-left">
-                    <span className="font-semibold text-slate-700 text-sm md:text-base block">View Profile</span>
+                    <span className="font-semibold text-slate-700 text-sm md:text-base block">Edit Profile</span>
                     <span className="text-xs text-slate-500">Edit your bio, resume, and display information</span>
                  </div>
               </div>
