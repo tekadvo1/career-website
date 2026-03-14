@@ -1,14 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { User, Shield, Bell, Key, LogOut, ChevronRight, AlertTriangle } from 'lucide-react';
+import { User, Shield, LogOut, ChevronRight, AlertTriangle, Globe, Share2, CheckCircle2 } from 'lucide-react';
 import { getUser } from '../utils/auth';
+import { apiFetch } from '../utils/apiFetch';
 
 export default function Settings() {
   const navigate = useNavigate();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isPublicProfile, setIsPublicProfile] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   
   const user: any = (getUser() ?? {});
+
+  useEffect(() => {
+    // Fetch initial privacy state from backend
+    apiFetch('/api/auth/me')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user?.is_public !== undefined) {
+          setIsPublicProfile(!!data.user.is_public);
+        }
+      })
+      .catch(err => console.error("Could not load profile settings:", err));
+  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem('token'); 
@@ -16,12 +31,24 @@ export default function Settings() {
     window.location.href = '/signin';
   };
 
-  const sections = [
-    { title: 'Profile details', icon: <User className="w-5 h-5 text-slate-500" />, action: () => navigate('/profile') },
-    { title: 'Privacy & Visibility', icon: <Shield className="w-5 h-5 text-slate-500" />, action: () => navigate('/profile') },
-    { title: 'Notifications', icon: <Bell className="w-5 h-5 text-slate-500" />, action: () => alert('Notification settings coming soon!') },
-    { title: 'Security', icon: <Key className="w-5 h-5 text-slate-500" />, action: () => alert('Security settings coming soon!') }
-  ];
+  const togglePublicProfile = () => {
+    const newValue = !isPublicProfile;
+    setIsPublicProfile(newValue);
+    apiFetch('/api/auth/visibility', {
+      method: 'PUT',
+      body: JSON.stringify({ isPublic: newValue }),
+    }).catch(() => {});
+  };
+
+  const shareProfile = () => {
+    const slug = String(user?.username || 'user').toLowerCase().replace(/\s+/g, '-');
+    // Using a default fallback workspace if needed, though often default profile works
+    const link = `${window.location.origin}/p/${slug}`;
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -51,21 +78,63 @@ export default function Settings() {
 
         {/* Settings Links */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
-           {sections.map((section, idx) => (
-             <button
-               key={idx}
-               onClick={section.action}
-               className="w-full flex items-center justify-between p-5 border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0"
-             >
-                <div className="flex items-center gap-4">
-                   <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                     {section.icon}
-                   </div>
-                   <span className="font-semibold text-slate-700 text-sm md:text-base">{section.title}</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-slate-400" />
-             </button>
-           ))}
+           
+           {/* View Profile Action */}
+           <button
+             onClick={() => navigate('/profile')}
+             className="w-full flex items-center justify-between p-5 border-b border-slate-100 hover:bg-slate-50 transition-colors"
+           >
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                   <User className="w-5 h-5 text-slate-500" />
+                 </div>
+                 <div className="text-left">
+                    <span className="font-semibold text-slate-700 text-sm md:text-base block">View Profile</span>
+                    <span className="text-xs text-slate-500">Edit your bio, resume, and display information</span>
+                 </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+           </button>
+
+           {/* Privacy and Visibility Toggle */}
+           <div className="w-full flex items-center justify-between p-5 border-b border-slate-100">
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                   <Shield className="w-5 h-5 text-slate-500" />
+                 </div>
+                 <div className="text-left">
+                    <span className="font-semibold text-slate-700 text-sm md:text-base block">Public Profile Visibility</span>
+                    <span className="text-xs text-slate-500">Allow others to view your FindStreak profile</span>
+                 </div>
+              </div>
+              <button 
+                 onClick={togglePublicProfile}
+                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isPublicProfile ? 'bg-teal-500' : 'bg-slate-300'}`}
+              >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isPublicProfile ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+           </div>
+
+           {/* Share Profile Link */}
+           <div className={`w-full flex items-center justify-between p-5 transition-all ${isPublicProfile ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600">
+                   <Globe className="w-5 h-5 text-slate-500" />
+                 </div>
+                 <div className="text-left">
+                    <span className="font-semibold text-slate-700 text-sm md:text-base block">Share Public Link</span>
+                    <span className="text-xs text-slate-500">Copy your public profile URL to share with recruiters</span>
+                 </div>
+              </div>
+              <button 
+                onClick={shareProfile}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors font-bold text-sm border border-teal-200"
+              >
+                {copiedLink ? <CheckCircle2 className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                {copiedLink ? 'Copied URL!' : 'Copy Link'}
+              </button>
+           </div>
+
         </div>
 
         {/* Danger Zone */}
