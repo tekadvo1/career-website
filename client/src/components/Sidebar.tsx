@@ -285,14 +285,14 @@ export default function Sidebar({ activePage }: SidebarProps) {
                    View Full Profile
                  </button>
                  <button 
-                   onClick={() => { setIsOpen(false); navigate('/profile'); /* Usually settings is part of profile or standalone */ }}
+                   onClick={() => { setIsOpen(false); navigate('/settings'); }}
                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
                  >
                    <Settings className="w-4 h-4 text-slate-500" />
                    Account Settings
                  </button>
                  <button 
-                   onClick={() => { setIsOpen(false); navigate('/profile'); }}
+                   onClick={() => { setIsOpen(false); navigate('/settings'); }}
                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
                  >
                    <Shield className="w-4 h-4 text-slate-500" />
