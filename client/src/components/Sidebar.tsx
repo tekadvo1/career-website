@@ -16,8 +16,13 @@ import {
   Wrench,
   Code,
   MessageSquare,
-  Terminal
+  Terminal,
+  Settings,
+  LogOut,
+  ChevronUp,
+  Shield
 } from 'lucide-react';
+import { getUser } from '../utils/auth';
 
 interface NavItem {
   label: string;
@@ -32,12 +37,6 @@ interface SidebarProps {
 }
 
 const navItems: NavItem[] = [
-  {
-    label: 'View Profile',
-    subtitle: 'Manage your account',
-    icon: <User className="w-5 h-5 text-emerald-600" />,
-    route: '/profile',
-  },
   {
     label: 'Start New Journey',
     subtitle: 'Analyze new resume',
@@ -141,8 +140,18 @@ const navItems: NavItem[] = [
 
 export default function Sidebar({ activePage }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const user: any = (getUser() ?? {});
+  const initials = user?.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G";
+  
+  const handleLogout = () => {
+    sessionStorage.removeItem('token'); 
+    sessionStorage.removeItem('user');
+    window.location.href = '/signin';
+  };
 
   const isActive = (route: string) => {
     if (activePage) {
@@ -260,9 +269,62 @@ export default function Sidebar({ activePage }: SidebarProps) {
           })}
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-slate-200 px-4 py-2 flex-shrink-0 text-center bg-slate-50">
-          <p className="text-[9px] text-slate-400 font-medium">Powered by FindStreak</p>
+        {/* Footer with User Actions */}
+        <div className="border-t border-slate-200 flex-shrink-0 bg-slate-50 relative">
+           
+           {/* Expandable Menu */}
+           <div className={`absolute bottom-full left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out overflow-hidden ${isProfileMenuOpen ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="p-2 space-y-1 my-1">
+                 <button 
+                   onClick={() => { setIsOpen(false); navigate('/profile'); }}
+                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                 >
+                   <User className="w-4 h-4 text-slate-500" />
+                   View Full Profile
+                 </button>
+                 <button 
+                   onClick={() => { setIsOpen(false); navigate('/profile'); /* Usually settings is part of profile or standalone */ }}
+                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                 >
+                   <Settings className="w-4 h-4 text-slate-500" />
+                   Account Settings
+                 </button>
+                 <button 
+                   onClick={() => { setIsOpen(false); navigate('/profile'); }}
+                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
+                 >
+                   <Shield className="w-4 h-4 text-slate-500" />
+                   Privacy & Visibility
+                 </button>
+                 <div className="h-px bg-slate-200 my-1 mx-2" />
+                 <button 
+                   onClick={handleLogout}
+                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                 >
+                   <LogOut className="w-4 h-4 text-red-500" />
+                   Log Out
+                 </button>
+              </div>
+           </div>
+
+           {/* User Profile Trigger Bar */}
+           <button 
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-100 transition-colors"
+           >
+              <div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                 {initials}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                 <p className="text-[13px] font-bold text-slate-800 truncate leading-tight">
+                    {user?.name || user?.username || "Guest User"}
+                 </p>
+                 <p className="text-[10px] text-slate-500 truncate leading-none mt-0.5">
+                    {user?.email || "Manage account"}
+                 </p>
+              </div>
+              <ChevronUp className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
+           </button>
         </div>
       </div>
     </>

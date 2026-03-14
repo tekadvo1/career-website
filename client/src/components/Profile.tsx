@@ -15,7 +15,6 @@ import {
   Trophy,
   Target,
   GraduationCap,
-  LogOut,
   Phone,
   Share2,
   CheckCircle2,
@@ -506,11 +505,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setShowSetupModal(false);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('token'); sessionStorage.removeItem('user');
-    // Use window.location to ensure all React states (like contexts) reset fully.
-    window.location.href = '/signin';
-  };
 
   const shareProfile = () => {
     // Slugify: "Rakesh Vejendla33" -> "rakesh-vejendla33" (no %20 in URL)
@@ -825,15 +819,6 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 >
                   {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
                   {copiedLink ? 'Link Copied!' : 'Share'}
-                </button>
-              )}
-              {!isPublic && (
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold text-xs border border-transparent hover:border-red-100"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Logout
                 </button>
               )}
             </div>
