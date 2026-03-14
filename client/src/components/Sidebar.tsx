@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X,
@@ -78,8 +78,26 @@ const navItems: NavItem[] = [
 export default function Sidebar({ activePage }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [clearedBadges, setClearedBadges] = useState<string[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('findstreak_cleared_badges');
+      if (stored) {
+        setClearedBadges(JSON.parse(stored));
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleClearBadge = (route: string) => {
+    if (!clearedBadges.includes(route)) {
+        const next = [...clearedBadges, route];
+        setClearedBadges(next);
+        localStorage.setItem('findstreak_cleared_badges', JSON.stringify(next));
+    }
+  };
 
   const user: any = (getUser() ?? {});
   const displayName = user?.name || user?.username || "";
@@ -158,6 +176,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                 key={item.route + item.label}
                 title={!isOpen ? item.label : undefined}
                 onClick={() => {
+                  if (item.badge) handleClearBadge(item.route);
                   if (window.innerWidth < 768) setIsOpen(false);
                   if (item.route === '/onboarding') {
                     navigate(item.route, { state: { force: true } });
@@ -196,7 +215,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
                     >
                       {item.label}
                     </span>
-                    {item.badge && (
+                    {(item.badge && !clearedBadges.includes(item.route)) && (
                       <span className={`flex-shrink-0 px-1 py-[2px] bg-red-500 text-white text-[9px] font-bold rounded leading-none transition-all duration-300 ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-0 w-0 h-0 overflow-hidden'}`}>
                         {item.badge}
                       </span>
