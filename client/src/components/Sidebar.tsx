@@ -237,7 +237,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
            <div className={`absolute bottom-full left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out overflow-hidden ${(isProfileMenuOpen && isOpen) ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>
               <div className="p-2 space-y-1 my-1">
                  <button 
-                   onClick={() => { if (window.innerWidth < 768) setIsOpen(false); navigate('/profile'); }}
+                   onClick={() => { if (window.innerWidth < 768) setIsOpen(false); navigate('/profile', { state: { readOnlyMode: true } }); }}
                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg transition-colors font-medium"
                  >
                    <User className="w-4 h-4 text-slate-500" />

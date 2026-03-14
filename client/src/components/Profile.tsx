@@ -1,6 +1,6 @@
 import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getToken, getUser } from '../utils/auth';
 import {
   Mail,
@@ -113,6 +113,9 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   const [dynamicSkills, setDynamicSkills] = useState<{name: string, level: number}[]>([]);
   const [timeline, setTimeline] = useState<any[]>([]);
   const [wsSkills, setWsSkills] = useState<string[]>(getActiveSkills);
+
+  const location = useLocation();
+  const isReadOnlyMode = location.state?.readOnlyMode === true;
 
   const [profileDetails, setProfileDetails] = useState({
     phone: "",
@@ -923,7 +926,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
                 </div>
               </div>
 
-              {!isPublic && (
+              {!isPublic && !isReadOnlyMode && (
                 isEditing ? (
                   <button
                     onClick={handleSaveProfile}
