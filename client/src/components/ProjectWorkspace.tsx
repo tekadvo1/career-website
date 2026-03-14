@@ -172,6 +172,8 @@ export default function ProjectWorkspace() {
         if (t.completed) newCompletedList.push(t.id);
     }));
 
+    const isFullyCompleted = newSteps.length > 0 && newSteps.every(s => s.completed);
+
     try {
         await apiFetch('/api/role/update-project-progress', {
             method: 'POST',
@@ -179,6 +181,7 @@ export default function ProjectWorkspace() {
             body: JSON.stringify({
                 userId: user.id,
                 projectId: projectId,
+                status: isFullyCompleted ? 'completed' : 'active',
                 progress: {
                     completedTasks: newCompletedList,
                     xp: currentXp

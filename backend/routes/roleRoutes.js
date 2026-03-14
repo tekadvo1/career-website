@@ -1003,19 +1003,24 @@ router.post('/start-project', async (req, res) => {
 
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
-    const { userId, projectId, progress } = req.body;
+    const { userId, projectId, progress, status } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
-        await pool.query(
-            `UPDATE user_projects 
-             SET progress_data = $1, last_updated = NOW()
-             WHERE id = $2 AND user_id = $3`,
-            [JSON.stringify(progress), projectId, userId]
-        );
+        let query = `UPDATE user_projects SET progress_data = $1, last_updated = NOW()`;
+        const params = [JSON.stringify(progress), projectId, userId];
+
+        if (status) {
+            params.push(status);
+            query += `, status = $4`;
+        }
+
+        query += ` WHERE id = $2 AND user_id = $3`;
+
+        await pool.query(query, params);
         res.json({ success: true });
 
         // ── Real-time broadcast ──────────────────────────────────────────────
