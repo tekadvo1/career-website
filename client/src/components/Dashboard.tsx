@@ -419,19 +419,36 @@ export default function Dashboard() {
           )}
 
           {isLoading ? (
-            /* Skeleton */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="bg-white rounded-xl overflow-hidden border border-slate-100 animate-pulse">
-                  <div className="h-1.5 bg-gradient-to-r from-indigo-200 to-purple-200" />
-                  <div className="p-4 space-y-3">
-                    <div className="flex justify-between"><div className="h-4 bg-slate-200 rounded w-1/4" /><div className="h-4 bg-slate-100 rounded w-16" /></div>
-                    <div className="h-5 bg-slate-200 rounded w-3/4" />
-                    <div className="h-3 bg-slate-100 rounded w-full" />
-                    <div className="h-3 bg-slate-100 rounded w-2/3" />
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+               <div className="relative mb-8 mt-4">
+                 <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-60" style={{ transform: 'scale(1.5)' }}></div>
+                 <div className="absolute inset-0 bg-teal-100 rounded-full animate-ping opacity-40" style={{ animationDelay: '0.2s', transform: 'scale(2)' }}></div>
+                 <div className="relative w-16 h-16 bg-white rounded-2xl shadow-xl border border-emerald-100 flex items-center justify-center animate-bounce">
+                    <Sparkles className="w-8 h-8 text-emerald-500" />
+                 </div>
+               </div>
+               
+               <h3 className="text-xl md:text-2xl font-bold text-slate-800 mb-2">Analyzing Profile & Workspaces...</h3>
+               <p className="text-slate-500 text-sm max-w-md text-center mb-10 leading-relaxed">
+                  Our AI is curating the most relevant real-world projects based on your <span className="font-semibold text-emerald-600">{selectedRole}</span> background and latest market trends.
+               </p>
+
+               {/* Hint skeleton grid */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full opacity-40 pointer-events-none">
+                 {[1, 2, 3, 4].map(i => (
+                   <div key={i} className="bg-white rounded-xl overflow-hidden border border-slate-200 animate-pulse hidden md:block">
+                     <div className="h-1.5 bg-gradient-to-r from-slate-200 to-slate-200" />
+                     <div className="p-4 space-y-4">
+                       <div className="flex justify-between"><div className="h-4 bg-slate-200 rounded w-1/3" /><div className="h-4 bg-slate-100 rounded w-12" /></div>
+                       <div className="h-5 bg-slate-200 rounded w-3/4 mt-2" />
+                       <div className="space-y-2 mt-4">
+                          <div className="h-3 bg-slate-100 rounded w-full" />
+                          <div className="h-3 bg-slate-100 rounded w-5/6" />
+                       </div>
+                     </div>
+                   </div>
+                 ))}
+               </div>
             </div>
           ) : filteredProjects.length > 0 ? (
             <>
