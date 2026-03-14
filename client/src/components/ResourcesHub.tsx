@@ -562,7 +562,13 @@ export default function ResourcesHub() {
                      </button>
                   )}
                   <a
-                    href={resource.url}
+                    href={
+                      resource.platform?.toLowerCase().includes('youtube') || resource.type === 'youtube'
+                        ? `https://www.youtube.com/results?search_query=${encodeURIComponent(resource.title)}`
+                        : resource.platform?.toLowerCase().includes('udemy')
+                        ? `https://www.udemy.com/courses/search/?q=${encodeURIComponent(resource.title)}`
+                        : resource.url
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 transition-all shadow-sm"
