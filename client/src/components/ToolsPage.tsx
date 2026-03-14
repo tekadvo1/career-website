@@ -3,9 +3,9 @@ import Sidebar from './Sidebar';
 import {
   Award,
   Gamepad2,
-  Sparkles,
   BookOpen,
   Wrench,
+  LayoutGrid,
   Terminal,
   MessageSquare,
   ChevronRight
@@ -31,13 +31,7 @@ export default function ToolsPage() {
       badge: 'NEW',
       bgColor: 'bg-teal-100',
     },
-    {
-      label: 'AI Assistant',
-      subtitle: 'Get learning help',
-      icon: <Sparkles className="w-6 h-6 text-purple-600" />,
-      route: '/ai-assistant',
-      bgColor: 'bg-purple-100',
-    },
+
     {
       label: 'Learning Resources',
       subtitle: 'Browse materials',
@@ -80,7 +74,7 @@ export default function ToolsPage() {
         <div className="max-w-5xl mx-auto px-4 py-6 md:px-8">
           <div className="flex items-center gap-3">
              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
-                 <Wrench className="w-6 h-6 text-emerald-600" />
+                 <LayoutGrid className="w-6 h-6 text-emerald-600" />
              </div>
              <div>
                 <h1 className="text-2xl font-bold text-slate-800">Advanced Tools Container</h1>

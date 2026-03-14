@@ -10,7 +10,8 @@ import {
   BarChart3,
   LayoutDashboard,
   Sparkles,
-  Wrench,
+  LayoutGrid,
+  Bot,
   Settings,
   Code,
   ChevronUp
@@ -69,9 +70,15 @@ const navItems: NavItem[] = [
     route: '/my-projects',
   },
   {
+    label: 'AI Assistant',
+    subtitle: 'Get learning help',
+    icon: <Bot className="w-5 h-5 text-emerald-600" />,
+    route: '/ai-assistant',
+  },
+  {
     label: 'Tools & Utilities',
     subtitle: 'All extra features',
-    icon: <Wrench className="w-5 h-5 text-emerald-600" />,
+    icon: <LayoutGrid className="w-5 h-5 text-emerald-600" />,
     route: '/tools',
   }
 ];
