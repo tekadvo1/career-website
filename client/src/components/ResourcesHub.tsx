@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { apiFetch } from '../utils/apiFetch';
+import Sidebar from './Sidebar';
 import {
   Search,
   Video,
@@ -237,6 +238,7 @@ export default function ResourcesHub() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-6">
+      <Sidebar activePage="resources" />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
