@@ -154,15 +154,31 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
     setIsDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
-                try {
+        try {
           const { latitude, longitude } = pos.coords;
-          const res = await fetch(
-            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-          );
-          if (!res.ok) throw new Error('Geocoding HTTP error ' + res.status);
-          const data = await res.json();
-          const city = data.city || data.locality || '';
-          const country = data.countryName || '';
+          let city = '';
+          let country = '';
+
+          try {
+            const res = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+            );
+            if (!res.ok) throw new Error('BigDataCloud HTTP error ' + res.status);
+            const data = await res.json();
+            city = data.city || data.locality || '';
+            country = data.countryName || '';
+          } catch (e) {
+            console.warn("Primary geocoding failed, trying fallback...", e);
+            // Fallback to OpenStreetMap Nominatim
+            const fallbackRes = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&addressdetails=1`
+            );
+            if (!fallbackRes.ok) throw new Error('Nominatim HTTP error ' + fallbackRes.status);
+            const fallbackData = await fallbackRes.json();
+            city = fallbackData.address?.city || fallbackData.address?.town || fallbackData.address?.village || fallbackData.address?.county || '';
+            country = fallbackData.address?.country || '';
+          }
+
           const locationStr = city && country ? `${city}, ${country}` : country || 'Unknown';
           formSetter((prev: any) => ({ ...prev, location: locationStr }));
         } catch (err: any) {
