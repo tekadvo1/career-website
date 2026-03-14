@@ -81,7 +81,7 @@ export default function Settings() {
            
            {/* View Profile Action */}
            <button
-             onClick={() => navigate('/profile')}
+             onClick={() => navigate('/profile', { state: { readOnlyMode: false } })}
              className="w-full flex items-center justify-between p-5 border-b border-slate-100 hover:bg-slate-50 transition-colors"
            >
               <div className="flex items-center gap-4">
