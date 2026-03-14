@@ -3,7 +3,8 @@ import Sidebar from './Sidebar';
 import {
   Award,
   Gamepad2,
-  BookOpen,
+  Search,
+  Sparkles,
   Wrench,
   LayoutGrid,
   Terminal,
@@ -33,10 +34,18 @@ export default function ToolsPage() {
     },
 
     {
-      label: 'Learning Resources',
-      subtitle: 'Browse materials',
-      icon: <BookOpen className="w-5 h-5 text-blue-600" />,
-      route: '/resources',
+      label: 'Start New Journey',
+      subtitle: 'Analyze new resume',
+      icon: <Sparkles className="w-5 h-5 text-purple-600" />,
+      route: '/onboarding',
+      bgColor: 'bg-purple-100',
+    },
+    {
+      label: 'Role Analysis',
+      subtitle: 'AI career insights',
+      icon: <Search className="w-5 h-5 text-blue-600" />,
+      route: '/role-analysis',
+      badge: 'NEW',
       bgColor: 'bg-blue-100',
     },
     {
