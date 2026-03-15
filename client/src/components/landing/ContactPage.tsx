@@ -12,7 +12,7 @@ const faqs = [
 ];
 
 const contactOptions = [
-  { icon: <Mail className="w-6 h-6" />, label: 'Email Support', value: 'hello@findstreak.com', desc: 'Reach out anytime. We are happy to help with account questions or feature requests.' },
+  { icon: <Mail className="w-6 h-6" />, label: 'Email Support', value: 'support@findstreak.com', desc: 'Reach out anytime. We are happy to help with account questions or feature requests.' },
   { icon: <MessageSquare className="w-6 h-6" />, label: 'In-Platform Chat', value: 'Available in Dashboard', desc: 'Registered users can message our support team directly from inside their workspace.' },
   { icon: <Clock className="w-6 h-6" />, label: 'Our Response Time', value: 'Within 24 hours', desc: 'We genuinely read every single message and aim to reply within one business day.' },
 ];
