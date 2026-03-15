@@ -39,10 +39,15 @@ export default function LandingFooter() {
           <div>
             <h3 className="font-bold text-slate-900 mb-5 text-sm uppercase tracking-wide">Platform</h3>
             <ul className="space-y-3.5">
-              {['Features', 'How It Works', 'Career Pathways', 'Project Library'].map(link => (
-                <li key={link}>
-                  <button onClick={() => navigate(link === 'How It Works' ? '/how-it-works' : '/')} className="text-sm font-medium text-slate-500 hover:text-teal-600 transition-colors">
-                    {link}
+              {[
+                { name: 'Features', path: '/' },
+                { name: 'How It Works', path: '/how-it-works' },
+                { name: 'Career Pathways', path: '/signup' },
+                { name: 'Project Library', path: '/signup' }
+              ].map(link => (
+                <li key={link.name}>
+                  <button onClick={() => navigate(link.path)} className="text-sm font-medium text-slate-500 hover:text-teal-600 transition-colors">
+                    {link.name}
                   </button>
                 </li>
               ))}
@@ -52,10 +57,14 @@ export default function LandingFooter() {
           <div>
             <h3 className="font-bold text-slate-900 mb-5 text-sm uppercase tracking-wide">Company</h3>
             <ul className="space-y-3.5">
-              {['About Us', 'Contact Support', 'Our Mission', 'Careers'].map(link => (
-                <li key={link}>
-                  <button onClick={() => navigate(link === 'About Us' ? '/about' : link === 'Contact Support' ? '/contact' : '/')} className="text-sm font-medium text-slate-500 hover:text-teal-600 transition-colors">
-                    {link}
+              {[
+                { name: 'About Us', path: '/about' },
+                { name: 'Contact Support', path: '/contact' },
+                { name: 'Our Mission', path: '/about' }
+              ].map(link => (
+                <li key={link.name}>
+                  <button onClick={() => navigate(link.path)} className="text-sm font-medium text-slate-500 hover:text-teal-600 transition-colors">
+                    {link.name}
                   </button>
                 </li>
               ))}
