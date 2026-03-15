@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-import { Mail, MessageSquare, Clock, CheckCircle, Send, ArrowRight, Heart } from 'lucide-react';
+import { Mail, MessageSquare, Clock, CheckCircle, Send, Heart } from 'lucide-react';
 
 const faqs = [
   { q: 'Who is FindStreak built for?', a: 'We built FindStreak for anyone who wants to learn tech skills by actually building things rather than just watching tutorials. It is perfect for career changers, bootcamp grads, and junior developers looking for clear, structured guidance.' },
@@ -19,7 +18,6 @@ const contactOptions = [
 ];
 
 export default function ContactPage() {
-  const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);

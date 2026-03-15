@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Target, Compass, BookOpen, Layers, Mail, Shield, FileText } from 'lucide-react';
+import { Target, Compass, BookOpen, Layers, Mail } from 'lucide-react';
 
 export default function LandingHeader() {
   const navigate = useNavigate();

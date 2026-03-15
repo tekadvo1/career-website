@@ -4,7 +4,7 @@ import LandingFooter from './LandingFooter';
 import {
   ArrowRight, CheckCircle, Code2,
   MessageSquare, BrainCircuit, Sparkles, Map,
-  Wrench, Terminal, GitBranch, Trophy,
+  Wrench, Terminal, Trophy,
   Shield, ChevronRight, Heart
 } from 'lucide-react';
 
@@ -192,7 +192,7 @@ export default function LandingHome() {
             <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-transparent via-teal-200 to-transparent" />
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {steps.map((s, i) => (
+              {steps.map((s) => (
                 <div key={s.num} className="relative group">
                   <div className="bg-white border border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-md rounded-2xl p-8 transition-all duration-300 h-full relative z-10 flex flex-col items-center text-center">
                     <div className="w-14 h-14 rounded-full bg-teal-50 border-2 border-white shadow-sm flex items-center justify-center text-teal-600 font-black text-lg mb-6 group-hover:bg-teal-600 group-hover:text-white transition-colors">
@@ -231,9 +231,9 @@ export default function LandingHome() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((f, i) => (
+            {features.map((f) => (
               <div
-                key={i}
+                key={f.title}
                 className="group relative bg-white border border-slate-200 hover:border-teal-300 rounded-3xl p-8 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-50/0 group-hover:from-teal-50/60 to-transparent transition-all duration-300 pointer-events-none" />
