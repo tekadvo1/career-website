@@ -43,23 +43,23 @@ export default function HowItWorksPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-white">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-indigo-100 to-transparent rounded-full blur-3xl opacity-60" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-teal-100 to-transparent rounded-full blur-3xl opacity-60" />
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             Full Platform Walkthrough
           </div>
           <h1 className="text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6">
             How{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">FindStreak</span>{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">FindStreak</span>{' '}
             Works
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mb-8 font-medium">
             A complete step-by-step walkthrough of every feature — from the moment you sign up to the day you walk into an interview with real projects behind you.
           </p>
           <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 shadow-sm rounded-xl px-5 py-2.5 text-sm text-slate-600 font-medium">
-            <Zap className="w-4 h-4 text-indigo-600" />
+            <Zap className="w-4 h-4 text-teal-600" />
             <span><strong className="text-slate-900">20 steps</strong> covering every feature of FindStreak</span>
           </div>
         </div>
@@ -73,23 +73,23 @@ export default function HowItWorksPage() {
             return (
               <div
                 key={i}
-                className={`rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${isOpen ? 'border-indigo-300 bg-white shadow-md' : 'border-slate-200 bg-white hover:border-indigo-200 hover:shadow-md'}`}
+                className={`rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${isOpen ? 'border-teal-300 bg-white shadow-md' : 'border-slate-200 bg-white hover:border-teal-200 hover:shadow-md'}`}
               >
                 <button
                   onClick={() => setExpanded(isOpen ? null : i)}
                   className="w-full flex items-center gap-5 px-6 py-5 text-left"
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors border shadow-sm ${isOpen ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-slate-50 text-indigo-600 border-slate-200'}`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors border shadow-sm ${isOpen ? 'bg-teal-600 text-white border-teal-700' : 'bg-slate-50 text-teal-600 border-slate-200'}`}>
                     {step.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">{step.number}</span>
+                      <span className="text-[11px] font-black text-teal-600 uppercase tracking-widest">{step.number}</span>
                       <span className="text-[11px] text-slate-500 uppercase tracking-wide font-bold hidden sm:block">{step.subtitle}</span>
                     </div>
                     <h3 className={`font-bold text-lg leading-snug mt-1 ${isOpen ? 'text-slate-900' : 'text-slate-800'}`}>{step.title}</h3>
                   </div>
-                  <span className={`text-xl font-black flex-shrink-0 transition-transform duration-200 ${isOpen ? 'text-indigo-600 rotate-45' : 'text-slate-400'}`}>+</span>
+                  <span className={`text-xl font-black flex-shrink-0 transition-transform duration-200 ${isOpen ? 'text-teal-600 rotate-45' : 'text-slate-400'}`}>+</span>
                 </button>
 
                 {isOpen && (
@@ -117,7 +117,7 @@ export default function HowItWorksPage() {
           <h2 className="text-4xl font-black text-slate-900 mb-4">Ready to Start Step 1?</h2>
           <p className="text-slate-600 text-lg mb-8">Create your free account and complete your first AI skill analysis in under 5 minutes.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all">
+            <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-teal-200 transition-all">
               Get Started Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button onClick={() => navigate('/signin')} className="inline-flex items-center justify-center px-8 py-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-bold rounded-xl shadow-sm transition-all">

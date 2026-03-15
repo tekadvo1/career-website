@@ -98,11 +98,11 @@ export default function CookiePolicy() {
       {/* Hero */}
       <section className="relative pt-32 pb-14 px-4 overflow-hidden bg-white border-b border-slate-200">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-indigo-100 to-transparent blur-3xl rounded-full opacity-60" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-teal-100 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="w-16 h-16 bg-white border border-indigo-100 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Cookie className="w-8 h-8 text-indigo-600" />
+          <div className="w-16 h-16 bg-white border border-teal-100 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Cookie className="w-8 h-8 text-teal-600" />
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-slate-900">Cookie Policy</h1>
           <p className="text-slate-500 font-medium text-base">Last updated: 11 March 2026</p>
@@ -116,8 +116,8 @@ export default function CookiePolicy() {
       <section className="py-16 px-4">
         <div className="max-w-3xl mx-auto space-y-8">
           {/* Quick summary */}
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-8 shadow-sm">
-            <h2 className="text-sm font-black text-indigo-700 uppercase tracking-widest mb-6 text-center">Summary</h2>
+          <div className="bg-teal-50 border border-teal-100 rounded-2xl p-8 shadow-sm">
+            <h2 className="text-sm font-black text-teal-700 uppercase tracking-widest mb-6 text-center">Summary</h2>
             <div className="grid sm:grid-cols-3 gap-6">
               {[
                 { label: 'Essential Cookies', desc: 'Always active — required to keep you logged in and use the platform' },

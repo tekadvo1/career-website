@@ -35,17 +35,17 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-white">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-indigo-100 to-transparent blur-3xl rounded-full opacity-60" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-teal-100 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             About FindStreak
           </div>
           <h1 className="text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6">
             We Built the Platform
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">We Needed Ourselves</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">We Needed Ourselves</span>
           </h1>
           <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             FindStreak exists because learning to code is not the hard part. Knowing what to build, which skills to focus on, and how to go from learning to actually getting hired — that is where most developers get stuck.
@@ -57,12 +57,12 @@ export default function AboutPage() {
       <section className="py-20 px-4 border-y border-slate-200 bg-slate-50">
         <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-start">
           {/* Mission card */}
-          <div className="rounded-2xl border border-indigo-100 bg-white p-9 relative overflow-hidden shadow-md lg:sticky lg:top-24">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-60" />
+          <div className="rounded-2xl border border-teal-100 bg-white p-9 relative overflow-hidden shadow-md lg:sticky lg:top-24">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-teal-50 rounded-full blur-3xl opacity-60" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center"><Zap className="w-5 h-5 text-indigo-600" /></div>
-                <span className="font-black text-indigo-700 uppercase tracking-widest text-xs">Our Mission</span>
+                <div className="w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl flex items-center justify-center"><Zap className="w-5 h-5 text-teal-600" /></div>
+                <span className="font-black text-teal-700 uppercase tracking-widest text-xs">Our Mission</span>
               </div>
               <blockquote className="text-2xl font-black leading-snug text-slate-900 mb-5">
                 "Help developers learn by building real projects — with AI that knows their specific goals and gaps."
@@ -87,7 +87,7 @@ export default function AboutPage() {
               <div className="space-y-3">
                 {['Your roadmap is generated from your resume, not a template', 'You build real projects with actual task-by-task guidance', 'The tech stack guide tells you what to install and how to use it', 'Interview practice uses questions specific to your role', 'Progress tracking keeps you consistent without pressure'].map((b, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-teal-500 flex-shrink-0 mt-0.5" />
                     <span className="text-slate-700 text-sm font-medium">{b}</span>
                   </div>
                 ))}
@@ -101,14 +101,14 @@ export default function AboutPage() {
       <section className="py-20 px-4 bg-white border-b border-slate-200">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-indigo-600 text-xs font-bold uppercase tracking-widest">Our Principles</span>
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">Our Principles</span>
             <h2 className="text-4xl font-black text-slate-900 mt-3 mb-3">What We Believe</h2>
             <p className="text-slate-600 text-base max-w-xl mx-auto">The principles behind every decision we make about how FindStreak is built and what it prioritises.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {values.map((v, i) => (
-              <div key={i} className="group bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-200 shadow-sm hover:shadow-md rounded-2xl p-6 transition-all duration-300">
-                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm text-indigo-600 flex items-center justify-center mb-5 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
+              <div key={i} className="group bg-slate-50 hover:bg-white border border-slate-100 hover:border-teal-200 shadow-sm hover:shadow-md rounded-2xl p-6 transition-all duration-300">
+                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm text-teal-600 flex items-center justify-center mb-5 group-hover:bg-teal-50 group-hover:border-teal-100 transition-colors">
                   {v.icon}
                 </div>
                 <h3 className="font-bold text-slate-900 text-lg mb-2">{v.title}</h3>
@@ -123,14 +123,14 @@ export default function AboutPage() {
       <section className="py-20 px-4 bg-slate-50 border-b border-slate-200">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
-            <span className="text-indigo-600 text-xs font-bold uppercase tracking-widest">The Platform</span>
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">The Platform</span>
             <h2 className="text-4xl font-black text-slate-900 mt-3 mb-3">What FindStreak Contains Right Now</h2>
             <p className="text-slate-600 text-base max-w-xl mx-auto">A straightforward description of every area of the platform that is currently live and available to you.</p>
           </div>
           <div className="space-y-4">
             {platformFeatures.map((f, i) => (
-              <div key={i} className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start bg-white border border-slate-200 hover:border-indigo-300 shadow-sm rounded-2xl p-6 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center flex-shrink-0 text-sm font-black">
+              <div key={i} className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start bg-white border border-slate-200 hover:border-teal-300 shadow-sm rounded-2xl p-6 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center flex-shrink-0 text-sm font-black">
                   {String(i + 1).padStart(2, '0')}
                 </div>
                 <div>
@@ -146,12 +146,12 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="w-16 h-16 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-             <BookOpen className="w-8 h-8 text-indigo-600" />
+          <div className="w-16 h-16 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+             <BookOpen className="w-8 h-8 text-teal-600" />
           </div>
           <h2 className="text-4xl font-black text-slate-900 mb-4">Ready to Build Something Real?</h2>
           <p className="text-slate-600 text-lg mb-8 leading-relaxed">Upload your resume, choose your target role, and FindStreak will give you a clear, personalised plan to follow starting today.</p>
-          <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all">
+          <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-teal-200 transition-all">
             Start for Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>

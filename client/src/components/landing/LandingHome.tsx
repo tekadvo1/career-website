@@ -21,42 +21,42 @@ const features = [
     title: 'AI Skill Gap Analysis',
     desc: 'Upload your resume. AI tells you exactly what is missing for your target role — prioritised and actionable.',
     tag: 'Career Planning',
-    color: 'indigo',
+    color: 'teal',
   },
   {
     icon: <Map className="w-6 h-6" />,
     title: 'Personalised Roadmap',
     desc: 'A custom learning path that skips what you already know and focuses only on what you actually need.',
     tag: 'Learning',
-    color: 'blue',
+    color: 'emerald',
   },
   {
     icon: <Code2 className="w-6 h-6" />,
     title: 'Real Project Workspace',
     desc: 'Every project has a full curriculum with daily tasks, milestones and guided steps built for your level.',
     tag: 'Projects',
-    color: 'indigo',
+    color: 'teal',
   },
   {
     icon: <MessageSquare className="w-6 h-6" />,
     title: 'Mock Interview AI',
     desc: 'Simulate real interviews under pressure. Get evaluated answers and a full performance report at the end.',
     tag: 'Interview Prep',
-    color: 'blue',
+    color: 'emerald',
   },
   {
     icon: <Terminal className="w-6 h-6" />,
     title: 'Tech Stack Generator',
     desc: 'AI tells you every tool, language and framework you need — ranked by importance for your specific role.',
     tag: 'Tech Stack',
-    color: 'indigo',
+    color: 'teal',
   },
   {
     icon: <Trophy className="w-6 h-6" />,
     title: 'XP & Streak System',
     desc: 'Track real progress with XP, streaks, daily missions and achievement badges — not vanity certificates.',
     tag: 'Motivation',
-    color: 'blue',
+    color: 'emerald',
   },
 ];
 
@@ -111,8 +111,8 @@ export default function LandingHome() {
       <section className="relative pt-32 pb-28 px-4 overflow-hidden bg-white">
         {/* Background mesh - subtle & clean */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-radial from-indigo-100 via-blue-50/50 to-transparent rounded-full blur-3xl opacity-70" />
-          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-50 rounded-full blur-3xl opacity-60" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-radial from-teal-100 via-emerald-50/50 to-transparent rounded-full blur-3xl opacity-70" />
+          <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-emerald-50 rounded-full blur-3xl opacity-60" />
           {/* Grid lines - very faint */}
           <div
             className="absolute inset-0 opacity-[0.02]"
@@ -125,8 +125,8 @@ export default function LandingHome() {
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
             AI-Powered Career Acceleration Platform
           </div>
 
@@ -134,11 +134,11 @@ export default function LandingHome() {
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-black leading-[1.05] tracking-tight mb-6 text-slate-900">
             Stop Watching Tutorials.
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-500">
               Start Building Real
             </span>
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-500">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-500">
               Projects.
             </span>
           </h1>
@@ -153,7 +153,7 @@ export default function LandingHome() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
             <button
               onClick={() => navigate('/signup')}
-              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-base rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all duration-200 overflow-hidden"
+              className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-base rounded-xl shadow-lg shadow-teal-200 hover:shadow-teal-300 transition-all duration-200 overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
                 Start Learning for Free
@@ -185,7 +185,7 @@ export default function LandingHome() {
         <div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-slate-100">
           {stats.map((s) => (
             <div key={s.label} className="flex flex-col items-center py-4 gap-1">
-              <div className="flex items-center gap-2 text-indigo-600 mb-1">{s.icon}</div>
+              <div className="flex items-center gap-2 text-teal-600 mb-1">{s.icon}</div>
               <p className="text-3xl font-black text-slate-900">{s.value}</p>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">{s.label}</p>
             </div>
@@ -197,7 +197,7 @@ export default function LandingHome() {
       <section className="py-24 px-4 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-indigo-600 text-xs font-bold uppercase tracking-widest">The Process</span>
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">The Process</span>
             <h2 className="text-4xl md:text-5xl font-black mt-3 text-slate-900">
               Exactly What Happens<br />When You Join
             </h2>
@@ -208,13 +208,13 @@ export default function LandingHome() {
 
           <div className="relative">
             {/* Connector line */}
-            <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-transparent via-indigo-200 to-transparent" />
+            <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-transparent via-teal-200 to-transparent" />
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {steps.map((s, i) => (
                 <div key={s.num} className="relative group">
-                  <div className="bg-white border border-slate-200 hover:border-indigo-300 shadow-sm hover:shadow-md rounded-2xl p-6 transition-all duration-300 h-full relative z-10">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-sm mb-5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                  <div className="bg-white border border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-md rounded-2xl p-6 transition-all duration-300 h-full relative z-10">
+                    <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 font-black text-sm mb-5 group-hover:bg-teal-600 group-hover:text-white transition-colors">
                       {String(i + 1).padStart(2, '0')}
                     </div>
                     <h3 className="font-bold text-slate-900 text-sm leading-snug mb-2">{s.title}</h3>
@@ -228,7 +228,7 @@ export default function LandingHome() {
           <div className="text-center mt-12">
             <button
               onClick={() => navigate('/how-it-works')}
-              className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-bold text-sm transition-colors py-2 px-4 rounded-full bg-indigo-50 hover:bg-indigo-100"
+              className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 font-bold text-sm transition-colors py-2 px-4 rounded-full bg-teal-50 hover:bg-teal-100"
             >
               See the full step-by-step breakdown <ChevronRight className="w-4 h-4" />
             </button>
@@ -240,7 +240,7 @@ export default function LandingHome() {
       <section className="py-24 px-4 bg-white border-t border-slate-200">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-indigo-600 text-xs font-bold uppercase tracking-widest">Platform Features</span>
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">Platform Features</span>
             <h2 className="text-4xl md:text-5xl font-black mt-3 text-slate-900">
               Every Tool You Need.<br />Nothing You Don't.
             </h2>
@@ -253,17 +253,17 @@ export default function LandingHome() {
             {features.map((f, i) => (
               <div
                 key={i}
-                className="group relative bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-6 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
+                className="group relative bg-white border border-slate-200 hover:border-teal-300 rounded-2xl p-6 transition-all duration-300 overflow-hidden shadow-sm hover:shadow-md"
               >
                 {/* Subtle highlight on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/0 group-hover:from-indigo-50/50 to-transparent transition-all duration-300 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-teal-50/0 group-hover:from-teal-50/50 to-transparent transition-all duration-300 pointer-events-none" />
 
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-5">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                       {f.icon}
                     </div>
-                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-100 px-2.5 py-1 rounded-full uppercase tracking-wider">
                       {f.tag}
                     </span>
                   </div>
@@ -296,7 +296,7 @@ export default function LandingHome() {
       <section className="py-24 px-4 bg-slate-50 border-t border-slate-200">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <span className="text-indigo-600 text-xs font-bold uppercase tracking-widest">Why FindStreak</span>
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">Why FindStreak</span>
             <h2 className="text-4xl md:text-5xl font-black mt-3 text-slate-900">
               Recruiters Hire People<br />Who Have Built Things
             </h2>
@@ -324,11 +324,11 @@ export default function LandingHome() {
             </div>
 
             {/* With */}
-            <div className="rounded-2xl border-2 border-indigo-200 bg-white p-8 shadow-md relative overflow-hidden transform md:-translate-y-2">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl opacity-80" />
+            <div className="rounded-2xl border-2 border-teal-200 bg-white p-8 shadow-md relative overflow-hidden transform md:-translate-y-2">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-full blur-3xl opacity-80" />
               <div className="flex items-center gap-2.5 mb-8 relative z-10">
-                <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
-                <p className="font-black text-sm uppercase tracking-widest text-indigo-700">With FindStreak</p>
+                <div className="w-2.5 h-2.5 rounded-full bg-teal-600 animate-pulse" />
+                <p className="font-black text-sm uppercase tracking-widest text-teal-700">With FindStreak</p>
               </div>
               <div className="space-y-4 relative z-10">
                 {comparison.with.map((item, i) => (
@@ -344,7 +344,7 @@ export default function LandingHome() {
           <div className="text-center mt-12">
             <button
               onClick={() => navigate('/signup')}
-              className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-base rounded-xl shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all duration-200"
+              className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-base rounded-xl shadow-lg shadow-teal-200 hover:shadow-teal-300 transition-all duration-200"
             >
               Start Building Today
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -355,10 +355,10 @@ export default function LandingHome() {
 
       {/* ── CTA BANNER ──────────────────────────────────────────────────────────── */}
       <section className="py-24 px-4 bg-white border-t border-slate-200 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-blue-50 opacity-50" />
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-emerald-50 opacity-50" />
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="w-16 h-16 bg-white border border-indigo-100 shadow-md rounded-2xl flex items-center justify-center mx-auto mb-8">
-            <Sparkles className="w-8 h-8 text-indigo-600" />
+          <div className="w-16 h-16 bg-white border border-teal-100 shadow-md rounded-2xl flex items-center justify-center mx-auto mb-8">
+            <Sparkles className="w-8 h-8 text-teal-600" />
           </div>
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">
             Ready to Build Your<br />First Project?
@@ -370,7 +370,7 @@ export default function LandingHome() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={() => navigate('/signup')}
-              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-base rounded-xl shadow-lg shadow-indigo-200 transition-all duration-200"
+              className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-base rounded-xl shadow-lg shadow-teal-200 transition-all duration-200"
             >
                Get Started Free
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

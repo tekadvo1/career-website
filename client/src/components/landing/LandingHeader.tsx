@@ -36,11 +36,11 @@ export default function LandingHeader() {
 
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-900/20 group-hover:shadow-indigo-900/40 transition-all">
+            <div className="w-8 h-8 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-teal-900/20 group-hover:shadow-teal-900/40 transition-all">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="text-lg font-black text-slate-900 tracking-tight">
-              Find<span className="text-indigo-600">Streak</span>
+              Find<span className="text-teal-600">Streak</span>
             </span>
           </button>
 
@@ -52,7 +52,7 @@ export default function LandingHeader() {
                 onClick={() => navigate(link.path)}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   isActive(link.path)
-                    ? 'text-indigo-600 bg-indigo-50'
+                    ? 'text-teal-600 bg-teal-50'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
@@ -71,7 +71,7 @@ export default function LandingHeader() {
             </button>
             <button
               onClick={() => navigate('/signup')}
-              className="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-lg shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/30 transition-all duration-200"
+              className="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 rounded-lg shadow-lg shadow-teal-900/20 hover:shadow-teal-900/30 transition-all duration-200"
             >
               Sign Up Free
             </button>
@@ -96,7 +96,7 @@ export default function LandingHeader() {
               onClick={() => { navigate(link.path); setMobileOpen(false); }}
               className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                 isActive(link.path)
-                  ? 'bg-indigo-50 text-indigo-600'
+                  ? 'bg-teal-50 text-teal-600'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
@@ -112,7 +112,7 @@ export default function LandingHeader() {
             </button>
             <button
               onClick={() => { navigate('/signup'); setMobileOpen(false); }}
-              className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl hover:from-indigo-500 hover:to-blue-500 transition-all shadow-md shadow-indigo-900/20"
+              className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 rounded-xl hover:from-teal-500 hover:to-emerald-500 transition-all shadow-md shadow-teal-900/20"
             >
               Sign Up Free
             </button>

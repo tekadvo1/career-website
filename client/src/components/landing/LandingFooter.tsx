@@ -22,7 +22,7 @@ export default function LandingFooter() {
 
           {/* Brand */}
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5 flex-shrink-0 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-indigo-900/20 group-hover:shadow-indigo-900/40 transition-shadow">
+            <div className="w-8 h-8 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-lg flex items-center justify-center shadow-md shadow-teal-900/20 group-hover:shadow-teal-900/40 transition-shadow">
               <Zap className="w-4 h-4 text-white" />
             </div>
             <span className="text-slate-900 font-black text-lg tracking-tight">FindStreak</span>
@@ -34,7 +34,7 @@ export default function LandingFooter() {
               <button
                 key={l.label}
                 onClick={() => navigate(l.path)}
-                className="text-sm text-slate-500 hover:text-indigo-600 transition-colors font-medium"
+                className="text-sm text-slate-500 hover:text-teal-600 transition-colors font-medium"
               >
                 {l.label}
               </button>
@@ -49,9 +49,9 @@ export default function LandingFooter() {
         <div className="mt-6 pt-6 border-t border-slate-100 text-center">
           <p className="text-[11px] text-slate-500 leading-relaxed">
             By using FindStreak you agree to our{' '}
-            <button onClick={() => navigate('/terms')} className="text-slate-600 font-medium hover:text-indigo-600 underline underline-offset-2 transition-colors">Terms &amp; Conditions</button>,{' '}
-            <button onClick={() => navigate('/privacy')} className="text-slate-600 font-medium hover:text-indigo-600 underline underline-offset-2 transition-colors">Privacy Policy</button> and{' '}
-            <button onClick={() => navigate('/cookies')} className="text-slate-600 font-medium hover:text-indigo-600 underline underline-offset-2 transition-colors">Cookie Policy</button>.
+            <button onClick={() => navigate('/terms')} className="text-slate-600 font-medium hover:text-teal-600 underline underline-offset-2 transition-colors">Terms &amp; Conditions</button>,{' '}
+            <button onClick={() => navigate('/privacy')} className="text-slate-600 font-medium hover:text-teal-600 underline underline-offset-2 transition-colors">Privacy Policy</button> and{' '}
+            <button onClick={() => navigate('/cookies')} className="text-slate-600 font-medium hover:text-teal-600 underline underline-offset-2 transition-colors">Cookie Policy</button>.
           </p>
         </div>
       </div>
