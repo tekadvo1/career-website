@@ -1,28 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-import { Zap, Target, ArrowRight, Heart, CheckCircle, Lightbulb, Shield, TrendingUp, Code, BookOpen } from 'lucide-react';
+import { Target, Heart, Shield, ArrowRight, Lightbulb, Users, Compass } from 'lucide-react';
 
 const values = [
-  { icon: <Code className="w-5 h-5" />, title: 'Learning by Building', desc: 'We believe the only way to truly learn software development is to build real things. Every feature we create is designed to get you writing code and shipping projects, not just watching videos.' },
-  { icon: <Target className="w-5 h-5" />, title: 'Clarity Over Noise', desc: 'There is too much advice online and not enough clarity. FindStreak tells you exactly what to learn, in what order, for your specific goal — nothing more, nothing less.' },
-  { icon: <Heart className="w-5 h-5" />, title: 'Honest About What Works', desc: 'We do not show fake numbers or inflated testimonials. We are building a platform we believe in, and we will earn your trust through the quality of what we actually deliver.' },
-  { icon: <Shield className="w-5 h-5" />, title: 'Industry Relevance First', desc: 'Every project, skill recommendation and tech stack suggestion is based on what real companies are actually hiring for — not what sounds impressive on a landing page.' },
-  { icon: <Lightbulb className="w-5 h-5" />, title: 'Built for Real Learners', desc: 'FindStreak is designed for people who are serious about transitioning into tech or levelling up their career. Not passive learners — people who want to build things and get hired.' },
-  { icon: <TrendingUp className="w-5 h-5" />, title: 'Progress That Compounds', desc: 'Small consistent effort beats intense bursts every time. Our daily missions, XP system and streak tracking are designed to keep you moving forward even on your busiest days.' },
-];
-
-const platformFeatures = [
-  { area: 'Career Analysis', detail: 'AI reads your resume and compares it to real hiring requirements for your chosen role. You get a precise skill gap report and a career fit score — not an estimate, but a direct comparison against actual job requirements.' },
-  { area: 'Personalised Roadmap', detail: 'A learning roadmap generated from your resume and target role. It skips what you already know and gives you a prioritised, logical sequence of topics — with a visual tree view of the full journey.' },
-  { area: 'Project-Based Learning', detail: 'AI recommends real-world projects matched to your skill level. Each project has a structured curriculum, daily tasks and milestone tracking — a real project for your portfolio, not a tutorial clone.' },
-  { area: 'Tech Stack & Tool Guides', detail: 'The platform generates a complete list of every language, framework and tool your target role requires. Every item has a step-by-step installation guide and a live AI mentor available while you follow it.' },
-  { area: 'Interview Preparation', detail: 'AI generates role-specific questions covering technical, behavioural and situational scenarios. You type answers and receive immediate feedback. A real-time mock interview mode simulates the pressure of an actual session.' },
-  { area: 'AI Learning Assistant', detail: 'A dedicated AI chat that knows your career context. Ask technical questions, get explanations, request guidance on what to do next. Chat history is saved and synced across all your devices.' },
-  { area: 'Daily Missions & Streak Tracking', detail: 'Every day you get one focused mission linked to your active project. Completing it earns XP and extends your daily streak. Missing a day resets it to zero — the accountability is intentionally real.' },
-  { area: 'Achievements & XP', detail: 'Every meaningful action earns XP. Completing projects, finishing interviews, maintaining streaks and hitting milestones unlock achievements and badges that appear on your public profile.' },
-  { area: 'Career Workspaces', detail: 'Run completely separate learning environments for different career paths simultaneously. Each workspace has its own roadmap, projects, analysis and progress — fully independent and switchable at any time.' },
-  { area: 'Public Developer Profile', detail: 'Your profile page is publicly shareable with a unique URL. It shows your target role, skills, completed projects and badges. Share it in job applications or on LinkedIn as evidence of consistent, structured work.' },
+  { icon: <Compass className="w-6 h-6" />, title: 'Providing Clear Direction', desc: 'The tech industry is filled with overwhelming advice. We aim to cut through the noise by giving you a single, clear, personalised compass to follow.' },
+  { icon: <Heart className="w-6 h-6" />, title: 'Leading with Empathy', desc: 'Learning a new skill is vulnerable and difficult. We design every feature to be encouraging, constructive, and supportive, never intimidating.' },
+  { icon: <Shield className="w-6 h-6" />, title: 'Radical Honesty', desc: 'We only recommend skills and tools that are actually requested by employers today. We do not sell false promises or sell your data.' },
+  { icon: <Target className="w-6 h-6" />, title: 'Practical Application', desc: 'Theory is important, but building is essential. We strongly believe that guided, hands-on experience is the kindest and most effective way to learn.' },
+  { icon: <Users className="w-6 h-6" />, title: 'Accessible to Everyone', desc: 'Whether you are self-taught, transitioning from another career, or fresh out of a bootcamp, our platform meets you exactly where you are.' },
+  { icon: <Lightbulb className="w-6 h-6" />, title: 'Continuous Growth', desc: 'We celebrate small daily wins because we know that consistent, gentle progress is what builds lasting confidence and true expertise.' },
 ];
 
 export default function AboutPage() {
@@ -35,108 +22,62 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-white">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-teal-100 to-transparent blur-3xl rounded-full opacity-60" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-teal-100/60 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" />
-            About FindStreak
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
+            <Heart className="w-4 h-4 text-teal-500" />
+            Our Mission & Story
           </div>
-          <h1 className="text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6">
-            We Built the Platform
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">We Needed Ourselves</span>
+          <h1 className="text-4xl md:text-6xl font-black leading-[1.1] tracking-tight mb-6 text-slate-900">
+            Making Tech Careers <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">Accessible for Everyone</span>
           </h1>
-          <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
-            FindStreak exists because learning to code is not the hard part. Knowing what to build, which skills to focus on, and how to go from learning to actually getting hired — that is where most developers get stuck.
+          <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
+            We believe that anyone with determination should be able to build a fulfilling career in technology. We created FindStreak to provide the clear, supportive guidance we wished we had when we started.
           </p>
         </div>
       </section>
 
-      {/* Mission + Why We Built */}
-      <section className="py-20 px-4 border-y border-slate-200 bg-slate-50">
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 items-start">
-          {/* Mission card */}
-          <div className="rounded-2xl border border-teal-100 bg-white p-9 relative overflow-hidden shadow-md lg:sticky lg:top-24">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-teal-50 rounded-full blur-3xl opacity-60" />
+      {/* The Story */}
+      <section className="py-24 px-4 border-y border-slate-200 bg-slate-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 md:p-14 relative overflow-hidden text-center md:text-left">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-50 rounded-full blur-3xl opacity-60" />
             <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-teal-50 border border-teal-100 rounded-xl flex items-center justify-center"><Zap className="w-5 h-5 text-teal-600" /></div>
-                <span className="font-black text-teal-700 uppercase tracking-widest text-xs">Our Mission</span>
-              </div>
-              <blockquote className="text-2xl font-black leading-snug text-slate-900 mb-5">
-                "Help developers learn by building real projects — with AI that knows their specific goals and gaps."
-              </blockquote>
-              <p className="text-slate-600 text-sm leading-relaxed font-medium">
-                Not generic advice. Not another course library. A personalised, hands-on learning system that starts with who you are today and helps you build towards where you want to be.
-              </p>
-            </div>
-          </div>
-
-          {/* Why */}
-          <div className="lg:py-4">
-            <h2 className="text-3xl font-black text-slate-900 mb-6">Why We Built This</h2>
-            <div className="space-y-4 text-slate-600 text-[15px] leading-relaxed">
-              <p>Most developers who want to break into a new role already have some knowledge. The problem is not lack of resources — there are thousands of tutorials. The problem is <strong className="text-slate-900">not knowing what to do with those resources</strong> given your specific situation.</p>
-              <p>Which skills are you actually missing? What should you build to prove those skills? How do you answer the interview questions for that specific role? These questions do not have the same answer for every developer.</p>
-              <p>FindStreak is our answer to that gap. It uses your actual resume and your actual target role to generate an actual plan — not a recycled template.</p>
-            </div>
-
-            <div className="mt-8 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-              <h3 className="font-black text-slate-900 mb-4 text-base">What makes FindStreak different</h3>
-              <div className="space-y-3">
-                {['Your roadmap is generated from your resume, not a template', 'You build real projects with actual task-by-task guidance', 'The tech stack guide tells you what to install and how to use it', 'Interview practice uses questions specific to your role', 'Progress tracking keeps you consistent without pressure'].map((b, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <CheckCircle className="w-4 h-4 text-teal-500 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-700 text-sm font-medium">{b}</span>
-                  </div>
-                ))}
+              <h2 className="text-3xl font-black text-slate-900 mb-6">Why FindStreak Exists</h2>
+              <div className="space-y-6 text-slate-600 text-[17px] leading-relaxed font-medium">
+                <p>
+                  The internet has made it incredibly easy to find tutorials, courses, and documentation. But ironically, this abundance of resources has created a new problem: <strong className="text-slate-900 font-bold">overwhelming confusion.</strong>
+                </p>
+                <p>
+                  When speaking with junior developers and career changers, we constantly heard the same frustrations: "I don't know what to learn next," "I feel like I have tutorial hell," and "I don't know if I'm ready for a real job." The anxiety was palpable.
+                </p>
+                <p>
+                  FindStreak was born from a desire to replace that anxiety with clarity. We wanted to build a gentle, intelligent system that acts like a patient mentor. A platform that looks at your unique background, holds your hand through the difficult parts, and specifically helps you build real confidence.
+                </p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Values */}
-      <section className="py-20 px-4 bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">Our Principles</span>
-            <h2 className="text-4xl font-black text-slate-900 mt-3 mb-3">What We Believe</h2>
-            <p className="text-slate-600 text-base max-w-xl mx-auto">The principles behind every decision we make about how FindStreak is built and what it prioritises.</p>
+      {/* Core Values */}
+      <section className="py-24 px-4 bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">What Drives Us</span>
+            <h2 className="text-4xl font-black text-slate-900 mt-4 mb-4">Our Core Values</h2>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto font-medium">The deep beliefs that guide every feature we build, every word we write, and every student we support.</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {values.map((v, i) => (
-              <div key={i} className="group bg-slate-50 hover:bg-white border border-slate-100 hover:border-teal-200 shadow-sm hover:shadow-md rounded-2xl p-6 transition-all duration-300">
-                <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-sm text-teal-600 flex items-center justify-center mb-5 group-hover:bg-teal-50 group-hover:border-teal-100 transition-colors">
+              <div key={i} className="bg-slate-50 border border-slate-100 hover:border-teal-200 shadow-sm hover:shadow-md rounded-3xl p-8 transition-all duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm text-teal-600 flex items-center justify-center mb-6">
                   {v.icon}
                 </div>
-                <h3 className="font-bold text-slate-900 text-lg mb-2">{v.title}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{v.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Platform features */}
-      <section className="py-20 px-4 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="text-teal-600 text-xs font-bold uppercase tracking-widest">The Platform</span>
-            <h2 className="text-4xl font-black text-slate-900 mt-3 mb-3">What FindStreak Contains Right Now</h2>
-            <p className="text-slate-600 text-base max-w-xl mx-auto">A straightforward description of every area of the platform that is currently live and available to you.</p>
-          </div>
-          <div className="space-y-4">
-            {platformFeatures.map((f, i) => (
-              <div key={i} className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start bg-white border border-slate-200 hover:border-teal-300 shadow-sm rounded-2xl p-6 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center flex-shrink-0 text-sm font-black">
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base mb-1.5">{f.area}</h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">{f.detail}</p>
-                </div>
+                <h3 className="font-black text-slate-900 text-xl mb-3">{v.title}</h3>
+                <p className="text-slate-600 text-[15px] leading-relaxed font-medium">{v.desc}</p>
               </div>
             ))}
           </div>
@@ -146,13 +87,10 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="py-24 px-4 bg-white">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="w-16 h-16 bg-teal-50 border border-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-             <BookOpen className="w-8 h-8 text-teal-600" />
-          </div>
-          <h2 className="text-4xl font-black text-slate-900 mb-4">Ready to Build Something Real?</h2>
-          <p className="text-slate-600 text-lg mb-8 leading-relaxed">Upload your resume, choose your target role, and FindStreak will give you a clear, personalised plan to follow starting today.</p>
-          <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-teal-200 transition-all">
-            Start for Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          <h2 className="text-4xl font-black text-slate-900 mb-6">Let Us Help You Succeed</h2>
+          <p className="text-slate-600 text-lg mb-10 leading-relaxed font-medium">We would be honoured to be part of your career journey. Sign up today and experience a platform built entirely around supporting you.</p>
+          <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-teal-200 transition-all hover:-translate-y-1">
+            Start Your Journey <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
       </section>
