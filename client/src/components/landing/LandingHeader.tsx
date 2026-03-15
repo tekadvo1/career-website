@@ -25,9 +25,9 @@ export default function LandingHeader() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-[#0a0f0d]/90 backdrop-blur-xl ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/90 backdrop-blur-xl ${
         scrolled
-          ? 'border-b border-white/[0.06] shadow-2xl shadow-black/30 py-1'
+          ? 'border-b border-slate-200 shadow-md shadow-slate-200/50 py-1'
           : 'border-b border-transparent shadow-none py-2'
       }`}
     >
@@ -36,11 +36,11 @@ export default function LandingHeader() {
 
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-lg shadow-teal-900/50 group-hover:shadow-teal-700/60 transition-all">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-900/20 group-hover:shadow-indigo-900/40 transition-all">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-black text-white tracking-tight">
-              Find<span className="text-teal-400">Streak</span>
+            <span className="text-lg font-black text-slate-900 tracking-tight">
+              Find<span className="text-indigo-600">Streak</span>
             </span>
           </button>
 
@@ -52,8 +52,8 @@ export default function LandingHeader() {
                 onClick={() => navigate(link.path)}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   isActive(link.path)
-                    ? 'text-teal-400 bg-teal-950/60'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                    ? 'text-indigo-600 bg-indigo-50'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 {link.label}
@@ -65,13 +65,13 @@ export default function LandingHeader() {
           <div className="hidden md:flex items-center gap-3">
             <button
               onClick={() => navigate('/signin')}
-              className="px-4 py-2 text-sm font-bold text-slate-300 hover:text-white transition-colors"
+              className="px-4 py-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
             >
               Login
             </button>
             <button
               onClick={() => navigate('/signup')}
-              className="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 rounded-lg shadow-lg shadow-teal-900/40 hover:shadow-teal-700/50 transition-all duration-200"
+              className="px-5 py-2 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 rounded-lg shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/30 transition-all duration-200"
             >
               Sign Up Free
             </button>
@@ -79,7 +79,7 @@ export default function LandingHeader() {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+            className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-all"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -89,30 +89,30 @@ export default function LandingHeader() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-[#0a0f0d]/98 backdrop-blur-xl border-t border-white/[0.06] px-4 py-5 space-y-1">
+        <div className="md:hidden bg-white/98 backdrop-blur-xl border-t border-slate-100 px-4 py-5 space-y-1 shadow-xl">
           {navLinks.map(link => (
             <button
               key={link.path}
               onClick={() => { navigate(link.path); setMobileOpen(false); }}
               className={`block w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                 isActive(link.path)
-                  ? 'bg-teal-950/60 text-teal-400'
-                  : 'text-slate-400 hover:text-white hover:bg-white/[0.06]'
+                  ? 'bg-indigo-50 text-indigo-600'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
               {link.label}
             </button>
           ))}
-          <div className="pt-4 border-t border-white/[0.06] flex flex-col gap-2">
+          <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
             <button
               onClick={() => { navigate('/signin'); setMobileOpen(false); }}
-              className="w-full py-3 text-sm font-bold text-slate-300 border border-white/10 rounded-xl hover:bg-white/[0.06] transition-all"
+              className="w-full py-3 text-sm font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-all"
             >
               Login
             </button>
             <button
               onClick={() => { navigate('/signup'); setMobileOpen(false); }}
-              className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl hover:from-teal-400 hover:to-emerald-400 transition-all"
+              className="w-full py-3 text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl hover:from-indigo-500 hover:to-blue-500 transition-all shadow-md shadow-indigo-900/20"
             >
               Sign Up Free
             </button>

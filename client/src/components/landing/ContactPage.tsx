@@ -45,94 +45,93 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0f0d] text-white font-sans antialiased">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased overflow-x-hidden">
       <LandingHeader />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden">
+      <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-white">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-teal-900/50 to-transparent blur-3xl rounded-full" />
-          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(#14b8a6 1px, transparent 1px), linear-gradient(to right, #14b8a6 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-indigo-100 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-950 border border-teal-800/60 text-teal-400 text-xs font-semibold uppercase tracking-widest mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
             Contact
           </div>
           <h1 className="text-5xl md:text-6xl font-black leading-tight tracking-tight mb-6">
             Get in{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400">Touch</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">Touch</span>
           </h1>
-          <p className="text-lg text-slate-400 leading-relaxed">
+          <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
             Have a question, a bug to report, or feedback on your experience? We read every message and take it seriously.
           </p>
         </div>
       </section>
 
       {/* Contact options */}
-      <section className="py-10 px-4 border-t border-white/5">
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-4">
+      <section className="py-12 px-4 border-y border-slate-200 bg-slate-50">
+        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-6">
           {contactOptions.map((opt, i) => (
-            <div key={i} className="bg-white/[0.02] border border-white/[0.06] hover:border-teal-800/50 rounded-2xl p-6 text-center transition-all group">
-              <div className="w-11 h-11 rounded-xl bg-teal-950 border border-teal-800/50 text-teal-400 flex items-center justify-center mx-auto mb-4 group-hover:bg-teal-900 transition-colors">{opt.icon}</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">{opt.label}</p>
-              <p className="font-bold text-white text-sm mb-2">{opt.value}</p>
-              <p className="text-slate-500 text-xs leading-relaxed">{opt.desc}</p>
+            <div key={i} className="bg-white border border-slate-200 hover:border-indigo-300 shadow-sm hover:shadow-md rounded-2xl p-6 text-center transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center mx-auto mb-5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">{opt.icon}</div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-1.5">{opt.label}</p>
+              <p className="font-bold text-slate-900 text-base mb-2">{opt.value}</p>
+              <p className="text-slate-600 text-sm leading-relaxed">{opt.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Form + FAQ */}
-      <section className="py-20 px-4 border-t border-white/5">
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-14">
+      <section className="py-24 px-4 bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-16">
 
           {/* Form */}
           <div>
-            <h2 className="text-3xl font-black text-white mb-2">Send a Message</h2>
-            <p className="text-slate-500 mb-8 text-[15px]">We will get back to you within one business day.</p>
+            <h2 className="text-3xl font-black text-slate-900 mb-3">Send a Message</h2>
+            <p className="text-slate-600 mb-8 text-base">We will get back to you within one business day.</p>
 
             {submitted ? (
-              <div className="bg-teal-950/30 border border-teal-800/50 rounded-2xl p-10 text-center">
-                <div className="w-14 h-14 rounded-full bg-teal-900/60 border border-teal-700/50 flex items-center justify-center mx-auto mb-5">
-                  <CheckCircle className="w-7 h-7 text-teal-400" />
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-10 text-center shadow-sm">
+                <div className="w-16 h-16 rounded-full bg-white border border-indigo-200 flex items-center justify-center mx-auto mb-6 shadow-sm">
+                  <CheckCircle className="w-8 h-8 text-indigo-600" />
                 </div>
-                <h3 className="text-xl font-black text-white mb-2">Message Sent</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Thank you <strong className="text-white">{form.name}</strong>. We will reply to <strong className="text-white">{form.email}</strong> within 24 hours.</p>
-                <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', subject: '', message: '' }); }} className="mt-6 px-5 py-2 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-500 transition-colors">
+                <h3 className="text-xl font-black text-slate-900 mb-3">Message Sent</h3>
+                <p className="text-slate-600 text-sm leading-relaxed mb-8">Thank you <strong className="text-slate-900">{form.name}</strong>. We will reply to <strong className="text-slate-900">{form.email}</strong> within 24 hours.</p>
+                <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', subject: '', message: '' }); }} className="px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200">
                   Send Another Message
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid sm:grid-cols-2 gap-5">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
                   {[{ label: 'Full Name *', key: 'name', type: 'text', placeholder: 'Your name' }, { label: 'Email Address *', key: 'email', type: 'email', placeholder: 'your@email.com' }].map(field => (
                     <div key={field.key}>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">{field.label}</label>
+                      <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">{field.label}</label>
                       <input
                         type={field.type}
                         required
                         value={form[field.key as keyof typeof form]}
                         onChange={e => setForm(p => ({ ...p, [field.key]: e.target.value }))}
-                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-700 focus:border-teal-700 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white transition-all shadow-sm"
                         placeholder={field.placeholder}
                       />
                     </div>
                   ))}
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Topic</label>
-                  <select value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-700 transition-all">
-                    <option value="" className="bg-[#0a0f0d]">Select a topic...</option>
-                    {['General Question', 'Bug or Technical Issue', 'Feature Suggestion', 'Account Help', 'Feedback on My Experience', 'Other'].map(o => <option key={o} className="bg-[#0a0f0d]">{o}</option>)}
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Topic</label>
+                  <select value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white transition-all shadow-sm">
+                    <option value="" className="text-slate-500">Select a topic...</option>
+                    {['General Question', 'Bug or Technical Issue', 'Feature Suggestion', 'Account Help', 'Feedback on My Experience', 'Other'].map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Message *</label>
-                  <textarea required rows={5} value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-700 transition-all resize-none" placeholder="Tell us what you need help with or share your feedback..." />
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">Message *</label>
+                  <textarea required rows={5} value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 focus:bg-white transition-all resize-none shadow-sm" placeholder="Tell us what you need help with or share your feedback..." />
                 </div>
-                <button type="submit" disabled={sending} className="w-full py-3.5 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white rounded-xl font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-                  {sending ? <><div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending...</> : <><Send className="w-4 h-4" /> Send Message</>}
+                <button type="submit" disabled={sending} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl font-bold text-base shadow-lg shadow-indigo-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+                  {sending ? <><div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending...</> : <><Send className="w-5 h-5" /> Send Message</>}
                 </button>
               </form>
             )}
@@ -140,18 +139,18 @@ export default function ContactPage() {
 
           {/* FAQ */}
           <div>
-            <h2 className="text-3xl font-black text-white mb-2">Common Questions</h2>
-            <p className="text-slate-500 mb-8 text-[15px]">Answers to the questions we hear most often.</p>
-            <div className="space-y-3">
+            <h2 className="text-3xl font-black text-slate-900 mb-3">Common Questions</h2>
+            <p className="text-slate-600 mb-8 text-base">Answers to the questions we hear most often.</p>
+            <div className="space-y-4">
               {faqs.map((faq, i) => (
-                <div key={i} className={`rounded-xl border overflow-hidden transition-colors ${openFaq === i ? 'border-teal-800/60 bg-teal-950/20' : 'border-white/[0.06] bg-white/[0.02]'}`}>
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-start justify-between px-5 py-4 text-left">
-                    <span className="font-bold text-slate-200 text-sm pr-4 leading-snug">{faq.q}</span>
-                    <span className={`text-teal-400 font-black text-lg flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
+                <div key={i} className={`rounded-2xl border overflow-hidden transition-all duration-300 shadow-sm ${openFaq === i ? 'border-indigo-300 bg-white shadow-md' : 'border-slate-200 bg-white hover:border-indigo-200 hover:shadow-md'}`}>
+                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-start justify-between px-6 py-5 text-left">
+                    <span className="font-bold text-slate-900 text-base pr-4 leading-snug">{faq.q}</span>
+                    <span className={`text-indigo-600 font-black text-xl flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
                   </button>
                   {openFaq === i && (
-                    <div className="px-5 pb-4 border-t border-white/[0.06]">
-                      <p className="text-slate-400 text-sm leading-relaxed pt-3">{faq.a}</p>
+                    <div className="px-6 pb-6 border-t border-slate-100">
+                      <p className="text-slate-600 text-[15px] leading-relaxed pt-4">{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -162,15 +161,15 @@ export default function ContactPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-4 border-t border-white/5">
+      <section className="py-24 px-4 bg-slate-50">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-4xl font-black text-white mb-4">Not a User Yet?</h2>
-          <p className="text-slate-400 text-lg mb-8">Create your free account and get a personalised learning plan based on your actual resume and target role.</p>
+          <h2 className="text-4xl font-black text-slate-900 mb-4">Not a User Yet?</h2>
+          <p className="text-slate-600 text-lg mb-8">Create your free account and get a personalised learning plan based on your actual resume and target role.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-xl transition-all">
+            <button onClick={() => navigate('/signup')} className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all">
               Get Started Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button onClick={() => navigate('/how-it-works')} className="inline-flex items-center justify-center px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white font-bold rounded-xl transition-all">
+            <button onClick={() => navigate('/how-it-works')} className="inline-flex items-center justify-center px-8 py-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 font-bold rounded-xl shadow-sm transition-all">
               See How It Works
             </button>
           </div>

@@ -121,33 +121,33 @@ Website: www.findstreak.com/contact-us`
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-[#0a0f0d] text-white font-sans antialiased">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased overflow-x-hidden">
       <LandingHeader />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-14 px-4 overflow-hidden">
+      <section className="relative pt-32 pb-14 px-4 overflow-hidden bg-white border-b border-slate-200">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-teal-900/40 to-transparent blur-3xl rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-indigo-100 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="w-12 h-12 bg-teal-950 border border-teal-800/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-6 h-6 text-teal-400" />
+          <div className="w-16 h-16 bg-white border border-indigo-100 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-8 h-8 text-indigo-600" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Privacy Policy</h1>
-          <p className="text-slate-400 text-base">Last updated: 11 March 2026</p>
-          <p className="text-slate-400 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-slate-900">Privacy Policy</h1>
+          <p className="text-slate-500 font-medium text-base">Last updated: 11 March 2026</p>
+          <p className="text-slate-600 text-base mt-4 max-w-xl mx-auto leading-relaxed">
             This policy explains what information FindStreak collects, how we use it, and the choices you have regarding your data.
           </p>
         </div>
       </section>
 
       {/* Content */}
-      <section className="py-12 px-4 border-t border-white/5">
+      <section className="py-16 px-4">
         <div className="max-w-3xl mx-auto space-y-8">
           {sections.map((sec, i) => (
-            <div key={i} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7">
-              <h2 className="text-lg font-black text-white mb-4">{sec.title}</h2>
-              <div className="text-slate-400 text-sm leading-relaxed whitespace-pre-line">{sec.content}</div>
+            <div key={i} className="bg-white border border-slate-200 shadow-sm rounded-2xl p-8">
+              <h2 className="text-xl font-black text-slate-900 mb-5">{sec.title}</h2>
+              <div className="text-slate-600 text-[15px] leading-relaxed whitespace-pre-line">{sec.content}</div>
             </div>
           ))}
         </div>

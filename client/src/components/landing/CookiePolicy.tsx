@@ -92,50 +92,50 @@ Website: www.findstreak.com/contact-us`
 
 export default function CookiePolicy() {
   return (
-    <div className="min-h-screen bg-[#0a0f0d] text-white font-sans antialiased">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased overflow-x-hidden">
       <LandingHeader />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-14 px-4 overflow-hidden">
+      <section className="relative pt-32 pb-14 px-4 overflow-hidden bg-white border-b border-slate-200">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-teal-900/40 to-transparent blur-3xl rounded-full" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-radial from-indigo-100 to-transparent blur-3xl rounded-full opacity-60" />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="w-12 h-12 bg-teal-950 border border-teal-800/50 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Cookie className="w-6 h-6 text-teal-400" />
+          <div className="w-16 h-16 bg-white border border-indigo-100 shadow-sm rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Cookie className="w-8 h-8 text-indigo-600" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4">Cookie Policy</h1>
-          <p className="text-slate-400 text-base">Last updated: 11 March 2026</p>
-          <p className="text-slate-400 text-sm mt-3 max-w-xl mx-auto leading-relaxed">
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-slate-900">Cookie Policy</h1>
+          <p className="text-slate-500 font-medium text-base">Last updated: 11 March 2026</p>
+          <p className="text-slate-600 text-base mt-4 max-w-xl mx-auto leading-relaxed">
             This policy explains how FindStreak uses cookies and similar technologies, and how you can manage your cookie preferences.
           </p>
         </div>
       </section>
 
       {/* Content */}
-      <section className="py-12 px-4 border-t border-white/5">
-        <div className="max-w-3xl mx-auto space-y-6">
+      <section className="py-16 px-4">
+        <div className="max-w-3xl mx-auto space-y-8">
           {/* Quick summary */}
-          <div className="bg-teal-950/30 border border-teal-800/40 rounded-2xl p-6">
-            <h2 className="text-base font-black text-teal-400 mb-3">Summary</h2>
-            <div className="grid sm:grid-cols-3 gap-4">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-8 shadow-sm">
+            <h2 className="text-sm font-black text-indigo-700 uppercase tracking-widest mb-6 text-center">Summary</h2>
+            <div className="grid sm:grid-cols-3 gap-6">
               {[
                 { label: 'Essential Cookies', desc: 'Always active — required to keep you logged in and use the platform' },
                 { label: 'No Advertising', desc: 'We do not use advertising or tracking cookies for marketing purposes' },
                 { label: 'Local Storage', desc: 'We use browser local storage for your tokens and preferences' },
               ].map((item, i) => (
-                <div key={i} className="text-center">
-                  <p className="text-xs font-bold text-white uppercase tracking-wide mb-1">{item.label}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
+                <div key={i} className="text-center bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                  <p className="text-xs font-bold text-slate-900 uppercase tracking-wide mb-2">{item.label}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {sections.map((sec, i) => (
-            <div key={i} className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-7">
-              <h2 className="text-lg font-black text-white mb-4">{sec.title}</h2>
-              <div className="text-slate-400 text-sm leading-relaxed whitespace-pre-line">{sec.content}</div>
+            <div key={i} className="bg-white border border-slate-200 shadow-sm rounded-2xl p-8">
+              <h2 className="text-xl font-black text-slate-900 mb-5">{sec.title}</h2>
+              <div className="text-slate-600 text-[15px] leading-relaxed whitespace-pre-line">{sec.content}</div>
             </div>
           ))}
         </div>
