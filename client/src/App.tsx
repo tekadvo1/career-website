@@ -86,7 +86,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-white">
         <Routes>
 
           {/* ── Public / Landing pages ───────────────────────────────────── */}

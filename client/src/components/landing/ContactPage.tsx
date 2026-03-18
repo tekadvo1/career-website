@@ -1,158 +1,277 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Sparkles, Mail, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-import { Mail, MessageSquare, Clock, CheckCircle, Send, Heart } from 'lucide-react';
 
-const faqs = [
-  { q: 'Who is FindStreak built for?', a: 'We built FindStreak for anyone who wants to learn tech skills by actually building things rather than just watching tutorials. It is perfect for career changers, bootcamp grads, and junior developers looking for clear, structured guidance.' },
-  { q: 'What happens when I upload my resume?', a: 'Our AI gently reads your resume to understand your current experience level. It then compares your background to live job requirements for your target role, giving you a friendly, clear report of what you need to learn next.' },
-  { q: 'How are the projects chosen for me?', a: 'Based on your specific skill gaps, we recommend real-world projects that match your comfort level. Each project comes with a step-by-step daily plan so you never feel lost or overwhelmed.' },
-  { q: 'Do I need previous coding experience?', a: 'FindStreak works best if you understand the very basics of coding. We do not teach "what is a variable from scratch," but if you know the fundamentals and want to learn how to put them together, we will absolutely guide you the rest of the way.' },
-  { q: 'Is it really free to start?', a: 'Yes. Our core features—including skill analysis, custom roadmaps, and initial project guidance—are completely free. We want to ensure anyone can get the clarity they need without a financial barrier.' },
-];
+const fadeUp: any = {
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
+const stagger: any = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 
-const contactOptions = [
-  { icon: <Mail className="w-6 h-6" />, label: 'Email Support', value: 'support@findstreak.com', desc: 'Reach out anytime. We are happy to help with account questions or feature requests.' },
-  { icon: <MessageSquare className="w-6 h-6" />, label: 'In-Platform Chat', value: 'Available in Dashboard', desc: 'Registered users can message our support team directly from inside their workspace.' },
-  { icon: <Clock className="w-6 h-6" />, label: 'Our Response Time', value: 'Within 24 hours', desc: 'We genuinely read every single message and aim to reply within one business day.' },
-];
+function SectionBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 text-[11px] font-semibold uppercase tracking-widest mb-4">
+      <Sparkles className="w-3 h-3" />{children}
+    </span>
+  );
+}
+
+type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [submitted, setSubmitted] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(0); // Open first FAQ by default for friendliness
+  const [status, setStatus] = useState<Status>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) return;
-    setSending(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSubmitted(true);
-      setSending(false);
-    }, 1000);
+    setStatus('loading');
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStatus('success');
+        setForm({ name: '', email: '', subject: '', message: '' });
+      } else {
+        setStatus('error');
+        setErrorMsg(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setStatus('error');
+      setErrorMsg('Network error. Please check your connection and try again.');
+    }
   };
 
+  const inputClass = `w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400
+    focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-200`;
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased overflow-x-hidden">
+    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden antialiased" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LandingHeader />
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 px-4 overflow-hidden bg-white">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-teal-100/60 to-transparent blur-3xl rounded-full opacity-60" />
-        </div>
-        <div className="max-w-3xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-teal-50 border border-teal-100 text-teal-700 text-xs font-bold uppercase tracking-widest mb-8 shadow-sm">
-            <Heart className="w-4 h-4 text-teal-500" />
-            We Are Here For You
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight mb-6">
-            How Can We <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">Help You?</span>
-          </h1>
-          <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-            Whether you have a technical question, need career advice, or just want to share feedback about your experience, we would love to hear from you.
-          </p>
-        </div>
+      <section
+        className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden bg-gradient-to-b from-slate-50 to-white"
+        style={{}}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(20,184,166,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.04) 1px, transparent 1px)',
+            backgroundSize: '44px 44px',
+          }}
+        />
+        <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-2xl mx-auto relative">
+          <motion.div variants={fadeUp}><SectionBadge>Contact Us</SectionBadge></motion.div>
+          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl font-black tracking-tight mb-4 text-slate-900">
+            Get in{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Touch</span>
+          </motion.h1>
+          <motion.p variants={fadeUp} className="text-slate-500 text-lg">
+            Have a question, suggestion, or need help? Send us a message and we will get back to you within 24 hours.
+          </motion.p>
+        </motion.div>
       </section>
 
-      {/* Contact options */}
-      <section className="py-12 px-4 border-y border-slate-200 bg-slate-50">
-        <div className="max-w-5xl mx-auto grid sm:grid-cols-3 gap-6">
-          {contactOptions.map((opt, i) => (
-            <div key={i} className="bg-white border border-slate-200 hover:border-teal-300 shadow-sm hover:shadow-md rounded-3xl p-8 text-center transition-all group">
-              <div className="w-14 h-14 rounded-2xl bg-teal-50 border border-teal-100 text-teal-600 flex items-center justify-center mx-auto mb-6 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                {opt.icon}
-              </div>
-              <p className="font-black text-slate-900 text-lg mb-2">{opt.value}</p>
-              <p className="text-slate-600 text-[15px] leading-relaxed font-medium">{opt.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Form + FAQ */}
-      <section className="py-24 px-4 bg-white border-b border-slate-200">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16">
+      {/* Main Content */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_380px] gap-10 items-start">
 
           {/* Form */}
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-3">Send a Direct Message</h2>
-            <p className="text-slate-600 mb-8 text-[15px] font-medium">Fill out the form below and we will get back to you directly.</p>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+            className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm"
+          >
+            <motion.h2 variants={fadeUp} className="text-xl font-bold text-slate-900 mb-6">Send a Message</motion.h2>
 
-            {submitted ? (
-              <div className="bg-teal-50 border border-teal-100 rounded-3xl p-10 text-center shadow-sm">
-                <div className="w-16 h-16 rounded-full bg-white border border-teal-200 flex items-center justify-center mx-auto mb-6 shadow-sm">
-                  <CheckCircle className="w-8 h-8 text-teal-600" />
+            {status === 'success' ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center text-center py-12"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-5">
+                  <CheckCircle className="w-8 h-8 text-teal-400" />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-3">Message Sent!</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed mb-8 font-medium">Thank you so much, <strong className="text-slate-900">{form.name}</strong>. We have received your message and will reply to <strong className="text-slate-900">{form.email}</strong> very soon.</p>
-                <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', subject: '', message: '' }); }} className="px-6 py-3 bg-teal-600 text-white text-sm font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-md shadow-teal-200">
-                  Send Another Message
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent</h3>
+                <p className="text-slate-400 text-sm max-w-xs">
+                  Thanks for reaching out. We will reply to your email within 24 hours.
+                </p>
+                <button
+                  onClick={() => setStatus('idle')}
+                  className="mt-6 text-sm text-teal-600 hover:text-teal-700 transition-colors"
+                >
+                  Send another message
                 </button>
-              </div>
+              </motion.div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {[{ label: 'What is your name?', key: 'name', type: 'text', placeholder: 'Jane Doe' }, { label: 'What is your email?', key: 'email', type: 'email', placeholder: 'jane@example.com' }].map(field => (
-                    <div key={field.key}>
-                      <label className="block text-[13px] font-bold text-slate-700 mb-2">{field.label}</label>
-                      <input
-                        type={field.type}
-                        required
-                        value={form[field.key as keyof typeof form]}
-                        onChange={e => setForm(p => ({ ...p, [field.key]: e.target.value }))}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-[15px] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white transition-all shadow-sm"
-                        placeholder={field.placeholder}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <label className="block text-[13px] font-bold text-slate-700 mb-2">What is this regarding?</label>
-                  <select value={form.subject} onChange={e => setForm(p => ({ ...p, subject: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-[15px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white transition-all shadow-sm">
-                    <option value="" className="text-slate-500">I need help with...</option>
-                    {['General Question', 'Technical Support', 'Career Advice', 'Feedback on the Platform', 'Other'].map(o => <option key={o} value={o}>{o}</option>)}
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <motion.div variants={fadeUp} className="grid sm:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                      Your Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      placeholder="Alex Johnson"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="alex@example.com"
+                      required
+                      className={inputClass}
+                    />
+                  </div>
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
+                  <select
+                    name="subject"
+                    value={form.subject}
+                    onChange={handleChange}
+                    className={inputClass + ' cursor-pointer'}
+                  >
+                    <option value="">Select a topic...</option>
+                    <option value="General Question">General Question</option>
+                    <option value="Technical Support">Technical Support</option>
+                    <option value="Billing & Pricing">Billing & Pricing</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Bug Report">Bug Report</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Other">Other</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-[13px] font-bold text-slate-700 mb-2">How can we help?</label>
-                  <textarea required rows={5} value={form.message} onChange={e => setForm(p => ({ ...p, message: e.target.value }))} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 text-[15px] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white transition-all resize-none shadow-sm" placeholder="Please share as much detail as possible so we can properly support you..." />
-                </div>
-                <button type="submit" disabled={sending} className="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-xl font-bold text-base shadow-lg shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-                  {sending ? <><div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Sending gently...</> : <><Send className="w-5 h-5" /> Send Message</>}
-                </button>
+                </motion.div>
+
+                <motion.div variants={fadeUp}>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Message <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="message"
+                    value={form.message}
+                    onChange={handleChange}
+                    placeholder="Describe your question or issue in detail..."
+                    required
+                    rows={6}
+                    className={inputClass + ' resize-none'}
+                  />
+                </motion.div>
+
+                {status === 'error' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-start gap-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20"
+                  >
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-300">{errorMsg}</p>
+                  </motion.div>
+                )}
+
+                <motion.button
+                  variants={fadeUp}
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Message
+                    </>
+                  )}
+                </motion.button>
               </form>
             )}
-          </div>
+          </motion.div>
 
-          {/* FAQ */}
-          <div>
-            <h2 className="text-3xl font-black text-slate-900 mb-3">Frequently Asked Questions</h2>
-            <p className="text-slate-600 mb-8 text-[15px] font-medium">Quick answers to the questions we hear most often.</p>
-            <div className="space-y-4">
-              {faqs.map((faq, i) => (
-                <div key={i} className={`rounded-3xl border overflow-hidden transition-all duration-300 shadow-sm ${openFaq === i ? 'border-teal-300 bg-white shadow-md' : 'border-slate-200 bg-white hover:border-teal-200 hover:shadow-sm cursor-pointer'}`}>
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-start justify-between px-6 py-6 text-left focus:outline-none">
-                    <span className="font-bold text-slate-900 text-[15px] pr-4 leading-snug">{faq.q}</span>
-                    <span className={`text-teal-600 font-light text-2xl flex-shrink-0 transition-transform duration-300 ${openFaq === i ? 'rotate-45' : ''}`}>+</span>
-                  </button>
-                  {openFaq === i && (
-                    <div className="px-6 pb-6 pt-2">
-                      <div className="border-t border-slate-100 pt-5">
-                        <p className="text-slate-600 text-[15px] leading-relaxed font-medium">{faq.a}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Contact Info */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={stagger}
+            className="space-y-4"
+          >
+            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-4">
+                <Mail className="w-5 h-5 text-teal-400" />
+              </div>
+              <h3 className="font-bold text-white text-sm mb-1.5">Email Support</h3>
+              <p className="text-sm text-gray-500 mb-2">For any general queries or support requests.</p>
+              <a
+                href="mailto:hello@findstreak.com"
+                className="text-sm text-teal-400 hover:text-teal-300 transition-colors font-medium"
+              >
+                hello@findstreak.com
+              </a>
+            </motion.div>
+
+            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-4">
+                <Clock className="w-5 h-5 text-teal-400" />
+              </div>
+              <h3 className="font-bold text-white text-sm mb-1.5">Response Time</h3>
+              <p className="text-sm text-gray-500">
+                We aim to respond to all messages within <span className="text-white font-medium">24 hours</span> on business days.
+              </p>
+            </motion.div>
+
+            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center mb-4">
+                <MapPin className="w-5 h-5 text-teal-600" />
+              </div>
+              <h3 className="font-bold text-slate-900 text-sm mb-1.5">Platform</h3>
+              <p className="text-sm text-slate-400">
+                Accessible globally at{' '}
+                <a href="https://findstreak.com" className="text-teal-600 hover:text-teal-700 transition-colors font-medium">
+                  findstreak.com
+                </a>
+              </p>
+            </motion.div>
+
+            {/* Note */}
+            <motion.div variants={fadeUp} className="p-5 rounded-xl border border-emerald-100 bg-emerald-50">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                <span className="text-emerald-700 font-semibold">Pro tip:</span> If you already have an account, you can also reach support directly from within the app using the AI Assistant page.
+              </p>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Footer */}
       <LandingFooter />
     </div>
   );
