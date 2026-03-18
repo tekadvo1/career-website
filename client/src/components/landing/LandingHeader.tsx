@@ -47,12 +47,11 @@ function FeaturesDropdown({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -8, scale: 0.98 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
-      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[900px] max-w-[95vw] z-50"
+      className="absolute top-full left-0 mt-2 z-50 origin-top-left"
     >
-      <div className="flex justify-center mb-1">
-        <div className="w-2.5 h-2.5 rotate-45 bg-white border-l border-t border-slate-200 shadow" />
-      </div>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden">
+      <div className="absolute -top-1.5 left-10 w-3 h-3 rotate-45 bg-white border-l border-t border-slate-200" />
+      
+      <div className="w-[860px] max-w-[90vw] bg-white border border-slate-200 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] overflow-hidden relative">
         {/* Top banner */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
           <div className="flex items-center gap-2">
