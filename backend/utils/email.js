@@ -119,5 +119,44 @@ const sendContactEmail = async ({ name, email, subject, message }) => {
   }
 };
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendContactEmail };
+const sendWeeklyStreakEmail = async ({ email, name, streak }) => {
+  if (!resend) {
+    console.warn("Skipping weekly email: RESEND_API_KEY is missing.");
+    return false;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'FindStreak <onboarding@resend.dev>',
+      to: [email],
+      subject: 'Keep your FindStreak alive! 🔥',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+          <h2 style="color: #0d9488; text-align: center;">Ready to level up, ${name}?</h2>
+          <div style="text-align: center; margin: 30px 0;">
+             <p style="font-size: 16px; color: #475569;">You currently have a</p>
+             <h1 style="font-size: 48px; color: #f59e0b; margin: 10px 0;">${streak} Day</h1>
+             <p style="font-size: 16px; color: #475569; font-weight: bold;">Learning Streak!</p>
+          </div>
+          <p style="color: #334155; line-height: 1.6;">Consistency is the key to mastering your career path. Log in today to complete a learning node, finish a project, or do a quick quiz to keep your fire burning!</p>
+          <div style="text-align: center; margin-top: 30px;">
+             <a href="https://findstreak.com/dashboard" style="display: inline-block; padding: 14px 28px; background-color: #0d9488; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Jump back in</a>
+          </div>
+          <p style="margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">You are receiving this email because you registered on FindStreak.com.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Error sending weekly email:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Weekly email failed:', err);
+    return false;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendContactEmail, sendWeeklyStreakEmail };
 

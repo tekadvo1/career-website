@@ -140,6 +140,9 @@ const updateSchema = async () => {
           ALTER TABLE users ADD COLUMN ai_credits INTEGER DEFAULT 20;
           ALTER TABLE users ADD COLUMN last_credit_reset TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'github_username') THEN
+          ALTER TABLE users ADD COLUMN github_username VARCHAR(255);
+        END IF;
 
       END $$;
     `);
@@ -269,6 +272,9 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
   });
 }
+
+// Initialize Cron Jobs
+require('./cron/streakEmails');
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);

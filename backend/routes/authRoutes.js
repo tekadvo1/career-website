@@ -391,4 +391,45 @@ router.put('/profile', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/github/sync
+// @desc    Sync GitHub repos and auto-update skills
+// @access  Private
+router.post('/github/sync', protect, async (req, res) => {
+  try {
+    const { githubUsername } = req.body;
+    if (!githubUsername) return res.status(400).json({ error: 'GitHub username required' });
+
+    // Save username
+    await pool.query('UPDATE users SET github_username = $1 WHERE id = $2', [githubUsername, req.user.id]);
+
+    // Fetch public repos dynamically
+    const fetchFn = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+    const githubRes = await fetchFn(`https://api.github.com/users/${githubUsername}/repos?per_page=10&sort=updated`);
+    if (!githubRes.ok) throw new Error('Failed to fetch GitHub repos');
+    const repos = await githubRes.json();
+
+    const languages = new Set();
+    repos.forEach(repo => {
+      if (repo.language) languages.add(repo.language);
+    });
+
+    const newSkills = Array.from(languages);
+
+    // Save to custom_skills
+    if (newSkills.length > 0) {
+        const userRes = await pool.query('SELECT custom_skills FROM users WHERE id = $1', [req.user.id]);
+        let existing = [];
+        try { existing = typeof userRes.rows[0].custom_skills === 'string' ? JSON.parse(userRes.rows[0].custom_skills) : (userRes.rows[0].custom_skills || []); } catch(e){}
+        const combined = Array.from(new Set([...existing, ...newSkills]));
+        await pool.query('UPDATE users SET custom_skills = $1 WHERE id = $2', [JSON.stringify(combined), req.user.id]);
+    }
+
+    res.json({ success: true, syncedSkills: newSkills });
+  } catch (error) {
+    console.error('GitHub sync error:', error);
+    res.status(500).json({ success: false, error: 'Failed to sync GitHub' });
+  }
+});
+
+
 module.exports = router;

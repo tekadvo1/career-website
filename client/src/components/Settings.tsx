@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import { User, Shield, LogOut, ChevronRight, AlertTriangle, Globe, Share2, CheckCircle2 } from 'lucide-react';
+import { User, Shield, LogOut, ChevronRight, AlertTriangle, Globe, Share2, CheckCircle2, Github, RefreshCcw } from 'lucide-react';
 import { getUser } from '../utils/auth';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -10,6 +10,9 @@ export default function Settings() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [githubUsername, setGithubUsername] = useState('');
+  const [isSyncingGitHub, setIsSyncingGitHub] = useState(false);
+  const [githubSuccess, setGithubSuccess] = useState('');
   
   const user: any = (getUser() ?? {});
 
@@ -20,6 +23,9 @@ export default function Settings() {
       .then(data => {
         if (data?.user?.is_public !== undefined) {
           setIsPublicProfile(!!data.user.is_public);
+        }
+        if (data?.user?.github_username) {
+          setGithubUsername(data.user.github_username);
         }
       })
       .catch(err => console.error("Could not load profile settings:", err));
@@ -47,6 +53,29 @@ export default function Settings() {
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const handleGitHubSync = async () => {
+      if (!githubUsername) return;
+      setIsSyncingGitHub(true);
+      setGithubSuccess('');
+      try {
+          const res = await apiFetch('/api/auth/github/sync', {
+              method: 'POST',
+              body: JSON.stringify({ githubUsername })
+          });
+          const data = await res.json();
+          if (data.success) {
+              setGithubSuccess(`Successfully synced ${data.syncedSkills.length} skills from GitHub!`);
+              setTimeout(() => setGithubSuccess(''), 5000);
+          } else {
+              setGithubSuccess('Failed to sync. Please check username.');
+          }
+      } catch (err) {
+          setGithubSuccess('Error syncing with GitHub.');
+      } finally {
+          setIsSyncingGitHub(false);
+      }
   };
 
 
@@ -135,6 +164,46 @@ export default function Settings() {
               </button>
            </div>
 
+        </div>
+
+        {/* Integrations */}
+        <div className="mb-8">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-2">Integrations</h3>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden px-5 py-6">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+               <div className="flex items-center gap-4 w-full md:w-auto">
+                  <div className="w-12 h-12 rounded-full bg-[#24292e] flex items-center justify-center shrink-0">
+                    <Github className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="text-left flex-1">
+                     <span className="font-semibold text-slate-800 text-sm md:text-base block">GitHub Auto-Sync</span>
+                     <span className="text-xs text-slate-500">Scan public repos to auto-update your verified skills</span>
+                  </div>
+               </div>
+               
+               <div className="flex items-center gap-2 w-full md:w-auto">
+                  <input
+                    type="text"
+                    value={githubUsername}
+                    onChange={(e) => setGithubUsername(e.target.value)}
+                    placeholder="GitHub Username"
+                    className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 w-full md:w-48 bg-slate-50"
+                  />
+                  <button
+                    onClick={handleGitHubSync}
+                    disabled={isSyncingGitHub || !githubUsername}
+                    className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-bold shadow hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isSyncingGitHub ? <RefreshCcw className="w-4 h-4 animate-spin" /> : 'Sync'}
+                  </button>
+               </div>
+             </div>
+             {githubSuccess && (
+                 <div className="mt-4 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> {githubSuccess}
+                 </div>
+             )}
+          </div>
         </div>
 
         {/* Danger Zone */}
