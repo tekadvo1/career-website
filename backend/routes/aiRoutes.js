@@ -14,10 +14,51 @@ const openai = new OpenAI({
 router.post('/chat', async (req, res) => {
     try {
         const { message, context, role } = req.body;
+        const userId = req.user?.id; // From authMiddleware
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
+        
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized user' });
+        }
+
+        // --- CREDIT CHECK LOGIC ---
+        const userRes = await pool.query('SELECT ai_credits, last_credit_reset FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        let ai_credits = userRes.rows[0].ai_credits;
+        if (ai_credits == null) ai_credits = 20;
+        
+        let last_credit_reset = userRes.rows[0].last_credit_reset;
+        // If its missing, default to now
+        if (!last_credit_reset) last_credit_reset = new Date();
+        
+        const now = new Date();
+        const resetTime = new Date(last_credit_reset);
+        const hoursPassed = (now.getTime() - resetTime.getTime()) / (1000 * 60 * 60);
+
+        if (hoursPassed >= 4) {
+            // Reset to 20 and deduct 1 for this request
+            await pool.query('UPDATE users SET ai_credits = 19, last_credit_reset = CURRENT_TIMESTAMP WHERE id = $1', [userId]);
+        } else if (ai_credits <= 0) {
+            const nextResetTime = new Date(resetTime.getTime() + 4 * 60 * 60 * 1000);
+            const msRemaining = nextResetTime.getTime() - now.getTime();
+            const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+            const minutesRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            
+            return res.status(429).json({ 
+                error: 'Out of credits', 
+                message: `Free credits exhausted. Your AI assistant is resting! Get 20 new messages in ${hoursRemaining} hour(s) and ${minutesRemaining} minute(s).` 
+            });
+        } else {
+            // Deduct 1 credit
+            await pool.query('UPDATE users SET ai_credits = ai_credits - 1 WHERE id = $1', [userId]);
+        }
+        // --- END CREDIT CHECK LOGIC ---
 
         const isProjectContext = context?.type === 'project';
         

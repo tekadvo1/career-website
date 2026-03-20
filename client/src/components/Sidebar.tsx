@@ -11,7 +11,8 @@ import {
   LayoutGrid,
   Bot,
   Settings,
-  ChevronUp
+  ChevronUp,
+  Code
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
@@ -144,7 +145,10 @@ export default function Sidebar({ activePage }: SidebarProps) {
       >
         {/* Header */}
         <div className={`flex items-center p-4 border-b border-slate-200 flex-shrink-0 h-16 ${isOpen ? 'justify-start' : 'justify-center md:px-0'}`}>
-          <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${isOpen ? 'w-auto opacity-100' : 'w-0 opacity-0 md:hidden'}`}>
+          <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
+             <Code className="w-4 h-4 text-white" />
+          </div>
+          <div className={`flex items-center overflow-hidden transition-all duration-300 ${isOpen ? 'w-auto opacity-100 ml-3' : 'w-0 opacity-0 md:hidden'}`}>
             <div className="flex-shrink-0">
               <h2 className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent leading-tight">
                 FindStreak

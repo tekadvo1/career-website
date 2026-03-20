@@ -588,6 +588,14 @@ export default function AILearningAssistant() {
         }),
       });
 
+      if (!res.ok) {
+        if (res.status === 429) {
+          const errData = await res.json();
+          throw new Error(errData.message || "Out of credits");
+        }
+        throw new Error("Failed to fetch");
+      }
+
       if (!res.body) throw new Error("No stream body");
 
       const reader = res.body.getReader();
@@ -611,12 +619,13 @@ export default function AILearningAssistant() {
           }
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      const isCreditError = error.message && error.message.includes("credits");
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: "Oops! AI is currently offline. Please try again later.",
+        content: isCreditError ? `⏳ ${error.message}` : "Oops! AI is currently offline. Please try again later.",
         timestamp: new Date()
       }]);
     } finally {
