@@ -5,8 +5,9 @@ import { getToken } from '../utils/auth';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
   BookOpen, Trophy, MessageSquare,
-  RefreshCw, GitBranch, Radio
+  RefreshCw, GitBranch, Radio, Share2
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import Sidebar from './Sidebar';
 
 
@@ -317,8 +318,18 @@ export default function LearningRoadmap() {
       const isCompleted = !completedTopics.has(topicName);
       setCompletedTopics(prev => {
           const newSet = new Set(prev);
-          if (isCompleted) newSet.add(topicName);
-          else newSet.delete(topicName);
+          if (isCompleted) {
+             newSet.add(topicName);
+             // Gamification: Trigger confetti!
+             confetti({
+               particleCount: 100,
+               spread: 70,
+               origin: { y: 0.6 },
+               colors: ['#10b981', '#14b8a6', '#f59e0b', '#3b82f6'] // Emerald, Teal, Amber, Blue
+             });
+          } else {
+             newSet.delete(topicName);
+          }
           return newSet;
       });
 
@@ -460,6 +471,18 @@ export default function LearningRoadmap() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+              <Button 
+                onClick={() => {
+                   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+                   const shareUrl = `${window.location.origin}/p/${user.username || user.id}`;
+                   navigator.clipboard.writeText(shareUrl);
+                   confetti({ particleCount: 50, spread: 40, origin: { y: 0.1, x: 0.8 } });
+                   alert("Public Roadmap link copied to clipboard!");
+                }} 
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm bg-gradient-to-r from-teal-600 to-emerald-600 border-0 hover:from-teal-700 hover:to-emerald-700 hover:shadow-md transition-all text-white font-bold"
+              >
+                <Share2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Share Roadmap</span>
+              </Button>
               <Button onClick={handleRefreshRoadmap} variant="outline" className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 text-sm">
                 <RefreshCw className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> <span className="inline">Refresh AI</span>
               </Button>
