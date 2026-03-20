@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  X,
   Menu,
   User,
   Briefcase,
@@ -12,7 +11,6 @@ import {
   LayoutGrid,
   Bot,
   Settings,
-  Code,
   ChevronUp
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
@@ -145,11 +143,8 @@ export default function Sidebar({ activePage }: SidebarProps) {
         }`}
       >
         {/* Header */}
-        <div className={`flex items-center p-4 border-b border-slate-200 flex-shrink-0 h-16 ${isOpen ? 'justify-between' : 'justify-center md:px-0'}`}>
+        <div className={`flex items-center p-4 border-b border-slate-200 flex-shrink-0 h-16 ${isOpen ? 'justify-start' : 'justify-center md:px-0'}`}>
           <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${isOpen ? 'w-auto opacity-100' : 'w-0 opacity-0 md:hidden'}`}>
-            <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
-              <Code className="w-4 h-4 text-white" />
-            </div>
             <div className="flex-shrink-0">
               <h2 className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent leading-tight">
                 FindStreak
@@ -157,14 +152,6 @@ export default function Sidebar({ activePage }: SidebarProps) {
               <p className="text-[9px] text-slate-500 leading-none">Navigation Menu</p>
             </div>
           </div>
-          
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center shrink-0 w-8 h-8"
-            aria-label="Toggle sidebar"
-          >
-            {isOpen ? <X className="w-4 h-4 text-slate-600" /> : <Menu className="w-5 h-5 text-slate-600 hidden md:block" />}
-          </button>
         </div>
 
         {/* Nav Items */}
