@@ -99,7 +99,13 @@ export default function ToolsPage() {
             {toolCategories.map((tool, idx) => (
               <div 
                 key={idx}
-                onClick={() => navigate(tool.route)}
+                onClick={() => {
+                  if (tool.route === '/onboarding') {
+                    navigate(tool.route, { state: { force: true } });
+                  } else {
+                    navigate(tool.route);
+                  }
+                }}
                 className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between hover:shadow-md hover:border-emerald-200 transition-all cursor-pointer group"
               >
                   <div>
