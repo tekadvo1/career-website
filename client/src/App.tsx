@@ -39,6 +39,7 @@ import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
 import NotFoundPage from './components/NotFoundPage';
 import ScrollToTop from './components/ScrollToTop';
+import FeedbackWidget from './components/FeedbackWidget';
 import { getToken, getUser, clearSession } from './utils/auth';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
@@ -147,6 +148,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
 
         </Routes>
+        <FeedbackWidget />
       </div>
     </BrowserRouter>
   );
