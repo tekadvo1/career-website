@@ -634,7 +634,20 @@ export default function AILearningAssistant() {
   };
 
   const handleStartProject = (_project: ProjectRecommendation) => {
-    navigate("/dashboard");
+    const mappedProject = {
+      id: _project.id || Date.now().toString(),
+      title: _project.title,
+      description: _project.description,
+      difficulty: _project.difficulty ? _project.difficulty.charAt(0).toUpperCase() + _project.difficulty.slice(1) : "Beginner",
+      duration: _project.duration,
+      tags: _project.skills || [],
+      tools: _project.skills || [],
+      metrics: {
+         xp: _project.xpReward || 500,
+         timeEstimate: _project.duration
+      }
+    };
+    navigate("/dashboard", { state: { setupAiProject: mappedProject } });
   };
 
   const handleNewChat = () => {

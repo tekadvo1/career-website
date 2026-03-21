@@ -90,6 +90,13 @@ export default function Dashboard() {
   const fromMission    = location.state?.fromMission;
   const highlightProject = location.state?.highlightProject;
 
+  useEffect(() => {
+    if (location.state?.setupAiProject) {
+        setSetupProject(location.state.setupAiProject as Project);
+        navigate(location.pathname, { replace: true, state: { ...location.state, setupAiProject: undefined } });
+    }
+  }, [location.state?.setupAiProject, navigate, location.pathname]);
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 4000);
