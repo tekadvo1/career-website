@@ -154,7 +154,7 @@ export default function AILearningAssistant() {
   // Sync historical chat states globally across mobile & web environments
   useEffect(() => {
     if (user?.id) {
-       fetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}`)
+       apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}`)
          .then(res => res.json())
          .then(data => {
             if (data.success && data.history && data.history.length > 0) {
