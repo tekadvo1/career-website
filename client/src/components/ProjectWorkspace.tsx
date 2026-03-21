@@ -632,7 +632,7 @@ export default function ProjectWorkspace() {
                           <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">
                               Task Sequence
                           </h4>
-                          {step.tasks.map((task, taskIndex) => (
+                          {step.tasks.map((task) => (
                             <div
                               key={task.id}
                               className={`group flex items-center gap-4 p-4 rounded-xl border transition-all ${
