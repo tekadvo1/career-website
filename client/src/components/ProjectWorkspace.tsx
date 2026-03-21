@@ -528,8 +528,8 @@ export default function ProjectWorkspace() {
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
             </button>
             
-            <button className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2">
-              JD
+            <button className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2 uppercase">
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
             </button>
           </div>
         </div>
