@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { getUser } from '../utils/auth';
 import {
   X, Calendar, Bell, Mail, Check,
-  ChevronRight, BarChart3, Clock
+  ChevronRight, BarChart3, Clock,
+  Monitor, Play, CalendarDays, Key
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -51,14 +52,13 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
     setSelectedDays(p => p.includes(day) ? p.filter(d => d !== day) : [...p, day]);
 
   const fallbackCurriculum = [
-    { id: 1, title: 'Project setup and configuration', description: 'Initialize project with required dependencies', estimatedHours: '2 hours' },
-    { id: 2, title: 'Database schema design', description: 'Design and implement database structure', estimatedHours: '4 hours' },
-    { id: 3, title: 'Backend API development', description: 'Create RESTful API endpoints', estimatedHours: '8 hours' },
-    { id: 4, title: 'Frontend components', description: 'Build React components and UI', estimatedHours: '10 hours' },
-    { id: 5, title: 'State management setup', description: 'Implement Redux/Context for state management', estimatedHours: '4 hours' },
-    { id: 6, title: 'Authentication system', description: 'Add user authentication and authorization', estimatedHours: '6 hours' },
-    { id: 7, title: 'Testing and bug fixes', description: 'Write tests and fix issues', estimatedHours: '6 hours' },
-    { id: 8, title: 'Deployment and documentation', description: 'Deploy app and write documentation', estimatedHours: '4 hours' },
+    { id: 1, title: 'Project Initialization', description: 'Configure repository and environment variables', estimatedHours: '2 hrs' },
+    { id: 2, title: 'Database Schema & Auth', description: 'Implement database models and authentication flow', estimatedHours: '6 hrs' },
+    { id: 3, title: 'Core API Services', description: 'Build and expose robust REST/GraphQL endpoints', estimatedHours: '8 hrs' },
+    { id: 4, title: 'Frontend Architecture', description: 'Scaffold React components and routing', estimatedHours: '10 hrs' },
+    { id: 5, title: 'State & Integration', description: 'Connect frontend to backend APIs', estimatedHours: '6 hrs' },
+    { id: 6, title: 'Testing Quality Assurance', description: 'Write unit tests and resolve major edge cases', estimatedHours: '5 hrs' },
+    { id: 7, title: 'Production Deployment', description: 'Deploy application to cloud infrastructure', estimatedHours: '3 hrs' },
   ];
 
   const handleContinue = async () => {
@@ -128,256 +128,274 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-in fade-in duration-200 w-full h-full">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6" style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}>
+      <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 border border-slate-200/50">
 
         {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between flex-shrink-0 bg-white">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900">
-              {step === 1 ? 'Schedule Your Free Time' : 'Project Timeline'}
+        <div className="px-8 py-6 flex items-start justify-between flex-shrink-0 bg-white border-b border-slate-100 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 to-white pointer-events-none" />
+          <div className="relative z-10 w-full pr-4">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none mb-2">
+              {step === 1 ? 'Configure Execution Plan' : 'Engineering Timeline'}
             </h2>
-            <p className="text-sm text-slate-500">{project?.title}</p>
+            <p className="text-[14.5px] text-slate-500 font-medium">{project?.title}</p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+          <button onClick={onClose} className="relative z-10 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-thin scrollbar-thumb-slate-200">
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50/30">
+          <div className="p-8">
 
-          {/* ─────── STEP 1 ─────── */}
-          {step === 1 && (
-            <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
-              {/* Hours slider */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <label className="font-semibold text-slate-900">How many hours can you dedicate per day?</label>
-                  <span className="text-indigo-600 font-bold text-lg">{dailyHours} hrs</span>
-                </div>
-                <input
-                  type="range" min="1" max="12" value={dailyHours}
-                  onChange={e => setDailyHours(parseInt(e.target.value))}
-                  className="w-full h-2 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                />
-              </div>
-
-              {/* Days selection */}
-              <div className="space-y-3">
-                <label className="font-semibold text-slate-900">Which days are you available?</label>
-                <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-                  {DAYS.map(day => {
-                    const sel = selectedDays.includes(day);
-                    return (
-                      <button
-                        key={day} onClick={() => toggleDay(day)}
-                        className={`py-2 rounded-lg text-sm font-medium transition-all ${
-                          sel
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                            : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600'
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="text-xs text-slate-500">Selected: {selectedDays.length} days per week</p>
-              </div>
-
-              {/* Start date */}
-              <div className="space-y-3">
-                <label className="font-semibold text-slate-900">When do you want to start?</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <input
-                    type="date" value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    className="w-full p-3 pl-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="space-y-3">
-                <label className="font-semibold text-slate-900">
-                  Email for reminders (optional)
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <input
-                    type="email" placeholder="your.email@example.com"
-                    value={email} onChange={e => setEmail(e.target.value)}
-                    className="w-full p-3 pl-10 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
-                  />
-                </div>
-              </div>
-
-              {/* Notification prefs */}
-              <div className="space-y-3">
-                <label className="font-semibold text-slate-900">Reminder preferences</label>
-                <div className="space-y-2">
-                  {[
-                    { key: 'browser' as const, label: 'Browser notifications', Icon: Bell },
-                    { key: 'email'   as const, label: 'Email reminders',       Icon: Mail },
-                  ].map(({ key, label, Icon }) => (
-                    <label key={key} className="flex items-center gap-3 cursor-pointer group">
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors flex-shrink-0 ${
-                        notifications[key] ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-300'
-                      }`}>
-                        {notifications[key] && <Check className="w-3.5 h-3.5 text-white" />}
+            {/* ─────── STEP 1 ─────── */}
+            {step === 1 && (
+              <div className="animate-in slide-in-from-left-4 duration-300">
+                
+                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-x-12 gap-y-10">
+                  {/* Left Column - Form */}
+                  <div className="space-y-10">
+                    
+                    {/* Hours slider */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[13px] font-bold text-slate-800 uppercase tracking-widest">Daily Commitment</label>
+                        <span className="text-emerald-600 font-extrabold text-[15px]">{dailyHours} hours</span>
                       </div>
-                      <input type="checkbox" className="hidden" checked={notifications[key]}
-                        onChange={() => setNotifications(p => ({ ...p, [key]: !p[key] }))} />
-                      <Icon className="w-4 h-4 text-slate-500" />
-                      <span className="text-sm text-slate-700">{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                      <input
+                        type="range" min="1" max="12" value={dailyHours}
+                        onChange={e => setDailyHours(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500 hover:accent-emerald-600 transition-all"
+                      />
+                    </div>
 
-              {/* OS selection */}
-              <div className="space-y-3">
-                <label className="font-semibold text-slate-900">Your Operating System</label>
-                <div className="flex gap-3">
-                  {['Windows', 'Mac', 'Linux'].map(sys => (
-                    <button
-                      key={sys} onClick={() => setOs(sys)}
-                      className={`flex-1 py-2.5 rounded-xl border font-medium text-sm transition-all ${
-                        os === sys
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-md shadow-indigo-200'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
-                    >
-                      {sys}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-400">We'll tailor terminal commands for your OS.</p>
-              </div>
-
-              {/* Quick summary */}
-              <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100 flex flex-col md:flex-row gap-6 md:items-center justify-between">
-                <div className="flex items-center gap-2 text-indigo-800 font-bold mb-2 md:mb-0 md:hidden">
-                  <BarChart3 className="w-5 h-5" /> Quick Summary
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Weekly commitment</p>
-                  <p className="text-xl font-bold text-indigo-600">{weeklyHours} hrs</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Estimated duration</p>
-                  <p className="text-xl font-bold text-indigo-600">{estimatedWeeks} weeks</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide font-medium mb-1">Target completion</p>
-                  <p className="text-xl font-bold text-indigo-600">{formattedCompletion}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ─────── STEP 2 ─────── */}
-          {step === 2 && (
-            <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
-              
-              {/* Timeline Stats - Green Box matches design */}
-              <div className="bg-[#f0fdf4] border border-[#bbf7d0] rounded-xl p-6 shadow-sm">
-                <h3 className="font-bold text-[#0f172a] text-[17px] mb-4">
-                  Your Project Timeline
-                </h3>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-xs text-[#0f172a] font-medium mb-1.5 opacity-70">Total hours</p>
-                    <p className="text-[20px] font-bold text-[#059669] leading-none">{TOTAL_HOURS} hrs</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#0f172a] font-medium mb-1.5 opacity-70">Hours per week</p>
-                    <p className="text-[20px] font-bold text-[#059669] leading-none">{weeklyHours} hrs</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#0f172a] font-medium mb-1.5 opacity-70">Duration</p>
-                    <p className="text-[20px] font-bold text-[#059669] leading-none">{estimatedWeeks} weeks</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#0f172a] font-medium mb-1.5 opacity-70">Completion date</p>
-                    <p className="text-[20px] font-bold text-[#059669] leading-none">{startAndEndFormat}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Project Breakdown */}
-              <div className="mt-8">
-                <h3 className="font-bold text-[#0f172a] mb-4 text-[17px]">
-                  Project Breakdown ({curriculum.length} Subtasks)
-                </h3>
-                <div className="space-y-3">
-                  {curriculum.map((item, index) => (
-                    <div key={item.id || index} className="border border-slate-200 rounded-xl p-4 flex gap-4 bg-white shadow-sm">
-                      <div className="w-[30px] h-[30px] rounded-full bg-[#eff6ff] text-[#3b82f6] flex items-center justify-center font-bold flex-shrink-0 text-sm mt-0.5">
-                        {index + 1}
+                    {/* Days selection */}
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[13px] font-bold text-slate-800 uppercase tracking-widest">Availability</label>
+                        <span className="text-[12px] font-bold text-slate-400">{selectedDays.length} days / week</span>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-[#0f172a] text-[15px]">{item.title}</h4>
-                        <p className="text-[#475569] text-[13px] mt-1 line-clamp-2">
-                          {item.description || "Project task details pending..."}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-[13px] text-[#64748b] mt-2.5">
-                          <Clock className="w-[14px] h-[14px]" /> {item.estimatedHours || "4 hours"}
+                      <div className="grid grid-cols-7 gap-2">
+                        {DAYS.map(day => {
+                          const sel = selectedDays.includes(day);
+                          return (
+                            <button
+                              key={day} onClick={() => toggleDay(day)}
+                              className={`py-2 rounded-lg text-[13px] font-bold transition-all border ${
+                                sel
+                                  ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-800'
+                              }`}
+                            >
+                              {day}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Dates & Environment Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Start Date</label>
+                        <div className="relative">
+                          <CalendarDays className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <input
+                            type="date" value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            className="w-full p-3 pl-11 border border-slate-200 rounded-xl text-[14px] font-medium text-slate-700 focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all shadow-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Target OS</label>
+                        <div className="relative">
+                          <Monitor className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <select
+                            value={os} onChange={(e) => setOs(e.target.value)}
+                            className="w-full p-3 pl-11 border border-slate-200 rounded-xl text-[14px] font-medium text-slate-700 focus:ring-2 focus:ring-slate-900 outline-none transition-all shadow-sm appearance-none bg-white"
+                          >
+                            <option value="Windows">Windows</option>
+                            <option value="Mac">macOS</option>
+                            <option value="Linux">Linux</option>
+                          </select>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Reminders Info */}
-              <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-xl p-5 flex gap-3 shadow-sm mt-6">
-                <Bell className="w-[18px] h-[18px] text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-[#1e3a8a] text-[15px] mb-2 leading-tight">Reminders configured</h4>
-                  <ul className="space-y-1.5">
+                    {/* Notifications */}
+                    <div className="pt-4 border-t border-slate-100">
+                      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-4 block">Telemetry & Alerts</label>
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
+                          <input
+                            type="email" placeholder="Ping email (optional)"
+                            value={email} onChange={e => setEmail(e.target.value)}
+                            className="w-full p-3 pl-11 border border-slate-200 rounded-xl text-[14px] font-medium text-slate-700 focus:ring-2 focus:ring-slate-900 outline-none transition-all shadow-sm mb-4"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {[
+                            { key: 'browser' as const, label: 'Enable System Notifications', Icon: Bell },
+                            { key: 'email'   as const, label: 'Enable Email Digest',       Icon: Mail },
+                          ].map(({ key, label, Icon }) => (
+                            <label key={key} className="flex items-center gap-3.5 cursor-pointer group w-max">
+                              <div className={`w-5 h-5 rounded-[6px] border flex items-center justify-center transition-colors flex-shrink-0 ${
+                                notifications[key] ? 'bg-emerald-500 border-emerald-500' : 'bg-slate-50 border-slate-300 group-hover:border-slate-400'
+                              }`}>
+                                {notifications[key] && <Check className="w-3.5 h-3.5 text-white" />}
+                              </div>
+                              <input type="checkbox" className="hidden" checked={notifications[key]}
+                                onChange={() => setNotifications(p => ({ ...p, [key]: !p[key] }))} />
+                              <div className="flex items-center gap-2">
+                                <Icon className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="text-[13px] font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column - Summary Panel */}
+                  <div>
+                    <div className="sticky top-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                      <h4 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">
+                        <BarChart3 className="w-4 h-4 text-emerald-500" /> Projected Scope
+                      </h4>
+                      <div className="space-y-6 text-slate-800">
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Weekly Bandwidth</p>
+                          <p className="text-2xl font-extrabold tracking-tight">{weeklyHours} <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">HRS</span></p>
+                        </div>
+                        <div className="h-px w-full bg-slate-100" />
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Sprint Duration</p>
+                          <p className="text-2xl font-extrabold tracking-tight">{estimatedWeeks} <span className="text-sm font-bold text-slate-500 uppercase tracking-wide">WKS</span></p>
+                        </div>
+                        <div className="h-px w-full bg-slate-100" />
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Target Delivery</p>
+                          <p className="text-[16px] font-bold tracking-tight text-emerald-600">{formattedCompletion}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ─────── STEP 2 ─────── */}
+            {step === 2 && (
+              <div className="animate-in slide-in-from-right-8 duration-300">
+                
+                {/* Timeline Stats - Enterprise Design */}
+                <div className="bg-slate-900 rounded-2xl p-6 md:p-8 shadow-[0_10px_30px_rgba(15,23,42,0.2)] mb-10 overflow-hidden relative">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-slate-800/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                  
+                  <h3 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 relative z-10">
+                    <Calendar className="w-4 h-4 text-emerald-400" /> Approved Timeline
+                  </h3>
+                  
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Scope Size</p>
+                      <p className="text-[22px] font-extrabold text-white leading-none tracking-tight">{TOTAL_HOURS} <span className="text-[13px] text-slate-400 ml-0.5">HRS</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Velocity</p>
+                      <p className="text-[22px] font-extrabold text-white leading-none tracking-tight">{weeklyHours} <span className="text-[13px] text-slate-400 ml-0.5">HRS / WK</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Duration</p>
+                      <p className="text-[22px] font-extrabold text-white leading-none tracking-tight">{estimatedWeeks} <span className="text-[13px] text-slate-400 ml-0.5">WEEKS</span></p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Target Date</p>
+                      <p className="text-[18px] font-bold text-emerald-400 leading-tight">{startAndEndFormat}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Project Breakdown */}
+                <div className="mb-10">
+                  <h3 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-5">
+                    <BarChart3 className="w-4 h-4 text-blue-500" /> Component Backlog ({curriculum.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {curriculum.map((item, index) => (
+                      <div key={item.id || index} className="border border-slate-200 rounded-xl p-5 flex gap-5 bg-white hover:border-slate-300 transition-colors shadow-sm">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold flex-shrink-0 text-[13px] shadow-[inset_0_1px_3px_rgba(0,0,0,0.05)]">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-extrabold text-slate-900 text-[15px] tracking-tight">{item.title}</h4>
+                          <p className="text-slate-500 text-[14px] mt-1.5 leading-relaxed font-medium">
+                            {item.description || "Subtask details pending initialization..."}
+                          </p>
+                        </div>
+                        <div className="flex items-start justify-end flex-shrink-0">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 rounded-md text-[12px] font-bold">
+                            <Clock className="w-3.5 h-3.5 opacity-70" /> {item.estimatedHours || "4 hrs"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Alert Regimen */}
+                <div className="border border-slate-200 bg-white rounded-xl p-6 shadow-sm">
+                  <h3 className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                    <Key className="w-4 h-4 text-purple-500" /> Active Alert Regimen
+                  </h3>
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6">
                     {notifications.browser && (
-                      <li className="text-[13px] text-[#1d4ed8] flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Daily browser notifications on your scheduled days
+                      <li className="text-[13.5px] font-medium text-slate-700 flex items-center gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> Daily browser notifications
                       </li>
                     )}
-                    <li className="text-[13px] text-[#1d4ed8] flex items-center gap-1.5">
-                      <Check className="w-3.5 h-3.5" /> Pending tasks notification for tomorrow
+                    <li className="text-[13.5px] font-medium text-slate-700 flex items-center gap-2.5">
+                      <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> Real-time pending task pings
                     </li>
                     {notifications.email && (
-                      <li className="text-[13px] text-[#1d4ed8] flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Weekly progress summary
+                      <li className="text-[13.5px] font-medium text-slate-700 flex items-center gap-2.5">
+                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" /> Weekly metric summaries
                       </li>
                     )}
                   </ul>
                 </div>
+
               </div>
+            )}
 
-            </div>
-          )}
-
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className={`p-4 md:px-6 md:py-4 border-t border-slate-100 flex items-center gap-3 flex-shrink-0 bg-white z-10 ${step === 2 ? 'flex-row-reverse' : ''}`}>
+        {/* Footer Actions */}
+        <div className={`px-8 py-5 border-t border-slate-200 bg-white relative z-10 flex items-center gap-4 flex-shrink-0 ${step === 2 ? 'flex-row-reverse' : ''}`}>
           {step === 1 ? (
             <>
               <button
                 onClick={onClose}
-                className="px-6 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+                className="px-6 py-3.5 rounded-xl text-slate-500 font-bold text-[14px] hover:bg-slate-100 hover:text-slate-800 transition-colors disabled:opacity-50"
+                disabled={loading}
               >
-                Cancel
+                Abort
               </button>
               <button
                 onClick={handleContinue}
                 disabled={loading || selectedDays.length === 0}
-                className="flex-[2] py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md"
+                className="flex-1 py-3.5 rounded-xl font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] bg-slate-900 hover:bg-black disabled:opacity-50 disabled:hover:shadow-none"
               >
                 {loading
-                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Fetching Plan...</>
-                  : <>Continue to Timeline <ChevronRight className="w-4 h-4" /></>}
+                  ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Compiling Plan...</>
+                  : <>Generate Architecture <ChevronRight className="w-4 h-4" /></>}
               </button>
             </>
           ) : (
@@ -385,15 +403,16 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
               <button
                 onClick={handleStart}
                 disabled={loading}
-                className="flex-[3] py-3 rounded-xl font-bold text-[15px] text-white flex items-center justify-center gap-2 transition-all shadow-md bg-[#059669] hover:bg-[#047857]"
+                className="flex-[2] py-4 rounded-xl font-bold text-[15px] text-white flex items-center justify-center gap-2.5 transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] bg-emerald-600 hover:bg-emerald-700 hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] disabled:opacity-50 tracking-wide"
               >
-                {loading ? 'Starting...' : <><Check className="w-4 h-4" /> Start This Project</>}
+                {loading ? 'Booting Workspace...' : <><Play className="w-4 h-4 fill-current" /> Initialize Final Pipeline</>}
               </button>
               <button
                 onClick={() => setStep(1)}
-                className="px-6 py-3 rounded-xl border border-[#e2e8f0] text-[#475569] font-medium text-sm hover:bg-[#f8fafc] transition-colors"
+                disabled={loading}
+                className="px-8 py-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-[14px] hover:bg-slate-50 hover:border-slate-300 transition-colors disabled:opacity-50"
               >
-                Back
+                Reconfigure
               </button>
             </>
           )}
