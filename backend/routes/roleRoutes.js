@@ -960,32 +960,45 @@ router.post('/adaptive-schedule', async (req, res) => {
 
 // POST /api/role/start-project - Saves a project to user_projects
 router.post('/start-project', async (req, res) => {
-    const { userId, project, role, curriculum } = req.body;
+    const { userId, project, role, curriculum, status = 'active' } = req.body;
 
     if (!userId || !project) {
         return res.status(400).json({ error: 'User ID and Project are required' });
     }
 
     try {
-        // Check if project already started
+        // Check if project already started or saved
         const existing = await pool.query(
-            "SELECT id FROM user_projects WHERE user_id = $1 AND title = $2",
+            "SELECT id, status FROM user_projects WHERE user_id = $1 AND title = $2",
             [userId, project.title]
         );
 
         if (existing.rows.length > 0) {
-            return res.json({ success: true, projectId: existing.rows[0].id, message: 'Project already started' });
+            const existingId = existing.rows[0].id;
+            const existingStatus = existing.rows[0].status;
+            
+            // If the project was merely "saved" but now they are starting it ("active"), update it!
+            if (existingStatus === 'saved' && status === 'active') {
+                await pool.query(
+                    "UPDATE user_projects SET status = 'active', project_data = $1 WHERE id = $2",
+                    [JSON.stringify({ ...project, curriculum }), existingId]
+                );
+                return res.json({ success: true, projectId: existingId, message: 'Saved project activated' });
+            }
+            
+            return res.json({ success: true, projectId: existingId, message: 'Project already in dashboard' });
         }
 
         const result = await pool.query(
             `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data)
-             VALUES ($1, $2, $3, $4, 'active', $5, $6)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
              RETURNING id`,
             [
                 userId, 
                 project.title, 
                 project.description,
                 role,
+                status,
                 JSON.stringify({ ...project, curriculum }), // Store full project + curriculum
                 JSON.stringify({ completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 })
             ]
