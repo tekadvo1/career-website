@@ -484,377 +484,364 @@ export default function ProjectWorkspace() {
   const progressPercentage = Math.round((completedSteps / (steps.length || 1)) * 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 relative pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[#fafafa] relative pb-20 lg:pb-0 font-sans selection:bg-slate-200">
       {/* Header */}
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 min-w-0">
-              <button
-                onClick={() => setShowRightSidebar(true)}
-                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition-colors shrink-0 md:hidden"
-                title="Open Menu"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="flex items-center gap-1.5 p-1.5 hover:bg-slate-100 rounded-lg text-emerald-600 font-bold transition-colors text-sm shrink-0"
-                title="Back to Projects"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Back</span>
-              </button>
-              <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
-              <div className="min-w-0 truncate">
-                <h1 className="text-lg font-bold text-slate-900 truncate flex items-center gap-2">
-                  {project?.title || "Real-time Chat Application"}
-                </h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 shrink-0">
-              {/* XP and Level Display - Compact */}
-              <div className="flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-200 shadow-sm hidden md:flex">
-                <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                <div className="flex items-center gap-2">
-                  <p className="text-[11px] font-bold text-slate-600 leading-none">LVL {level}</p>
-                  <p className="text-[11px] font-bold text-emerald-700 leading-none">{totalXP} XP</p>
-                </div>
-              </div>
-
-              <button className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors relative">
-                <Bell className="w-4 h-4 text-slate-600" />
-                <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-emerald-600 rounded-full border border-white"></span>
-              </button>
-              
-              <button className="w-7 h-7 bg-gradient-to-r from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-white font-bold text-xs hover:scale-105 transition-transform shadow-md">
-                JD
-              </button>
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 transform-gpu">
+        <div className="max-w-[1800px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-5 min-w-0">
+            <button
+              onClick={() => setShowRightSidebar(true)}
+              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors shrink-0 md:hidden"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 font-semibold transition-colors text-[13px] tracking-wide shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Workspace</span>
+            </button>
+            <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
+            <div className="min-w-0 truncate flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
+              <h1 className="text-[16px] font-extrabold text-slate-900 truncate tracking-tight">
+                {project?.title || "Real-time Chat Application"}
+              </h1>
             </div>
           </div>
+          
+          <div className="flex items-center gap-4 shrink-0">
+            {/* XP and Level Display - Enterprise Look */}
+            <div className="hidden md:flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-md">
+              <Star className="w-3.5 h-3.5 text-slate-400 fill-slate-800" />
+              <div className="flex items-center gap-3 text-[12px] font-bold tracking-widest uppercase">
+                <span className="text-slate-500">LVL {level}</span>
+                <span className="text-slate-900">{totalXP} XP</span>
+              </div>
+            </div>
+
+            <button className="relative p-2 text-slate-400 hover:text-slate-900 transition-colors">
+              <Bell className="w-[18px] h-[18px]" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+            </button>
+            
+            <button className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2">
+              JD
+            </button>
+          </div>
         </div>
-        {/* Slim Progress Bar underneath header */}
-        <div className="w-full bg-slate-100 h-1 relative">
+        
+        {/* Progress Tracker Bar */}
+        <div className="w-full bg-slate-100 h-[2px]">
           <div
-            className="absolute top-0 left-0 h-1 bg-emerald-500 transition-all duration-700 shadow-sm"
+            className="h-full bg-slate-900 transition-all duration-700 ease-in-out"
             style={{ width: `${progressPercentage}%` }}
-          ></div>
+          />
         </div>
       </div>
 
       {/* Main Content - Two Column Layout */}
-      <div className="px-6 py-8 h-[calc(100vh-68px)] flex flex-col md:flex-row max-w-[1600px] mx-auto overflow-hidden">
-        {/* Left Column - Step-by-Step Guide OR Task Guide View */}
-        <div className="w-full md:w-3/4 pr-0 md:pr-8 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300">
-            {!showGuideView ? (
-              <>
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">FindStreak Learning Path</h2>
-                    <p className="text-sm text-slate-600 mt-1">Step-by-step interactive timeline synced real-time</p>
-                  </div>
-                  <Badge className="bg-emerald-100 text-emerald-800 border-none shadow-sm">
-                    {steps.length} Modules
-                  </Badge>
+      <div className="h-[calc(100vh-70px)] flex flex-col md:flex-row max-w-[1800px] mx-auto overflow-hidden">
+        
+        {/* Left Column - Pipeline Tasks */}
+        <div className="w-full md:w-[65%] lg:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
+          {!showGuideView ? (
+            <div className="max-w-4xl max-auto">
+              <div className="flex items-end justify-between mb-8">
+                <div>
+                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Engineering Pipeline</h2>
+                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Execution Backlog</h3>
                 </div>
+                <Badge className="bg-slate-100 text-slate-600 border border-slate-200 rounded px-2.5 py-1 text-[11px] uppercase tracking-widest">
+                  {steps.length} Modules
+                </Badge>
+              </div>
 
-                <div className="space-y-4">
-                  {steps.map((step, index) => (
-                    <Card
-                      key={step.id}
-                      className={`transition-all overflow-hidden ${
-                        step.completed
-                          ? "border border-emerald-300 bg-emerald-50/20 shadow-sm"
-                          : step.expanded
-                          ? "border border-[#00875a] bg-white ring-1 ring-[#00875a]/10 shadow-md rounded-xl"
-                          : "border border-slate-200 bg-white hover:border-emerald-200 hover:shadow-sm rounded-xl"
-                      }`}
-                    >
-                      <div
-                        className="p-5 cursor-pointer"
-                        onClick={() => handleStepClick(step.id)}
-                      >
-                          <div className="flex items-start gap-3">
-                          <div
-                            className={`flex-shrink-0 w-8 h-8 mt-0.5 rounded-full flex items-center justify-center font-bold text-sm shadow-sm ${
-                              step.completed
-                                ? "bg-[#00875a] text-white"
-                                : "bg-emerald-100 text-[#00875a]"
-                            }`}
-                          >
-                            {step.completed ? (
-                              <CheckCircle className="w-4 h-4" />
-                            ) : (
-                              index + 1
-                            )}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1 mr-4">
-                                <h3
-                                  className={`text-[17px] font-bold mb-1 line-clamp-1 ${
-                                    step.completed
-                                      ? "text-emerald-900"
-                                      : "text-slate-900"
-                                  }`}
-                                >
-                                  {step.title}
-                                </h3>
-                                <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
-                                  {step.description}
-                                </p>
-                              </div>
-                              <ChevronRight
-                                className={`w-5 h-5 text-slate-300 transition-transform ${
-                                  step.expanded ? "rotate-90 text-emerald-500" : ""
-                                }`}
-                              />
-                            </div>
-
-                            {!step.expanded && (
-                              <div className="mt-4 flex items-center gap-2">
-                                <span className="text-xs font-bold text-slate-500 tracking-wide">
-                                    TASKS
-                                </span>
-                                <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-emerald-400 rounded-full" 
-                                        style={{ width: `${(step.tasks.filter(t => t.completed).length / (step.tasks.length || 1)) * 100}%`}} 
-                                    />
-                                </div>
-                                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                                    {step.tasks.filter((t) => t.completed).length}/{step.tasks.length}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {step.expanded && (
-                         <div className="px-5 pb-5 pt-2 animate-in slide-in-from-top-2 duration-200">
-                          <div className="h-px bg-slate-100 w-full mb-5 -mt-2"></div>
-                          
-                          <div className="space-y-3 mb-6">
-                            <h4 className="text-[14px] font-bold text-slate-800 tracking-wide mb-4 flex items-center gap-2">
-                                Tasks Checklist
-                            </h4>
-                            {step.tasks.map((task, taskIndex) => (
-                              <div
-                                key={task.id}
-                                className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${
-                                  task.completed
-                                    ? "bg-slate-50 border-slate-100"
-                                    : "bg-white border-emerald-300 hover:bg-emerald-50/30 hover:border-emerald-400 shadow-sm"
-                                }`}
-                              >
-                                <div 
-                                  className="flex-shrink-0 cursor-pointer text-slate-300 hover:text-emerald-500 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleTaskToggle(step.id, task.id);
-                                  }}
-                                >
-                                  {task.completed ? (
-                                    <CheckCircle2 className="w-[22px] h-[22px] text-emerald-500 fill-emerald-50" />
-                                  ) : (
-                                    <Circle className="w-[22px] h-[22px] text-slate-300" />
-                                  )}
-                                </div>
-                                
-                                <p className={`text-[14px] flex-1 font-medium ${task.completed ? "text-slate-400 line-through" : "text-slate-800"}`}>
-                                    {taskIndex + 1}. {task.text}
-                                </p>
-
-                                <button
-                                  onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleTaskClick(task.id);
-                                  }}
-                                  className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-[#00875a] bg-white hover:bg-emerald-50 rounded-lg border border-emerald-200 transition-colors shadow-sm"
-                                >
-                                  <FileText className="w-3.5 h-3.5" />
-                                  View Guide
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-
-
-                          <div className="flex items-center gap-4 pt-4 border-t border-slate-100">
-                             <Button
-                              onClick={(e: Event) => {
-                                e.stopPropagation();
-                                const allCompleted = step.tasks.every((t) => t.completed);
-                                if (allCompleted) {
-                                  handleStepToggle(step.id);
-                                } else {
-                                  showAlert("Please check off all tasks above to mark the module complete.", "warning");
-                                }
-                              }}
-                              className={`transition-all font-bold px-5 py-2.5 rounded-lg flex items-center gap-2 text-[14px] shadow-sm ${
-                                step.completed
-                                  ? "bg-[#00875a] text-white hover:bg-emerald-700 shadow-md"
-                                  : step.tasks.every((t) => t.completed)
-                                  ? "bg-[#00875a] text-white hover:bg-emerald-700 shadow-md animate-pulse"
-                                  : "bg-[#cbd5e1] text-white cursor-not-allowed"
-                              }`}
-                              disabled={!step.tasks.every((t) => t.completed) && !step.completed}
-                            >
-                                <Circle className={`w-4 h-4 ${step.tasks.every((t) => t.completed) || step.completed ? 'text-white' : 'text-slate-100 fill-slate-400'}`} /> 
-                                {step.completed ? "Module Verified" : "Complete All Tasks First"}
-                            </Button>
-                            <span className="text-sm font-medium text-slate-600">
-                               {step.tasks.filter((t) => t.completed).length} of {step.tasks.length} tasks done
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-              </>
-            ) : selectedTaskId ? (
-                <TaskGuideView
-                  task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
-                  projectTitle={project?.title}
-                  onBack={handleBackToTasks}
-                  onMarkComplete={() => {
-                    const step = steps.find(s => s.tasks.some(t => t.id === selectedTaskId));
-                    if (step) handleTaskToggle(step.id, selectedTaskId);
-                    handleBackToTasks();
-                  }}
-                />
-            ) : null}
-          </div>
-
-          {/* Right Column - REAL TIME AI Assistant */}
-          <div className="w-full md:w-1/4 h-full hidden md:block">
-            <div className="h-full relative">
-              <Card className="border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 flex flex-col absolute inset-0">
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-5 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center shadow-inner relative">
-                      <Sparkles className="w-5 h-5 text-white" />
-                      <div className="absolute top-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-slate-800 animate-pulse"></div>
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-white text-[15px]">FindStreak AI</h3>
-                      <p className="text-[11px] text-emerald-300 font-medium uppercase tracking-widest flex items-center gap-1">
-                          🟢 Online
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 bg-slate-50/50 scrollbar-thin scrollbar-thumb-slate-300">
-                  {messages.map((message) => (
+              <div className="space-y-4">
+                {steps.map((step, index) => (
+                  <Card
+                    key={step.id}
+                    className={`transition-all overflow-hidden border ${
+                      step.completed
+                        ? "border-slate-200 bg-white opacity-60 grayscale-[30%]"
+                        : step.expanded
+                        ? "border-slate-800 shadow-[0_8px_30px_rgba(0,0,0,0.06)] bg-white ring-1 ring-slate-900/5 relative z-10"
+                        : "border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm"
+                    }`}
+                  >
                     <div
-                      key={message.id}
-                      className={`flex gap-3 ${
-                        message.role === "user" ? "justify-end" : "justify-start"
-                      }`}
+                      className="p-6 cursor-pointer group flex items-start gap-4"
+                      onClick={() => handleStepClick(step.id)}
                     >
-                      {message.role === "assistant" && (
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                      
-                      <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
                         <div
-                          className={`rounded-2xl ${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm ${
-                            message.role === "assistant"
-                              ? "bg-white text-slate-700 border border-slate-100"
-                              : "bg-emerald-600 text-white"
+                          className={`flex-shrink-0 w-7 h-7 mt-0.5 rounded shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] flex items-center justify-center font-bold text-[13px] ${
+                            step.completed
+                              ? "bg-emerald-500 text-white shadow-none"
+                              : step.expanded
+                              ? "bg-slate-900 text-white shadow-none"
+                              : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 transition-colors"
                           }`}
                         >
-                          <p className="text-[14px] whitespace-pre-wrap leading-relaxed">
-                            {message.content}
-                          </p>
+                          {step.completed ? <CheckCircle className="w-4 h-4" /> : index + 1}
                         </div>
-                        
-                        <div className="flex items-center gap-2 mt-1.5 px-1">
-                            <p className="text-[10px] text-slate-400 font-medium">
-                            {message.timestamp.toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                            })}
-                            </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
 
-                  {isTyping && (
-                    <div className="flex gap-3 animate-in fade-in duration-300">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md">
-                        <Sparkles className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="bg-white rounded-2xl rounded-tl-sm p-4 border border-slate-100 shadow-sm flex items-center h-10">
-                        <div className="flex gap-1.5">
-                          <div className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"></div>
-                          <div
-                            className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.15s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-emerald-400/50 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.3s" }}
-                          ></div>
+                        <div className="flex-1 min-w-0 pr-4">
+                          <h3
+                            className={`text-[16px] font-extrabold mb-1.5 tracking-tight ${
+                              step.completed ? "text-slate-500 line-through decoration-slate-300" : "text-slate-900"
+                            }`}
+                          >
+                            {step.title}
+                          </h3>
+                          <p className="text-[13.5px] text-slate-500 line-clamp-2 leading-relaxed">
+                            {step.description}
+                          </p>
+                          
+                          {!step.expanded && (
+                            <div className="mt-4 flex items-center gap-3 opacity-80">
+                              <span className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+                                  Progress
+                              </span>
+                              <div className="flex-1 max-w-[150px] bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                  <div 
+                                      className="h-full bg-slate-800 rounded-full" 
+                                      style={{ width: `${(step.tasks.filter(t => t.completed).length / (step.tasks.length || 1)) * 100}%`}} 
+                                  />
+                              </div>
+                              <span className="text-[11px] font-bold text-slate-500">
+                                  {step.tasks.filter((t) => t.completed).length}/{step.tasks.length}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <ChevronRight
+                          className={`w-5 h-5 text-slate-400 transition-transform flex-shrink-0 ${
+                            step.expanded ? "rotate-90 text-slate-900" : "group-hover:translate-x-1"
+                          }`}
+                        />
+                    </div>
+
+                    {step.expanded && (
+                       <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-200 border-t border-slate-100 bg-slate-50/50 pt-5 mt-2">
+                        
+                        <div className="space-y-2 mb-8">
+                          <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">
+                              Task Sequence
+                          </h4>
+                          {step.tasks.map((task, taskIndex) => (
+                            <div
+                              key={task.id}
+                              className={`group flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                                task.completed
+                                  ? "bg-transparent border-transparent"
+                                  : "bg-white border-slate-200 shadow-sm hover:border-slate-300"
+                              }`}
+                            >
+                              <button 
+                                className={`flex-shrink-0 focus:outline-none transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-500'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleTaskToggle(step.id, task.id);
+                                }}
+                              >
+                                {task.completed ? (
+                                  <CheckCircle2 className="w-6 h-6 fill-emerald-50" />
+                                ) : (
+                                  <Circle className="w-6 h-6" />
+                                )}
+                              </button>
+                              
+                              <p className={`text-[14px] flex-1 tracking-tight ${task.completed ? "text-slate-400 font-medium line-through" : "text-slate-900 font-bold"}`}>
+                                  {task.text}
+                              </p>
+
+                              <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleTaskClick(task.id);
+                                }}
+                                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded border transition-colors ${
+                                  task.completed 
+                                    ? "bg-transparent border-slate-200 text-slate-400" 
+                                    : "bg-white border-slate-200 text-slate-700 hover:border-slate-800 hover:bg-slate-900 hover:text-white"
+                                }`}
+                              >
+                                <FileText className="w-3 h-3" />
+                                Docs
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-4 pt-5 border-t border-slate-200/60">
+                           <Button
+                            onClick={(e: Event) => {
+                              e.stopPropagation();
+                              const allCompleted = step.tasks.every((t) => t.completed);
+                              if (allCompleted) {
+                                handleStepToggle(step.id);
+                              } else {
+                                showAlert("Please check off all tasks above to verify module completion.", "warning");
+                              }
+                            }}
+                            className={`transition-all font-bold px-6 py-2.5 rounded-lg flex items-center gap-2 text-[13px] uppercase tracking-wider ${
+                              step.completed
+                                ? "bg-emerald-500 text-white shadow-sm"
+                                : step.tasks.every((t) => t.completed)
+                                ? "bg-slate-900 text-white hover:bg-black shadow-[0_4px_14px_rgba(0,0,0,0.15)] animate-pulse"
+                                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                            }`}
+                            disabled={!step.tasks.every((t) => t.completed) && !step.completed}
+                          >
+                              {step.completed ? "Module Verified" : "Verify Completion"}
+                          </Button>
+                          <span className="text-[12px] font-medium text-slate-500 tracking-wide">
+                             {step.tasks.filter((t) => t.completed).length} / {step.tasks.length} Verified
+                          </span>
                         </div>
                       </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ) : selectedTaskId ? (
+              <TaskGuideView
+                task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
+                projectTitle={project?.title}
+                onBack={handleBackToTasks}
+                onMarkComplete={() => {
+                  const step = steps.find(s => s.tasks.some(t => t.id === selectedTaskId));
+                  if (step) handleTaskToggle(step.id, selectedTaskId);
+                  handleBackToTasks();
+                }}
+              />
+          ) : null}
+        </div>
+
+        {/* Right Column - REAL TIME Co-Pilot */}
+        <div className="w-full md:w-[35%] lg:w-[30%] h-full hidden md:flex flex-col border-l border-slate-200 bg-white">
+          <div className="h-full flex flex-col w-full relative">
+            
+            {/* AI Header */}
+            <div className="bg-slate-900 p-5 shrink-0 flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-800 rounded shadow-inner flex items-center justify-center relative border border-slate-700">
+                  <Sparkles className="w-4 h-4 text-slate-300" />
+                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900"></div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-[13px] tracking-wide">Copilot Engine</h3>
+                  <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">
+                      Systems Online
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* AI Messages Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 bg-white scrollbar-thin scrollbar-thumb-slate-200">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-3 ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {message.role === "assistant" && (
+                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-slate-100 border border-slate-200">
+                      <Sparkles className="w-3 h-3 text-slate-600" />
                     </div>
                   )}
-
-                  <div ref={messagesEndRef} />
-                </div>
-
-                <div className="px-5 py-3 bg-white border-t border-slate-100 flex gap-2">
-                    <button
-                      onClick={getProgressInsights}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors shadow-sm"
+                  
+                  <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`rounded-xl ${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm text-[13px] leading-relaxed font-medium ${
+                        message.role === "assistant"
+                          ? "bg-slate-50 text-slate-800 border border-slate-200"
+                          : "bg-slate-900 text-white"
+                      }`}
                     >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      Run Analytics
-                    </button>
-                    <button
-                      onClick={getSmartHints}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 rounded-lg text-xs font-bold text-slate-600 hover:text-emerald-700 transition-colors shadow-sm"
-                    >
-                      <Lightbulb className="w-3.5 h-3.5" />
-                      Smart Hint
-                    </button>
-                </div>
-
-                <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all shadow-inner">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Ask the AI anything..."
-                      className="flex-1 bg-transparent border-none focus:outline-none text-[14px] text-slate-800 placeholder:text-slate-400 px-3 py-2"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim()}
-                      className="w-10 h-10 bg-emerald-600 text-white rounded-lg flex items-center justify-center hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
-                    >
-                      <Send className="w-4 h-4 ml-0.5" />
-                    </button>
+                      <p className="whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-1 px-1">
+                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">
+                        {message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}
+                        </p>
+                    </div>
                   </div>
                 </div>
-              </Card>
+              ))}
+
+              {isTyping && (
+                <div className="flex gap-3 animate-in fade-in duration-300">
+                  <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-slate-100 border border-slate-200">
+                    <Sparkles className="w-3 h-3 text-slate-600" />
+                  </div>
+                  <div className="bg-slate-50 rounded-xl rounded-tl-sm p-3.5 border border-slate-200 shadow-sm flex items-center h-10">
+                    <div className="flex gap-1.5">
+                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
+                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.15s" }}></div>
+                      <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0.3s" }}></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
+
+            {/* Action Buttons */}
+            <div className="px-5 py-3 bg-white border-t border-slate-100 flex gap-2">
+                <button
+                  onClick={getProgressInsights}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Metrics
+                </button>
+                <button
+                  onClick={getSmartHints}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" />
+                  Hints
+                </button>
+            </div>
+
+            {/* Input Form */}
+            <div className="p-4 bg-white border-t border-slate-100 shrink-0">
+              <div className="flex items-center gap-2 bg-slate-50 rounded border border-slate-200 p-1 focus-within:border-slate-800 transition-colors">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Query copilot..."
+                  className="flex-1 bg-transparent border-none focus:outline-none text-[13px] font-medium text-slate-900 placeholder:text-slate-400 px-3 py-1.5"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim()}
+                  className="w-8 h-8 bg-slate-900 text-white rounded flex items-center justify-center hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5 ml-0.5" />
+                </button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 
