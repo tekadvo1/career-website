@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import {
-  X, Flame, TrendingUp, Wrench, Code, BookOpen,
-  Lightbulb, ChevronRight, Zap, Clock, Briefcase,
-  CheckCircle, Target, Sparkles,
+  X, Flame, TrendingUp, ChevronRight, Zap, Clock, Briefcase,
+  CheckCircle, Target, Sparkles, Code2, Layout, Database, Check, Play
 } from 'lucide-react';
 
 /* ─── Types (mirror Dashboard's Project interface) ─────────────────────────── */
@@ -36,16 +35,8 @@ interface Props {
   onStart: (project: Project) => void;
 }
 
-/* ─── Difficulty colour map ─────────────────────────────────────────────────── */
-const diffColour = (d?: string) => {
-  if (d === 'Beginner')     return { badge: 'bg-emerald-100 text-emerald-700', bar: 'from-emerald-400 to-teal-500' };
-  if (d === 'Intermediate') return { badge: 'bg-amber-100 text-amber-700',     bar: 'from-amber-400 to-orange-500' };
-  return                           { badge: 'bg-red-100 text-red-700',         bar: 'from-rose-500 to-red-600' };
-};
-
 export default function ProjectDetailModal({ project, role: _role, onClose, onStart }: Props) {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const dc = diffColour(project.difficulty);
 
   /* Close on Escape key */
   useEffect(() => {
@@ -67,314 +58,208 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}
       onClick={e => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-8 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        {/* ── Top colour accent bar ─────────────────────────────────────────── */}
-        <div className={`h-1.5 w-full bg-gradient-to-r ${dc.bar} flex-shrink-0`} />
-
-        {/* ── Header ────────────────────────────────────────────────────────── */}
-        <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex-shrink-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <h2 className="text-xl font-bold text-slate-900 leading-snug">{project.title}</h2>
-                {project.trending && (
-                  <span className="flex items-center gap-1 px-2.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-[11px] font-bold">
-                    <Flame className="w-3 h-3" /> Trending
-                  </span>
-                )}
-                {project.status === 'active' && (
-                  <span className="px-2.5 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[11px] font-bold animate-pulse">▶ Active</span>
-                )}
-                {project.status === 'completed' && (
-                  <span className="px-2.5 py-0.5 bg-green-100 text-green-700 rounded-full text-[11px] font-bold">✓ Completed</span>
-                )}
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed">{project.description}</p>
+      <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200/50">
+        
+        {/* Header - Minimalist & Bold */}
+        <div className="flex items-start justify-between px-6 sm:px-8 py-6 sm:py-7 border-b border-slate-100 bg-white flex-shrink-0 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 to-white pointer-events-none" />
+          <div className="relative z-10 w-full pr-4">
+            <div className="flex flex-wrap items-center gap-3 mb-2.5">
+              <h2 className="text-2xl sm:text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">{project.title}</h2>
+              {project.trending && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-md text-[10px] font-bold tracking-wider uppercase shadow-sm">
+                  <Flame className="w-3 h-3" /> Trending
+                </span>
+              )}
             </div>
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 transition-colors mt-0.5"
-            >
-              <X className="w-4 h-4 text-slate-600" />
-            </button>
+            <p className="text-slate-500 text-[14.5px] sm:text-[15.5px] leading-relaxed max-w-3xl font-medium">{project.description}</p>
           </div>
-
-          {/* Quick meta pills */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${dc.badge}`}>{project.difficulty}</span>
-            <span className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-medium">
-              <Clock className="w-3 h-3" />{project.metrics?.timeEstimate || project.duration}
-            </span>
-            <span className="flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-lg text-xs font-semibold">
-              <Target className="w-3 h-3" />{project.matchScore}% Match
-            </span>
-            <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold">
-              <Zap className="w-3 h-3" />{project.metrics?.xp ?? 500} XP
-            </span>
-            {project.metrics?.matchIncrease && (
-              <span className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">
-                <TrendingUp className="w-3 h-3" />{project.metrics.matchIncrease} career boost
-              </span>
-            )}
-          </div>
+          <button
+            onClick={onClose}
+            className="relative z-10 flex-shrink-0 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* ── Active progress bar ───────────────────────────────────────────── */}
-        {project.status === 'active' && totalTasks > 0 && (
-          <div className="px-6 py-3 bg-indigo-50 border-b border-indigo-100 flex-shrink-0">
-            <div className="flex justify-between items-center mb-1.5 text-xs font-semibold">
-              <span className="text-indigo-700">Your Progress</span>
-              <span className="text-indigo-900">{completedTasks}/{totalTasks} tasks · {pct}%</span>
-            </div>
-            <div className="h-2 bg-indigo-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700"
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-          </div>
-        )}
+        {/* Content Body Split */}
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-white">
+          
+          {/* Main Info - Left */}
+          <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-12 no-scrollbar">
 
-        {/* ── Scrollable body ───────────────────────────────────────────────── */}
-        <div className="overflow-y-auto flex-1" style={{ maxHeight: '60vh' }}>
-          <div className="px-6 py-5 space-y-6">
-
-            {/* Why This Project? */}
-            {project.whyRecommended && project.whyRecommended.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-purple-100 flex items-center justify-center">
-                    <Lightbulb className="w-3.5 h-3.5 text-purple-600" />
-                  </span>
-                  Why This Project?
-                </h3>
-                <ul className="space-y-2">
-                  {project.whyRecommended.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm text-slate-700">
-                      <ChevronRight className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                      {r}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {/* Career Impact */}
-            {project.careerImpact && project.careerImpact.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-rose-100 flex items-center justify-center">
-                    <Flame className="w-3.5 h-3.5 text-rose-500" />
-                  </span>
-                  Career Impact
-                </h3>
-                <div className="grid sm:grid-cols-2 gap-2">
-                  {project.careerImpact.map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-slate-700 bg-rose-50 rounded-lg px-3 py-2">
-                      <Sparkles className="w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5" />
-                      {item}
-                    </div>
-                  ))}
+            {/* AI Career Insights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+              {project.whyRecommended && project.whyRecommended.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Target className="w-3.5 h-3.5 text-slate-400" /> Objective
+                  </h3>
+                  <ul className="space-y-3.5">
+                    {project.whyRecommended.map((r, i) => (
+                      <li key={i} className="flex items-start gap-3 text-[14px] text-slate-700 font-medium leading-relaxed">
+                        <Check className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <span>{r}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </section>
-            )}
+              )}
 
-            {/* Skills You'll Develop */}
-            {project.skillsToDevelop && project.skillsToDevelop.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-green-100 flex items-center justify-center">
-                    <TrendingUp className="w-3.5 h-3.5 text-green-600" />
-                  </span>
-                  Skills You'll Develop
+              {project.careerImpact && project.careerImpact.length > 0 && (
+                <div>
+                  <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Briefcase className="w-3.5 h-3.5 text-slate-400" /> Professional Impact
+                  </h3>
+                  <ul className="space-y-3.5">
+                    {project.careerImpact.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3 text-[14px] text-slate-700 font-medium leading-relaxed">
+                        <TrendingUp className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* High-Level Blueprint / Technologies */}
+            {((project.tools && project.tools.length > 0) || (project.languages && project.languages.length > 0)) && (
+              <div>
+                <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Code2 className="w-3.5 h-3.5 text-slate-400" /> High-Level Blueprint
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  {project.skillsToDevelop.map((s, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-800 rounded-full text-xs font-semibold">
-                      {s}
+                <div className="flex flex-wrap gap-2.5">
+                  {[...(project.languages || []), ...(project.tools || [])].map((tech, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-slate-50 border border-slate-200/60 text-slate-700 rounded-md text-[13.5px] font-semibold tracking-tight hover:bg-slate-100 transition-colors">
+                      {tech}
                     </span>
                   ))}
                 </div>
-              </section>
+              </div>
             )}
 
-            {/* Skill progression bars */}
+            {/* Skill Gain Heatmap */}
             {project.skillGainEstimates && project.skillGainEstimates.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center">
-                    <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-                  </span>
-                  Skill Progression
+              <div className="border-t border-slate-100 pt-10">
+                <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-slate-400" /> Projected Competency Matrix
                 </h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                   {project.skillGainEstimates.map((sk, i) => (
                     <div key={i}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="font-semibold text-slate-700">{sk.skill}</span>
-                        <span className="text-slate-400">{sk.before}% → <span className="text-indigo-600 font-bold">{sk.after}%</span></span>
+                      <div className="flex justify-between items-end mb-2.5">
+                        <span className="text-[14px] font-bold text-slate-800">{sk.skill}</span>
+                        <div className="flex items-center gap-2 text-[12px] font-bold tracking-tight">
+                          <span className="text-slate-400">{sk.before}%</span>
+                          <ChevronRight className="w-3 h-3 text-slate-300" />
+                          <span className="text-emerald-600">{sk.after}% Focus</span>
+                        </div>
                       </div>
-                      <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
-                        {/* "before" ghost */}
-                        <div className="absolute h-full bg-slate-300 rounded-full" style={{ width: `${sk.before}%` }} />
-                        {/* "after" fill */}
-                        <div className="absolute h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full transition-all duration-700" style={{ width: `${sk.after}%` }} />
+                      <div className="relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="absolute h-full bg-slate-200" style={{ width: `${sk.before}%` }} />
+                        <div className="absolute h-full bg-slate-800" style={{ left: `${sk.before}%`, width: `${sk.after - sk.before}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
-              </section>
-            )}
-
-            {/* Tools Required + Languages — two columns */}
-            <section className="grid sm:grid-cols-2 gap-4">
-              {/* Tools */}
-              <div>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center">
-                    <Wrench className="w-3.5 h-3.5 text-blue-600" />
-                  </span>
-                  Tools Required
-                </h3>
-                <ul className="space-y-1.5">
-                  {(project.tools ?? []).map((t, i) => (
-                    <li key={i} className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg text-sm text-blue-900 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
               </div>
-
-              {/* Languages */}
-              <div>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-indigo-100 flex items-center justify-center">
-                    <Code className="w-3.5 h-3.5 text-indigo-600" />
-                  </span>
-                  Languages
-                </h3>
-                <ul className="space-y-1.5">
-                  {(project.languages ?? []).map((l, i) => (
-                    <li key={i} className="flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg text-sm text-indigo-900 font-medium">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                      {l}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-
-            {/* Recruiter Appeal */}
-            {project.recruiterAppeal && project.recruiterAppeal.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center">
-                    <Briefcase className="w-3.5 h-3.5 text-amber-600" />
-                  </span>
-                  Recruiter Value
-                </h3>
-                <ul className="space-y-1.5">
-                  {project.recruiterAppeal.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                      <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </section>
             )}
-
-            {/* Setup Instructions */}
-            {project.setupGuide && project.setupGuide.steps?.length > 0 && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center">
-                    <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-                  </span>
-                  Setup Instructions
-                </h3>
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <ol className="space-y-3">
-                    {project.setupGuide.steps.map((step, i) => (
-                      <li key={i} className="flex gap-3 items-start">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-600 text-white text-[11px] font-bold flex items-center justify-center mt-0.5">
-                          {i + 1}
-                        </span>
-                        <span className="text-sm text-slate-700 leading-relaxed">{step}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </section>
-            )}
-
-            {/* Curriculum stats */}
-            {project.curriculumStats && (
-              <section>
-                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-3 uppercase tracking-wide">
-                  <span className="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center">
-                    <Target className="w-3.5 h-3.5 text-violet-600" />
-                  </span>
-                  Curriculum Overview
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { label: 'Modules',   val: project.curriculumStats.modules,               cls: 'bg-violet-50 text-violet-700' },
-                    { label: 'Tasks',     val: project.curriculumStats.tasks,                 cls: 'bg-indigo-50 text-indigo-700' },
-                    { label: 'Deploy',    val: project.curriculumStats.deployment ? '✓' : '✗', cls: project.curriculumStats.deployment ? 'bg-green-50 text-green-700' : 'bg-slate-50 text-slate-400' },
-                    { label: 'Code Review', val: project.curriculumStats.codeReview ? '✓' : '✗', cls: project.curriculumStats.codeReview ? 'bg-green-50 text-green-700' : 'bg-slate-50 text-slate-400' },
-                  ].map(m => (
-                    <div key={m.label} className={`rounded-xl p-3 text-center ${m.cls}`}>
-                      <div className="text-lg font-bold">{m.val}</div>
-                      <div className="text-[11px] font-semibold mt-0.5 opacity-75">{m.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
           </div>
-        </div>
 
-        {/* ── Sticky footer CTA ─────────────────────────────────────────────── */}
-        <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center gap-3 flex-shrink-0">
-          {project.status === 'active' ? (
-            <button
-              onClick={() => onStart(project)}
-              className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
-            >
-              <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[7px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
-              </span>
-              Start This Project
-            </button>
-          ) : project.status === 'completed' ? (
-            <button
-              onClick={() => onStart(project)}
-              className="flex-1 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-4 h-4" /> View Completed Project
-            </button>
-          ) : (
-            <button
-              onClick={() => onStart(project)}
-              className="flex-1 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2"
-            >
-              <Zap className="w-4 h-4" /> Start This Project
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="px-5 py-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl font-semibold text-sm transition-all"
-          >
-            Close
-          </button>
+          {/* Sidebar - Right (Specs & Actions) */}
+          <div className="w-full md:w-[320px] lg:w-[360px] bg-slate-50/80 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col flex-shrink-0">
+            <div className="p-6 sm:p-8 flex-1 overflow-y-auto no-scrollbar">
+              
+              <div className="space-y-8">
+                {/* Meta Grid */}
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Project Telemetry</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-center shadow-sm">
+                      <span className="text-[11px] font-semibold text-slate-500 mb-1">Schedule</span>
+                      <span className="text-[14px] font-bold text-slate-900 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-slate-400"/> {project.metrics?.timeEstimate || project.duration}</span>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-center shadow-sm">
+                      <span className="text-[11px] font-semibold text-slate-500 mb-1">XP Reward</span>
+                      <span className="text-[14px] font-bold text-slate-900 flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-slate-400"/> {project.metrics?.xp ?? 500}</span>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-center shadow-sm">
+                      <span className="text-[11px] font-semibold text-slate-500 mb-1">Match Index</span>
+                      <span className="text-[14px] font-bold text-slate-900 flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-rose-500"/> {project.matchScore}%</span>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col justify-center shadow-sm">
+                      <span className="text-[11px] font-semibold text-slate-500 mb-1">Complexity</span>
+                      <span className="text-[14px] font-bold text-slate-900 flex items-center gap-1.5 capitalize"><Flame className="w-3.5 h-3.5 text-orange-400"/> {project.difficulty}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {project.curriculumStats && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Architecture Scope</h4>
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden text-[13px] font-medium text-slate-700 shadow-sm">
+                      <div className="flex justify-between items-center p-3.5 border-b border-slate-100">
+                        <span className="flex items-center gap-2.5"><Layout className="w-4 h-4 text-slate-400"/> Micro-modules</span>
+                        <span className="font-bold text-slate-900">{project.curriculumStats.modules}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3.5 border-b border-slate-100">
+                        <span className="flex items-center gap-2.5"><Database className="w-4 h-4 text-slate-400"/> Engineering Tasks</span>
+                        <span className="font-bold text-slate-900">{project.curriculumStats.tasks}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3.5 border-b border-slate-100">
+                        <span className="flex items-center gap-2.5"><Code2 className="w-4 h-4 text-slate-400"/> Final Deployment</span>
+                        {project.curriculumStats.deployment ? <CheckCircle className="w-4 h-4 text-slate-900"/> : <X className="w-4 h-4 text-slate-300"/>}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* CTAs */}
+            <div className="p-6 sm:p-8 pt-6 border-t border-slate-200 bg-white relative z-10 w-full mt-auto shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+              {project.status === 'active' && totalTasks > 0 && (
+                <div className="mb-5">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Pipeline</span>
+                    <span className="text-[11px] font-bold text-slate-900">{pct}%</span>
+                  </div>
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {project.status === 'active' ? (
+                <button
+                  onClick={() => onStart(project)}
+                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-bold text-[14.5px] transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center justify-center gap-2 group tracking-wide"
+                >
+                  <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" /> Resume Engineering
+                </button>
+              ) : project.status === 'completed' ? (
+                <button
+                  onClick={() => onStart(project)}
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-[14.5px] transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 tracking-wide"
+                >
+                  <CheckCircle className="w-4 h-4" /> Review Post-Mortem
+                </button>
+              ) : (
+                <button
+                  onClick={() => onStart(project)}
+                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-xl font-bold text-[14.5px] transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center justify-center gap-2 group tracking-wide"
+                >
+                  <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" /> Initialize Pipeline
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
