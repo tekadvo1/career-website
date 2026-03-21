@@ -77,7 +77,7 @@ const seedMissionsWithAI = async (role) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -145,7 +145,8 @@ const seedRewards = async () => {
       { title: 'Pro Learner Badge', description: 'Unlock the exclusive Pro Learner badge on your profile. Show the world your dedication!', xp_cost: 300, reward_type: 'badge' },
       { title: 'AI Resume Review', description: 'Get an in-depth AI-powered review of your resume with actionable feedback and improvement suggestions.', xp_cost: 200, reward_type: 'feature' },
       { title: 'Coursera Plus Trial', description: 'Earn a 7-day Coursera Plus trial to access thousands of professional courses for free.', xp_cost: 2000, reward_type: 'promocode' },
-      { title: 'Career Mastery Certificate', description: 'The ultimate achievement. Complete all missions to earn this prestigious career mastery certificate.', xp_cost: 5000, reward_type: 'certification' }
+      { title: 'Career Mastery Certificate', description: 'The ultimate achievement. Complete all missions to earn this prestigious career mastery certificate.', xp_cost: 5000, reward_type: 'certification' },
+      { title: '5 AI Generation Credits', description: 'Exchange 500 XP to get 5 more AI credits. Use them to generate Mock Interviews, Tech Roadmaps, and more!', xp_cost: 500, reward_type: 'ai_credits' }
     ];
 
     for (const r of defaultRewards) {
@@ -331,6 +332,13 @@ router.post('/redeem', async (req, res) => {
       [userId, rewardId]
     );
 
+    if (reward.reward_type === 'ai_credits') {
+      await pool.query(
+        'UPDATE users SET ai_credits = COALESCE(ai_credits, 0) + 5 WHERE id = $1',
+        [userId]
+      );
+    }
+
     res.json({ success: true, reward: reward.title, remainingXp: availableXp - reward.xp_cost });
 
     fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
@@ -360,7 +368,7 @@ router.post('/generate-more', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',

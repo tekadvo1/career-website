@@ -39,7 +39,9 @@
 
   /* Gradient text utility */
   .text-gradient-teal {
-    @apply text-transparent bg-clip-text;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
     background-image: linear-gradient(135deg, #2dd4bf, #34d399);
   }
 }

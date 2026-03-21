@@ -78,6 +78,7 @@ export default function Missions() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
   const [startingMission, setStartingMission] = useState<number | null>(null);
+  const [aiCredits, setAiCredits] = useState<number>((user as any).ai_credits || 5);
 
   // Workspace state
   const [userProjects, setUserProjects] = useState<any[]>([]);
@@ -262,6 +263,16 @@ export default function Missions() {
 
       if (data.success) {
         setTotalXp(data.remainingXp);
+        if (data.reward && data.reward.includes('AI') && data.reward.includes('Credits')) {
+          setAiCredits((prev: number) => prev + 5);
+          // Manually update the visual storage if possible so it persists without refresh
+          try {
+            const currentObj = JSON.parse(localStorage.getItem('fs_user') || '{}');
+            localStorage.setItem('fs_user', JSON.stringify({ ...currentObj, ai_credits: (currentObj.ai_credits || 0) + 5 }));
+            const currentSession = JSON.parse(sessionStorage.getItem('fs_user') || '{}');
+            sessionStorage.setItem('fs_user', JSON.stringify({ ...currentSession, ai_credits: (currentSession.ai_credits || 0) + 5 }));
+          } catch(e) {}
+        }
         showAlert(`🎉 Reward redeemed: ${data.reward}! Remaining XP: ${data.remainingXp}`, 'success');
       } else {
         showAlert(data.error || 'Failed to redeem', 'error');
@@ -370,6 +381,13 @@ export default function Missions() {
                   <span className="text-xl font-black text-orange-400">{totalAvailableXP}</span>
                 </div>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Available</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-violet-500/30 rounded-xl px-4 py-3 text-center min-w-[90px]">
+                <div className="flex items-center gap-1.5 justify-center mb-1">
+                  <Sparkles className="w-4 h-4 text-violet-400" />
+                  <span className="text-xl font-black text-violet-400">{aiCredits}</span>
+                </div>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">AI Credits</span>
               </div>
             </div>
           </div>

@@ -111,7 +111,7 @@ Make it educational, detailed, and highly specific to their project. Include at 
 - 5-8 getting started steps`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: `Generate project structure for: ${prompt}` },
@@ -188,7 +188,7 @@ Your role:
     }));
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: systemContent },
         ...contextMessages,

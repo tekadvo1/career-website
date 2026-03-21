@@ -92,10 +92,22 @@ router.get('/me', protect, async (req, res) => {
       };
     }
 
+    // Calculate exact usable XP globally
+    const xpQuery = `
+      SELECT 
+        (SELECT COALESCE(SUM(xp_earned), 0) FROM user_missions WHERE user_id = $1 AND status = 'completed') +
+        (SELECT COALESCE(bonus_xp, 0) FROM users WHERE id = $1) -
+        (SELECT COALESCE(SUM(r.xp_cost), 0) FROM user_rewards ur JOIN rewards r ON ur.reward_id = r.id WHERE ur.user_id = $1) as available_xp
+    `;
+    const xpRes = await pool.query(xpQuery, [req.user.id]);
+    const available_xp = parseInt(xpRes.rows[0]?.available_xp) || 0;
+
     res.json({
       status: 'success',
       user: {
         ...req.user,
+        ai_credits: userRecord.ai_credits || 0,
+        available_xp,
         lastRoleAnalysis
       }
     });
@@ -431,5 +443,21 @@ router.post('/github/sync', protect, async (req, res) => {
   }
 });
 
+
+// @route   POST /api/auth/add-xp
+// @desc    Give user arbitrary gamification XP for completing tool tasks
+// @access  Private
+router.post('/add-xp', protect, async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || isNaN(amount)) return res.status(400).json({ error: 'Valid XP amount required' });
+    
+    await pool.query('UPDATE users SET bonus_xp = COALESCE(bonus_xp, 0) + $1 WHERE id = $2', [parseInt(amount), req.user.id]);
+    res.json({ success: true, added: parseInt(amount) });
+  } catch (error) {
+    console.error('Add XP error:', error);
+    res.status(500).json({ error: 'Failed to add XP' });
+  }
+});
 
 module.exports = router;

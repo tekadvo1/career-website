@@ -70,7 +70,7 @@ router.post('/analyze', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -363,7 +363,7 @@ router.post('/projects', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -514,7 +514,7 @@ router.post('/workflow-custom', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -610,7 +610,7 @@ router.post('/workflow-step-details', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -809,7 +809,7 @@ router.post('/project-details', async (req, res) => {
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',
+                model: 'gpt-4o',
                 messages: [
                     {
                         role: 'system',

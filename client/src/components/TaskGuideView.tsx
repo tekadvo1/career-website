@@ -184,10 +184,10 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
 
         <div className="mt-12 pt-6 border-t border-slate-100">
           <button 
-            onClick={onMarkComplete}
+            onClick={() => { apiFetch('/api/auth/add-xp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount: 50 }) }); onMarkComplete(); }}
             className="w-full py-4 bg-[#00875a] hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-[0.99] text-lg"
           >
-            <CheckCircle2 className="w-5 h-5" /> Mark Task as Complete & Return
+            <CheckCircle2 className="w-5 h-5" /> Mark Task as Complete (+50 XP) & Return
           </button>
         </div>
       </div>

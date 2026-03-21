@@ -63,7 +63,7 @@ const seedResourcesIfEmpty = async () => {
                 'Authorization': `Bearer ${apiKey}`
             },
             body: JSON.stringify({
-                model: 'gpt-4o-mini',
+                model: 'gpt-4o',
                 messages: [
                     { role: 'system', content: 'You are an expert learning resource curator with real-time web search access. Find the best, most current resources available online.' },
                     { role: 'user', content: `Search the web and find 5 real, high-quality learning resources for "${topic}" that are available in 2024/2025.
@@ -158,7 +158,7 @@ router.post('/search', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -262,7 +262,7 @@ router.post('/create-course', async (req, res) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -386,7 +386,7 @@ router.post('/:id/enhance', async (req, res) => {
          'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-         model: 'gpt-4o-mini',
+         model: 'gpt-4o',
          messages: [
             { role: 'system', content: 'You are an AI learning resource expert. Add comprehensive missing details to the learning resource.' },
             { role: 'user', content: `Analyze the learning resource titled "${resource.title}" (${resource.url || ''}).

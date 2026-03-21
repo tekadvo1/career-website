@@ -62,6 +62,10 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'custom_skills') THEN
         ALTER TABLE users ADD COLUMN custom_skills JSONB DEFAULT '[]';
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'ai_credits') THEN
+        ALTER TABLE users ADD COLUMN ai_credits INTEGER DEFAULT 5;
+    END IF;
 END $$;
 
 -- Workspaces table

@@ -110,7 +110,11 @@ export default function QuizGame() {
     if (idx === questions[currentIdx].answerIndex) {
       setScore(s => s + 100);
       
-      // Update Real-Time XP tracking by saving to DB (optional: mock here by just awarding points)
+      apiFetch('/api/auth/add-xp', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ amount: 100 })
+      }).then(() => showAlert('+100 XP awarded!', 'success')).catch(e => console.error(e));
     }
   };
 

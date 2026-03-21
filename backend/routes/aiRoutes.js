@@ -4,6 +4,7 @@ const { OpenAI } = require('openai');
 const pool = require('../config/db');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
+const { checkAICredits } = require('../middleware/creditMiddleware');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -11,54 +12,10 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-router.post('/chat', async (req, res) => {
+router.post('/chat', checkAICredits, async (req, res) => {
     try {
         const { message, context, role } = req.body;
-        const userId = req.user?.id; // From authMiddleware
-
-        if (!message) {
-            return res.status(400).json({ error: 'Message is required' });
-        }
-        
-        if (!userId) {
-            return res.status(401).json({ error: 'Unauthorized user' });
-        }
-
-        // --- CREDIT CHECK LOGIC ---
-        const userRes = await pool.query('SELECT ai_credits, last_credit_reset FROM users WHERE id = $1', [userId]);
-        if (userRes.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        let ai_credits = userRes.rows[0].ai_credits;
-        if (ai_credits == null) ai_credits = 20;
-        
-        let last_credit_reset = userRes.rows[0].last_credit_reset;
-        // If its missing, default to now
-        if (!last_credit_reset) last_credit_reset = new Date();
-        
-        const now = new Date();
-        const resetTime = new Date(last_credit_reset);
-        const hoursPassed = (now.getTime() - resetTime.getTime()) / (1000 * 60 * 60);
-
-        if (hoursPassed >= 4) {
-            // Reset to 20 and deduct 1 for this request
-            await pool.query('UPDATE users SET ai_credits = 19, last_credit_reset = CURRENT_TIMESTAMP WHERE id = $1', [userId]);
-        } else if (ai_credits <= 0) {
-            const nextResetTime = new Date(resetTime.getTime() + 4 * 60 * 60 * 1000);
-            const msRemaining = nextResetTime.getTime() - now.getTime();
-            const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
-            const minutesRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-            
-            return res.status(429).json({ 
-                error: 'Out of credits', 
-                message: `Free credits exhausted. Your AI assistant is resting! Get 20 new messages in ${hoursRemaining} hour(s) and ${minutesRemaining} minute(s).` 
-            });
-        } else {
-            // Deduct 1 credit
-            await pool.query('UPDATE users SET ai_credits = ai_credits - 1 WHERE id = $1', [userId]);
-        }
-        // --- END CREDIT CHECK LOGIC ---
+        // userId checked and credit deducted via checkAICredits middleware
 
         const isProjectContext = context?.type === 'project';
         
@@ -93,7 +50,7 @@ router.post('/chat', async (req, res) => {
         }
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: message }
@@ -140,7 +97,7 @@ router.post('/chat', async (req, res) => {
     }
 });
 
-router.post('/guide', async (req, res) => {
+router.post('/guide', checkAICredits, async (req, res) => {
     try {
         const { message, context, role } = req.body;
 
@@ -193,7 +150,7 @@ router.post('/guide', async (req, res) => {
              }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: message }
@@ -295,7 +252,7 @@ router.post('/chat-history', async (req, res) => {
 });
 
 // POST /api/ai/generate-quiz - Generates real-time quizzes based on role and topic
-router.post('/generate-quiz', async (req, res) => {
+router.post('/generate-quiz', checkAICredits, async (req, res) => {
     try {
         const { role, topic } = req.body;
         
@@ -318,7 +275,7 @@ router.post('/generate-quiz', async (req, res) => {
         }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [{ role: "system", content: systemPrompt }],
             max_tokens: 1500,
             temperature: 0.8,
@@ -336,7 +293,7 @@ router.post('/generate-quiz', async (req, res) => {
 });
 
 // POST /api/ai/generate-resume-quiz - Generates real-time quizzes based on an uploaded Resume and Role
-router.post('/generate-resume-quiz', upload.single('resume'), async (req, res) => {
+router.post('/generate-resume-quiz', checkAICredits, upload.single('resume'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No resume file uploaded' });
         
@@ -375,7 +332,7 @@ router.post('/generate-resume-quiz', upload.single('resume'), async (req, res) =
         }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: `Here is my Resume Text:\n\n${resumeText}\n\nPlease generate the trivia game.` }
@@ -396,7 +353,7 @@ router.post('/generate-resume-quiz', upload.single('resume'), async (req, res) =
 });
 
 // POST /api/ai/generate-interview-guide - Generates an interview guide (Q&A and tips)
-router.post('/generate-interview-guide', upload.single('resume'), async (req, res) => {
+router.post('/generate-interview-guide', checkAICredits, upload.single('resume'), async (req, res) => {
     try {
         const role = req.body.role || 'Software Engineering';
         const notes = req.body.notes || ''; // Optional context or specific topics the user wants
@@ -440,7 +397,7 @@ router.post('/generate-interview-guide', upload.single('resume'), async (req, re
         }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease generate the interview guide.` : `Please generate the interview guide.` }
@@ -538,7 +495,7 @@ router.post('/mock-interview-evaluate', async (req, res) => {
         }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [{ role: "system", content: systemPrompt }],
             max_tokens: 1000,
             temperature: 0.7,
@@ -556,7 +513,7 @@ router.post('/mock-interview-evaluate', async (req, res) => {
 });
 
 // POST /api/ai/tech-stack - Generates trending tech stack based on role and resume
-router.post('/tech-stack', upload.single('resume'), async (req, res) => {
+router.post('/tech-stack', checkAICredits, upload.single('resume'), async (req, res) => {
     try {
         const role = req.body.role || 'Software Engineering';
         
@@ -594,7 +551,7 @@ router.post('/tech-stack', upload.single('resume'), async (req, res) => {
         }`;
 
         const requestOptions = {
-            model: "gpt-4o-mini",
+            model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: resumeText ? `Here is my Resume Text:\n\n${resumeText}\n\nPlease recommend a highly detailed tech stack.` : `Please recommend the latest and highly detailed tech stack.` }
