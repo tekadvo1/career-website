@@ -118,17 +118,38 @@ export default function Sidebar({ activePage }: SidebarProps) {
         @media (min-width: 768px) {
           body { padding-left: 5rem !important; }
         }
+        @media (max-width: 767px) {
+          body { padding-top: 4rem !important; }
+          .sticky.top-0 { top: 4rem !important; }
+        }
       `}</style>
       
-      {/* ─── Mobile Hamburger Button ─── */}
+      {/* ─── Mobile Header Bar ─── */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="md:hidden fixed top-2.5 left-2.5 z-40 p-2 bg-white hover:bg-slate-100 rounded-lg transition-colors shadow-sm border border-slate-200"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="w-5 h-5 text-slate-700" />
-        </button>
+        <div className="md:hidden fixed top-0 left-0 right-0 h-[4rem] bg-white/95 backdrop-blur-md border-b border-slate-200 z-[60] flex items-center justify-between px-4 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsOpen(true)}
+              className="p-1.5 -ml-1.5 hover:bg-slate-100 rounded-lg transition-colors flex items-center justify-center"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="w-6 h-6 text-slate-700" />
+            </button>
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded flex items-center justify-center shadow-sm">
+                 <Code className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-extrabold text-slate-800 tracking-tight text-[15px]">FindStreak</span>
+            </div>
+          </div>
+          <button 
+             onClick={() => navigate('/profile', { state: { readOnlyMode: true } })} 
+             className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold shadow-sm hover:scale-105 transition-transform"
+             title="View Profile"
+          >
+            {initials}
+          </button>
+        </div>
       )}
 
       {/* ─── Mobile Backdrop ─── */}
