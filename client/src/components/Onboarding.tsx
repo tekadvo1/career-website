@@ -1,7 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus } from 'lucide-react';
+import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus, ChevronDown } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
 import Sidebar from './Sidebar';
 import { getUser } from '../utils/auth';
@@ -282,20 +282,25 @@ export default function Onboarding() {
               <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-2">
                 Target Country
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                {['USA', 'India', 'UK', 'Australia', 'Canada'].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCountry(c)}
-                    className={`py-1.5 text-xs font-semibold rounded-md border transition-all ${
-                      country === c
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
+              <div className="relative">
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="block w-full pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none shadow-sm cursor-pointer hover:border-indigo-300"
+                >
+                  <option value="USA">United States (USA)</option>
+                  <option value="India">India</option>
+                  <option value="UK">United Kingdom (UK)</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Australia">Australia</option>
+                  <option value="Germany">Germany</option>
+                  <option value="Singapore">Singapore</option>
+                  <option value="Remote">Remote / Global</option>
+                  <option value="Other">Other</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
             </div>
 
