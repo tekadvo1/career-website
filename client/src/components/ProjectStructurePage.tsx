@@ -560,10 +560,10 @@ export default function ProjectStructurePage() {
         </header>
 
         {/* ── Three Panes ────────────────────────────────────────────────── */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden">
 
           {/* ══════════════ LEFT PANEL: Prompt Input ══════════════════════ */}
-          <aside className="w-64 xl:w-72 flex-shrink-0 border-r border-white/5 flex flex-col overflow-y-auto bg-[#0c1016]">
+          <aside className="w-full lg:w-64 xl:w-72 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col lg:overflow-y-auto bg-[#0c1016]">
 
             {/* Prompt section */}
             <div className="p-4 border-b border-white/5">
@@ -663,7 +663,7 @@ export default function ProjectStructurePage() {
           </aside>
 
           {/* ══════════════ MIDDLE PANEL: Structure Output ════════════════ */}
-          <main className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <main className="flex-1 flex flex-col min-h-[600px] lg:min-h-0 min-w-0 overflow-hidden">
 
             {/* Empty state */}
             {!structure && !loading && !error && (
@@ -782,7 +782,7 @@ export default function ProjectStructurePage() {
           </main>
 
           {/* ══════════════ RIGHT PANEL: AI Chat Assistant ════════════════ */}
-          <aside className="w-72 xl:w-80 flex-shrink-0 border-l border-white/5 flex flex-col bg-[#0c1016]">
+          <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-white/5 flex flex-col bg-[#0c1016] min-h-[500px] lg:min-h-0">
 
             {/* Chat Header */}
             <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2.5 flex-shrink-0">

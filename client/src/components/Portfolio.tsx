@@ -345,7 +345,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-5 pt-8 md:pt-12 relative z-10">
+      <div className="max-w-5xl xl:max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 md:pt-12 relative z-10">
         {!isPublic && builderStep === 'landing' ? (
           <div className="text-center py-16 md:py-24 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="w-24 h-24 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-teal-200 transform rotate-3 hover:rotate-0 transition-transform">
@@ -444,16 +444,16 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                 </div>
 
                 <div className="px-8 pb-10">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end -mt-16 mb-8 gap-5">
-                        <div className="flex items-end gap-5">
-                            <div className={`w-32 h-32 rounded-2xl ${t.card} p-1.5 shadow-xl z-10 transition-colors duration-500`}>
-                                <div className={`w-full h-full bg-gradient-to-br ${t.headerBg} rounded-[10px] flex items-center justify-center text-white text-4xl font-bold shadow-inner`}>
+                    <div className="flex flex-col md:flex-row justify-between items-center md:items-end -mt-16 sm:-mt-20 mb-8 gap-5">
+                        <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-5 w-full md:w-auto">
+                            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-2xl ${t.card} p-1.5 shadow-xl z-10 transition-colors duration-500`}>
+                                <div className={`w-full h-full bg-gradient-to-br ${t.headerBg} rounded-[10px] flex items-center justify-center text-white text-3xl sm:text-4xl font-bold shadow-inner`}>
                                     {displayName ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G"}
                                 </div>
                             </div>
-                            <div className="mb-2 z-10">
-                                <h1 className={`text-3xl font-extrabold ${t.textPrimary} tracking-tight transition-colors`}>{displayName}</h1>
-                                <p className={`${t.accentText} font-bold text-sm tracking-wide uppercase mt-1 flex items-center gap-1.5 transition-colors`}><Briefcase className="w-4 h-4" /> {activeRole}</p>
+                            <div className="mb-2 z-10 text-center md:text-left">
+                                <h1 className={`text-2xl sm:text-3xl font-extrabold ${t.textPrimary} tracking-tight transition-colors`}>{displayName}</h1>
+                                <p className={`${t.accentText} font-bold text-xs sm:text-sm tracking-wide uppercase mt-1 flex items-center justify-center md:justify-start gap-1.5 transition-colors`}><Briefcase className="w-4 h-4" /> {activeRole}</p>
                             </div>
                         </div>
 
@@ -481,8 +481,8 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                          </div>
                     )}
 
-                    <div className="grid md:grid-cols-3 gap-10">
-                        <div className="md:col-span-2 space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+                        <div className="lg:col-span-2 space-y-8">
                             {/* Summary */}
                             <section>
                                 <h2 className={`text-xl font-extrabold ${t.textPrimary} mb-3 flex items-center gap-2 transition-colors`}>About Me</h2>

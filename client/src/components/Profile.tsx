@@ -799,10 +799,10 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 md:px-5">
-        <div className="grid lg:grid-cols-3 gap-5">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 xl:gap-10">
           {/* Left Column - Profile Card */}
-          <div className="lg:col-span-1 space-y-5">
+          <div className="lg:col-span-1 space-y-6">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
               {/* Profile Background Banner (LinkedIn Style) */}
               <div className="h-24 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-500 relative">
@@ -1077,7 +1077,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           </div>
 
           {/* Right Column - Stats & Activity */}
-          <div className="lg:col-span-2 space-y-5">
+          <div className="lg:col-span-2 space-y-6">
             
             {/* Realtime Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 cursor-pointer">

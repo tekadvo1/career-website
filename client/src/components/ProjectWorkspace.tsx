@@ -491,7 +491,7 @@ export default function ProjectWorkspace() {
           <div className="flex items-center gap-5 min-w-0">
             <button
               onClick={() => setShowRightSidebar(true)}
-              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors shrink-0 md:hidden"
+              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors shrink-0 lg:hidden"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -544,10 +544,10 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Main Content - Two Column Layout */}
-      <div className="h-[calc(100vh-70px)] flex flex-col md:flex-row max-w-[1800px] mx-auto overflow-hidden">
+      <div className="h-[calc(100vh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
         
         {/* Left Column - Pipeline Tasks */}
-        <div className="w-full md:w-[65%] lg:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
+        <div className="w-full lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
           {!showGuideView ? (
             <div className="max-w-4xl max-auto">
               <div className="flex items-end justify-between mb-8">
@@ -724,7 +724,7 @@ export default function ProjectWorkspace() {
         </div>
 
         {/* Right Column - REAL TIME Co-Pilot */}
-        <div className="w-full md:w-[35%] lg:w-[30%] h-full hidden md:flex flex-col border-l border-slate-200 bg-white">
+        <div className="w-full lg:w-[35%] xl:w-[30%] h-full hidden lg:flex flex-col border-t lg:border-t-0 lg:border-l border-slate-200 bg-white">
           <div className="h-full flex flex-col w-full relative">
             
             {/* AI Header */}

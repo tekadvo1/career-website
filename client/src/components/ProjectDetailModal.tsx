@@ -87,7 +87,7 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
         </div>
 
         {/* Content Body Split */}
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden bg-white">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-white">
           
           {/* Main Info - Left */}
           <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-12 no-scrollbar">
@@ -172,7 +172,7 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
           </div>
 
           {/* Sidebar - Right (Specs & Actions) */}
-          <div className="w-full md:w-[320px] lg:w-[360px] bg-slate-50/80 border-t md:border-t-0 md:border-l border-slate-200 flex flex-col flex-shrink-0">
+          <div className="w-full lg:w-[360px] xl:w-[400px] bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col flex-shrink-0">
             <div className="p-6 sm:p-8 flex-1 overflow-y-auto no-scrollbar">
               
               <div className="space-y-8">
