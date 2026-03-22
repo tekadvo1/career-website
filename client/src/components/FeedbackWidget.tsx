@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MessageSquarePlus, X, Send } from 'lucide-react';
 import { getToken, getUser } from '../utils/auth';
+import { useLocation } from 'react-router-dom';
 
 export default function FeedbackWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,6 +9,9 @@ export default function FeedbackWidget() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const location = useLocation();
+
+  const isChatPage = location.pathname.includes('/ai-assistant');
 
   // Only show the feedback widget if they are securely logged into the app
   const token = getToken();
@@ -54,7 +58,7 @@ export default function FeedbackWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
+    <div className={`fixed right-6 z-[9999] transition-all duration-300 ${isChatPage ? 'bottom-20 md:bottom-6' : 'bottom-6'}`}>
       {/* The floating button */}
       {!isOpen && (
         <button
