@@ -131,13 +131,13 @@ export default function Achievements() {
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-start justify-between mb-6 pl-12">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 md:py-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <Trophy className="w-7 h-7 text-amber-500" />
-                <h1 className="text-2xl font-bold text-slate-900">Achievements</h1>
-                <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${isLive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
+                <Trophy className="w-7 h-7 text-amber-500 shrink-0" />
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Achievements</h1>
+                <span className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold transition-all ${isLive ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'}`}>
                   {isLive
                     ? <><Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE</>
                     : <><Wifi className="w-2.5 h-2.5" /> Connecting…</>}
@@ -151,7 +151,7 @@ export default function Achievements() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6">
             <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-200">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-4 h-4 text-indigo-600" />
@@ -188,39 +188,38 @@ export default function Achievements() {
 
           {/* Next Milestone Banner */}
           {nextMilestone && (
-            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 text-white mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center text-2xl">
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl p-4 md:p-5 text-white mb-6 shadow-md">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-start md:items-center gap-4">
+                  <div className="w-12 h-12 shrink-0 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center text-2xl">
                     {nextMilestone.icon}
                   </div>
                   <div>
                     <p className="font-bold mb-1">Next: {nextMilestone.title}</p>
                     <p className="text-indigo-100 text-sm">{nextMilestone.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="bg-white/20 rounded-full h-2 w-40 overflow-hidden">
+                    <div className="flex items-center flex-wrap gap-2 mt-2">
+                      <div className="bg-white/20 rounded-full h-2 w-full max-w-[160px] overflow-hidden">
                         <div
                           className="bg-white h-full transition-all duration-500"
                           style={{ width: `${(nextMilestone.progress / nextMilestone.total) * 100}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium">
+                      <span className="text-sm font-medium shrink-0">
                         {nextMilestone.progress}/{nextMilestone.total}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs text-indigo-200 mb-1">{nextMilestone.rarity}</p>
-                  <p className="text-2xl font-bold">+{nextMilestone.points}</p>
-                  <p className="text-xs text-indigo-200">points</p>
+                <div className="text-left md:text-right bg-white/10 md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none">
+                  <p className="text-xs text-indigo-200 mb-0.5 md:mb-1 uppercase tracking-wider font-semibold">{nextMilestone.rarity}</p>
+                  <p className="text-2xl font-bold">+{nextMilestone.points} pts</p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Filter Tabs */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {[
               { key: 'all', label: `All (${achievements.length})` },
               { key: 'earned', label: `Earned (${earned.length})` },
@@ -247,7 +246,7 @@ export default function Achievements() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-6 md:py-10">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
@@ -270,7 +269,7 @@ export default function Achievements() {
             <p className="text-slate-500">No achievements found for this filter.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
             {displayed.map((a) => (
               <div
                 key={a.id}
