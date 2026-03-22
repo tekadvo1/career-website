@@ -132,7 +132,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
       <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 border border-slate-200/50">
 
         {/* Header */}
-        <div className="px-8 py-6 flex items-start justify-between flex-shrink-0 bg-white border-b border-slate-100 relative">
+        <div className="px-5 sm:px-8 py-5 sm:py-6 flex items-start justify-between flex-shrink-0 bg-white border-b border-slate-100 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 to-white pointer-events-none" />
           <div className="relative z-10 w-full pr-4">
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight leading-none mb-2">
@@ -147,13 +147,13 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto no-scrollbar bg-slate-50/30">
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
 
             {/* ─────── STEP 1 ─────── */}
             {step === 1 && (
               <div className="animate-in slide-in-from-left-4 duration-300">
                 
-                <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-x-12 gap-y-10">
+                <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-x-8 xl:gap-x-12 gap-y-10">
                   {/* Left Column - Form */}
                   <div className="space-y-10">
                     
@@ -176,7 +176,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
                         <label className="text-[13px] font-bold text-slate-800 uppercase tracking-widest">Availability</label>
                         <span className="text-[12px] font-bold text-slate-400">{selectedDays.length} days / week</span>
                       </div>
-                      <div className="grid grid-cols-7 gap-2">
+                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                         {DAYS.map(day => {
                           const sel = selectedDays.includes(day);
                           return (
@@ -302,7 +302,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
                     <Calendar className="w-4 h-4 text-emerald-400" /> Approved Timeline
                   </h3>
                   
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 relative z-10">
                     <div>
                       <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2">Scope Size</p>
                       <p className="text-[22px] font-extrabold text-white leading-none tracking-tight">{TOTAL_HOURS} <span className="text-[13px] text-slate-400 ml-0.5">HRS</span></p>
@@ -378,12 +378,12 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
         </div>
 
         {/* Footer Actions */}
-        <div className={`px-8 py-5 border-t border-slate-200 bg-white relative z-10 flex items-center gap-4 flex-shrink-0 ${step === 2 ? 'flex-row-reverse' : ''}`}>
+        <div className={`px-5 sm:px-8 py-5 border-t border-slate-200 bg-white relative z-10 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-shrink-0 ${step === 2 ? 'sm:flex-row-reverse' : ''}`}>
           {step === 1 ? (
             <>
               <button
                 onClick={onClose}
-                className="px-6 py-3.5 rounded-xl text-slate-500 font-bold text-[14px] hover:bg-slate-100 hover:text-slate-800 transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl text-slate-500 font-bold text-[14px] hover:bg-slate-100 hover:text-slate-800 transition-colors disabled:opacity-50"
                 disabled={loading}
               >
                 Abort
@@ -391,7 +391,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
               <button
                 onClick={handleContinue}
                 disabled={loading || selectedDays.length === 0}
-                className="flex-1 py-3.5 rounded-xl font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] bg-slate-900 hover:bg-black disabled:opacity-50 disabled:hover:shadow-none"
+                className="w-full sm:flex-1 py-3.5 rounded-xl font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] bg-slate-900 hover:bg-black disabled:opacity-50 disabled:hover:shadow-none"
               >
                 {loading
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Compiling Plan...</>
@@ -403,14 +403,14 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
               <button
                 onClick={handleStart}
                 disabled={loading}
-                className="flex-[2] py-4 rounded-xl font-bold text-[15px] text-white flex items-center justify-center gap-2.5 transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] bg-emerald-600 hover:bg-emerald-700 hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] disabled:opacity-50 tracking-wide"
+                className="w-full sm:flex-[2] py-4 rounded-xl font-bold text-[15px] text-white flex items-center justify-center gap-2.5 transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.3)] bg-emerald-600 hover:bg-emerald-700 hover:shadow-[0_6px_20px_rgba(16,185,129,0.4)] disabled:opacity-50 tracking-wide"
               >
                 {loading ? 'Booting Workspace...' : <><Play className="w-4 h-4 fill-current" /> Initialize Final Pipeline</>}
               </button>
               <button
                 onClick={() => setStep(1)}
                 disabled={loading}
-                className="px-8 py-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-[14px] hover:bg-slate-50 hover:border-slate-300 transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-8 py-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-[14px] hover:bg-slate-50 hover:border-slate-300 transition-colors disabled:opacity-50"
               >
                 Reconfigure
               </button>
