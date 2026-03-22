@@ -295,8 +295,6 @@ export default function Onboarding() {
                   <option value="Australia">Australia</option>
                   <option value="Germany">Germany</option>
                   <option value="Singapore">Singapore</option>
-                  <option value="Remote">Remote / Global</option>
-                  <option value="Other">Other</option>
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
                   <ChevronDown className="w-4 h-4" />
