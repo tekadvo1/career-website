@@ -128,8 +128,8 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6" style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}>
-      <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200 border border-slate-200/50">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-6" style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}>
+      <div className="bg-white rounded-none sm:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-4xl overflow-hidden flex flex-col h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[92vh] animate-in zoom-in-95 duration-200 border-0 sm:border border-slate-200/50">
 
         {/* Header */}
         <div className="px-5 sm:px-8 py-5 sm:py-6 flex items-start justify-between flex-shrink-0 bg-white border-b border-slate-100 relative">

@@ -56,20 +56,20 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
   const pct            = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-      style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}
-      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
-    >
-      <div className="relative bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-200/50">
+      <div
+        ref={overlayRef}
+        className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6"
+        style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}
+        onClick={e => { if (e.target === overlayRef.current) onClose(); }}
+      >
+        <div className="relative bg-white rounded-none sm:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border-0 sm:border sm:border-slate-200/50">
         
         {/* Header - Minimalist & Bold */}
-        <div className="flex items-start justify-between px-6 sm:px-8 py-6 sm:py-7 border-b border-slate-100 bg-white flex-shrink-0 relative">
+        <div className="flex items-start justify-between px-5 sm:px-8 py-5 sm:py-7 border-b border-slate-100 bg-white flex-shrink-0 relative">
           <div className="absolute inset-0 bg-gradient-to-b from-slate-50/50 to-white pointer-events-none" />
-          <div className="relative z-10 w-full pr-4">
+          <div className="relative z-10 flex-1 min-w-0 pr-4">
             <div className="flex flex-wrap items-center gap-3 mb-2.5">
-              <h2 className="text-2xl sm:text-[28px] font-extrabold text-slate-900 tracking-tight leading-none">{project.title}</h2>
+              <h2 className="text-[22px] sm:text-[28px] font-extrabold text-slate-900 tracking-tight leading-[1.15] sm:leading-none break-words">{project.title}</h2>
               {project.trending && (
                 <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-md text-[10px] font-bold tracking-wider uppercase shadow-sm">
                   <Flame className="w-3 h-3" /> Trending

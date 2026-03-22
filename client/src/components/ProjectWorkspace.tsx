@@ -544,7 +544,7 @@ export default function ProjectWorkspace() {
       </div>
 
       {/* Main Content - Two Column Layout */}
-      <div className="h-[calc(100vh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
+      <div className="h-[calc(100dvh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
         
         {/* Left Column - Pipeline Tasks */}
         <div className="w-full lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
