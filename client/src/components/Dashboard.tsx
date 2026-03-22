@@ -272,11 +272,10 @@ export default function Dashboard() {
 
       {/* ── HEADER ── */}
       <div className="bg-white border-b border-slate-200">
-        <div className="px-4 md:px-6 py-3 md:py-4">
+        <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2 md:mb-3">
             {/* Left */}
             <div className="flex items-center gap-2 md:gap-4">
-              <div className="w-10" />
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-2xl font-bold text-slate-900">
@@ -348,7 +347,7 @@ export default function Dashboard() {
           const taskIdx = proj.progress_data?.currentTaskIndex   || 0;
           const task    = proj.project_data?.curriculum?.[modIdx]?.tasks?.[taskIdx];
           return (
-            <div className="px-4 md:px-6 pt-4 pb-2">
+            <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
               <div className="bg-gradient-to-r from-emerald-700 to-teal-800 rounded-xl p-4 md:p-5 relative overflow-hidden shadow-sm group">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-400/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -386,8 +385,8 @@ export default function Dashboard() {
         })()}
 
         {/* Tabs */}
-        <div className="bg-white border-b border-slate-200 px-4 md:px-6 overflow-x-auto no-scrollbar">
-          <div className="flex gap-4 md:gap-6 border-b border-slate-200 min-w-max md:min-w-0">
+        <div className="bg-white border-b border-slate-200 overflow-x-auto no-scrollbar">
+          <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 flex gap-4 md:gap-6 border-b border-slate-200 min-w-max md:min-w-0">
             {[
               { id: 'recommended', label: 'For You',   count: null },
               { id: 'trending',    label: 'Trending',  count: null },
@@ -407,7 +406,7 @@ export default function Dashboard() {
         </div>
 
         {/* Project Grid */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 w-full max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
           {/* Mission context banner */}
           {fromMission && (
             <div className="mb-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-3">
@@ -441,7 +440,7 @@ export default function Dashboard() {
                </p>
 
                {/* Hint skeleton grid */}
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 w-full opacity-40 pointer-events-none">
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 w-full opacity-40 pointer-events-none">
                  {[1, 2, 3, 4].map(i => (
                    <div key={i} className="bg-white rounded-xl overflow-hidden border border-slate-200 animate-pulse hidden md:block">
                      <div className="h-1.5 bg-gradient-to-r from-slate-200 to-slate-200" />
@@ -464,7 +463,7 @@ export default function Dashboard() {
                 {activeTab === 'recommended' && <span className="ml-1 text-emerald-600 font-medium">· AI-personalised for you</span>}
                 {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 flex-wrap items-stretch">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-stretch">
                 {filteredProjects.map(project => {
                   const ds = diffStyle(project.difficulty);
                   const isUserProj = ['active', 'completed'].includes(project.status || '');

@@ -798,10 +798,9 @@ export default function AILearningAssistant() {
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
-        <div className="max-w-[1500px] mx-auto px-2 lg:px-6 py-2 md:py-3">
+        <div className="max-w-[1500px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-2 md:py-3">
           <div className="flex items-center justify-between gap-1 md:gap-3">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-10 md:w-12 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
               <div>
                 <h1 className="text-base md:text-xl font-bold text-slate-900 flex items-center gap-1.5 md:gap-2">
                   <div className="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center shadow-md">
@@ -907,7 +906,7 @@ export default function AILearningAssistant() {
       </div>
 
       {/* Main Content Area */}
-      <div className="max-w-[1500px] mx-auto px-4 lg:px-6 py-4 flex-1 flex flex-col w-full min-h-0">
+      <div className="max-w-[1500px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-2 md:py-4 flex-1 flex flex-col w-full min-h-0">
         <div className={`flex flex-col lg:grid gap-4 lg:gap-6 flex-1 min-h-0 ${showLeftSidebar ? 'lg:grid-cols-[260px_1fr]' : 'lg:grid-cols-1'}`}>
           
           {/* Left Sidebar - Chat History */}
@@ -938,7 +937,7 @@ export default function AILearningAssistant() {
 
             <div className="flex-1 overflow-y-auto p-2.5 md:p-6 space-y-4 md:space-y-6">
               {messages.map((message) => (
-                <div key={message.id}>
+                <div key={message.id} className="max-w-[1000px] mx-auto w-full">
                   {message.type === "assistant" ? (
                     <div className="flex gap-2 md:gap-3">
                       <div className="flex-shrink-0 w-7 h-7 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
@@ -1084,7 +1083,7 @@ export default function AILearningAssistant() {
               ))}
 
               {isTyping && (
-                <div className="flex gap-2 md:gap-3">
+                <div className="flex gap-2 md:gap-3 max-w-[1000px] mx-auto w-full">
                   <div className="flex-shrink-0 w-7 h-7 md:w-9 md:h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
                     <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                   </div>

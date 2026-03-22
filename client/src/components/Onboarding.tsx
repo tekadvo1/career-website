@@ -167,9 +167,9 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen w-screen overflow-y-auto flex items-center justify-center bg-gray-100 p-4 md:py-6">
+    <div className="min-h-screen w-[100vw] overflow-y-auto flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
       {isReturningUser && <Sidebar activePage="onboarding" />}
-      <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 my-auto">
+      <div className="max-w-4xl xl:max-w-5xl w-full bg-white rounded-3xl shadow-2xl p-5 sm:p-8 lg:p-10 my-auto border border-white/20">
         
         {step === 'input' && (
           <>
@@ -188,10 +188,10 @@ export default function Onboarding() {
         </div>
 
         {/* Main Content - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 relative">
           
           {/* Optional OR divider for desktop */}
-          <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-100 rounded-full items-center justify-center text-[10px] font-bold text-gray-400 uppercase z-10 shadow-sm">
+          <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-100 rounded-full items-center justify-center text-[11px] font-black text-gray-400 uppercase z-10 shadow-sm">
             OR
           </div>
 
@@ -257,8 +257,8 @@ export default function Onboarding() {
               )}
             </div>
             
-            <div className="mb-3">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+            <div className="mb-4">
+              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-2">
                 Experience Level
               </label>
               <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -278,11 +278,11 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+            <div className="mb-5">
+              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-2">
                 Target Country
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 {['USA', 'India', 'UK', 'Australia', 'Canada'].map((c) => (
                   <button
                     key={c}
@@ -299,7 +299,7 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <p className="text-[10px] text-gray-500 mb-4 md:mb-0">
+            <p className="text-[11px] font-medium text-gray-500 mb-4 md:mb-0 leading-relaxed">
               AI will analyze open projects and suggest the best fits based on your desired role.
             </p>
           </div>
@@ -312,12 +312,12 @@ export default function Onboarding() {
 
           {/* RIGHT SIDE: Upload Resume */}
           <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wide">
+            <h2 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
               Upload your resume
             </h2>
             
             <div 
-              className={`flex-1 min-h-[160px] border-2 border-dashed rounded-lg p-5 flex flex-col items-center justify-center transition-all cursor-pointer ${
+              className={`flex-1 min-h-[180px] border-2 border-dashed rounded-xl p-5 md:p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isDragging 
                   ? 'border-emerald-500 bg-emerald-50' 
                   : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
@@ -454,7 +454,7 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 mb-8">
               {/* Card 1: Master */}
               <button 
                 onClick={() => {

@@ -335,11 +335,11 @@ export default function Missions() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/20 via-transparent to-transparent" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent" />
 
-        <div className="relative max-w-7xl mx-auto px-4 py-8">
+        <div className="relative max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           {/* Back Button */}
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-6"
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-4 md:mb-6"
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
@@ -360,32 +360,32 @@ export default function Missions() {
             </div>
 
             {/* XP Stats */}
-            <div className="flex gap-3">
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 text-center min-w-[90px]">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="flex-1 sm:flex-none bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-2 sm:px-4 py-3 text-center min-w-[80px] sm:min-w-[90px]">
                 <div className="flex items-center gap-1.5 justify-center mb-1">
                   <Zap className="w-4 h-4 text-amber-400" />
-                  <span className="text-xl font-black text-amber-400">{totalXp}</span>
+                  <span className="text-lg sm:text-xl font-black text-amber-400">{totalXp}</span>
                 </div>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Total XP</span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 text-center min-w-[90px]">
+              <div className="flex-1 sm:flex-none bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-2 sm:px-4 py-3 text-center min-w-[80px] sm:min-w-[90px]">
                 <div className="flex items-center gap-1.5 justify-center mb-1">
                   <Trophy className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xl font-black text-emerald-400">{completedCount}/{totalCount}</span>
+                  <span className="text-lg sm:text-xl font-black text-emerald-400">{completedCount}/{totalCount}</span>
                 </div>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Completed</span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-4 py-3 text-center min-w-[90px] hidden md:block">
+              <div className="flex-1 sm:flex-none bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl px-2 sm:px-4 py-3 text-center min-w-[80px] sm:min-w-[90px] hidden md:block">
                 <div className="flex items-center gap-1.5 justify-center mb-1">
                   <Flame className="w-4 h-4 text-orange-400" />
-                  <span className="text-xl font-black text-orange-400">{totalAvailableXP}</span>
+                  <span className="text-lg sm:text-xl font-black text-orange-400">{totalAvailableXP}</span>
                 </div>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Available</span>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm border border-violet-500/30 rounded-xl px-4 py-3 text-center min-w-[90px]">
+              <div className="flex-1 sm:flex-none bg-white/5 backdrop-blur-sm border border-violet-500/30 rounded-xl px-2 sm:px-4 py-3 text-center min-w-[80px] sm:min-w-[90px]">
                 <div className="flex items-center gap-1.5 justify-center mb-1">
                   <Sparkles className="w-4 h-4 text-violet-400" />
-                  <span className="text-xl font-black text-violet-400">{aiCredits}</span>
+                  <span className="text-lg sm:text-xl font-black text-violet-400">{aiCredits}</span>
                 </div>
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">AI Credits</span>
               </div>
@@ -407,7 +407,7 @@ export default function Missions() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 bg-white/5 rounded-xl p-1 w-fit">
+          <div className="flex flex-nowrap md:flex-wrap gap-1 bg-white/5 rounded-xl p-1 w-full md:w-fit overflow-x-auto no-scrollbar snap-x">
             {[
               { id: 'missions', label: 'Missions', icon: <Target className="w-4 h-4" />, badge: missions.filter(m => m.status === 'available').length },
               { id: 'workspace', label: 'Workspace', icon: <Layout className="w-4 h-4" />, badge: inProgressMissions.length },
@@ -417,7 +417,7 @@ export default function Missions() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
+                className={`flex items-center whitespace-nowrap gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all snap-start ${activeTab === tab.id
                   ? 'bg-white text-slate-900 shadow-md'
                   : 'text-slate-400 hover:text-white'
                   }`}
@@ -435,7 +435,7 @@ export default function Missions() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
 
         {/* ═══════════ MISSIONS TAB ═══════════ */}
         {activeTab === 'missions' && (
@@ -463,7 +463,7 @@ export default function Missions() {
             </div>
 
             {/* Missions Grid */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {filteredMissions.map((mission) => (
                 <div
                   key={mission.id}
@@ -592,7 +592,7 @@ export default function Missions() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-8">
                   {inProgressMissions.map(mission => (
                     <div
                       key={mission.id}
@@ -680,7 +680,7 @@ export default function Missions() {
                   <span className="text-slate-400">Loading your active projects...</span>
                 </div>
               ) : userProjects.length > 0 ? (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
                   {userProjects.map((project, i) => (
                     <div
                       key={i}
@@ -769,7 +769,7 @@ export default function Missions() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
               {rewards.map((reward) => {
                 const canAfford = totalXp >= reward.xp_cost;
                 return (

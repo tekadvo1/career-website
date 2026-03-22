@@ -251,9 +251,9 @@ export default function MyProjects() {
       
       <div className="flex-1 overflow-y-auto">
         {/* Sticky Header Top Bar to protect Hamburger Menu */}
-        <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200/50 px-6 md:px-8 py-4 mb-6">
-          <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center gap-4">
-            <div className="w-10 h-10 flex-shrink-0" /> {/* Spacer for system hamburger menu */}
+        <div className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-sm border-b border-slate-200/50 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 mb-4 sm:mb-6">
+          <div className="max-w-[1500px] w-full mx-auto flex flex-col md:flex-row md:items-center gap-2 sm:gap-4">
+            <div className="w-10 h-10 flex-shrink-0 hidden md:block" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-bold text-slate-800">My Projects</h1>
@@ -296,9 +296,9 @@ export default function MyProjects() {
           </button>
         </div>
 
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 pb-12 transition-all duration-300" style={{ zoom } as React.CSSProperties}>
+        <div className="max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 pb-12 transition-all duration-300" style={{ zoom } as React.CSSProperties}>
 
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
              <div className="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 border-t-4 border-t-indigo-500">
               <div className="flex items-center gap-2 text-slate-500 text-sm mb-2">
                 <Trophy className="w-4 h-4 text-indigo-500" />
@@ -390,14 +390,14 @@ export default function MyProjects() {
                <p className="text-slate-500">You haven't {filter === 'all' ? 'started any' : `${filter} any`} projects yet.</p>
              </div>
           ) : (
-             <div className="space-y-6">
+             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6">
                {filteredProjects.map((project) => {
                  const stats = getProjectStats(project);
                  const tags = project.project_data?.tags || project.project_data?.tools || ['React', 'Node.js', 'Fullstack'];
                  
                  return (
-                   <div key={project.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                     <div className="p-6">
+                   <div key={project.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+                     <div className="p-4 sm:p-6 flex-1 flex flex-col">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex items-center gap-3 flex-wrap">
                             <h3 className="text-xl font-bold text-slate-800">{project.title}</h3>
@@ -465,7 +465,7 @@ export default function MyProjects() {
                        </div>
                        
                        {/* Metrics inline */}
-                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-5 sm:mb-6 text-sm flex-1">
                          <div>
                            <div className="flex items-center gap-1.5 text-slate-500 mb-1">
                              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
@@ -501,9 +501,9 @@ export default function MyProjects() {
                        </div>
                        
                        {/* Next Up Section */}
-                       <div className="bg-indigo-50/50 rounded-xl p-4 border border-indigo-100 flex flex-col md:flex-row items-center justify-between gap-4">
-                         <div className="flex items-start gap-4">
-                           <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                       <div className="bg-indigo-50/50 rounded-xl p-3 sm:p-4 border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mt-auto">
+                         <div className="flex items-start flex-col sm:flex-row gap-2 sm:gap-4 w-full">
+                           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
                              <TrendingUp className="w-5 h-5 text-indigo-600" />
                            </div>
                            <div>
@@ -523,7 +523,7 @@ export default function MyProjects() {
                          
                          <button 
                            onClick={() => handleOpenProject(project)}
-                           className="w-full md:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm shadow-indigo-200 whitespace-nowrap"
+                           className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm shadow-indigo-200 whitespace-nowrap"
                          >
                            Continue
                          </button>

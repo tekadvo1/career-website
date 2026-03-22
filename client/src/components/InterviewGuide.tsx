@@ -215,8 +215,8 @@ export default function InterviewGuide() {
         <div className="flex h-screen bg-[#F8FAFC] font-sans">
             <Sidebar activePage="interview-guide" />
             
-            <div className="flex-1 overflow-auto md:ml-0">
-                <main className="max-w-4xl mx-auto px-4 py-8 md:px-8">
+            <div className="flex-1 overflow-auto bg-slate-50/50">
+                <main className="max-w-4xl xl:max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-10">
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-2">
                            <div className="p-2.5 bg-teal-100 rounded-xl">
@@ -229,8 +229,8 @@ export default function InterviewGuide() {
                         </p>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
-                        <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 md:p-8 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                             <div>
                                 <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Target Role</label>
                                 <div className="relative">
@@ -281,11 +281,11 @@ export default function InterviewGuide() {
                              />
                         </div>
 
-                        <div className="mt-6 flex justify-end">
+                        <div className="mt-6 flex sm:justify-end">
                             <button 
                                 onClick={handleGenerate}
                                 disabled={loading || loadingMore}
-                                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                                 {loading ? 'Generating Guide...' : 'Generate AI Interview Guide'}
@@ -317,7 +317,7 @@ export default function InterviewGuide() {
                             <div className="space-y-4">
                                 {guideData.guide.map((qa, idx) => (
                                     <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:border-teal-300 transition-colors">
-                                        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start gap-3">
+                                        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start gap-3">
                                             <div className="flex gap-3">
                                                 <div className="w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-black flex items-center justify-center shrink-0">
                                                     Q{idx + 1}
@@ -348,11 +348,11 @@ export default function InterviewGuide() {
                                                      onChange={(e) => setMockAnswers(prev => ({...prev, [idx]: e.target.value}))}
                                                      disabled={!!mockFeedback[idx] || loadingFeedback[idx]}
                                                 />
-                                                <div className="mt-3 flex items-center justify-between">
+                                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                                                     {!revealedAnswers[idx] ? (
                                                         <button 
                                                             onClick={() => setRevealedAnswers(prev => ({...prev, [idx]: true}))}
-                                                            className="text-[12px] text-slate-500 font-bold hover:text-slate-700 underline underline-offset-2"
+                                                            className="text-[12px] text-slate-500 font-bold hover:text-slate-700 underline underline-offset-2 shrink-0"
                                                         >
                                                             Skip & Reveal Answer
                                                         </button>
@@ -362,7 +362,7 @@ export default function InterviewGuide() {
                                                         <button 
                                                             onClick={() => handleSubmitMockAnswer(idx)}
                                                             disabled={loadingFeedback[idx] || !mockAnswers[idx]}
-                                                            className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[12px] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                                            className="w-full sm:w-auto px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-[12px] shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0"
                                                         >
                                                             {loadingFeedback[idx] && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                                             Submit for AI Feedback
@@ -420,17 +420,17 @@ export default function InterviewGuide() {
                                 ))}
                             </div>
                             
-                            <div className="pt-4 flex flex-wrap justify-center gap-4">
+                            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                                 <button 
                                     onClick={() => navigate('/realtime-mock-interview', { state: { guideData, role } })}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center gap-2"
+                                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-bold shadow-md shadow-teal-200 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
                                 >
                                     Start Live Mock Interview (Voice)
                                 </button>
                                 <button 
                                     onClick={handleAddMore}
                                     disabled={loadingMore}
-                                    className="px-6 py-2.5 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                    className="w-full sm:w-auto px-6 py-3 bg-white border border-slate-200 hover:border-teal-300 hover:bg-teal-50 text-slate-700 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                                 >
                                     {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-teal-600" />}
                                     {loadingMore ? 'Loading more...' : 'Add More Questions'}

@@ -447,15 +447,14 @@ export default function LearningRoadmap() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-3 sm:p-5">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 px-3 sm:px-6 lg:px-8 flex-1 flex flex-col">
       <Sidebar activePage="roadmap" />
 
-      <div className="max-w-5xl mx-auto" ref={contentRef}>
+      <div className="max-w-6xl xl:max-w-7xl mx-auto w-full" ref={contentRef}>
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-md p-5 mb-5 mt-4 sm:mt-6 relative">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mb-6 mt-2 relative">
           <div className="flex items-start justify-between mb-3 flex-col sm:flex-row gap-4">
             <div className="flex items-start gap-3 sm:gap-4 flex-1">
-              <div className="w-10 sm:w-0" /> {/* Spacer for absolute hamburger */}
               <div className="flex-1">
                 <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full text-xs font-medium mb-2 shadow-sm">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -520,7 +519,7 @@ export default function LearningRoadmap() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 mt-5 md:mt-8">
             <div className="flex items-center gap-2.5 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
               <Calendar className="w-5 h-5 text-emerald-600" />
               <div>
@@ -548,7 +547,7 @@ export default function LearningRoadmap() {
 
         
         {/* NEW ROADMAP.SH STYLE FLOWCHART */}
-        <div className="relative py-8 px-4 sm:px-8 max-w-4xl mx-auto flex flex-col items-center mt-4">
+        <div className="relative py-8 md:py-12 px-2 sm:px-8 w-full max-w-5xl mx-auto flex flex-col items-center mt-6">
             {/* Main vertical line */}
             <div className="absolute top-0 bottom-0 left-[28px] md:left-1/2 md:-translate-x-1/2 w-1.5 bg-emerald-200/60 rounded-full z-0" />
             
@@ -583,7 +582,7 @@ export default function LearningRoadmap() {
                            <div key={topicIdx} className={`w-full flex ${alignLeft ? 'md:justify-start' : 'md:justify-end'} justify-start relative`}>
                               
                               {/* Horizontal connector line (desktop) */}
-                              <div className={`hidden md:block absolute top-[24px] h-1.5 bg-emerald-200/80 w-[20%] ${alignLeft ? 'right-1/2 rotate-180 translate-x-[2px]' : 'left-1/2 -translate-x-[2px]'} z-0 origin-left`} />
+                              <div className={`hidden md:block absolute top-[24px] h-1.5 bg-emerald-200/80 w-[30%] ${alignLeft ? 'right-1/2 rotate-180 translate-x-[2px]' : 'left-1/2 -translate-x-[2px]'} z-0 origin-left`} />
 
                               {/* Interactive Dot Connector on the center line */}
                               <div className={`absolute top-[24px] -translate-y-1/2 w-5 h-5 rounded-full border-[4px] border-slate-50 shadow bg-emerald-400 z-20 
