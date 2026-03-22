@@ -187,12 +187,12 @@ export default function RealTimeMockInterview() {
     const totalQuestions = state.guideData.guide.length;
 
     return (
-        <div className="flex h-screen bg-[#F8FAFC] font-sans">
-            <Sidebar activePage="interview-guide" />
+        <div className="flex flex-col md:flex-row min-h-[100dvh] bg-[#F8FAFC] font-sans">
+            <div className="z-50 shrink-0"><Sidebar activePage="interview-guide" /></div>
             
-            <div className="flex-1 flex flex-col overflow-hidden md:ml-0">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
                 {/* Header */}
-                <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-10">
+                <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm z-10 shrink-0">
                     <div className="flex items-center gap-4">
                         <button 
                             onClick={() => navigate('/interview-guide')}
@@ -302,19 +302,19 @@ export default function RealTimeMockInterview() {
                                         </div>
                                     </div>
 
-                                    <div className="flex justify-end gap-3 mt-6">
+                                    <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
                                         <button 
                                             onClick={handleTryAgain}
-                                            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center gap-2"
+                                            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl text-sm shadow-sm hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center gap-2"
                                         >
                                             <RotateCcw className="w-4 h-4" /> Try Again
                                         </button>
                                         <button 
                                             onClick={handleNextQuestion}
-                                            className="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-xl text-sm shadow-md hover:bg-slate-900 transition-all flex items-center gap-2"
+                                            className="px-6 py-2.5 bg-slate-800 text-white font-bold rounded-xl text-sm shadow-md hover:bg-slate-900 transition-all flex items-center justify-center gap-2"
                                         >
                                             {currentIdx < totalQuestions - 1 ? 'Next Question' : 'Finish Interview'} 
-                                            <ArrowRight className="w-4 h-4" />
+                                            <ArrowRight className="w-4 h-4 shrink-0" />
                                         </button>
                                     </div>
                                 </div>

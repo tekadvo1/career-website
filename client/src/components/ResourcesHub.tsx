@@ -237,9 +237,10 @@ export default function ResourcesHub() {
   const paidCount = filteredResources.filter(r => !r.free).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-6">
-      <Sidebar activePage="resources" />
-      <div className="max-w-7xl mx-auto">
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="resources" /></div>
+      <div className="flex-1 w-full p-4 py-6 md:p-8 overflow-y-auto min-h-0 relative">
+      <div className="max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
@@ -596,6 +597,7 @@ export default function ResourcesHub() {
         )}
         </>
         )}
+      </div>
       </div>
     </div>
   );

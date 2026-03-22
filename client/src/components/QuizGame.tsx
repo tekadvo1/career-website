@@ -131,12 +131,12 @@ export default function QuizGame() {
   const currentQ = questions[currentIdx];
 
   return (
-    <div className="min-h-screen bg-slate-900 flex">
-      <div className="z-50"><Sidebar activePage="quiz-game" /></div>
+    <div className="min-h-[100dvh] bg-slate-900 flex flex-col md:flex-row">
+      <div className="z-50 shrink-0"><Sidebar activePage="quiz-game" /></div>
 
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center relative">
+      <div className="flex-1 overflow-y-auto w-full p-4 md:p-8 flex flex-col items-center justify-start sm:justify-center relative min-h-0 pt-16 sm:pt-8">
          {/* Zoom Controls */}
-         <div className="absolute top-4 right-4 z-50 flex items-center gap-2 bg-slate-800 border border-slate-700 p-1.5 rounded-lg shadow-xl">
+         <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 flex items-center gap-1.5 sm:gap-2 bg-slate-800 border border-slate-700 p-1 sm:p-1.5 rounded-lg shadow-xl scale-90 sm:scale-100 origin-top-right">
            <button 
              onClick={() => setZoom(z => Math.max(50, z - 10))} 
              className="p-1.5 hover:bg-slate-700 text-slate-300 rounded transition-colors"
@@ -196,7 +196,7 @@ export default function QuizGame() {
                            </div>
                         </div>
                      ) : (
-                       <div className="flex flex-col md:flex-row gap-4">
+                       <div className="flex flex-col sm:flex-row gap-4 w-full">
                            {selectedFile ? (
                                <button 
                                  onClick={() => fileInputRef.current?.click()}
@@ -262,12 +262,12 @@ export default function QuizGame() {
                                       key={i}
                                       onClick={() => handleSelect(i)}
                                       disabled={showExplanation}
-                                      className={`w-full text-left p-4 rounded-xl border-2 transition-all font-medium text-sm md:text-base flex items-center gap-4 ${btnClass}`}
+                                      className={`w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all font-medium text-[13.5px] sm:text-base flex items-center gap-3 sm:gap-4 ${btnClass}`}
                                   >
                                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold flex-shrink-0 ${showExplanation && isCorrectAnswer ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-400'}`}>
                                           {String.fromCharCode(65 + i)}
                                       </div>
-                                      {opt}
+                                      <span className="flex-1">{opt}</span>
                                   </button>
                               );
                           })}
@@ -307,16 +307,16 @@ export default function QuizGame() {
                        You scored <span className="text-amber-400 font-bold">{score} XP</span> on this quiz. Keep pushing forward!
                    </p>
 
-                   <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+                   <div className="flex flex-col sm:flex-row gap-4 max-w-sm mx-auto w-full">
                        <button 
                          onClick={() => { setStarted(false); setFinished(false); setScore(0); setCurrentIdx(0); }}
-                         className="px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold rounded-xl transition-colors"
+                         className="flex-1 px-6 py-3 border border-slate-600 text-slate-300 hover:bg-slate-700 font-bold rounded-xl transition-colors shrink-0"
                        >
                          Play Again
                        </button>
                        <button 
                          onClick={() => navigate('/roadmap')}
-                         className="px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl transition-colors"
+                         className="flex-1 px-6 py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl transition-colors shadow-sm shrink-0"
                        >
                          Back to Roadmap
                        </button>

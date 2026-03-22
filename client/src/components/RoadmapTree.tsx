@@ -134,7 +134,7 @@ export default function RoadmapTree() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8 relative">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8 relative font-sans">
       {/* Top Left Navigation Button */}
       <button 
         onClick={() => navigate(-1)}

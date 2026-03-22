@@ -55,7 +55,7 @@ export default function RoadmapGuideView() {
   }, [topicName, role, subtopics]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm flex-shrink-0">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -81,8 +81,8 @@ export default function RoadmapGuideView() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto mb-10">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="max-w-4xl mx-auto px-4 py-8 pb-12 sm:pb-8">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-10">
                 <div className="mb-6 md:mb-8 border-b border-slate-100 pb-5 md:pb-6">
                     <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 leading-tight">Comprehension Guide: {topicName}</h2>
