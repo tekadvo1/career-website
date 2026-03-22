@@ -58,11 +58,11 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
   return (
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-6"
+        className="fixed inset-0 z-50 flex items-center justify-center sm:p-6"
         style={{ background: 'rgba(15, 23, 42, 0.70)', backdropFilter: 'blur(8px)' }}
         onClick={e => { if (e.target === overlayRef.current) onClose(); }}
       >
-        <div className="relative bg-white rounded-none sm:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border-0 sm:border sm:border-slate-200/50">
+        <div className="relative bg-white rounded-none sm:rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl h-full sm:h-auto max-h-none sm:max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border-0 sm:border sm:border-slate-200/50">
         
         {/* Header - Minimalist & Bold */}
         <div className="flex items-start justify-between px-5 sm:px-8 py-5 sm:py-7 border-b border-slate-100 bg-white flex-shrink-0 relative">
@@ -87,10 +87,10 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
         </div>
 
         {/* Content Body Split */}
-        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-white">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-y-auto lg:overflow-hidden min-h-0 bg-white">
           
           {/* Main Info - Left */}
-          <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-12 no-scrollbar">
+          <div className="flex-1 lg:overflow-y-auto p-5 sm:p-8 space-y-10 sm:space-y-12 no-scrollbar min-h-0">
 
             {/* AI Career Insights */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
@@ -172,8 +172,8 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
           </div>
 
           {/* Sidebar - Right (Specs & Actions) */}
-          <div className="w-full lg:w-[360px] xl:w-[400px] bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col flex-shrink-0">
-            <div className="p-6 sm:p-8 flex-1 overflow-y-auto no-scrollbar">
+          <div className="w-full lg:w-[360px] xl:w-[400px] bg-slate-50/80 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col flex-shrink-0 min-h-0">
+            <div className="p-5 sm:p-8 flex-1 lg:overflow-y-auto no-scrollbar">
               
               <div className="space-y-8">
                 {/* Meta Grid */}
@@ -223,7 +223,7 @@ export default function ProjectDetailModal({ project, role: _role, onClose, onSt
             </div>
 
             {/* CTAs */}
-            <div className="p-6 sm:p-8 pt-6 border-t border-slate-200 bg-white relative z-10 w-full mt-auto shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+            <div className="p-5 sm:p-8 pt-5 sm:pt-6 border-t border-slate-200 bg-white relative z-10 w-full mt-auto shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
               {project.status === 'active' && totalTasks > 0 && (
                 <div className="mb-5">
                   <div className="flex justify-between items-center mb-2">

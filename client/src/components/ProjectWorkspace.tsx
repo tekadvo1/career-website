@@ -547,7 +547,7 @@ export default function ProjectWorkspace() {
       <div className="h-[calc(100dvh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
         
         {/* Left Column - Pipeline Tasks */}
-        <div className="w-full lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
+        <div className="w-full flex-1 min-h-0 lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
           {!showGuideView ? (
             <div className="max-w-4xl max-auto">
               <div className="flex items-end justify-between mb-8">
