@@ -80,7 +80,7 @@ export default function ToolsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-[100dvh] bg-[#F8FAFC]">
       <Sidebar activePage="tools" />
       
       {/* Header */}

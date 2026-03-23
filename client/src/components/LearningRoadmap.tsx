@@ -421,7 +421,7 @@ export default function LearningRoadmap() {
         // Dropthrough and render main
     } else {
         return (
-          <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+          <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50 p-4">
             <div className="w-full max-w-sm bg-white rounded-2xl p-8 shadow-xl text-center border border-slate-200">
                 <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5">
                    <Sparkles className="w-8 h-8 text-emerald-600 animate-pulse" />
@@ -447,9 +447,10 @@ export default function LearningRoadmap() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 px-3 sm:px-6 lg:px-8 flex-1 flex flex-col">
-      <Sidebar activePage="roadmap" />
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="roadmap" /></div>
 
+      <div className="flex-1 w-full flex flex-col min-h-0 overflow-y-auto px-3 py-6 sm:px-6 lg:px-8">
       <div className="max-w-6xl xl:max-w-7xl mx-auto w-full" ref={contentRef}>
         {/* Header */}
         <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mb-6 mt-2 relative">
@@ -662,6 +663,7 @@ export default function LearningRoadmap() {
               )
             })}
         </div>
+      </div>
       </div>
     </div>
   );

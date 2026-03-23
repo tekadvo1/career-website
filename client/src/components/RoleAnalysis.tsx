@@ -280,7 +280,7 @@ export default function RoleAnalysis() {
   // Guard clause while loading
   if (isLoading) {
       return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gray-50 p-6">
           {isReturningUser && <Sidebar activePage="role-analysis" />}
           <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center">
             {/* Animated Icon */}
@@ -319,7 +319,7 @@ export default function RoleAnalysis() {
 
   if (error) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50">
           {isReturningUser && <Sidebar activePage="role-analysis" />}
           <div className="text-center p-6 max-w-md bg-white rounded-xl shadow-lg border border-gray-100">
              <div className="text-red-500 mb-4 text-4xl">⚠️</div>
@@ -353,9 +353,10 @@ export default function RoleAnalysis() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-2 md:p-4" id="role-analysis-content">
-      {isReturningUser && <Sidebar activePage="role-analysis" />}
-      <div className="max-w-5xl mx-auto">
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-gray-50 to-gray-100 font-sans" id="role-analysis-content">
+      {isReturningUser && <div className="z-50 shrink-0"><Sidebar activePage="role-analysis" /></div>}
+      <div className="flex-1 w-full flex flex-col min-h-0 overflow-y-auto p-2 md:p-4">
+      <div className="max-w-5xl mx-auto w-full">
         
 
         {/* Header Card */}
@@ -1063,6 +1064,7 @@ export default function RoleAnalysis() {
             Continue <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

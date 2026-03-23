@@ -524,7 +524,7 @@ export default function ProjectStructurePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen bg-[#0d1117] text-white flex overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="h-[100dvh] bg-[#0d1117] text-white flex overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
       {/* Global Sidebar */}
       <Sidebar activePage="project-structure" />
 

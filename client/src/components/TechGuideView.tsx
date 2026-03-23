@@ -97,7 +97,7 @@ export default function TechGuideView() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans h-screen overflow-hidden">
+    <div className="min-h-[100dvh] h-[100dvh] bg-slate-100 flex flex-col font-sans overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-slate-200 shadow-sm flex-shrink-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">

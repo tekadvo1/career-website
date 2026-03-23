@@ -103,7 +103,7 @@ export default function RoadmapTree() {
       // dropthrough
     } else {
       return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
             <Sparkles className="w-16 h-16 text-emerald-500 mb-6 animate-pulse" />
             <h2 className="text-2xl font-bold text-slate-800 mb-4 tracking-tight">Generating Tree View...</h2>
             <div className="w-full max-w-md bg-slate-200 rounded-full h-3 mb-4 overflow-hidden shadow-inner">
@@ -122,7 +122,7 @@ export default function RoadmapTree() {
 
   if (!roadmap || roadmap.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-[100dvh] bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <Target className="w-16 h-16 text-emerald-300 mb-4" />
         <h2 className="text-2xl font-bold text-slate-800 mb-2">No Roadmap Data Found</h2>
         <p className="text-slate-600 mb-6 max-w-md">Please generate your roadmap first from the main roadmap page.</p>

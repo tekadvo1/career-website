@@ -212,10 +212,10 @@ export default function InterviewGuide() {
     };
 
     return (
-        <div className="flex h-screen bg-[#F8FAFC] font-sans">
-            <Sidebar activePage="interview-guide" />
+        <div className="flex flex-col md:flex-row min-h-[100dvh] bg-[#F8FAFC] font-sans">
+            <div className="z-50 shrink-0"><Sidebar activePage="interview-guide" /></div>
             
-            <div className="flex-1 overflow-auto bg-slate-50/50">
+            <div className="flex-1 flex flex-col overflow-auto bg-slate-50/50 min-h-0">
                 <main className="max-w-4xl xl:max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-10">
                     <div className="mb-8">
                         <div className="flex items-center gap-3 mb-2">

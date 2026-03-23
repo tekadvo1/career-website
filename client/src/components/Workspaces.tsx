@@ -271,8 +271,8 @@ export default function Workspaces() {
   const currentRoleActive = currentActiveTarget();
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex font-sans text-slate-900 selection:bg-slate-200 selection:text-slate-900">
-      <div className="z-50"><Sidebar activePage="workspaces" /></div>
+    <div className="min-h-[100dvh] bg-[#fafafa] flex flex-col md:flex-row font-sans text-slate-900 selection:bg-slate-200 selection:text-slate-900">
+      <div className="z-50 shrink-0"><Sidebar activePage="workspaces" /></div>
 
       {/* Create Workspace Modal */}
       {showModal && (

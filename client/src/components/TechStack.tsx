@@ -59,8 +59,8 @@ export default function TechStack() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex font-sans text-slate-900">
-            <div className="z-50"><Sidebar activePage="tech-stack" /></div>
+        <div className="min-h-[100dvh] bg-[#F8FAFC] flex flex-col md:flex-row font-sans text-slate-900">
+            <div className="z-50 shrink-0"><Sidebar activePage="tech-stack" /></div>
             
             <div className="flex-1 overflow-y-auto relative w-full lg:ml-0">
                 <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-teal-50 via-slate-50/50 to-transparent pointer-events-none" />

@@ -259,9 +259,10 @@ export default function Dashboard() {
 
   /* ─────────────────────────────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <Sidebar activePage="dashboard" />
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="dashboard" /></div>
 
+      <div className="flex-1 w-full flex flex-col min-h-0 relative overflow-y-auto">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${toast.ok ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
@@ -578,6 +579,7 @@ export default function Dashboard() {
           role={selectedRole}
         />
       )}
+      </div>
     </div>
   );
 }

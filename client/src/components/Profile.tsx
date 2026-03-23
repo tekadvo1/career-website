@@ -663,7 +663,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   // Public profile loading/error states
   if (isPublic && publicProfileLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-[100dvh] h-[100dvh] overflow-y-auto bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-500 font-medium">Loading profile...</p>
@@ -675,7 +675,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   if (isPublic && publicProfileError) {
     const isPrivate = publicProfileError === '__PRIVATE__';
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-[100dvh] h-[100dvh] overflow-y-auto bg-[#F8FAFC] flex items-center justify-center">
         <div className="text-center bg-white p-10 rounded-2xl shadow border border-slate-200 max-w-md">
           <div className="text-5xl mb-4">{isPrivate ? '🔒' : '🔍'}</div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">
@@ -695,7 +695,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] selection:bg-teal-100 selection:text-teal-900 font-sans">
+    <div className="min-h-[100dvh] bg-[#F8FAFC] selection:bg-teal-100 selection:text-teal-900 font-sans">
       {!isPublic && profileCheckDone && showSetupModal && (
          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
             <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">

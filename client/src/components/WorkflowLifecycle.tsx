@@ -113,7 +113,7 @@ export default function WorkflowLifecycle() {
   // Fallback if no workflow data found
   if (!currentWorkflow || currentWorkflow.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 flex-col gap-4 p-4">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50 flex-col gap-4 p-4">
         {isReturningUser && <Sidebar activePage="workflow-lifecycle" />}
         <h2 className="text-2xl font-extrabold text-gray-800">Generate Your Professional Workflow</h2>
         <p className="text-gray-600 text-center max-w-md">Our AI will create a comprehensive, step-by-step professional lifecycle tailored to your exact role or tech stack.</p>
@@ -167,7 +167,7 @@ export default function WorkflowLifecycle() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50/40 to-white" id="workflow-content">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-teal-50/40 to-white" id="workflow-content">
       {isReturningUser && <Sidebar activePage="workflow-lifecycle" />}
 
       {/* Header */}

@@ -294,7 +294,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
   if (isPublic && portfolioData.isPrivate) {
       return (
-          <div className={`min-h-screen ${t.bg} flex flex-col items-center justify-center p-6 text-center`}>
+          <div className={`min-h-[100dvh] ${t.bg} flex flex-col items-center justify-center p-6 text-center`}>
               <div className="w-20 h-20 bg-slate-100/50 rounded-full flex items-center justify-center text-slate-400 mb-6 border border-slate-200/50 shadow-sm backdrop-blur">
                   <Lock className="w-8 h-8" />
               </div>
@@ -305,7 +305,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   }
 
   return (
-    <div className={`min-h-screen ${t.bg} selection:bg-teal-100 selection:text-teal-900 font-sans pb-20 transition-colors duration-500`}>
+    <div className={`min-h-[100dvh] ${t.bg} selection:bg-teal-100 selection:text-teal-900 font-sans pb-20 transition-colors duration-500`}>
       {/* Editor Main Header Tooltar */}
       {!isPublic && (
         <div className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-sm">

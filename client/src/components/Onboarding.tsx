@@ -167,7 +167,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen w-[100vw] overflow-y-auto flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-[100dvh] w-[100vw] overflow-y-auto flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
       {isReturningUser && <Sidebar activePage="onboarding" />}
       <div className="max-w-4xl xl:max-w-5xl w-full bg-white rounded-3xl shadow-2xl p-5 sm:p-8 lg:p-10 my-auto border border-white/20">
         

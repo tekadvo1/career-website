@@ -125,9 +125,10 @@ export default function Achievements() {
   const nextMilestone = achievements.find((a) => !a.earned && a.progress > 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Shared Sidebar */}
-      <Sidebar activePage="achievements" />
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="achievements" /></div>
+
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto w-full">
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
@@ -371,6 +372,7 @@ export default function Achievements() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   );
