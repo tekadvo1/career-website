@@ -171,13 +171,13 @@ export default function Workspaces() {
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this workspace?')) return;
     try {
-      const res = await apiFetch(`/api/workspaces/${id}`, {
+      const res = await apiFetch(`/api/workspaces/${id}?userId=${user?.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id })
       });
       if (res.ok) {
-        setWorkspaces(workspaces.filter(w => w.id !== id));
+        setWorkspaces(prev => prev.filter(w => w.id !== id));
       }
     } catch (err) {
       console.error('Failed to delete', err);

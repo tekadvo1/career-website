@@ -45,7 +45,7 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { userId } = req.body; // To verify ownership
+        const userId = req.body.userId || req.query.userId; // To verify ownership
 
         if (!userId) {
             return res.status(400).json({ error: 'userId is required to delete' });
