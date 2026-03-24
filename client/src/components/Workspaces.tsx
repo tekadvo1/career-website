@@ -154,7 +154,7 @@ export default function Workspaces() {
       });
       const data = await res.json();
       if (data.success) {
-        setWorkspaces([data.workspace, ...workspaces]);
+        setWorkspaces(prev => [data.workspace, ...prev]);
         setNewName('');
         setNewRole('');
         setSelectedFile(null);
@@ -210,7 +210,7 @@ export default function Workspaces() {
         body: JSON.stringify({ userId: user?.id, name: editingName.trim() })
       });
       if (res.ok) {
-        setWorkspaces(workspaces.map(w => w.id === ws.id ? { ...w, name: editingName.trim() } : w));
+        setWorkspaces(prev => prev.map(w => w.id === ws.id ? { ...w, name: editingName.trim() } : w));
       }
     } catch (err) {
       console.error('Failed to rename', err);
@@ -449,7 +449,7 @@ export default function Workspaces() {
 
                   {/* Action buttons top-right (non-active) */}
                   {!isActive && !isEditing && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3 flex items-center gap-1">
                       <button
                         onClick={(e) => startEdit(e, ws)}
                         className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all rounded"
