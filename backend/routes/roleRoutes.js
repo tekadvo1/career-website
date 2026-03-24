@@ -1074,7 +1074,7 @@ router.get('/my-projects', async (req, res) => {
 // DELETE /api/role/project/:id - Delete a project
 router.delete('/project/:id', async (req, res) => {
     const { id } = req.params;
-    const { userId } = req.body;
+    const userId = req.body.userId || req.query.userId;
 
     if (!id || !userId) {
         return res.status(400).json({ error: 'Project ID and User ID are required' });
@@ -1107,7 +1107,7 @@ router.put('/project/:id', async (req, res) => {
     try {
         await pool.query(
             "UPDATE user_projects SET title = COALESCE($1, title), description = COALESCE($2, description), status = COALESCE($3, status), last_updated = NOW() WHERE id = $4 AND user_id = $5",
-            [title, description, status, id, userId]
+            [title ?? null, description ?? null, status ?? null, id, userId]
         );
         res.json({ success: true, message: "Project updated successfully" });
         

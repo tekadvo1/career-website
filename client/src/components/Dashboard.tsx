@@ -173,7 +173,7 @@ export default function Dashboard() {
     const user = (getUser() ?? {});
     if (!user.id) return;
     try {
-      const res = await apiFetch(`/api/role/project/${projectId}`, {
+      const res = await apiFetch(`/api/role/project/${projectId}?userId=${user.id}`, {
         method: 'DELETE',
         body: JSON.stringify({ userId: user.id })
       });
