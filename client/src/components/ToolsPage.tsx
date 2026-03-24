@@ -7,16 +7,13 @@ import {
   LayoutGrid,
   Terminal,
   MessageSquare,
-  ChevronRight,
-  Zap
+  ChevronRight
 } from 'lucide-react';
-import { getUser } from '../utils/auth';
 
 export default function ToolsPage() {
   const navigate = useNavigate();
-  const user = (getUser() ?? {}) as any;
-  const aiCredits = user.ai_credits || 0;
-  const xpAvailable = user.available_xp || 0;
+
+
 
   const toolCategories = [
     {
@@ -77,17 +74,7 @@ export default function ToolsPage() {
                   <p className="text-xs text-slate-500 mt-0.5">Access all your extra career, study, and productivity utilities</p>
                </div>
             </div>
-            {/* Gamification Balances */}
-            <div className="hidden sm:flex gap-3">
-               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <Zap className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-bold text-amber-600">{xpAvailable.toLocaleString()} XP</span>
-               </div>
-               <div className="flex items-center gap-2 bg-violet-50 border border-violet-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <Sparkles className="w-4 h-4 text-violet-500" />
-                  <span className="text-sm font-bold text-violet-600">{aiCredits.toLocaleString()} AI Credits</span>
-               </div>
-            </div>
+
           </div>
         </div>
       </div>
