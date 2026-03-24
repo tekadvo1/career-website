@@ -301,15 +301,25 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// Serve static assets in production
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path');
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+// Serve static assets — always serve in any environment when dist exists
+const distPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
 
+  // SPA fallback — send index.html for ALL non-API routes so React Router works
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
   });
+  console.log('Serving React app from:', distPath);
+} else {
+  // Dev mode — no built frontend
+  app.get('/', (req, res) => res.json({ status: 'API running', env: process.env.NODE_ENV }));
+  console.log('No dist folder found — API-only mode');
 }
+
 
 // Initialize Cron Jobs
 require('./cron/streakEmails');
