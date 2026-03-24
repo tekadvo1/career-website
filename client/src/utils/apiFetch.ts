@@ -40,9 +40,15 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   const publicRoutes = ['/login', '/signup', '/signin', '/p/', '/portfolio/', '/about', '/contact', '/privacy', '/terms', '/cookies', '/admin-login', '/admindashboard'];
   const isPublicPage = publicRoutes.some(route => window.location.pathname.startsWith(route));
 
-  if ((response.status === 401 || response.status === 403) && isLocalRequest && !isPublicPage) {
+  if ((response.status === 401 || response.status === 403) && isLocalRequest && !isPublicPage && !window.location.pathname.startsWith('/admin')) {
     clearSession();
     window.location.href = '/signin';
+  }
+
+  // Security Feature 3: Global Maintenance Mode Interceptor
+  // If the server returns a 503 from our backend, redirect the user immediately
+  if (response.status === 503 && isLocalRequest && !window.location.pathname.startsWith('/admin') && window.location.pathname !== '/maintenance') {
+    window.location.href = '/maintenance';
   }
 
   return response;

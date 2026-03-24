@@ -42,6 +42,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
 import ScrollToTop from './components/ScrollToTop';
 import FeedbackWidget from './components/FeedbackWidget';
+import Maintenance from './pages/Maintenance';
 import { getToken, getUser, clearSession } from './utils/auth';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
@@ -108,6 +109,7 @@ function App() {
           <Route path="/cookie-policy"        element={<CookiePolicy />} />
           <Route path="/terms"                element={<TermsAndConditions />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/maintenance"          element={<Maintenance />} />
 
           {/* ── Auth pages (redirect away if already logged in) ──────────── */}
           <Route path="/signup"          element={<RedirectIfLoggedIn><SignUp /></RedirectIfLoggedIn>} />

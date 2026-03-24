@@ -5,7 +5,7 @@ import {
   RefreshCw, Check, X, Search, ChevronLeft, ChevronRight, Eye,
   TrendingUp, Zap, BookOpen, Trophy, AlertCircle, Send, Bell,
   Cpu, Database, Server, CheckCircle2, CalendarDays,
-  Target,
+  Target, Globe, Clock, LogOut, Info, AlertTriangle, XCircle,
   Power
 } from 'lucide-react';
 import {
