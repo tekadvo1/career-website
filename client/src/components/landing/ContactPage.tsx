@@ -232,10 +232,10 @@ export default function ContactPage() {
               <h3 className="font-bold text-white text-sm mb-1.5">Email Support</h3>
               <p className="text-sm text-gray-500 mb-2">For any general queries or support requests.</p>
               <a
-                href="mailto:hello@findstreak.com"
-                className="text-sm text-teal-400 hover:text-teal-300 transition-colors font-medium"
+                href="mailto:supportfindstreak@tekadvo.com"
+                className="text-sm text-teal-400 hover:text-teal-300 transition-colors font-medium break-all"
               >
-                hello@findstreak.com
+                supportfindstreak@tekadvo.com
               </a>
             </motion.div>
 

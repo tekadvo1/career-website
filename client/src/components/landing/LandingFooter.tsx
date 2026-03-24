@@ -59,7 +59,7 @@ export default function LandingFooter() {
                 { Icon: Twitter, href: '#' },
                 { Icon: Github, href: '#' },
                 { Icon: Linkedin, href: '#' },
-                { Icon: Mail, href: 'mailto:hello@findstreak.com' },
+                { Icon: Mail, href: 'mailto:supportfindstreak@tekadvo.com' },
               ].map(({ Icon, href }, i) => (
                 <a
                   key={i}
