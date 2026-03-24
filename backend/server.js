@@ -21,7 +21,13 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Security Middleware
-app.use(helmet());
+// Relax Helmet CSP to allow Vite/React inline scripts to execute and prevent "white screen of death"
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
 // Rate Limiting
 app.set('trust proxy', 1); // Trust first proxy (necessary for Railway/Heroku/etc)
@@ -33,19 +39,27 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// CORS — only allow requests from findstreak.com and local dev
+// CORS — only allow requests from known domains
 const allowedOrigins = [
   'https://www.findstreak.com',
   'https://findstreak.com',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
+
+// Add dynamic FRONTEND_URL (like the Railway Staging URL) if it exists
+if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+// Support for any Railway auto-generated domain in dev/staging
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin or known origin
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.up.railway.app') || origin.endsWith('.railway.app')) {
       callback(null, true);
     } else {
+      console.warn(`Blocked CORS request from origin: ${origin}`);
       callback(new Error(`CORS: origin '${origin}' not allowed`));
     }
   },
