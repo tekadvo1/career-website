@@ -1119,4 +1119,79 @@ router.put('/project/:id', async (req, res) => {
     }
 });
 
+// POST /api/role/custom-roadmap-phase - Generate a custom roadmap phase based on a user prompt
+router.post('/custom-roadmap-phase', async (req, res) => {
+    const { role, prompt } = req.body;
+    if (!role || !prompt) {
+        return res.status(400).json({ error: 'Role and prompt are required' });
+    }
+
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const apiKey = process.env.OPENAI_API_KEY;
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are an expert technical career coach. Your task is to generate a SINGLE new Custom phase for a learning roadmap.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Role: ${role}\nUser Request: ${prompt}\n\nCreate exactly ONE customized roadmap phase that directly addresses the User Request. Return ONLY the JSON object for the phase with the following structure:\n{
+  "phase": "Phase Title",
+  "duration": "e.g. 3 weeks",
+  "difficulty": "Beginner/Intermediate/Advanced",
+  "category": "Custom",
+  "description": "Short explanation of this custom phase.",
+  "topics": [
+    {
+      "name": "Topic Name",
+      "emoji": "💻",
+      "description": "What they will learn.",
+      "subtopics": ["Concept 1", "Concept 2"]
+    }
+  ],
+  "skills_covered": ["Skill 1", "Skill 2"],
+  "projects": [
+    { "name": "Mini Project", "description": "What to build", "difficulty": "Intermediate" }
+  ]
+}\nDo not wrap in markdown or code fences, return pure JSON.`
+                    }
+                ],
+                temperature: 0.7
+            })
+        });
+
+        const data = await response.json();
+        const content = data.choices[0].message.content;
+
+        let phaseData;
+        try {
+            const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/```\n([\s\S]*?)\n```/);
+            const jsonText = jsonMatch ? jsonMatch[1] : content;
+            phaseData = JSON.parse(jsonText);
+        } catch (e) {
+            const startIndex = content.indexOf('{');
+            const endIndex = content.lastIndexOf('}');
+            if (startIndex !== -1 && endIndex !== -1) {
+                phaseData = JSON.parse(content.substring(startIndex, endIndex + 1));
+            } else {
+                phaseData = JSON.parse(content);
+            }
+        }
+        res.json({ success: true, phase: phaseData });
+    } catch (error) {
+        console.error('Custom mapping phase error:', error);
+        res.status(500).json({ error: 'Failed to generate custom phase' });
+    }
+});
+
 module.exports = router;

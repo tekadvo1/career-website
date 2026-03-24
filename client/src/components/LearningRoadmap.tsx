@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { getToken } from '../utils/auth';
 import { 
   Calendar, Target, Sparkles, CheckCircle2, Circle, ArrowRight,
-  BookOpen, Trophy, MessageSquare,
+  BookOpen, Trophy, MessageSquare, Plus,
   RefreshCw, GitBranch, Radio, Share2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -191,6 +191,11 @@ export default function LearningRoadmap() {
   
   // Real-time tracking state
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
+  
+  // Custom Roadmap Phase Modals & State
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [isGeneratingCustom, setIsGeneratingCustom] = useState(false);
   
   // Feature flags / Modals
   const [isLoading, setIsLoading] = useState(true);
@@ -413,6 +418,43 @@ export default function LearningRoadmap() {
             roadmap 
         } 
     });
+  };
+
+  const handleGenerateCustomPhase = async () => {
+    setIsGeneratingCustom(true);
+    try {
+        const response = await apiFetch('/api/role/custom-roadmap-phase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role, prompt: customPrompt })
+        });
+        const data = await response.json();
+        if (data.success && data.phase) {
+            const updatedRoadmap = [...roadmap, data.phase];
+            setRoadmap(updatedRoadmap);
+            setIsAddingCustom(false);
+            setCustomPrompt("");
+            
+            // Save locally so it persists
+            const saved = sessionStorage.getItem('lastRoleAnalysis');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.analysis) {
+                        parsed.analysis.roadmap = updatedRoadmap;
+                        sessionStorage.setItem('lastRoleAnalysis', JSON.stringify(parsed));
+                    }
+                } catch(e) {}
+            }
+            
+            // Automatically switch to Roadmap Tree view once generated
+            navigate("/roadmap-tree", { state: { role, roadmap: updatedRoadmap } });
+        }
+    } catch (err) {
+        console.error("Failed to generate custom phase", err);
+    } finally {
+        setIsGeneratingCustom(false);
+    }
   };
 
   if (isLoading || loadingProgress < 100) {
@@ -665,6 +707,64 @@ export default function LearningRoadmap() {
         </div>
       </div>
       </div>
+
+      {/* Floating Plus Button for generating custom roadmap phase */}
+      <button 
+        onClick={() => setIsAddingCustom(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgb(16,185,129,0.3)] hover:shadow-[0_8px_30px_rgb(16,185,129,0.5)] hover:scale-105 hover:-translate-y-1 transition-all z-40 border border-emerald-400/30"
+        title="Add Custom Roadmap Phase"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      {/* Custom Phase Modal */}
+      {isAddingCustom && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100/50 rounded-full blur-3xl -mr-10 -mt-10"></div>
+            
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 flex items-center gap-2 relative z-10 tracking-tight">
+              <Sparkles className="text-emerald-500 w-6 h-6 flex-shrink-0" /> Add Custom Phase
+            </h3>
+            <p className="text-sm font-medium text-slate-600 mb-6 relative z-10">
+              What specific topic or tech stack would you like to add? Our AI will generate a tailored learning phase for it.
+            </p>
+            
+            <div className="relative z-10">
+              <input 
+                type="text"
+                className="w-full px-4 py-3.5 bg-slate-50 rounded-xl border-2 border-slate-200 focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors mb-6 font-medium text-slate-800"
+                placeholder="e.g. Master LangChain & LLM Agents"
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                autoFocus
+              />
+            </div>
+            
+            <div className="flex justify-end gap-3 relative z-10">
+              <Button 
+                variant="outline" 
+                onClick={() => { setIsAddingCustom(false); setCustomPrompt(""); }}
+                className="font-bold border-2 border-slate-200 hover:bg-slate-100 px-6"
+                disabled={isGeneratingCustom}
+              >
+                Cancel
+              </Button>
+              <Button 
+                disabled={!customPrompt.trim() || isGeneratingCustom} 
+                onClick={handleGenerateCustomPhase}
+                className="font-bold border-2 border-emerald-600 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all text-white px-6"
+              >
+                {isGeneratingCustom ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin flex-shrink-0" /> Generating...
+                  </span>
+                ) : "Generate & Add"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
