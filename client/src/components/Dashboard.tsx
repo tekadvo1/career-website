@@ -251,9 +251,9 @@ export default function Dashboard() {
         // A project was started/updated elsewhere — re-fetch the full snapshot
         apiFetch(`/api/realtime/notify`, {
           method: 'POST',
-          body: JSON.stringify({ userId: user.id }),
+          body: JSON.stringify({ userId: user.id, event: 'snapshot' }),
         });
-        showToast('📡 Project update received — dashboard synced!');
+        // showToast('📡 Project update received — dashboard synced!'); // Removed to not double-toast on Save/Delete
       } catch { /* ignore */ }
     });
 
