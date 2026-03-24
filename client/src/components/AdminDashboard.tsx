@@ -4,8 +4,9 @@ import {
   Users, BarChart2, MessageSquare, Activity, Shield, Mail, Trash2,
   RefreshCw, Check, X, Search, ChevronLeft, ChevronRight, Eye,
   TrendingUp, Zap, BookOpen, Trophy, AlertCircle, Send, Bell,
-  Cpu, Database, Server, CheckCircle2, Clock, Globe, LogOut,
-  AlertTriangle, Info, XCircle
+  Cpu, Database, Server, CheckCircle2, CalendarDays,
+  Target,
+  Power
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -301,6 +302,8 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
   // Toast & confirm modal state
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -323,7 +326,7 @@ export default function AdminDashboard() {
     setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${adminToken}` };
-      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes, topUsersRes, summaryRes] = await Promise.all([
+      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes, topUsersRes, summaryRes, maintenanceRes] = await Promise.all([
         apiFetch('/api/admin/stats', { headers }).then(r => r.json()),
         apiFetch('/api/admin/signup-trends', { headers }).then(r => r.json()),
         apiFetch('/api/admin/top-roles', { headers }).then(r => r.json()),
@@ -332,6 +335,7 @@ export default function AdminDashboard() {
         apiFetch('/api/admin/system-health', { headers }).then(r => r.json()),
         apiFetch('/api/admin/top-users', { headers }).then(r => r.json()),
         apiFetch('/api/admin/platform-summary', { headers }).then(r => r.json()),
+        apiFetch('/api/admin/maintenance', { headers }).then(r => r.json()).catch(() => ({})),
       ]);
       if (statsRes.success) setStats(statsRes.stats);
       if (trendsRes.success) setSignupTrends(trendsRes.trends.map((t: any) => ({ date: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), count: parseInt(t.count) })));
@@ -341,6 +345,7 @@ export default function AdminDashboard() {
       if (healthRes.success) setHealth(healthRes.health);
       if (topUsersRes.success) setTopUsers(topUsersRes.users);
       if (summaryRes.success) setSummary(summaryRes.summary);
+      if (maintenanceRes.success) setMaintenanceMode(maintenanceRes.maintenance);
     } catch (err) {
       console.error('Admin fetch error:', err);
     } finally {
@@ -404,6 +409,25 @@ export default function AdminDashboard() {
     setBroadcastMsg(''); setBroadcastSubject('');
   };
 
+  const toggleMaintenance = async () => {
+    if (!window.confirm(`Are you sure you want to turn Maintenance Mode ${maintenanceMode ? 'OFF' : 'ON'}?`)) return;
+    setTogglingMaintenance(true);
+    try {
+      const res = await apiFetch('/api/admin/maintenance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+        body: JSON.stringify({ enabled: !maintenanceMode })
+      }).then(r => r.json());
+      if (res.success) {
+        setMaintenanceMode(res.maintenance);
+        showToast(`Maintenance Mode is now ${res.maintenance ? 'ON (Blocking users)' : 'OFF (Live)'}`, res.maintenance ? 'error' : 'success');
+      }
+    } catch (err) {
+      showToast('Failed to toggle maintenance mode', 'error');
+    }
+    setTogglingMaintenance(false);
+  };
+
   if (!adminToken) return null;
 
   const tabs = [
@@ -450,6 +474,22 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {/* Maintenance Toggle */}
+          <button 
+            onClick={toggleMaintenance}
+            disabled={togglingMaintenance || loading}
+            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg transition-colors border ${
+              maintenanceMode 
+                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 animate-pulse' 
+                : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
+            }`}
+          >
+            <Power className="w-3.5 h-3.5" />
+            {maintenanceMode ? 'MAINTENANCE ON' : 'Maintenance Off'}
+          </button>
+          
+          <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
           <button onClick={() => { fetchData(); if (activeTab === 'users') fetchUsers(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-600' : ''}`} />

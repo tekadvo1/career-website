@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const nodemailer = require('nodemailer');
+const platformState = require('../utils/platformState');
 
 // ── Mailer setup ──────────────────────────────────────────────────
 const ADMIN_EMAIL = 'supportfindstreak@tekadvo.com';
@@ -364,6 +365,23 @@ router.post('/notify-admin', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to send alert' });
+  }
+});
+
+// ── GET & POST /api/admin/maintenance ─ Toggle Maintenance Mode ───
+router.get('/maintenance', (req, res) => {
+  res.json({ success: true, maintenance: platformState.isMaintenanceMode() });
+});
+
+router.post('/maintenance', async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    await pool.query('UPDATE platform_settings SET maintenance_mode = $1, updated_at = CURRENT_TIMESTAMP', [!!enabled]);
+    platformState.setMaintenanceMode(!!enabled);
+    res.json({ success: true, maintenance: platformState.isMaintenanceMode() });
+  } catch (err) {
+    console.error('Maintenance toggle error:', err);
+    res.status(500).json({ error: 'Failed to toggle maintenance mode' });
   }
 });
 

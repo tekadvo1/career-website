@@ -11,6 +11,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const platformState = require('./utils/platformState');
 
 
 const helmet = require('helmet');
@@ -103,6 +104,18 @@ const adminAuthRoutes = require('./routes/adminAuthRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 const { adminProtect } = require('./middleware/adminMiddleware');
+
+// --- Maintenance Mode Middleware ---
+app.get('/api/maintenance-status', (req, res) => {
+  res.json({ maintenance: platformState.isMaintenanceMode() });
+});
+
+app.use('/api', (req, res, next) => {
+  if (platformState.isMaintenanceMode() && !req.path.startsWith('/admin-auth') && !req.path.startsWith('/admin')) {
+    return res.status(503).json({ error: 'System is currently undergoing maintenance. Please try again shortly.', maintenance: true });
+  }
+  next();
+});
 
 // --- Public routes (no auth required) ---
 app.use('/api/auth', authRoutes);
@@ -219,6 +232,24 @@ const updateSchema = async () => {
         END IF;
       END $$;
     `);
+
+    // Create platform_settings table for maintenance mode
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        id SERIAL PRIMARY KEY,
+        maintenance_mode BOOLEAN DEFAULT FALSE,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Initialize platform settings if empty, and sync memory state
+    const settingsRes = await client.query('SELECT maintenance_mode FROM platform_settings ORDER BY id LIMIT 1');
+    if (settingsRes.rows.length === 0) {
+      await client.query('INSERT INTO platform_settings (maintenance_mode) VALUES (FALSE)');
+    } else {
+      platformState.setMaintenanceMode(settingsRes.rows[0].maintenance_mode);
+    }
+    console.log(`Platform Status: Maintenance Mode is ${platformState.isMaintenanceMode() ? 'ON' : 'OFF'}`);
 
     // Create project_structures table for caching AI-generated structures per role
     await client.query(`
