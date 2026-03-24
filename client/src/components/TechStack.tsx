@@ -18,18 +18,44 @@ export default function TechStack() {
     const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
 
     useEffect(() => {
+        let currentRole = "Software Engineer";
         const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
             try {
                 const lastRoleState = JSON.parse(lastStateRaw);
                 if (lastRoleState?.role) {
-                    setRole(cleanRole(lastRoleState.role));
+                    currentRole = cleanRole(lastRoleState.role);
+                    setRole(currentRole);
                 }
             } catch (e) {}
         }
+        
+        const savedResult = localStorage.getItem(`techStack_${currentRole}`);
+        if (savedResult) {
+            try {
+                setResult(JSON.parse(savedResult));
+            } catch (err) {}
+        }
     }, []);
 
+    useEffect(() => {
+        if (!role) return;
+        const savedResult = localStorage.getItem(`techStack_${role}`);
+        if (savedResult) {
+            try {
+                setResult(JSON.parse(savedResult));
+            } catch (err) {}
+        } else {
+            setResult(null);
+        }
+    }, [role]);
+
     const handleAnalyze = async () => {
+        if (result) {
+            const confirmRefresh = window.confirm("Are you sure you want to refresh? Your current data will be gone and you'll get new trending information.");
+            if (!confirmRefresh) return;
+        }
+
         setIsLoading(true);
         setResult(null);
 
@@ -47,6 +73,7 @@ export default function TechStack() {
             const data = await res.json();
             if (data.languages || data.frameworks || data.tools) {
                 setResult(data);
+                localStorage.setItem(`techStack_${role}`, JSON.stringify(data));
             } else {
                 showAlert("Failed to analyze. Please try again.", "error");
             }
