@@ -146,7 +146,9 @@ function App() {
           <Route path="/project-structure"       element={<ProtectedRoute><ProjectStructurePage /></ProtectedRoute>} />
           <Route path="/settings"                element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/tools"                   element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
-          <Route path="/admindashboard"           element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          {/* Admin routes — use their own admin token guard, NOT regular ProtectedRoute */}
+          <Route path="/admin-login"             element={<AdminLogin />} />
+          <Route path="/admindashboard"          element={<AdminDashboard />} />
 
           {/* ── 404 ─────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFoundPage />} />
