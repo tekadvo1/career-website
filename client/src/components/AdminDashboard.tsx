@@ -615,7 +615,27 @@ export default function AdminDashboard() {
                       <p className="text-[10px] text-slate-400">Ranked by streak · projects · XP</p>
                     </div>
                     <button
-                      onClick={() => window.open(`/api/admin/export-users`, '_blank')}
+                      onClick={async () => {
+                        try {
+                          const res = await apiFetch('/api/admin/export-users', {
+                            headers: { Authorization: `Bearer ${adminToken}` }
+                          });
+                          if (!res.ok) throw new Error('Export failed');
+                          
+                          const blob = await res.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `findstreak-users-${Date.now()}.csv`;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                          showToast('Export downloaded successfully!', 'success');
+                        } catch (err) {
+                          showToast('Failed to export users CSV', 'error');
+                        }
+                      }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
                     >
                       <Database className="w-3.5 h-3.5" /> Export CSV
