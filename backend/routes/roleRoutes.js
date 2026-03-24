@@ -329,12 +329,12 @@ router.post('/projects', async (req, res) => {
        : "The user is starting fresh or has not provided a specific resume.";
 
     let systemPrompt = `You are a technical mentor designing portfolio projects.`;
-    let userTask = `Task: Suggest 15 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
+    let userTask = `Task: Suggest 9 comprehensive, outcome-driven portfolio projects that would help someone get hired for this role.
             - YOU MUST PROVIDE EXACTLY: 
-                - 5 Beginner Projects
-                - 5 Intermediate Projects
-                - 5 Advanced Projects
-            - Ensure at least 3-4 projects are marked as "trending" (using modern tech stacks).
+                - 3 Beginner Projects
+                - 3 Intermediate Projects
+                - 3 Advanced Projects
+            - Ensure at least 2-3 projects are marked as "trending" (using modern tech stacks).
             - FOCUS ON CAREER OUTCOMES. NOT just "learning".`;
 
     if (projectType === 'trending') {
