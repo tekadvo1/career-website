@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, Sparkles, X } from 'lucide-react';
+import { UploadCloud, FileText, Settings, Rocket, Code, Terminal, BrainCircuit, Sparkles, X, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { apiFetch } from '../utils/apiFetch';
@@ -14,6 +14,7 @@ export default function TechStack() {
     
     const [isLoading, setIsLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
+    const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
 
     const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
 
@@ -50,11 +51,16 @@ export default function TechStack() {
         }
     }, [role]);
 
-    const handleAnalyze = async () => {
+    const handleAnalyze = () => {
         if (result) {
-            const confirmRefresh = window.confirm("Are you sure you want to refresh? Your current data will be gone and you'll get new trending information.");
-            if (!confirmRefresh) return;
+            setShowRefreshConfirm(true);
+            return;
         }
+        executeAnalyze();
+    };
+
+    const executeAnalyze = async () => {
+        setShowRefreshConfirm(false);
 
         setIsLoading(true);
         setResult(null);
@@ -329,6 +335,42 @@ export default function TechStack() {
                     </div>
                 </div>
             </div>
+
+            {/* Custom Refresh Confirmation Modal */}
+            {showRefreshConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-slate-100 flex items-center gap-3 bg-gradient-to-r from-amber-50 to-white">
+                            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0">
+                                <AlertCircle className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-slate-900">Refresh Tech Stack?</h3>
+                                <p className="text-[12px] text-slate-500 mt-0.5">Your current data will be replaced.</p>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <p className="text-sm text-slate-700 leading-relaxed mb-6">
+                                Are you sure you want to generate a new tech stack? The current information will be lost and you will receive new, real-time trending data from the AI.
+                            </p>
+                            <div className="flex items-center justify-end gap-3 pb-1">
+                                <button 
+                                    onClick={() => setShowRefreshConfirm(false)}
+                                    className="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-sm font-semibold transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={executeAnalyze}
+                                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold shadow-md shadow-amber-500/20 transition-all active:scale-95"
+                                >
+                                    Yes, Refresh Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
