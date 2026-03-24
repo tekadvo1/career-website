@@ -542,19 +542,19 @@ export default function AdminDashboard() {
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                   <SectionHeader title="Platform Feature Usage" subtitle="Relative engagement across features" />
                   <div className="flex flex-col md:flex-row items-center gap-6">
-                    <ResponsiveContainer width={260} height={200}>
-                      <PieChart>
+                    <ResponsiveContainer width={260} height={240}>
+                      <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                         <Pie data={[
                           { name: 'Roadmaps', value: stats?.totalRoadmaps || 0 },
                           { name: 'Projects', value: stats?.totalProjects || 0 },
                           { name: 'AI Chats', value: stats?.totalChats || 0 },
                           { name: 'Quizzes', value: stats?.totalQuiz || 0 },
                           { name: 'Feedback', value: stats?.totalFeedback || 0 },
-                        ]} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
+                        ]} cx="50%" cy="45%" outerRadius={75} innerRadius={45} paddingAngle={2} dataKey="value" stroke="none">
                           {[0,1,2,3,4].map(i => <Cell key={i} fill={COLORS[i]} />)}
                         </Pie>
-                        <Tooltip />
-                        <Legend />
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Legend wrapperStyle={{ fontSize: '11px', fontWeight: 'bold' }} />
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="grid grid-cols-2 gap-3 flex-1">
