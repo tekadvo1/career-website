@@ -1,29 +1,42 @@
-const pool = require('../config/db');
+const jwt = require('jsonwebtoken');
 
-const ADMIN_EMAIL = 'supportfindstreak@tekadvo.com';
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.JWT_SECRET + '_admin_secure';
 
-const adminOnly = async (req, res, next) => {
+/**
+ * adminProtect - verifies the dedicated admin JWT token
+ * Reads from Authorization: Bearer <adminToken>
+ */
+const adminProtect = (req, res, next) => {
   try {
-    // req.user is already set by the protect middleware
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7)
+      : null;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Admin token required' });
     }
 
-    const result = await pool.query('SELECT email, is_admin FROM users WHERE id = $1', [req.user.id]);
-    const user = result.rows[0];
+    const decoded = jwt.verify(token, ADMIN_JWT_SECRET);
 
-    if (!user) return res.status(401).json({ error: 'User not found' });
-
-    // Allow access if email matches admin email OR is_admin flag is set
-    if (user.email === ADMIN_EMAIL || user.is_admin === true) {
-      return next();
+    if (!decoded.isAdmin) {
+      return res.status(403).json({ error: 'Not an admin token' });
     }
 
-    return res.status(403).json({ error: 'Admin access required' });
+    req.adminUser = decoded;
+    next();
   } catch (err) {
-    console.error('Admin middleware error:', err);
-    return res.status(500).json({ error: 'Server error' });
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Admin session expired. Please log in again.' });
+    }
+    return res.status(401).json({ error: 'Invalid admin token' });
   }
 };
 
-module.exports = { adminOnly };
+/**
+ * adminOnly (legacy) - kept for backwards compatibility
+ * Uses the same adminProtect logic
+ */
+const adminOnly = adminProtect;
+
+module.exports = { adminOnly, adminProtect };

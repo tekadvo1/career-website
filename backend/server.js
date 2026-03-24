@@ -99,14 +99,16 @@ const workspaceRoutes = require('./routes/workspaceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const projectStructureRoutes = require('./routes/projectStructureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const adminAuthRoutes = require('./routes/adminAuthRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
-const { adminOnly } = require('./middleware/adminMiddleware');
+const { adminProtect } = require('./middleware/adminMiddleware');
 
 // --- Public routes (no auth required) ---
 app.use('/api/auth', authRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/admin-auth', adminAuthRoutes);   // Public admin login — no user JWT needed
 
 // --- Protected routes (JWT required) ---
 app.use('/api/ai',          protect, aiRoutes);
@@ -117,7 +119,7 @@ app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
-app.use('/api/admin',       protect, adminOnly, adminRoutes);
+app.use('/api/admin',       adminProtect, adminRoutes);  // Uses admin JWT, NOT user JWT
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {

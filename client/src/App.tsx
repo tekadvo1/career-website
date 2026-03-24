@@ -39,6 +39,7 @@ import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
+import AdminLogin from './components/AdminLogin';
 import ScrollToTop from './components/ScrollToTop';
 import FeedbackWidget from './components/FeedbackWidget';
 import { getToken, getUser, clearSession } from './utils/auth';
@@ -100,6 +101,7 @@ function App() {
           <Route path="/contact"              element={<ContactPage />} />
           <Route path="/contact-us"           element={<ContactPage />} />
           <Route path="/contact-us/"          element={<ContactPage />} />
+          <Route path="/admin-login"           element={<AdminLogin />} />
           <Route path="/privacy"              element={<PrivacyPolicy />} />
           <Route path="/privacy-policy"       element={<PrivacyPolicy />} />
           <Route path="/cookies"              element={<CookiePolicy />} />

@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getToken, getUser } from '../utils/auth';
 import {
   Users, BarChart2, MessageSquare, Activity, Shield, Mail, Trash2,
   RefreshCw, Check, X, Search, ChevronLeft, ChevronRight, Eye,
   TrendingUp, Zap, BookOpen, Trophy, AlertCircle, Send, Bell,
-  Cpu, Database, Server, CheckCircle2, Clock, Globe
+  Cpu, Database, Server, CheckCircle2, Clock, Globe, LogOut
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -13,7 +12,7 @@ import {
 } from 'recharts';
 import { apiFetch } from '../utils/apiFetch';
 
-const ADMIN_EMAIL = 'supportfindstreak@tekadvo.com';
+const ADMIN_TOKEN_KEY = 'findstreak_admin_token';
 
 const COLORS = ['#10b981', '#14b8a6', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#0ea5e9', '#84cc16', '#f97316'];
 
@@ -203,8 +202,8 @@ const UserDetailModal = ({ userId, onClose, token }: any) => {
 // ─── Main Admin Dashboard ─────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const token = getToken();
-  const user = getUser<{ email?: string; is_admin?: boolean }>();
+  const adminToken = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+  const adminEmail = sessionStorage.getItem('adminEmail') || '';
 
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<any>(null);
@@ -226,16 +225,15 @@ export default function AdminDashboard() {
   const [broadcastResult, setBroadcastResult] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Guard: admin only
+  // Guard: admin token required
   useEffect(() => {
-    if (!token || !user) { navigate('/signin'); return; }
-    if (user.email !== ADMIN_EMAIL && !user.is_admin) { navigate('/dashboard'); return; }
-  }, [token, user, navigate]);
+    if (!adminToken) { navigate('/admin-login'); return; }
+  }, [adminToken, navigate]);
 
   const fetchData = useCallback(async () => {
     setRefreshing(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = { Authorization: `Bearer ${adminToken}` };
       const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes] = await Promise.all([
         apiFetch('/api/admin/stats', { headers }).then(r => r.json()),
         apiFetch('/api/admin/signup-trends', { headers }).then(r => r.json()),
@@ -256,12 +254,12 @@ export default function AdminDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [token]);
+  }, [adminToken]);
 
   const fetchUsers = useCallback(async () => {
     try {
       const res = await apiFetch(`/api/admin/users?page=${userPage}&limit=15&search=${userSearch}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${adminToken}` }
       }).then(r => r.json());
       if (res.success) {
         setUsers(res.users);
@@ -271,7 +269,7 @@ export default function AdminDashboard() {
     } catch (err) {
       console.error('Users fetch error:', err);
     }
-  }, [token, userPage, userSearch]);
+  }, [adminToken, userPage, userSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { if (activeTab === 'users') fetchUsers(); }, [fetchUsers, activeTab]);
@@ -284,14 +282,14 @@ export default function AdminDashboard() {
 
   const deleteUser = async (id: number, username: string) => {
     if (!confirm(`Delete user "${username}"? This is irreversible.`)) return;
-    await apiFetch(`/api/admin/user/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    await apiFetch(`/api/admin/user/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${adminToken}` } });
     fetchUsers();
   };
 
   const resolveFeedback = async (id: number, status: string) => {
     await apiFetch(`/api/admin/feedback/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
       body: JSON.stringify({ status })
     });
     setFeedback(prev => prev.map(f => f.id === id ? { ...f, status } : f));
@@ -302,7 +300,7 @@ export default function AdminDashboard() {
     setBroadcasting(true);
     const res = await apiFetch('/api/admin/broadcast', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
       body: JSON.stringify({ subject: broadcastSubject, message: broadcastMsg })
     }).then(r => r.json());
     setBroadcasting(false);
@@ -310,7 +308,7 @@ export default function AdminDashboard() {
     setBroadcastMsg(''); setBroadcastSubject('');
   };
 
-  if (!user || (user.email !== ADMIN_EMAIL && !user.is_admin)) return null;
+  if (!adminToken) return null;
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart2 },
@@ -323,7 +321,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
-      {selectedUser && <UserDetailModal userId={selectedUser} onClose={() => setSelectedUser(null)} token={token} />}
+      {selectedUser && <UserDetailModal userId={selectedUser} onClose={() => setSelectedUser(null)} token={adminToken} />}
 
       {/* Top Bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
@@ -335,7 +333,7 @@ export default function AdminDashboard() {
             <h1 className="font-black text-slate-900 text-base tracking-tight">FindStreak Admin</h1>
             <p className="text-[10px] text-slate-400 font-medium">
               <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse" />
-              Live Dashboard · {user?.email}
+              Live Dashboard · {adminEmail}
             </p>
           </div>
         </div>
@@ -345,9 +343,13 @@ export default function AdminDashboard() {
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <button onClick={() => navigate('/dashboard')}
-            className="px-3 py-1.5 text-xs font-bold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
-            ← App
+          <button onClick={() => {
+            sessionStorage.removeItem('findstreak_admin_token');
+            sessionStorage.removeItem('adminEmail');
+            navigate('/admin-login');
+          }}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition-colors">
+            <LogOut className="w-3.5 h-3.5" /> Sign Out
           </button>
         </div>
       </div>
@@ -679,7 +681,7 @@ export default function AdminDashboard() {
                   if (!msg) return;
                   await apiFetch('/api/admin/notify-admin', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
                     body: JSON.stringify({ subject: '[FindStreak] Admin Alert', message: msg })
                   });
                   alert('Alert sent to admin email!');
@@ -720,7 +722,7 @@ export default function AdminDashboard() {
                   { label: 'Ping DB', url: '/api/health/db' },
                 ].map(btn => (
                   <button key={btn.label} onClick={async () => {
-                    const res = await fetch(btn.url, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+                    const res = await fetch(btn.url, { headers: { Authorization: `Bearer ${adminToken}` } }).then(r => r.json());
                     alert(JSON.stringify(res, null, 2));
                   }}
                     className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">
