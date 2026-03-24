@@ -22,23 +22,6 @@ export default function ToolsPage() {
 
   const toolCategories = [
     {
-      label: 'Achievements',
-      subtitle: 'View your milestones',
-      icon: <Award className="w-5 h-5 text-emerald-600" />,
-      route: '/achievements',
-      badge: 'NEW',
-      bgColor: 'bg-emerald-100',
-    },
-    {
-      label: 'Quiz & Games',
-      subtitle: 'Play learning games',
-      icon: <Gamepad2 className="w-5 h-5 text-teal-600" />,
-      route: '/quiz-game',
-      badge: 'NEW',
-      bgColor: 'bg-teal-100',
-    },
-
-    {
       label: 'Start New Journey',
       subtitle: 'Analyze new resume',
       icon: <Sparkles className="w-5 h-5 text-purple-600" />,

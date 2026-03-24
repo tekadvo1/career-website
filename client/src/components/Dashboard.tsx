@@ -6,7 +6,7 @@ import Sidebar from './Sidebar';
 import { getToken, getUser } from '../utils/auth';
 import {
   Search, Flame, ChevronRight,
-  Target, Zap, Clock, CheckCircle,
+  Target, Clock, CheckCircle,
   Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
@@ -461,7 +461,7 @@ export default function Dashboard() {
                       <span className="text-emerald-100 text-xs font-medium px-2 py-0.5 rounded border border-white/10">{proj.title}</span>
                     </div>
                     <h2 className="text-2xl font-bold text-white mb-2">{task?.title || 'Continue Your Project'}</h2>
-                    <p className="text-emerald-50 text-sm max-w-xl">Complete your daily task to earn XP points and accelerate your career growth!</p>
+                    <p className="text-emerald-50 text-sm max-w-xl">Complete your daily task to accelerate your career growth!</p>
                   </div>
                   <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto mt-2 md:mt-0">
                     <button onClick={() => {
@@ -476,7 +476,6 @@ export default function Dashboard() {
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <div className="flex gap-2 w-full md:w-auto justify-end">
-                      <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-[10px] font-bold text-amber-300 backdrop-blur-sm border border-white/5"><Zap className="w-3 h-3" /> 50 XP</span>
                       <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded text-[10px] font-medium text-emerald-100 backdrop-blur-sm border border-white/5"><Clock className="w-3 h-3" /> {task?.duration || '30 min'}</span>
                     </div>
                   </div>
@@ -518,7 +517,7 @@ export default function Dashboard() {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-emerald-900">Mission in Progress</h3>
-                <p className="text-xs text-emerald-600">{highlightProject ? <>Select <strong>"{highlightProject}"</strong> below or pick any matching project.</> : 'Pick a project to earn XP!'}</p>
+                <p className="text-xs text-emerald-600">{highlightProject ? <>Select <strong>"{highlightProject}"</strong> below or pick any matching project.</> : 'Pick a project to continue!'}</p>
               </div>
               <button onClick={() => navigate('/missions', { state: { role: selectedRole } })}
                 className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors flex-shrink-0">
@@ -674,7 +673,6 @@ export default function Dashboard() {
                       {/* Footer */}
                       <div className="px-3 py-2 md:px-4 md:py-2.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
                         <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                          <span className="flex items-center gap-1 font-semibold text-slate-600"><Zap className="w-3 h-3 text-amber-500" />{project.metrics?.xp || 500} XP</span>
                           {project.metrics?.matchIncrease && (
                             <span className="font-semibold text-emerald-600">{project.metrics.matchIncrease} boost</span>
                           )}

@@ -466,7 +466,7 @@ export default function AILearningAssistant() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: `Great choice! Here are ${filteredProjects.length} ${action} dashboard projects I recommend for you. Each project is designed to help you build practical skills while earning XP! Click "Start Project" to begin your guided learning journey. 🚀`,
+        content: `Great choice! Here are ${filteredProjects.length} ${action} dashboard projects I recommend for you. Each project is designed to help you build practical skills! Click "Start Project" to begin your guided learning journey. 🚀`,
         timestamp: new Date(),
         projectRecommendations: filteredProjects,
       };
@@ -893,9 +893,7 @@ export default function AILearningAssistant() {
                 <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
               </button>
 
-              <button onClick={() => navigate('/missions')} className="hidden md:flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-purple-400 hover:bg-purple-50 hover:text-purple-700 transition-all shadow-sm" title="Challenge">
-                <Gamepad2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-              </button>
+
 
               <button onClick={() => setShowSettingsModal(true)} className="flex items-center justify-center p-2 sm:p-2.5 bg-white border border-slate-300 text-slate-600 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition-all shadow-sm" title="Settings">
                 <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
@@ -997,7 +995,6 @@ export default function AILearningAssistant() {
                                 <p className="text-xs text-slate-500 mb-3 line-clamp-2">{project.description}</p>
                                 <div className="flex items-center justify-between text-xs font-medium pt-3 border-t border-slate-100 mb-3">
                                   <span className="flex items-center gap-1 text-slate-500"><Clock className="w-3.5 h-3.5" /> {project.duration}</span>
-                                  <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded"><Star className="w-3 h-3 fill-emerald-500 text-emerald-500" /> {project.xpReward} XP</span>
                                 </div>
                                 <div className="flex gap-2 pt-2">
                                   <button onClick={(e) => { e.stopPropagation(); handleStartProject(project); }} className="flex-[2] py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition shadow-sm">
