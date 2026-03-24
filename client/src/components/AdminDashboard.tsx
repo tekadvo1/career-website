@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, BarChart2, MessageSquare, Activity, Shield, Mail, Trash2,
   RefreshCw, Check, X, Search, ChevronLeft, ChevronRight, Eye,
   TrendingUp, Zap, BookOpen, Trophy, AlertCircle, Send, Bell,
-  Cpu, Database, Server, CheckCircle2, Clock, Globe, LogOut
+  Cpu, Database, Server, CheckCircle2, Clock, Globe, LogOut,
+  AlertTriangle, Info, XCircle
 } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -15,6 +16,80 @@ import { apiFetch } from '../utils/apiFetch';
 const ADMIN_TOKEN_KEY = 'findstreak_admin_token';
 
 const COLORS = ['#10b981', '#14b8a6', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#0ea5e9', '#84cc16', '#f97316'];
+
+// ─── Toast System ─────────────────────────────────────────────────────
+type ToastType = 'success' | 'error' | 'info' | 'warning';
+interface ToastItem { id: number; message: string; type: ToastType; }
+
+const ToastContainer = ({ toasts, remove }: { toasts: ToastItem[]; remove: (id: number) => void }) => {
+  const icons = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, info: Info };
+  const colors = {
+    success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+    error: 'bg-rose-50 border-rose-200 text-rose-800',
+    warning: 'bg-amber-50 border-amber-200 text-amber-800',
+    info: 'bg-indigo-50 border-indigo-200 text-indigo-800',
+  };
+  const iconColors = { success: 'text-emerald-500', error: 'text-rose-500', warning: 'text-amber-500', info: 'text-indigo-500' };
+  return (
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+      {toasts.map(t => {
+        const Icon = icons[t.type];
+        return (
+          <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-semibold pointer-events-auto animate-in slide-in-from-right-5 ${colors[t.type]}`}>
+            <Icon className={`w-4 h-4 flex-shrink-0 ${iconColors[t.type]}`} />
+            <span className="flex-1">{t.message}</span>
+            <button onClick={() => remove(t.id)} className="ml-2 opacity-60 hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Confirm Delete Modal ──────────────────────────────────────────────
+const ConfirmDeleteModal = ({ user, onConfirm, onCancel }: { user: any; onConfirm: () => void; onCancel: () => void }) => (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-rose-100 overflow-hidden">
+      <div className="bg-gradient-to-r from-rose-500 to-rose-600 p-5 text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-black text-lg">Delete User Account</h3>
+            <p className="text-rose-100 text-xs">This action cannot be undone</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+              {user?.username?.[0]?.toUpperCase() ?? '?'}
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 text-sm">{user?.username}</p>
+              <p className="text-xs text-slate-500">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600 leading-relaxed mb-6">
+          All data for this user — including projects, roadmap progress, quiz history, chat sessions, and achievements — will be <strong className="text-rose-600">permanently deleted</strong> from the database.
+        </p>
+        <div className="flex gap-3">
+          <button onClick={onCancel}
+            className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={onConfirm}
+            className="flex-1 py-2.5 bg-rose-600 text-white font-bold rounded-xl text-sm hover:bg-rose-700 transition-colors flex items-center justify-center gap-2 shadow-md">
+            <Trash2 className="w-4 h-4" /> Yes, Delete Permanently
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 const StatCard = ({ icon: Icon, label, value, sub, color = 'emerald' }: any) => {
@@ -224,6 +299,18 @@ export default function AdminDashboard() {
   const [broadcasting, setBroadcasting] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // Toast & confirm modal state
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const toastId = useRef(0);
+
+  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+    const id = ++toastId.current;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  }, []);
+
+  const removeToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), []);
 
   // Guard: admin token required
   useEffect(() => {
@@ -280,9 +367,10 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [fetchData, fetchUsers, activeTab]);
 
-  const deleteUser = async (id: number, username: string) => {
-    if (!confirm(`Delete user "${username}"? This is irreversible.`)) return;
+  const deleteUser = async (id: number) => {
     await apiFetch(`/api/admin/user/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${adminToken}` } });
+    setDeleteTarget(null);
+    showToast('User deleted permanently.', 'success');
     fetchUsers();
   };
 
@@ -293,6 +381,7 @@ export default function AdminDashboard() {
       body: JSON.stringify({ status })
     });
     setFeedback(prev => prev.map(f => f.id === id ? { ...f, status } : f));
+    showToast(status === 'resolved' ? 'Feedback marked as resolved.' : 'Feedback reopened.', 'info');
   };
 
   const sendBroadcast = async () => {
@@ -304,7 +393,8 @@ export default function AdminDashboard() {
       body: JSON.stringify({ subject: broadcastSubject, message: broadcastMsg })
     }).then(r => r.json());
     setBroadcasting(false);
-    setBroadcastResult(`✅ Sent to ${res.sent ?? 0} users`);
+    setBroadcastResult(`Sent to ${res.sent ?? 0} users`);
+    showToast(`✅ Broadcast sent to ${res.sent ?? 0} users!`, 'success');
     setBroadcastMsg(''); setBroadcastSubject('');
   };
 
@@ -321,6 +411,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} remove={removeToast} />
+
+      {/* Confirm Delete Modal */}
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          user={deleteTarget}
+          onConfirm={() => deleteUser(deleteTarget.id)}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
       {selectedUser && <UserDetailModal userId={selectedUser} onClose={() => setSelectedUser(null)} token={adminToken} />}
 
       {/* Top Bar */}
@@ -331,17 +433,21 @@ export default function AdminDashboard() {
           </div>
           <div>
             <h1 className="font-black text-slate-900 text-base tracking-tight">FindStreak Admin</h1>
-            <p className="text-[10px] text-slate-400 font-medium">
-              <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1 animate-pulse" />
-              Live Dashboard · {adminEmail}
+            <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-emerald-600 font-bold">Live</span>
+              </span>
+              <span className="text-slate-300">·</span>
+              {stats?.totalUsers ?? '—'} users · {adminEmail}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => { fetchData(); if (activeTab === 'users') fetchUsers(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-600' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
           <button onClick={() => {
             sessionStorage.removeItem('findstreak_admin_token');
@@ -524,8 +630,8 @@ export default function AdminDashboard() {
                               className="p-1.5 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors" title="View Details">
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => deleteUser(u.id, u.username)}
-                              className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors" title="Delete User">
+                            <button onClick={() => setDeleteTarget(u)}
+                              className="p-1.5 hover:bg-rose-50 text-rose-500 rounded-lg transition-colors" title="Delete User">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -684,7 +790,8 @@ export default function AdminDashboard() {
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
                     body: JSON.stringify({ subject: '[FindStreak] Admin Alert', message: msg })
                   });
-                  alert('Alert sent to admin email!');
+                  showToast('Alert email sent to admin!', 'success');
+                  (document.getElementById('alertMsg') as HTMLInputElement).value = '';
                 }}
                   className="px-4 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5" /> Send Alert
@@ -722,8 +829,10 @@ export default function AdminDashboard() {
                   { label: 'Ping DB', url: '/api/health/db' },
                 ].map(btn => (
                   <button key={btn.label} onClick={async () => {
-                    const res = await fetch(btn.url, { headers: { Authorization: `Bearer ${adminToken}` } }).then(r => r.json());
-                    alert(JSON.stringify(res, null, 2));
+                    try {
+                      const res = await fetch(btn.url, { headers: { Authorization: `Bearer ${adminToken}` } }).then(r => r.json());
+                      showToast(`${btn.label}: ${JSON.stringify(res)}`, 'info');
+                    } catch { showToast('Ping failed', 'error'); }
                   }}
                     className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">
                     {btn.label}
