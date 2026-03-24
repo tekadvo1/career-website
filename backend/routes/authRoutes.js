@@ -4,41 +4,17 @@ const { registerUser, verifyEmail, loginUser, googleCallback, forgotPassword, re
 const passport = require('passport');
 
 // @route   POST /api/auth/register
-// @desc    Register a new user
-// @access  Public
 router.post('/register', registerUser);
-
-// @route   POST /api/auth/verify-email
-// @desc    Verify user email
-// @access  Public
 router.post('/verify-email', verifyEmail);
-
-// @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
 router.post('/login', loginUser);
-
-// @route   POST /api/auth/forgot-password
-// @desc    Request password reset
-// @access  Public
 router.post('/forgot-password', forgotPassword);
-
-// @route   POST /api/auth/reset-password
-// @desc    Reset password
-// @access  Public
 router.post('/reset-password', resetPassword);
 
-// @route   GET /api/auth/google
-// @desc    Redirect to Google OAuth
-// @access  Public
+// Google OAuth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// @route   GET /api/auth/google/callback
-// @desc    Google OAuth Callback
-// @access  Public
 router.get(
-  '/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/signin', session: false }), 
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/signin', session: false }),
   googleCallback
 );
 
@@ -474,6 +450,14 @@ router.post('/feedback', protect, async (req, res) => {
        ON CONFLICT DO NOTHING`,
       [req.user.id, name || req.user.username, email || req.user.email, message, page_path, type]
     ).catch(() => {}); // Silently fail if table doesn't exist yet
+
+    // Notify admin immediately (non-blocking)
+    notifyNewFeedback(
+      name || req.user.username || 'Unknown',
+      email || req.user.email || 'No email',
+      message,
+      page_path
+    );
 
     res.json({ success: true });
   } catch (error) {

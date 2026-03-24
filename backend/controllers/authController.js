@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { sendVerificationEmail } = require('../utils/email');
+const { notifyNewUser } = require('../utils/adminNotify');
 
 const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
@@ -34,6 +35,9 @@ const registerUser = async (req, res) => {
 
     // Send verification email
     await sendVerificationEmail(email, verificationToken);
+
+    // Notify admin of new signup (non-blocking)
+    notifyNewUser(username, email, 'email');
 
     res.status(201).json({
       status: 'success',

@@ -47,6 +47,12 @@ passport.use(
           [username, email, hashedPassword, googleId, true, false]
         );
 
+        // Notify admin of new Google signup (non-blocking)
+        try {
+          const { notifyNewUser } = require('../utils/adminNotify');
+          notifyNewUser(username, email, 'Google OAuth');
+        } catch (_) {}
+
         return done(null, newUser.rows[0]);
 
       } catch (err) {
