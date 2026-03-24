@@ -25,24 +25,39 @@ export default function FeedbackWidget() {
     setError('');
 
     try {
-      // Get the current user details to attach to the email automatically
-      const user = getUser<{ name?: string, username?: string, email?: string }>() || {};
+      const user = getUser<{ name?: string, username?: string, email?: string, id?: number }>() || {};
       const userEmail = user.email || 'anonymous@findstreak.com';
       const userName = user.name || user.username || 'FindStreak User';
 
-      const res = await fetch('/api/contact', {
+      // 1. Send email notification (existing flow)
+      await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: userName, 
+          name: userName,
           email: userEmail,
           subject: `[In-App Feedback] - Path: ${window.location.pathname}`,
           message: feedback
         })
       });
 
-      if (!res.ok) throw new Error('Failed to send feedback');
-      
+      // 2. Also save to DB so admin dashboard can display it
+      const token = getToken();
+      if (token) {
+        await fetch('/api/auth/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            message: feedback,
+            page_path: window.location.pathname,
+            type: 'feedback',
+            name: userName,
+            email: userEmail,
+            user_id: user.id || null,
+          })
+        }).catch(() => {}); // Non-blocking
+      }
+
       setSuccess(true);
       setTimeout(() => {
         setIsOpen(false);

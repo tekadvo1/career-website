@@ -38,6 +38,7 @@ import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
 import NotFoundPage from './components/NotFoundPage';
+import AdminDashboard from './components/AdminDashboard';
 import ScrollToTop from './components/ScrollToTop';
 import FeedbackWidget from './components/FeedbackWidget';
 import { getToken, getUser, clearSession } from './utils/auth';
@@ -143,6 +144,7 @@ function App() {
           <Route path="/project-structure"       element={<ProtectedRoute><ProjectStructurePage /></ProtectedRoute>} />
           <Route path="/settings"                element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/tools"                   element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+          <Route path="/admindashboard"           element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
 
           {/* ── 404 ─────────────────────────────────────────────────────── */}
           <Route path="*" element={<NotFoundPage />} />

@@ -98,8 +98,10 @@ const realtimeRoutes = require('./routes/realtimeRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const projectStructureRoutes = require('./routes/projectStructureRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
+const { adminOnly } = require('./middleware/adminMiddleware');
 
 // --- Public routes (no auth required) ---
 app.use('/api/auth', authRoutes);
@@ -115,6 +117,7 @@ app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
+app.use('/api/admin',       protect, adminOnly, adminRoutes);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {
@@ -236,6 +239,39 @@ const updateSchema = async () => {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // Create feedback table for storing in-app user feedback/bug reports
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        name VARCHAR(255),
+        email VARCHAR(255),
+        message TEXT NOT NULL,
+        page_path VARCHAR(500),
+        type VARCHAR(50) DEFAULT 'feedback',
+        status VARCHAR(50) DEFAULT 'open',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Add is_admin column to users if not exists
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_admin') THEN
+          ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'bonus_xp') THEN
+          ALTER TABLE users ADD COLUMN bonus_xp INTEGER DEFAULT 0;
+        END IF;
+      END $$;
+    `);
+
+    // Set admin flag for primary admin email
+    await client.query(`
+      UPDATE users SET is_admin = TRUE WHERE email = 'supportfindstreak@tekadvo.com'
+    `).catch(() => {});
 
     client.release();
     console.log('Schema updated for role caching');

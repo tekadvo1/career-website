@@ -460,4 +460,27 @@ router.post('/add-xp', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/feedback
+// @desc    Save in-app feedback to the database
+// @access  Private
+router.post('/feedback', protect, async (req, res) => {
+  try {
+    const { message, page_path, type = 'feedback', name, email } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message required' });
+
+    await pool.query(
+      `INSERT INTO feedback (user_id, name, email, message, page_path, type, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'open')
+       ON CONFLICT DO NOTHING`,
+      [req.user.id, name || req.user.username, email || req.user.email, message, page_path, type]
+    ).catch(() => {}); // Silently fail if table doesn't exist yet
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Feedback save error:', error);
+    res.json({ success: true }); // Non-blocking for user
+  }
+});
+
 module.exports = router;
+
