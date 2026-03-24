@@ -423,10 +423,13 @@ export default function LearningRoadmap() {
   const handleGenerateCustomPhase = async () => {
     setIsGeneratingCustom(true);
     try {
+        const userStr = sessionStorage.getItem('user');
+        const userId = userStr ? JSON.parse(userStr).id : null;
+        
         const response = await apiFetch('/api/role/custom-roadmap-phase', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ role, prompt: customPrompt })
+            body: JSON.stringify({ role, prompt: customPrompt, userId })
         });
         const data = await response.json();
         if (data.success && data.phase) {

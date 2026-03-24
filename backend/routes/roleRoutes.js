@@ -1121,7 +1121,7 @@ router.put('/project/:id', async (req, res) => {
 
 // POST /api/role/custom-roadmap-phase - Generate a custom roadmap phase based on a user prompt
 router.post('/custom-roadmap-phase', async (req, res) => {
-    const { role, prompt } = req.body;
+    const { role, prompt, userId } = req.body;
     if (!role || !prompt) {
         return res.status(400).json({ error: 'Role and prompt are required' });
     }
@@ -1187,6 +1187,30 @@ router.post('/custom-roadmap-phase', async (req, res) => {
                 phaseData = JSON.parse(content);
             }
         }
+        
+        // If logged in, save the new phase incrementally to the database
+        if (userId) {
+             const result = await pool.query(
+                "SELECT id, analysis_data FROM role_analyses WHERE user_id = $1 AND role_title ILIKE $2 ORDER BY created_at DESC LIMIT 1",
+                [userId, `%${role}%`]
+             );
+             if (result.rows.length > 0) {
+                 const dbId = result.rows[0].id;
+                 const analysisData = result.rows[0].analysis_data;
+                 
+                 // Append the phase to the roadmap array
+                 if (analysisData && Array.isArray(analysisData.roadmap)) {
+                     // Verify it wasn't already added (simple deduplication by title matching could go here if needed)
+                     analysisData.roadmap.push(phaseData);
+                     
+                     await pool.query(
+                         "UPDATE role_analyses SET analysis_data = $1 WHERE id = $2",
+                         [analysisData, dbId]
+                     );
+                 }
+             }
+        }
+
         res.json({ success: true, phase: phaseData });
     } catch (error) {
         console.error('Custom mapping phase error:', error);
