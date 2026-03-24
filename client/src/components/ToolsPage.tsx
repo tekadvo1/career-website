@@ -1,8 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import {
-  Award,
-  Gamepad2,
   Search,
   Sparkles,
   Wrench,
