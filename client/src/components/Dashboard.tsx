@@ -101,6 +101,11 @@ export default function Dashboard() {
         if (res.ok) {
            showToast('Project moved to saved');
            setOpenMenuId(null);
+           setRecommendedProjects(prev => {
+              const updated = prev.filter(p => String(p.id) !== String(project.id));
+              sessionStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
+              return updated;
+           });
         }
       } else {
         const res = await apiFetch(`/api/role/project/${project.id}`, {
