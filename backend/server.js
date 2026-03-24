@@ -230,6 +230,11 @@ const updateSchema = async () => {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_public') THEN
           ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT FALSE;
         END IF;
+        
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'ai_credits') THEN
+          ALTER TABLE users ADD COLUMN ai_credits INTEGER DEFAULT 20;
+          ALTER TABLE users ADD COLUMN last_credit_reset TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+        END IF;
       END $$;
     `);
 

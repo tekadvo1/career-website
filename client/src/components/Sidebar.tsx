@@ -14,7 +14,8 @@ import {
   ChevronUp,
   Code,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Zap
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
@@ -100,9 +101,21 @@ export default function Sidebar({ activePage }: SidebarProps) {
     }
   };
 
-  const user: any = (getUser() ?? {});
+  // Get user from auth or localStorage to read ai_credits
+  const [user, setUser] = useState<any>((getUser() ?? {}));
+
+  useEffect(() => {
+    // Polling or simple listener for user updates across app could go here
+    const interval = setInterval(() => {
+        const u = getUser();
+        if (u && JSON.stringify(u) !== JSON.stringify(user)) setUser(u);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const displayName = user?.name || user?.username || "";
   const initials = displayName ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G";
+  const aiCredits = user?.ai_credits ?? 20;
 
   const isActive = (route: string) => {
     if (activePage) {
@@ -142,13 +155,20 @@ export default function Sidebar({ activePage }: SidebarProps) {
               <span className="font-extrabold text-slate-800 tracking-tight text-[15px]">FindStreak</span>
             </div>
           </div>
-          <button 
-             onClick={() => navigate('/profile', { state: { readOnlyMode: true } })} 
-             className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold shadow-sm hover:scale-105 transition-transform"
-             title="View Profile"
-          >
-            {initials}
-          </button>
+          
+          <div className="flex items-center gap-3">
+             <div className="flex items-center bg-amber-100 text-amber-700 px-2 py-1 space-x-1 rounded-full text-[10px] font-bold shadow-sm border border-amber-200">
+               <Zap className="w-3 h-3 fill-amber-500 text-amber-500 animate-pulse" />
+               <span>{aiCredits}</span>
+             </div>
+             <button 
+                onClick={() => navigate('/profile', { state: { readOnlyMode: true } })} 
+                className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-bold shadow-sm hover:scale-105 transition-transform"
+                title="View Profile"
+             >
+               {initials}
+             </button>
+          </div>
         </div>
       )}
 
@@ -253,7 +273,32 @@ export default function Sidebar({ activePage }: SidebarProps) {
         </div>
 
         {/* Footer with User Actions */}
-        <div className="border-t border-slate-200 flex-shrink-0 bg-slate-50 relative">
+        <div className="flex-shrink-0 bg-slate-50 relative">
+
+           {/* AI Credits Mini Bar */}
+           <div className={`border-t border-slate-200 flex items-center justify-center bg-amber-50/50 hover:bg-amber-50 cursor-pointer transition-all ${isOpen ? 'px-4 py-2' : 'py-2 px-0'}`}
+                title={!isOpen ? `${aiCredits} AI Credits` : undefined}
+                onClick={() => navigate('/missions')}
+           >
+              {isOpen ? (
+                <div className="flex border border-amber-200/60 rounded-xl overflow-hidden shadow-sm bg-white w-full max-w-full">
+                  <div className="bg-amber-100/80 px-3 py-1.5 flex items-center justify-center shrink-0 border-r border-amber-100">
+                     <Zap className="w-4 h-4 fill-amber-500 text-amber-500 animate-pulse" />
+                  </div>
+                  <div className="flex-1 px-3 py-1.5 flex justify-between items-center text-[11px] min-w-0 truncate">
+                     <span className="font-bold text-slate-700 truncate mr-2">AI Credits</span>
+                     <span className="font-black text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100 shrink-0">{aiCredits}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-amber-100/80 border border-amber-200 hover:bg-amber-200 flex items-center justify-center shadow-sm relative shrink-0">
+                  <Zap className="w-[14px] h-[14px] fill-amber-500 text-amber-500 animate-[pulse_2s_infinite]" />
+                  <div className="absolute -top-1 font-bold -right-1 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-red-500 text-[8px] text-white shadow-sm ring-2 ring-white">
+                     {aiCredits > 99 ? '99+' : aiCredits}
+                  </div>
+                </div>
+              )}
+           </div>
            
            {/* Expandable Menu */}
            <div className={`absolute bottom-full left-0 w-full bg-white border-t border-slate-200 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out overflow-hidden ${(isProfileMenuOpen && isOpen) ? 'max-h-60 opacity-100' : 'max-h-0 opacity-0'}`}>

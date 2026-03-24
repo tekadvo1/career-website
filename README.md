@@ -2,9 +2,11 @@
 
 Welcome to the **FindStreak** repository! This document contains the complete step-by-step instructions for developers to download the code, set up the database, and run the project locally. 
 
-This project consists of:
-- **Client (Frontend):** React + Vite + Tailwind CSS
-- **Backend (Server):** Node.js + Express + PostgreSQL (Node `pg`)
+## 📁 Project Structure
+
+This project is a Monorepo containing both the Frontend and Backend:
+- **`client/` (Frontend):** React + Vite + Tailwind CSS + TypeScript
+- **`backend/` (Server):** Node.js + Express + PostgreSQL (Node `pg`)
 
 ---
 
@@ -13,7 +15,7 @@ This project consists of:
 Ensure you have the following installed on your machine:
 - **Node.js** (v18.0.0 or higher recommended)
 - **Git** for version control
-- **PostgreSQL** database (installed and running locally)
+- **PostgreSQL** database (installed and running locally on port 5432)
 
 ---
 
@@ -27,10 +29,10 @@ cd findstreak
 ```
 
 > **Important Workflow Rule:** We use two branches.
-> - `main` -> **Production Server** (Always stable, DO NOT push here directly)
-> - `dev` -> **Development Server** (Push all your daily work here)
+> - `main` -> **Production Server** (Protected branch. Requires a PR and owner approval to merge.)
+> - `dev` -> **Development Server** (Push all your daily work here to auto-deploy to the Staging server)
 
-Always ensure you are working on the `dev` branch:
+Always ensure you are working on the `dev` branch or a feature branch that merges into `dev`:
 ```bash
 git checkout dev
 ```
@@ -41,12 +43,25 @@ git checkout dev
 
 You need to create a local PostgreSQL database for FindStreak.
 
-1. Open pgAdmin or your terminal with psql.
+1. Open pgAdmin or your terminal with `psql`.
 2. Create a new database named `findstreak`:
 ```sql
 CREATE DATABASE findstreak;
 ```
-*(The backend script automatically handles table creation and schema definitions when it starts up!)*
+
+### Table Information & Schema
+The backend script (`server.js`) **automatically creates** all necessary tables when you start the server locally for the first time. However, here is the reference schema it builds:
+
+- **`users`**: Core user accounts. Stores username, email, full name, auth method (local/google), hashed password, bio, avatar, and gamification stats (`xp_score`, `ai_credits`, `current_workspace_id`).
+- **`workspaces`**: User career workspaces. Stores user role, setup status, etc.
+- **`role_analyses`**: Stores AI-generated analysis of a specific role for a user (needed skills, tools, etc.).
+- **`projects`**: Generated learning projects for users. Stores title, description, skills, setup tools, status (active/completed).
+- **`user_progress`**: Tracks granular checkbox progress inside projects.
+- **`missions`**: AI gamification missions (daily/weekly quests). Stores title, difficulty, XP reward, category.
+- **`user_missions`**: Tracks which missions a user has started or completed.
+- **`rewards`**: The store rewards (e.g. AI credits, badges).
+- **`user_rewards`**: History of rewards redeemed by the user.
+- **`platform_settings`**: Global admin settings (e.g., `maintenance_mode` toggle).
 
 ---
 
@@ -55,17 +70,17 @@ CREATE DATABASE findstreak;
 You need two `.env` files — one for the backend and one for the frontend.
 
 ### Backend `.env`
-Create a file at `backend/.env` and copy this outline:
+Create a file at `backend/.env` and copy this outline precisely. Make sure to replace your postgres password.
 
 ```env
 PORT=5000
 NODE_ENV=development
 
-# Database Connection
-# Replace "postgres" and "password" with your local DB credentials
+# Database Connection (IMPORTANT: Replace 'password' with your local postgres password)
+# Format: postgres://username:password@localhost:5432/databasename
 DATABASE_URL=postgres://postgres:password@localhost:5432/findstreak
 
-# Security JWT Secret (any random string)
+# Security JWT Secret (any random string for local testing)
 JWT_SECRET=local_findstreak_secret_development_9999
 
 # Google OAuth Setup (For Google Login)
@@ -73,7 +88,7 @@ GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
 
-# OpenAI Server (for AI roadmap parsing)
+# OpenAI Server (for AI roadmap and mission parsing)
 OPENAI_API_KEY=your_openai_api_key_here
 
 # Frontend URL (Important for CORS)
@@ -125,6 +140,7 @@ Open **two separate terminal windows/tabs** (one for backend, one for frontend).
 cd backend
 npm run dev
 ```
+*(When you run this for the first time, watch the console. You will see logs confirming that PostgreSQL tables are automatically being created if they don't exist).*
 
 ### Terminal 2: Start Frontend (Port 5173)
 ```bash
@@ -133,48 +149,29 @@ npm run dev
 ```
 
 > The FindStreak platform is now running locally at: **http://localhost:5173**
+> You can create a local account, test out functionality, run missions, and build features without affecting production!
 
 ---
 
 ## 7. The Git Workflow (How to push code safely) 🚨
 
-Never push directly to `main`! Here is the strict workflow to follow:
+Never push directly to `main`! The production branch is strictly protected.
 
-### A. Developing a new feature
 1. Make sure you are on the `dev` branch: `git checkout dev`
-2. Make your code changes locally.
-3. Test everything thoroughly on `localhost:5173`.
+2. Create a new branch for your feature: `git checkout -b feature/my-new-button`
+3. Make your code changes locally and test thoroughly on `localhost:5173`.
 4. Commit your changes:
 ```bash
 git add .
-git commit -m "feat/fix: descriptive message of what you changed"
+git commit -m "feat: added my new button"
 ```
-5. Push to the development server:
+5. Push to GitHub:
 ```bash
-git push origin dev
+git push origin feature/my-new-button
 ```
-*(Deploying to the `dev` branch automatically updates the live testing staging server)*
-
-### B. Moving code from `dev` to `main` (Production)
-Once the client has tested your code on the Live Development Server and approved it, you are allowed to deploy to production:
-
-```bash
-# Switch to main branch
-git checkout main
-
-# Pull the latest main changes just in case
-git pull origin main
-
-# Merge all your dev work into main
-git merge dev
-
-# Push forcefully to update production
-git push origin main
-
-# Switch back to dev immediately to continue working!
-git checkout dev
-```
+6. Go to GitHub and open a **Pull Request (PR)** merging your feature branch into `dev` (or directly from `dev` to `main` if the Project Owner requests it).
+7. The Project Owner will review, approve, and merge it.
 
 ---
 
-*For any questions regarding server configurations on Railway, refer to the project administrator.*
+*For any questions regarding server configurations, refer to the Project Administrator.*

@@ -275,13 +275,19 @@ router.post('/complete', async (req, res) => {
       ON CONFLICT (user_id, mission_id) DO UPDATE SET status = 'completed', xp_earned = $3, completed_at = NOW()
     `, [userId, missionId, xpReward]);
 
+    // Give a +1 AI Credit gamification reward for actually playing the game!
+    await pool.query(
+        'UPDATE users SET ai_credits = COALESCE(ai_credits, 0) + 1 WHERE id = $1',
+        [userId]
+    );
+
     // Return total XP
     const xpResult = await pool.query(
       'SELECT COALESCE(SUM(xp_earned), 0) as total_xp FROM user_missions WHERE user_id = $1 AND status = $2',
       [userId, 'completed']
     );
 
-    res.json({ success: true, xpEarned: xpReward, totalXp: parseInt(xpResult.rows[0].total_xp) });
+    res.json({ success: true, xpEarned: xpReward, totalXp: parseInt(xpResult.rows[0].total_xp), bonusAiCredits: 1 });
     
     fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
       method: 'POST',
