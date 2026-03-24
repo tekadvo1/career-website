@@ -19,13 +19,16 @@ interface Project {
   tools: string[];
   languages: string[];
   setupGuide: { title: string; steps: string[] };
-  status?: 'active' | 'completed' | 'saved' | 'none';
+  status?: 'active' | 'completed' | 'saved' | 'none' | 'undo';
+  last_updated?: string;
   careerImpact?: string[];
   metrics?: { matchIncrease: string; xp: number; timeEstimate: string; roleRelevance: string };
   skillGainEstimates?: { skill: string; before: number; after: number }[];
-  recruiterAppeal?: string[];
   curriculumStats?: { modules: number; tasks: number; deployment: boolean; codeReview: boolean };
-  progress_data?: { xp?: number; completedTasks?: string[] };
+  recruiterAppeal?: string[];
+  progress_data?: any;
+  project_data?: any;
+  role?: string;
 }
 
 interface Props {

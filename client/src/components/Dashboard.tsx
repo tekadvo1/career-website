@@ -26,7 +26,7 @@ interface Project {
   tools: string[];
   languages: string[];
   setupGuide: { title: string; steps: string[] };
-  status?: 'active' | 'completed' | 'saved' | 'none';
+  status?: 'active' | 'completed' | 'saved' | 'none' | 'undo';
   last_updated?: string;
   careerImpact?: string[];
   metrics?: { matchIncrease: string; xp: number; timeEstimate: string; roleRelevance: string };
@@ -88,20 +88,47 @@ export default function Dashboard() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletePromptProject, setDeletePromptProject] = useState<Project | null>(null);
 
-  const handleSaveProject = async (e: React.MouseEvent, projectId: string) => {
+  const handleSaveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
     const user = (getUser() ?? {});
     if (!user.id) return;
     try {
-      const res = await apiFetch(`/api/role/project/${projectId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ userId: user.id, status: 'saved' })
-      });
-      if (res.ok) {
-        showToast('Project moved to saved');
-        setOpenMenuId(null);
+      if (!project.status || project.status === 'none') {
+        const res = await apiFetch('/api/role/start-project', {
+          method: 'POST',
+          body: JSON.stringify({ userId: user.id, project, role: selectedRole, status: 'saved' })
+        });
+        if (res.ok) {
+           showToast('Project moved to saved');
+           setOpenMenuId(null);
+        }
+      } else {
+        const res = await apiFetch(`/api/role/project/${project.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ userId: user.id, status: 'saved' })
+        });
+        if (res.ok) {
+          showToast('Project moved to saved');
+          setOpenMenuId(null);
+        }
       }
     } catch(err) {}
+  };
+
+  const handleDeletePrompt = (e: React.MouseEvent, project: Project) => {
+     e.stopPropagation();
+     setOpenMenuId(null);
+     
+     if (!project.status || project.status === 'none') {
+        setRecommendedProjects(prev => {
+           const updated = prev.filter(p => String(p.id) !== String(project.id));
+           sessionStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
+           return updated;
+        });
+        showToast('Recommendation dismissed');
+     } else {
+        setDeletePromptProject(project);
+     }
   };
 
   const handleUndoProject = async (projectId: string) => {
@@ -565,7 +592,7 @@ export default function Dashboard() {
                                 ✓ Done
                               </span>
                             )}
-                            {(project.status === 'active' || project.status === 'saved' || project.status === 'undo') && (
+                            {(project.status !== 'completed') && (
                               <div className="relative">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === project.id ? null : project.id); }}
@@ -575,9 +602,9 @@ export default function Dashboard() {
                                 </button>
                                 {openMenuId === project.id && (
                                   <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-slate-200 rounded-lg shadow-xl py-1 z-50">
-                                    {project.status === 'active' && (
+                                    {(project.status === 'active' || project.status === 'none' || !project.status) && (
                                       <button
-                                        onClick={(e) => handleSaveProject(e, project.id)}
+                                        onClick={(e) => handleSaveProject(e, project)}
                                         className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-emerald-700 flex items-center gap-2"
                                       >
                                         <Save className="w-3.5 h-3.5" /> Save
@@ -592,7 +619,7 @@ export default function Dashboard() {
                                       </button>
                                     )}
                                     <button
-                                      onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setDeletePromptProject(project); }}
+                                      onClick={(e) => handleDeletePrompt(e, project)}
                                       className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" /> Delete
