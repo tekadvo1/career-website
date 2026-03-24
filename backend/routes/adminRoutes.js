@@ -367,5 +367,78 @@ router.post('/notify-admin', async (req, res) => {
   }
 });
 
+// ── GET /api/admin/top-users ─ Most active users ──────────────────
+router.get('/top-users', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        u.id, u.username, u.email, u.current_streak, u.ai_credits,
+        u.onboarding_completed, u.created_at,
+        (SELECT COUNT(*) FROM user_projects WHERE user_id = u.id) as project_count,
+        (SELECT COUNT(*) FROM roadmap_progress WHERE user_id = u.id) as topics_done,
+        (SELECT COALESCE(SUM(xp_earned), 0) FROM user_missions WHERE user_id = u.id AND status = 'completed') as total_xp
+      FROM users u
+      ORDER BY u.current_streak DESC, total_xp DESC, project_count DESC
+      LIMIT 10
+    `);
+    res.json({ success: true, users: result.rows });
+  } catch (err) {
+    console.error('Top users error:', err);
+    res.status(500).json({ error: 'Failed to fetch top users' });
+  }
+});
+
+// ── GET /api/admin/platform-summary ─ KPIs and growth ────────────
+router.get('/platform-summary', async (req, res) => {
+  try {
+    const [avgStreak, avgCredits, streakUsers, topCountries, recentLogins] = await Promise.all([
+      pool.query('SELECT ROUND(AVG(current_streak),1) as avg FROM users'),
+      pool.query('SELECT ROUND(AVG(ai_credits),0) as avg FROM users'),
+      pool.query("SELECT COUNT(*) FROM users WHERE current_streak > 0"),
+      pool.query(`SELECT COALESCE(location, 'Unknown') as country, COUNT(*) as count FROM users GROUP BY location ORDER BY count DESC LIMIT 5`),
+      pool.query(`SELECT username, email, last_active_date FROM users WHERE last_active_date IS NOT NULL ORDER BY last_active_date DESC LIMIT 6`),
+    ]);
+
+    res.json({
+      success: true,
+      summary: {
+        avgStreak: parseFloat(avgStreak.rows[0].avg || 0),
+        avgCredits: parseInt(avgCredits.rows[0].avg || 0),
+        activeStreakUsers: parseInt(streakUsers.rows[0].count || 0),
+        topCountries: topCountries.rows,
+        recentLogins: recentLogins.rows,
+      }
+    });
+  } catch (err) {
+    console.error('Platform summary error:', err);
+    res.status(500).json({ error: 'Failed to fetch summary' });
+  }
+});
+
+// ── GET /api/admin/export-users ─ CSV export ──────────────────────
+router.get('/export-users', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.username, u.email, u.created_at, u.onboarding_completed,
+        u.current_streak, u.ai_credits, u.location,
+        (SELECT COUNT(*) FROM user_projects WHERE user_id = u.id) as projects,
+        (SELECT COUNT(*) FROM roadmap_progress WHERE user_id = u.id) as topics_done
+      FROM users u ORDER BY u.created_at DESC
+    `);
+
+    const header = 'ID,Username,Email,Joined,Onboarded,Streak,AI Credits,Location,Projects,Topics Done\n';
+    const rows = result.rows.map(r =>
+      `${r.id},"${r.username}","${r.email}","${new Date(r.created_at).toISOString()}",${r.onboarding_completed},${r.current_streak},${r.ai_credits},"${r.location || ''}",${r.projects},${r.topics_done}`
+    ).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="findstreak-users-${Date.now()}.csv"`);
+    res.send(header + rows);
+  } catch (err) {
+    console.error('Export error:', err);
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
 module.exports = router;
 module.exports.sendAdminEmail = sendAdminEmail;

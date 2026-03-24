@@ -299,6 +299,8 @@ export default function AdminDashboard() {
   const [broadcasting, setBroadcasting] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [topUsers, setTopUsers] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   // Toast & confirm modal state
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
@@ -321,13 +323,15 @@ export default function AdminDashboard() {
     setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${adminToken}` };
-      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes] = await Promise.all([
+      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes, topUsersRes, summaryRes] = await Promise.all([
         apiFetch('/api/admin/stats', { headers }).then(r => r.json()),
         apiFetch('/api/admin/signup-trends', { headers }).then(r => r.json()),
         apiFetch('/api/admin/top-roles', { headers }).then(r => r.json()),
         apiFetch('/api/admin/feedback', { headers }).then(r => r.json()),
         apiFetch('/api/admin/activity', { headers }).then(r => r.json()),
         apiFetch('/api/admin/system-health', { headers }).then(r => r.json()),
+        apiFetch('/api/admin/top-users', { headers }).then(r => r.json()),
+        apiFetch('/api/admin/platform-summary', { headers }).then(r => r.json()),
       ]);
       if (statsRes.success) setStats(statsRes.stats);
       if (trendsRes.success) setSignupTrends(trendsRes.trends.map((t: any) => ({ date: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), count: parseInt(t.count) })));
@@ -335,6 +339,8 @@ export default function AdminDashboard() {
       if (feedbackRes.success) setFeedback(feedbackRes.feedback);
       if (activityRes.success) setActivity(activityRes.activity);
       if (healthRes.success) setHealth(healthRes.health);
+      if (topUsersRes.success) setTopUsers(topUsersRes.users);
+      if (summaryRes.success) setSummary(summaryRes.summary);
     } catch (err) {
       console.error('Admin fetch error:', err);
     } finally {
@@ -575,6 +581,93 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {/* ── OVERVIEW EXTRA: KPI Strip + Leaderboard ── */}
+        {activeTab === 'overview' && !loading && (
+            <div className="space-y-4 mt-2">
+              {/* Platform KPIs */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Avg. Streak', value: `${summary?.avgStreak ?? 0} days`, icon: TrendingUp, color: 'emerald' },
+                  { label: 'Avg. AI Credits', value: summary?.avgCredits ?? 0, icon: Zap, color: 'violet' },
+                  { label: 'Active Streaks', value: summary?.activeStreakUsers ?? 0, icon: Activity, color: 'teal' },
+                  { label: 'Onboard Rate', value: `${stats?.totalUsers ? Math.round((stats.onboardedUsers / stats.totalUsers) * 100) : 0}%`, icon: CheckCircle2, color: 'indigo' },
+                ].map(k => (
+                  <div key={k.label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-${k.color}-50 text-${k.color}-600 border border-${k.color}-100`}>
+                      <k.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{k.label}</p>
+                      <p className="text-xl font-black text-slate-900">{k.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Top Active Users + Export */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Leaderboard */}
+                <div className="md:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-black text-slate-900 text-sm">🏆 Top Active Users</h3>
+                      <p className="text-[10px] text-slate-400">Ranked by streak · projects · XP</p>
+                    </div>
+                    <button
+                      onClick={() => window.open(`/api/admin/export-users`, '_blank')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                    >
+                      <Database className="w-3.5 h-3.5" /> Export CSV
+                    </button>
+                  </div>
+                  <div className="divide-y divide-slate-50">
+                    {topUsers.slice(0, 7).map((u, i) => (
+                      <div key={u.id} className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/50 transition-colors">
+                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${i === 0 ? 'bg-amber-100 text-amber-700' : i === 1 ? 'bg-slate-100 text-slate-600' : i === 2 ? 'bg-orange-100 text-orange-700' : 'bg-slate-50 text-slate-400'}`}>
+                          {i + 1}
+                        </span>
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          {u.username?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 truncate">{u.username}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs flex-shrink-0">
+                          <span className="font-bold text-emerald-600">{u.current_streak ?? 0}🔥</span>
+                          <span className="font-bold text-indigo-600">{u.project_count ?? 0} proj</span>
+                          <span className="font-bold text-amber-600">{u.topics_done ?? 0} topics</span>
+                        </div>
+                      </div>
+                    ))}
+                    {topUsers.length === 0 && (
+                      <div className="py-8 text-center text-slate-400 text-sm">No user data yet</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top Locations */}
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-slate-100">
+                    <h3 className="font-black text-slate-900 text-sm">🌍 User Locations</h3>
+                    <p className="text-[10px] text-slate-400">Top countries / regions</p>
+                  </div>
+                  <div className="divide-y divide-slate-50">
+                    {(summary?.topCountries || []).map((c: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between px-5 py-3">
+                        <span className="text-sm font-semibold text-slate-700 truncate">{c.country || 'Unknown'}</span>
+                        <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">{c.count}</span>
+                      </div>
+                    ))}
+                    {(!summary?.topCountries || summary.topCountries.length === 0) && (
+                      <div className="py-8 text-center text-slate-400 text-sm">No location data</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* ── USERS ── */}
         {activeTab === 'users' && (
