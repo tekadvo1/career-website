@@ -243,7 +243,7 @@ export default function MyProjects() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-[100dvh] bg-slate-50">
       <Sidebar activePage="my-projects" />
       
       <div className="flex-1 overflow-y-auto">
