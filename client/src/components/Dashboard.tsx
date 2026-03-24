@@ -93,7 +93,8 @@ export default function Dashboard() {
     const user = (getUser() ?? {});
     if (!user.id) return;
     try {
-      if (!project.status || project.status === 'none') {
+      const isRecommended = activeTab === 'recommended' || activeTab === 'trending';
+      if (isRecommended) {
         const res = await apiFetch('/api/role/start-project', {
           method: 'POST',
           body: JSON.stringify({ userId: user.id, project, role: selectedRole, status: 'saved' })
@@ -124,7 +125,8 @@ export default function Dashboard() {
      e.stopPropagation();
      setOpenMenuId(null);
      
-     if (!project.status || project.status === 'none') {
+     const isRecommended = activeTab === 'recommended' || activeTab === 'trending';
+     if (isRecommended) {
         setRecommendedProjects(prev => {
            const updated = prev.filter(p => String(p.id) !== String(project.id));
            sessionStorage.setItem(`dashboard_projects_v2_${_rawRole}`, JSON.stringify(updated));
