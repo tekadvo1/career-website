@@ -82,10 +82,11 @@ export default function Dashboard() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [setupProject,    setSetupProject]    = useState<Project | null>(null); // independent state for setup modal
   const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'|'trending'>('recommended');
+  const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'|'trending'|'undo'>('recommended');
   const [lastSync, setLastSync] = useState(new Date());
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deletePromptProject, setDeletePromptProject] = useState<Project | null>(null);
 
   const handleSaveProject = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
@@ -103,8 +104,38 @@ export default function Dashboard() {
     } catch(err) {}
   };
 
-  const handleDeleteProject = async (e: React.MouseEvent, projectId: string) => {
+  const handleUndoProject = async (projectId: string) => {
+    const user = (getUser() ?? {});
+    if (!user.id) return;
+    try {
+      const res = await apiFetch(`/api/role/project/${projectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ userId: user.id, status: 'undo' })
+      });
+      if (res.ok) {
+        showToast('Moved to Undo - Progress Saved!');
+        setDeletePromptProject(null);
+      }
+    } catch(err) {}
+  };
+
+  const handleRestoreProject = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
+    const user = (getUser() ?? {});
+    if (!user.id) return;
+    try {
+      const res = await apiFetch(`/api/role/project/${projectId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ userId: user.id, status: 'active' })
+      });
+      if (res.ok) {
+        showToast('Project Restored to Active!');
+        setOpenMenuId(null);
+      }
+    } catch(err) {}
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
     const user = (getUser() ?? {});
     if (!user.id) return;
     try {
@@ -115,6 +146,7 @@ export default function Dashboard() {
       if (res.ok) {
         showToast('Project removed');
         setOpenMenuId(null);
+        setDeletePromptProject(null);
       }
     } catch(err) {}
   };
@@ -263,6 +295,7 @@ export default function Dashboard() {
     if (activeTab === 'active')    matchTab = p.status === 'active';
     if (activeTab === 'completed') matchTab = p.status === 'completed';
     if (activeTab === 'saved')     matchTab = p.status === 'saved';
+    if (activeTab === 'undo')      matchTab = p.status === 'undo';
     if (activeTab === 'trending')  matchTab = Boolean(p.trending);
     return matchSearch && matchDiff && matchTab;
   });
@@ -428,6 +461,7 @@ export default function Dashboard() {
               { id: 'active',      label: 'Active',    count: activeCount },
               { id: 'completed',   label: 'Completed', count: completedCount },
               { id: 'saved',       label: 'Saved',     count: userProjects.filter(p => p.status === 'saved').length },
+              { id: 'undo',        label: 'Undo',      count: userProjects.filter(p => p.status === 'undo').length },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                 className={`py-2 md:py-2.5 text-xs md:text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
@@ -531,7 +565,7 @@ export default function Dashboard() {
                                 ✓ Done
                               </span>
                             )}
-                            {(project.status === 'active' || project.status === 'saved') && (
+                            {(project.status === 'active' || project.status === 'saved' || project.status === 'undo') && (
                               <div className="relative">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === project.id ? null : project.id); }}
@@ -549,8 +583,16 @@ export default function Dashboard() {
                                         <Save className="w-3.5 h-3.5" /> Save
                                       </button>
                                     )}
+                                    {project.status === 'undo' && (
+                                      <button
+                                        onClick={(e) => handleRestoreProject(e, project.id)}
+                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-teal-700 flex items-center gap-2"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5" /> Restore
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={(e) => handleDeleteProject(e, project.id)}
+                                      onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); setDeletePromptProject(project); }}
                                       className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -640,6 +682,41 @@ export default function Dashboard() {
           project={setupProject}
           role={selectedRole}
         />
+      )}
+
+      {/* ── Undo/Delete Prompt Modal ── */}
+      {deletePromptProject && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Manage Project</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Do you want to permanently delete this project, or move it to your <strong>Undo</strong> list to save its progress forever?
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => handleUndoProject(deletePromptProject.id)}
+                className="w-full py-2.5 rounded-lg font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-sm transition-all"
+              >
+                Move to Undo (Save Progress)
+              </button>
+              <button
+                onClick={() => handleDeleteProject(deletePromptProject.id)}
+                className="w-full py-2.5 rounded-lg font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 transition-all border border-rose-100"
+              >
+                Permanently Delete
+              </button>
+              <button
+                onClick={() => setDeletePromptProject(null)}
+                className="w-full py-2 rounded-lg font-semibold text-slate-500 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </div>
