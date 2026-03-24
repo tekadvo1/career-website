@@ -528,12 +528,16 @@ router.post('/tech-stack', checkAICredits, upload.single('resume'), async (req, 
             if (resumeText.length > 3000) resumeText = resumeText.substring(0, 3000);
         }
 
-        let systemPrompt = `You are an expert ${role} Engineering Manager and Tech Lead.
+        let systemPrompt = `You are an expert ${role} Manager and Tech Lead.
         
         The user wants a highly detailed, comprehensive, and up-to-date breakdown of the exact Tech Stack, Tools, and Frameworks they need to learn and use for a "${role}" position right now. 
         ${resumeText ? 'The user has uploaded their resume. Thoroughly analyze their existing skills. Skip basic foundational skills they already have, and focus strictly on advanced, modern, or trending alternatives to level up their career.' : 'No resume was provided. Provide a comprehensive modern stack from scratch.'}
         
-        Please act as an AI with web search capabilities and provide the absolute latest, industry-standard, and rapidly trending technologies. DO NOT give generic answers; give specific tools (e.g., "Docker", "Kubernetes", "Next.js", "GraphQL", "Terraform"). For every item, provide a very detailed explanation of why it is used professionally.
+        CRITICAL INSTRUCTION: Analyze if the role "${role}" actually requires programming or coding. 
+        If the role is NON-TECHNICAL (e.g. HR, Sales, Project Manager, Marketing, UI/UX Designer, purely operational roles, etc.), DO NOT return any programming languages or frameworks. Instead, return EMPTY arrays for 'languages' and 'frameworks', and ONLY return software tools, SaaS products, platforms, and methodologies relevant to their role in the 'tools' array.
+        If the role IS technical and requires coding, provide specific programming languages, frameworks, and tools.
+        
+        Please act as an AI with web search capabilities and provide the absolute latest, industry-standard, and rapidly trending technologies. DO NOT give generic answers; give specific tools (e.g., if technical: "Docker", "Kubernetes", "Next.js", if non-technical: "Salesforce", "Figma", "Jira", "HubSpot", "Tableau"). For every item, provide a very detailed explanation of why it is used professionally.
         
         You MUST return your response as a valid JSON object matching this schema exactly:
         {
@@ -544,7 +548,7 @@ router.post('/tech-stack', checkAICredits, upload.single('resume'), async (req, 
              { "name": "Framework Name", "reason": "Deep dive into what problems this framework solves structurally.", "status": "Industry Standard" }
           ],
           "tools": [
-             { "name": "Tool Name", "reason": "Explicit justification for this tool in a production workflow.", "category": "CI/CD, DevOps, DB, IDE, etc." }
+             { "name": "Tool Name", "reason": "Explicit justification for this tool in a production workflow.", "category": "Category type (e.g. CI/CD, CRM, Design, Analytics)" }
           ],
           "trending": ["Rapidly growing tech 1", "Rapidly growing tech 2"],
           "summary": "A comprehensive 3-sentence summary of what their strategic learning priority should be."

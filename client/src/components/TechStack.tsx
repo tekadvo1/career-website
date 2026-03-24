@@ -181,6 +181,7 @@ export default function TechStack() {
                                     </div>
 
                                     {/* Programming Languages */}
+                                    {result.languages && result.languages.length > 0 && (
                                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
                                             <Code className="w-4 h-4 text-emerald-600" />
@@ -208,8 +209,10 @@ export default function TechStack() {
                                             ))}
                                         </div>
                                     </div>
+                                    )}
 
                                     {/* Frameworks */}
+                                    {result.frameworks && result.frameworks.length > 0 && (
                                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
                                             <Terminal className="w-4 h-4 text-blue-600" />
@@ -237,6 +240,7 @@ export default function TechStack() {
                                             ))}
                                         </div>
                                     </div>
+                                    )}
 
                                     {/* Modern Tools */}
                                     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
