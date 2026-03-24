@@ -229,9 +229,17 @@ export default function RoadmapTree() {
                 Follow this intelligently structured tree path to master your career goals
               </p>
             </div>
-            <div className="text-center md:text-right bg-slate-50 p-3 rounded-2xl border border-slate-100 shrink-0">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Effort</p>
-              <p className="text-xl font-black text-emerald-600">~{totalDuration} {totalDuration > 50 ? 'wks' : 'mos'}</p>
+            <div className="flex flex-col gap-3 shrink-0">
+              <div className="text-center md:text-right bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Effort</p>
+                <p className="text-xl font-black text-emerald-600">~{totalDuration} {totalDuration > 50 ? 'wks' : 'mos'}</p>
+              </div>
+              <button 
+                onClick={() => setIsAddingCustom(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-center border border-emerald-400/30 w-full"
+              >
+                <Plus className="w-4 h-4" /> Add Phase
+              </button>
             </div>
           </div>
         </div>
@@ -381,15 +389,6 @@ export default function RoadmapTree() {
           </button>
         </div>
       </div>
-
-      {/* Floating Plus Button for generating custom roadmap phase */}
-      <button 
-        onClick={() => setIsAddingCustom(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgb(16,185,129,0.3)] hover:shadow-[0_8px_30px_rgb(16,185,129,0.5)] hover:scale-105 hover:-translate-y-1 transition-all z-40 border border-emerald-400/30"
-        title="Add Custom Roadmap Phase"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
 
       {/* Custom Phase Modal */}
       {isAddingCustom && (

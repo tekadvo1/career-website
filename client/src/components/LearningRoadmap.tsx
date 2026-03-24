@@ -559,6 +559,16 @@ export default function LearningRoadmap() {
                 </div>
               </div>
 
+              <div className="relative group flex items-center">
+                <Button onClick={() => setIsAddingCustom(true)} variant="outline" className="flex items-center justify-center h-10 w-10 sm:h-9 sm:w-9 !p-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200">
+                  <Plus className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                </Button>
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all whitespace-nowrap pointer-events-none z-50">
+                  Add Custom Phase
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-800"></div>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -707,15 +717,6 @@ export default function LearningRoadmap() {
         </div>
       </div>
       </div>
-
-      {/* Floating Plus Button for generating custom roadmap phase */}
-      <button 
-        onClick={() => setIsAddingCustom(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center text-white shadow-[0_8px_30px_rgb(16,185,129,0.3)] hover:shadow-[0_8px_30px_rgb(16,185,129,0.5)] hover:scale-105 hover:-translate-y-1 transition-all z-40 border border-emerald-400/30"
-        title="Add Custom Roadmap Phase"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
 
       {/* Custom Phase Modal */}
       {isAddingCustom && (
