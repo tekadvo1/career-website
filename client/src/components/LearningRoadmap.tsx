@@ -241,6 +241,7 @@ export default function LearningRoadmap() {
 
       const userStr = sessionStorage.getItem('user');
       const user = userStr ? JSON.parse(userStr) : null;
+      
       if (user?.id) {
           es = new EventSource(`/api/realtime/stream?userId=${user.id}&token=${getToken()}`);
           es.addEventListener('snapshot', (e: MessageEvent) => {
@@ -253,6 +254,32 @@ export default function LearningRoadmap() {
                       setCompletedTopics(new Set(completedForRole));
                   }
               } catch (err) {}
+          });
+
+          es.addEventListener('roadmap_updated', async () => {
+              console.log('Realtime update: Custom roadmap phase added elsewhere!');
+              try {
+                  const userStr = sessionStorage.getItem('user');
+                  if (!userStr) return;
+                  const res = await apiFetch('/api/role/analyze', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ role: role, userId: JSON.parse(userStr).id })
+                  });
+                  if (res.ok) {
+                      const data = await res.json();
+                      if (data.data && data.data.roadmap) {
+                         setRoadmap(data.data.roadmap);
+                         sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                             role: role,
+                             analysis: data.data,
+                             timestamp: new Date().getTime()
+                         }));
+                      }
+                  }
+              } catch (e) {
+                  console.error('Failed to sync roadmap_updated', e);
+              }
           });
       }
 

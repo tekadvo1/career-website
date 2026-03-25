@@ -13,19 +13,48 @@ router.post('/analyze', async (req, res) => {
 
   try {
     const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()} - ${country.toLowerCase()}${learningPath ? ' - ' + learningPath : ''})`;
-    const forceRefresh = req.body.forceRefresh === true;
-    
-    // 1. Check for existing analysis (GLOBAL CACHE)
-    // We strictly match the normalized role title which includes generic role + level + country
     let cachedData = null;
+    let isUserCache = false;
     
+    // 1. Check for existing analysis (USER CACHE FIRST, THEN GLOBAL)
     if (!forceRefresh) {
-      const cacheResult = await pool.query(
-        "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
-        [normalizedRole]
-      );
-      if (cacheResult.rows.length > 0) {
-        cachedData = cacheResult.rows[0].analysis_data;
+      if (userId) {
+        // Try user cache first
+        const userCacheResult = await pool.query(
+          "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
+          [normalizedRole, userId]
+        );
+        if (userCacheResult.rows.length > 0) {
+          cachedData = userCacheResult.rows[0].analysis_data;
+          isUserCache = true;
+          console.log(`Using USER cached analysis for: ${normalizedRole} (User ${userId})`);
+        }
+      }
+
+      // Fallback to global cache
+      if (!cachedData) {
+        const globalCacheResult = await pool.query(
+          "SELECT analysis_data, user_id FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
+          [normalizedRole]
+        );
+        if (globalCacheResult.rows.length > 0) {
+          cachedData = globalCacheResult.rows[0].analysis_data;
+          console.log(`Using GLOBAL cached analysis for: ${normalizedRole}`);
+          
+          // If we are falling back to a global cache created by SOMEONE ELSE,
+          // we should clone it to the current user so they have their own copy they can customize later.
+          if (userId && globalCacheResult.rows[0].user_id !== userId) {
+             try {
+                 await pool.query(
+                   "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
+                   [userId, normalizedRole, cachedData]
+                 );
+                 console.log(`Cloned GLOBAL cache to USER cache for User ${userId}`);
+             } catch (cloneErr) {
+                 console.error("Failed to clone cache to user:", cloneErr);
+             }
+          }
+        }
       }
     }
 
@@ -42,11 +71,10 @@ router.post('/analyze', async (req, res) => {
       }
 
       if (isModernStructure) {
-        console.log(`Returning GLOBAL cached analysis for: ${normalizedRole}`);
         return res.json({
           success: true,
           data: cachedData,
-          source: 'cache_global'
+          source: isUserCache ? 'cache_user' : 'cache_global'
         });
       }
       console.log(`Cache found but using old structure, regenerating for: ${normalizedRole}`);
@@ -1191,16 +1219,16 @@ router.post('/custom-roadmap-phase', async (req, res) => {
         // If logged in, save the new phase incrementally to the database
         if (userId) {
              const result = await pool.query(
-                "SELECT id, analysis_data FROM role_analyses WHERE user_id = $1 AND role_title ILIKE $2 ORDER BY created_at DESC LIMIT 1",
+                "SELECT id, analysis_data, role_title FROM role_analyses WHERE user_id = $1 AND role_title ILIKE $2 ORDER BY created_at DESC LIMIT 1",
                 [userId, `%${role}%`]
              );
+             
              if (result.rows.length > 0) {
                  const dbId = result.rows[0].id;
                  const analysisData = result.rows[0].analysis_data;
                  
                  // Append the phase to the roadmap array
                  if (analysisData && Array.isArray(analysisData.roadmap)) {
-                     // Verify it wasn't already added (simple deduplication by title matching could go here if needed)
                      analysisData.roadmap.push(phaseData);
                      
                      await pool.query(
@@ -1208,7 +1236,33 @@ router.post('/custom-roadmap-phase', async (req, res) => {
                          [analysisData, dbId]
                      );
                  }
+             } else {
+                 // Fallback: If user didn't have their own role_analyses row, find a global one, append and insert it.
+                 const globalResult = await pool.query(
+                     "SELECT analysis_data, role_title FROM role_analyses WHERE role_title ILIKE $1 ORDER BY created_at DESC LIMIT 1",
+                     [`%${role}%`]
+                 );
+                 if (globalResult.rows.length > 0) {
+                     const globalData = globalResult.rows[0].analysis_data;
+                     if (globalData && Array.isArray(globalData.roadmap)) {
+                         globalData.roadmap.push(phaseData);
+                         await pool.query(
+                             "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
+                             [userId, globalResult.rows[0].role_title || role, globalData]
+                         );
+                     }
+                 }
              }
+             
+             // Broadcast realtime update to sync all open tabs of this user
+             try {
+                 const fetch = (await import('node-fetch')).default;
+                 fetch(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ userId, event: 'roadmap_updated' })
+                 }).catch(() => {});
+             } catch (_) {}
         }
 
         res.json({ success: true, phase: phaseData });
