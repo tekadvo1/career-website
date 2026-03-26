@@ -173,7 +173,9 @@ export default function LandingHeader() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
           <button onClick={() => navigate('/')} className="flex items-center gap-2.5 flex-shrink-0 group">
-            <img src="/logo.png" alt="FindStreak Logo" className="w-9 h-9 rounded-lg shadow-md group-hover:opacity-90 transition-opacity drop-shadow-sm object-cover" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-teal-500 to-emerald-500 shadow-md group-hover:shadow-teal-500/40 transition-shadow">
+              <Zap className="w-[17px] h-[17px] text-white fill-white" />
+            </div>
             <span className="text-[17px] font-bold tracking-tight text-slate-900">
               Find<span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Streak</span>
             </span>
