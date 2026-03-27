@@ -84,7 +84,9 @@ router.get('/me', protect, async (req, res) => {
         ...req.user,
         ai_credits: userRecord.ai_credits || 0,
         available_xp,
-        lastRoleAnalysis
+        lastRoleAnalysis,
+        free_time_schedule: userRecord.free_time_schedule || '',
+        daily_email_enabled: userRecord.daily_email_enabled !== false
       }
     });
   } catch (error) {
@@ -466,5 +468,21 @@ router.post('/feedback', protect, async (req, res) => {
   }
 });
 
-module.exports = router;
+// @route   PUT /api/auth/schedule
+// @desc    Update free time schedule
+// @access  Private
+router.put('/schedule', protect, async (req, res) => {
+  try {
+    const { freeTimeSchedule, dailyEmailEnabled } = req.body;
+    await pool.query(
+      'UPDATE users SET free_time_schedule = $1, daily_email_enabled = $2 WHERE id = $3',
+      [freeTimeSchedule, dailyEmailEnabled !== false, req.user.id]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating schedule:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
+module.exports = router;

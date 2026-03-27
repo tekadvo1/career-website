@@ -148,6 +148,10 @@ const updateSchema = async () => {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'github_username') THEN
           ALTER TABLE users ADD COLUMN github_username VARCHAR(255);
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'free_time_schedule') THEN
+          ALTER TABLE users ADD COLUMN free_time_schedule VARCHAR(255);
+          ALTER TABLE users ADD COLUMN daily_email_enabled BOOLEAN DEFAULT true;
+        END IF;
 
       END $$;
     `);
@@ -323,6 +327,7 @@ if (fs.existsSync(distPath)) {
 
 // Initialize Cron Jobs
 require('./cron/streakEmails');
+require('./cron/dailyReminders');
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
