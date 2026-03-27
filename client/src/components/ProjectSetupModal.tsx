@@ -96,6 +96,20 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
     let dbProjectId = project.id;
 
     if (user.id) {
+      if (email && email.includes('@')) {
+        try {
+          await apiFetch('/api/auth/schedule', {
+            method: 'PUT',
+            body: JSON.stringify({
+              freeTimeSchedule: email,
+              dailyEmailEnabled: notifications.email
+            })
+          });
+        } catch (e) {
+          console.error('Failed to save email notification settings', e);
+        }
+      }
+
       try {
         const res = await apiFetch('/api/role/start-project', {
           method: 'POST',
@@ -232,7 +246,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
                         <div className="relative">
                           <Mail className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400 pointer-events-none" />
                           <input
-                            type="email" placeholder="Ping email (optional)"
+                            type="email" placeholder="Mandatory Ping Email (e.g., Gmail)"
                             value={email} onChange={e => setEmail(e.target.value)}
                             className="w-full p-3 pl-11 border border-slate-200 rounded-xl text-[14px] font-medium text-slate-700 focus:ring-2 focus:ring-slate-900 outline-none transition-all shadow-sm mb-4"
                           />
@@ -390,7 +404,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
               </button>
               <button
                 onClick={handleContinue}
-                disabled={loading || selectedDays.length === 0}
+                disabled={loading || selectedDays.length === 0 || !email || !email.includes('@')}
                 className="w-full sm:flex-1 py-3.5 rounded-xl font-bold text-[14px] text-white flex items-center justify-center gap-2 transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] bg-slate-900 hover:bg-black disabled:opacity-50 disabled:hover:shadow-none"
               >
                 {loading

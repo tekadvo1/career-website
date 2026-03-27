@@ -158,7 +158,7 @@ const sendWeeklyStreakEmail = async ({ email, name, streak }) => {
   }
 };
 
-const sendDailyScheduleEmail = async ({ email, name, freeTime }) => {
+const sendDailyScheduleEmail = async ({ email, name }) => {
   if (!resend) {
     console.warn("Skipping daily email: RESEND_API_KEY is missing.");
     return false;
@@ -168,13 +168,12 @@ const sendDailyScheduleEmail = async ({ email, name, freeTime }) => {
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'FindStreak <onboarding@resend.dev>',
       to: [email],
-      subject: `Your Daily Learning Schedule Reminder — FindStreak`,
+      subject: `Your Daily Learning Reminder — FindStreak`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
-          <h2 style="color: #0d9488; text-align: center;">Daily Learning Schedule</h2>
+          <h2 style="color: #0d9488; text-align: center;">Daily Learning Reminder</h2>
           <div style="text-align: center; margin: 30px 0;">
-             <p style="font-size: 16px; color: #475569;">This is your automated daily reminder. You have scheduled dedicated learning time today during the following hours:</p>
-             <h1 style="font-size: 32px; color: #f59e0b; margin: 15px 0;">${freeTime}</h1>
+             <p style="font-size: 16px; color: #475569; margin-bottom: 15px;">This is your 9:00 AM daily reminder. It's time to work on your career path and complete today's goals.</p>
              <p style="font-size: 16px; color: #475569;">Consistency is the key to career advancement. Log in to your workspace to continue your progress.</p>
           </div>
           <div style="text-align: center; margin-top: 30px;">
