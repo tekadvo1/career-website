@@ -391,6 +391,11 @@ export default function JobMatches() {
                   <span className="flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
                     <CheckCircle className="w-3 h-3" /> Analyzed
                   </span>
+                  {analyzedAt && (
+                    <span className="text-[10px] text-slate-400">
+                      {new Date(analyzedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
                 </div>
                 {analysis.candidateName && (
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
