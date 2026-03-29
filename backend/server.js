@@ -111,6 +111,7 @@ const missionRoutes = require('./routes/missionRoutes');
 const achievementRoutes = require('./routes/achievementRoutes');
 const realtimeRoutes = require('./routes/realtimeRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
+const jobMatchRoutes = require('./routes/jobMatchRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const projectStructureRoutes = require('./routes/projectStructureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -145,6 +146,7 @@ app.use('/api/missions',    protect, missionRoutes);
 app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
+app.use('/api/job-match',   protect, jobMatchRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
 app.use('/api/admin',       adminProtect, adminRoutes);  // Uses admin JWT, NOT user JWT
 
@@ -319,6 +321,19 @@ const updateSchema = async () => {
         END IF;
       END $$;
     `);
+
+    // Create job_match_analyses table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS job_match_analyses (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        file_name VARCHAR(255),
+        analysis_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+
 
     // Set admin flag for primary admin email
     await client.query(`

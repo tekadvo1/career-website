@@ -74,7 +74,7 @@ const navItems: NavItem[] = [
     subtitle: 'All extra features',
     icon: <LayoutGrid className="w-5 h-5 text-emerald-600" />,
     route: '/tools',
-  }
+  },
 ];
 
 export default function Sidebar({ activePage }: SidebarProps) {

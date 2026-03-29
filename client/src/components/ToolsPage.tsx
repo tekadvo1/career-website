@@ -7,7 +7,8 @@ import {
   LayoutGrid,
   Terminal,
   MessageSquare,
-  ChevronRight
+  ChevronRight,
+  Briefcase
 } from 'lucide-react';
 
 export default function ToolsPage() {
@@ -54,7 +55,15 @@ export default function ToolsPage() {
       route: '/interview-guide',
       badge: 'NEW',
       bgColor: 'bg-pink-100',
-    }
+    },
+    {
+      label: 'Job Matches',
+      subtitle: 'Upload resume → find jobs',
+      icon: <Briefcase className="w-5 h-5 text-violet-600" />,
+      route: '/job-matches',
+      badge: 'NEW',
+      bgColor: 'bg-violet-100',
+    },
   ];
 
   return (
