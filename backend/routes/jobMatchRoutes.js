@@ -463,4 +463,48 @@ function buildFallbackLinks(role, country) {
   return links[country] || links['us'];
 }
 
+// ==========================================
+// TARGET ROLES (Job Search Portal)
+// ==========================================
+
+// Save user's selected roles
+router.post('/save-target-roles', authenticateToken, async (req, res) => {
+  try {
+    const { roles } = req.body;
+    if (!roles || !Array.isArray(roles)) {
+      return res.status(400).json({ error: 'Valid roles array is required.' });
+    }
+
+    const userId = req.user.id;
+    await pool.query(
+      `INSERT INTO user_target_roles (user_id, roles, updated_at) 
+       VALUES ($1, $2, NOW()) 
+       ON CONFLICT (user_id) DO UPDATE SET roles = EXCLUDED.roles, updated_at = NOW()`,
+      [userId, JSON.stringify(roles)]
+    );
+
+    res.json({ success: true, message: 'Roles saved securely.' });
+  } catch (err) {
+    console.error('Error saving target roles:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+// Retrieve user's saved roles
+router.get('/target-roles', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query('SELECT roles FROM user_target_roles WHERE user_id = $1', [userId]);
+
+    if (result.rows.length === 0) {
+      return res.json({ success: true, roles: [] });
+    }
+
+    res.json({ success: true, roles: result.rows[0].roles });
+  } catch (err) {
+    console.error('Error fetching target roles:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 module.exports = router;

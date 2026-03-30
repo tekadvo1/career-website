@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Upload, FileText, ChevronLeft, ChevronRight,
-  X, CheckCircle, TrendingUp, AlertCircle,
-  Loader2, RotateCcw, ChevronDown,
+  X, CheckCircle, TrendingUp, AlertCircle, Check,
+  Loader2, RotateCcw, ChevronDown, ArrowRight,
   Target, Award, Briefcase, Sparkles
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
@@ -108,9 +108,8 @@ export default function JobMatches() {
   const [fileName, setFileName]     = useState<string | null>(null);
   const [analyzedAt, setAnalyzedAt] = useState<string | null>(null);
   const [loadingSaved, setLoadingSaved] = useState(true);
-
-
-
+  const [targetRoles, setTargetRoles] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
   useEffect(() => {
     fetchSavedAnalysis()
       .then(saved => {
@@ -124,6 +123,27 @@ export default function JobMatches() {
       .catch(() => {})
       .finally(() => setLoadingSaved(false));
   }, []);
+
+  const handleContinue = async () => {
+    if (targetRoles.length === 0) return;
+    setSavingRoles(true);
+    try {
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/api/job-match/save-target-roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ roles: targetRoles })
+      });
+      if (res.ok) {
+        navigate('/job-search-portal');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save roles. Please check connection.');
+    } finally {
+      setSavingRoles(false);
+    }
+  };
 
   const handleFile = useCallback(async (file: File) => {
     const allowed = [
@@ -406,13 +426,34 @@ export default function JobMatches() {
                       <div key={role.roleName + idx}>
                         {/* ── Role row ── */}
                         <div
-                          className={`px-5 py-4 flex items-center gap-4 transition-colors cursor-pointer ${
+                          className={`px-5 py-4 flex items-center gap-3 transition-colors cursor-pointer select-none ${
                             isExpanded ? 'bg-emerald-50' : 'hover:bg-slate-50'
                           }`}
                           onClick={() => {
                             setExpandedRole(isExpanded ? null : role.roleName);
                           }}
                         >
+                          {/* Checkbox */}
+                          <div 
+                            className="shrink-0 flex items-center justify-center py-2 pr-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTargetRoles(prev => 
+                                prev.includes(role.roleName) 
+                                  ? prev.filter(r => r !== role.roleName)
+                                  : [...prev, role.roleName]
+                              );
+                            }}
+                          >
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 ${
+                              targetRoles.includes(role.roleName) 
+                                ? 'bg-emerald-600 border-emerald-600 shadow-sm shadow-emerald-200' 
+                                : 'border-slate-300 hover:border-emerald-400 bg-white'
+                            }`}>
+                              {targetRoles.includes(role.roleName) && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                            </div>
+                          </div>
+
                           {/* Match % circle */}
                           <div className={`shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2 font-black text-sm tabular-nums ${
                             isExpanded ? 'border-emerald-500 bg-emerald-500 text-white' : `border-slate-200 ${matchTextColor(role.matchPercent)}`
@@ -540,6 +581,27 @@ export default function JobMatches() {
               </div>
             </div>
 
+            {/* Target Selected Floating Bar */}
+            {targetRoles.length > 0 && (
+              <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 fade-up">
+                <div className="bg-slate-900 shadow-2xl shadow-slate-900/40 rounded-full pl-6 pr-2 py-2 flex items-center gap-6 border border-slate-700/50">
+                  <span className="text-white text-sm font-semibold flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black tabular-nums">{targetRoles.length}</span>
+                    Roles Selected
+                  </span>
+                  
+                  <button
+                    onClick={handleContinue}
+                    disabled={savingRoles}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-70 disabled:hover:bg-emerald-500 text-white text-sm font-bold rounded-full transition-colors"
+                  >
+                    {savingRoles ? 'Saving...' : 'Continue to Job Portal'}
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {/* Skills gap now shown inside expanded WHY section per role */}
           </div>
         )}

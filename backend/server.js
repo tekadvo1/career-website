@@ -333,7 +333,14 @@ const updateSchema = async () => {
       );
     `);
 
-
+    // Create user target roles table (Job Search Portal)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS user_target_roles (
+        user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        roles JSONB NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
     // Set admin flag for primary admin email
     await client.query(`
