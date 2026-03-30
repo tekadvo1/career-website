@@ -222,7 +222,13 @@ ${resumeText.substring(0, 7000)}`,
       return res.status(500).json({ error: 'Failed to parse AI response. Please try again.' });
     }
 
-    // ── PASS 2: Self-verification (double-check) ──────────────────────────────
+    // Force-lock the mathematically computed experience (never let GPT override this)
+    if (preciseExperienceLabel) {
+      analysis.totalExperienceLabel = preciseExperienceLabel;
+      analysis.totalExperienceYears = preciseExperienceYears;
+    }
+
+    // ── PASS 2: Verify roles/skills only (experience already locked above) ────
     try {
       const verifyRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -230,19 +236,22 @@ ${resumeText.substring(0, 7000)}`,
         body: JSON.stringify({
           model: 'gpt-4o',
           messages: [
-            { role: 'system', content: 'You are a quality reviewer. Validate and correct resume analysis JSON. Return corrected JSON only, no markdown.' },
+            {
+              role: 'system',
+              content: 'You are a quality reviewer. Validate resume role matching JSON. Return corrected JSON only, no markdown, no extra text.',
+            },
             {
               role: 'user',
-              content: `Review this resume analysis against the original resume. Check:
-1. Is totalExperienceYears accurate based on actual job dates in the resume?
-2. Are matchPercent values honest and evidence-based?
-3. Are all skills mentioned in whyExplanation actually present in the resume?
-4. Fix any inaccuracies and return the corrected full JSON (same schema, no changes to schema).
+              content: `Review this resume analysis. Check ONLY:
+1. Are matchPercent values honest and evidence-based (not inflated)?
+2. Are skills in whyExplanation actually present in the resume text?
+3. Fix any issues and return the corrected full JSON.
 
-Original resume (first 3000 chars): ${resumeText.substring(0, 3000)}
+IMPORTANT: Do NOT change totalExperienceLabel or totalExperienceYears — keep them exactly as they are.
 
-Analysis to verify:
-${JSON.stringify(analysis, null, 2)}`,
+Resume (first 2000 chars): ${resumeText.substring(0, 2000)}
+
+Analysis: ${JSON.stringify(analysis)}`,
             },
           ],
           temperature: 0.1,
@@ -256,15 +265,20 @@ ${JSON.stringify(analysis, null, 2)}`,
         try {
           const vMatch = vRaw.match(/```json\n([\s\S]*?)\n```/) || vRaw.match(/```\n([\s\S]*?)\n```/);
           const verified = JSON.parse(vMatch ? vMatch[1] : vRaw);
-          // Only replace if verification returned a valid object with roles
           if (verified?.roles && Array.isArray(verified.roles)) {
             analysis = verified;
+            // Re-lock experience after verification (in case GPT changed it)
+            if (preciseExperienceLabel) {
+              analysis.totalExperienceLabel = preciseExperienceLabel;
+              analysis.totalExperienceYears = preciseExperienceYears;
+            }
           }
-        } catch { /* keep original if verification parse fails */ }
+        } catch { /* keep original if parse fails */ }
       }
     } catch (verifyErr) {
       console.warn('Verification pass failed (non-fatal):', verifyErr.message);
     }
+
 
     // Ensure roles are sorted by matchPercent desc
     if (analysis.roles) {
