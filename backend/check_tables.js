@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 const client = new Client({ connectionString: 'postgresql://postgres:iXbjqloBGLwGCkoTNFEaPdmurPgePsrR@caboose.proxy.rlwy.net:31652/railway' });
 client.connect()
-  .then(() => client.query('SELECT user_id, file_name, created_at, analysis_data->>\'totalExperienceLabel\' as experience_label FROM job_match_analyses ORDER BY created_at DESC LIMIT 3;'))
+  .then(() => client.query('SELECT table_name FROM information_schema.tables WHERE table_schema=\'public\';'))
   .then(res => { console.log(JSON.stringify(res.rows, null, 2)); client.end(); })
   .catch(e => { console.error(e); client.end(); });

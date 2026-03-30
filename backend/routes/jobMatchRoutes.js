@@ -101,6 +101,8 @@ ${resumeText.substring(0, 5000)}`,
           const expParsed = JSON.parse(expMatch ? expMatch[1] : expRaw);
 
           if (expParsed?.jobs && Array.isArray(expParsed.jobs) && expParsed.jobs.length > 0) {
+            console.log(`[JobMatch] PASS 0 Extracted Jobs =>`, JSON.stringify(expParsed.jobs)); // Added log to trace GPT errors directly in Railway
+            
             const periods = expParsed.jobs
               .filter(j => j.startDate && j.endDate)
               .map(j => {
@@ -121,7 +123,8 @@ ${resumeText.substring(0, 5000)}`,
               }
             }
 
-            const totalMonths = merged.reduce((sum, p) => sum + (p.end - p.start), 0);
+            // Fixed inclusive math: (+ 1) because working from Jan to Feb is 2 months, not 1
+            const totalMonths = merged.reduce((sum, p) => sum + (p.end - p.start + 1), 0);
             if (totalMonths > 0) {
               const years = Math.floor(totalMonths / 12);
               const months = totalMonths % 12;
