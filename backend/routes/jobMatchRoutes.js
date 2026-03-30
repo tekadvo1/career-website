@@ -164,14 +164,14 @@ ${resumeText.substring(0, 25000)}`,
           },
           {
             role: 'user',
-            content: `Carefully analyze this resume and return ALL eligible job roles this person qualifies for (no limit — include every role from 50% match and above).
+            content: `Carefully analyze this resume and return an UNLIMITED and exhaustive list of ALL eligible job roles this person qualifies for (NO LIMIT — include every role from 50% match and above). You MUST find at least 10 to 20 different job roles if the resume supports it. Do not stop at just 4 or 5 roles. Explore leadership, specialized niches, and lateral moves.
 
 ${experienceInstruction}
 
 RULES:
 - DO NOT make up skills or experience — only use what is explicitly in the resume.
 - Match percent must honestly reflect the resume evidence (do not inflate).
-- Include ALL roles the person is eligible for, sorted by matchPercent descending.
+- Mandate: Include an UNLIMITED number of ALL roles the person is eligible for, sorted by matchPercent descending. Output as many valid roles as possible to give the candidate options.
 
 For EACH role provide:
 - roleName: exact professional job title
@@ -203,7 +203,7 @@ ${resumeText.substring(0, 25000)}`,
           },
         ],
         temperature: 0.2,
-        max_tokens: 4000,
+        max_tokens: 12000,
       }),
     });
 
@@ -248,7 +248,7 @@ ${resumeText.substring(0, 25000)}`,
               content: `Review this resume analysis. Check ONLY:
 1. Are matchPercent values honest and evidence-based (not inflated)?
 2. Are skills in whyExplanation actually present in the resume text?
-3. Fix any issues and return the corrected full JSON.
+3. Fix any issues and return the corrected full JSON. Ensure NONE of the roles are truncated from the array! Output ALL roles!
 
 IMPORTANT: Do NOT change totalExperienceLabel or totalExperienceYears — keep them exactly as they are.
 
@@ -258,7 +258,7 @@ Analysis: ${JSON.stringify(analysis)}`,
             },
           ],
           temperature: 0.1,
-          max_tokens: 4000,
+          max_tokens: 12000,
         }),
       });
 
