@@ -211,9 +211,9 @@ export default function JobMatches() {
   }, [selectedRole, selectedCountry]);
 
   useEffect(() => {
-    if (jobsSearched && selectedRole) handleSearchJobs();
+    if (selectedRole) handleSearchJobs();
     // eslint-disable-next-line
-  }, [selectedCountry]);
+  }, [selectedRole, selectedCountry]);
 
   const resetAll = () => {
     setAnalysis(null); setFileName(null); setAnalyzedAt(null);
@@ -664,16 +664,6 @@ export default function JobMatches() {
 
                 {/* Jobs list */}
                 <div className="p-4">
-                  {!jobsSearched && !jobsLoading && (
-                    <div className="text-center py-10">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mx-auto mb-3">
-                        <Globe className="w-6 h-6 text-slate-400" />
-                      </div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">Select a country &amp; click Find Jobs</p>
-                      <p className="text-xs text-slate-400">We'll search LinkedIn, Indeed, and official job boards</p>
-                    </div>
-                  )}
-
                   {jobsLoading && (
                     <div className="text-center py-10">
                       <Loader2 className="w-7 h-7 text-emerald-600 animate-spin mx-auto mb-3" />
