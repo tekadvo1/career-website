@@ -406,10 +406,21 @@ router.get('/my-analysis', async (req, res) => {
       return res.json({ success: true, analysis: null });
     }
     const row = result.rows[0];
+    const analysisData = row.analysis_data;
+
+    // Invalidate old cache if it doesn't have the new precise experience fields
+    // (forces re-upload with the improved backend)
+    const hasNewSchema = analysisData?.totalExperienceLabel && analysisData?.roles?.[0]?.whyExplanation;
+    if (!hasNewSchema) {
+      // Delete the stale record so user is prompted to re-upload
+      await pool.query('DELETE FROM job_match_analyses WHERE user_id = $1', [userId]);
+      return res.json({ success: true, analysis: null, staleCache: true });
+    }
+
     return res.json({
       success: true,
       fileName: row.file_name,
-      analysis: row.analysis_data,
+      analysis: analysisData,
       analyzedAt: row.created_at,
     });
   } catch (err) {

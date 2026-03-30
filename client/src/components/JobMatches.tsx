@@ -119,7 +119,8 @@ async function fetchSavedAnalysis(): Promise<{ analysis: ResumeAnalysis; fileNam
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
-  if (!res.ok || !data.success || !data.analysis) return null;
+  // Server detected stale cache and deleted it — treat as no analysis
+  if (!res.ok || !data.success || !data.analysis || data.staleCache) return null;
   return { analysis: data.analysis, fileName: data.fileName, analyzedAt: data.analyzedAt };
 }
 
@@ -150,7 +151,12 @@ export default function JobMatches() {
   useEffect(() => {
     fetchSavedAnalysis()
       .then(saved => {
-        if (saved) { setAnalysis(saved.analysis); setFileName(saved.fileName); setAnalyzedAt(saved.analyzedAt); }
+        if (saved) {
+          setAnalysis(saved.analysis);
+          setFileName(saved.fileName);
+          setAnalyzedAt(saved.analyzedAt);
+        }
+        // If null: either no analysis ever, or stale cache was cleared → show upload screen
       })
       .catch(() => {})
       .finally(() => setLoadingSaved(false));
