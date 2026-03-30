@@ -468,7 +468,7 @@ function buildFallbackLinks(role, country) {
 // ==========================================
 
 // Save user's selected roles
-router.post('/save-target-roles', authenticateToken, async (req, res) => {
+router.post('/save-target-roles', async (req, res) => {
   try {
     const { roles } = req.body;
     if (!roles || !Array.isArray(roles)) {
@@ -491,7 +491,7 @@ router.post('/save-target-roles', authenticateToken, async (req, res) => {
 });
 
 // Retrieve user's saved roles
-router.get('/target-roles', authenticateToken, async (req, res) => {
+router.get('/target-roles', async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query('SELECT roles FROM user_target_roles WHERE user_id = $1', [userId]);
