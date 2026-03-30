@@ -414,17 +414,22 @@ export default function JobMatches() {
                 {analysis.candidateName && (
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
                     {analysis.candidateName}
-                    {(analysis.totalExperienceLabel || analysis.totalExperienceYears) &&
-                      ` · ${analysis.totalExperienceLabel || `${analysis.totalExperienceYears} yrs`} experience`
-                    }
                   </p>
                 )}
                 <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{analysis.experienceSummary}</p>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-3 shrink-0 flex-wrap sm:flex-nowrap w-full sm:w-auto mt-2 sm:mt-0">
+                {(analysis.totalExperienceLabel || analysis.totalExperienceYears) && (
+                  <div className="px-3.5 py-1.5 bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-lg flex flex-col justify-center sm:items-end w-full sm:w-auto shadow-sm">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Total Experience</span>
+                    <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
+                      {analysis.totalExperienceLabel || `${analysis.totalExperienceYears} yrs`}
+                    </span>
+                  </div>
+                )}
                 <button
                   onClick={resetAll}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 rounded-lg transition-all"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 rounded-lg transition-all w-full sm:w-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> New Resume
                 </button>
