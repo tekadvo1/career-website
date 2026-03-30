@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Upload, FileText, Search, Globe, ChevronLeft, ChevronRight,
-  ExternalLink, X, CheckCircle, TrendingUp, AlertCircle,
-  MapPin, Clock, Building2, Loader2, RotateCcw, ChevronDown,
+  Upload, FileText, ChevronLeft, ChevronRight,
+  X, CheckCircle, TrendingUp, AlertCircle,
+  Loader2, RotateCcw, ChevronDown,
   Target, Award, Briefcase, Sparkles
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
@@ -36,28 +36,7 @@ interface ResumeAnalysis {
   roles: MatchedRole[];
 }
 
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  employmentType: string;
-  isRemote: boolean;
-  salary: string | null;
-  postedAt: string | null;
-  applyUrl: string;
-  logo: string | null;
-  description: string;
-}
 
-type Country = 'us' | 'in' | 'uk' | 'ca';
-
-const COUNTRIES: { code: Country; label: string; flag: string; description: string }[] = [
-  { code: 'us', label: 'United States', flag: '🇺🇸', description: 'LinkedIn, Indeed, USAJobs' },
-  { code: 'in', label: 'India',         flag: '🇮🇳', description: 'LinkedIn, Naukri, Indeed' },
-  { code: 'uk', label: 'United Kingdom', flag: '🇬🇧', description: 'LinkedIn, Reed, Totaljobs' },
-  { code: 'ca', label: 'Canada',        flag: '🇨🇦', description: 'LinkedIn, Job Bank, Indeed' },
-];
 
 const DEMAND_STYLE: Record<string, string> = {
   High:   'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -102,16 +81,7 @@ async function analyzeResume(file: File): Promise<{ analysis: ResumeAnalysis; fi
   return { analysis: data.analysis, fileName: data.fileName };
 }
 
-async function searchJobs(role: string, country: Country): Promise<Job[]> {
-  const token = getToken();
-  const params = new URLSearchParams({ role, country });
-  const res = await fetch(`${API_BASE}/api/job-match/search-jobs?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const data = await res.json();
-  if (!res.ok || !data.success) throw new Error(data.error || 'Job search failed');
-  return data.jobs || [];
-}
+
 
 async function fetchSavedAnalysis(): Promise<{ analysis: ResumeAnalysis; fileName: string; analyzedAt: string } | null> {
   const token = getToken();
@@ -139,14 +109,7 @@ export default function JobMatches() {
   const [analyzedAt, setAnalyzedAt] = useState<string | null>(null);
   const [loadingSaved, setLoadingSaved] = useState(true);
 
-  const [selectedRole, setSelectedRole]   = useState<MatchedRole | null>(null);
-  const [selectedCountry, setSelectedCountry] = useState<Country>('us');
-  const [countryOpen, setCountryOpen]     = useState(false);
 
-  const [jobs, setJobs]             = useState<Job[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [jobsError, setJobsError]   = useState<string | null>(null);
-  const [jobsSearched, setJobsSearched] = useState(false);
 
   useEffect(() => {
     fetchSavedAnalysis()
@@ -174,9 +137,6 @@ export default function JobMatches() {
     if (file.size > 5 * 1024 * 1024) { setUploadError('File size must be under 5MB.'); return; }
     setUploadError(null);
     setUploading(true);
-    setSelectedRole(null);
-    setJobs([]);
-    setJobsSearched(false);
     try {
       const result = await analyzeResume(file);
       setAnalysis(result.analysis);
@@ -199,28 +159,12 @@ export default function JobMatches() {
     e.target.value = '';
   };
 
-  const handleSearchJobs = useCallback(async () => {
-    if (!selectedRole) return;
-    setJobsLoading(true); setJobsError(null); setJobsSearched(true);
-    try {
-      const results = await searchJobs(selectedRole.roleName, selectedCountry);
-      setJobs(results);
-    } catch (err: any) {
-      setJobsError(err.message || 'Search failed.');
-    } finally { setJobsLoading(false); }
-  }, [selectedRole, selectedCountry]);
 
-  useEffect(() => {
-    if (selectedRole) handleSearchJobs();
-    // eslint-disable-next-line
-  }, [selectedRole, selectedCountry]);
 
   const resetAll = () => {
     setAnalysis(null); setFileName(null); setAnalyzedAt(null);
-    setSelectedRole(null); setJobs([]); setJobsSearched(false); setUploadError(null);
+    setUploadError(null);
   };
-
-  const selectedCountryInfo = COUNTRIES.find(c => c.code === selectedCountry)!;
 
   // ── Render ──────────────────────────────────────────────────────────────
   return (
@@ -254,9 +198,9 @@ export default function JobMatches() {
 
           {/* Step indicators */}
           <div className="hidden sm:flex items-center gap-1.5">
-            {['Upload Resume', 'Match Roles', 'Find Jobs'].map((step, i) => {
-              const done = (i === 0 && !!analysis) || (i === 1 && !!selectedRole) || (i === 2 && jobsSearched);
-              const active = (!analysis && i === 0) || (analysis && !selectedRole && i === 1) || (selectedRole && !jobsSearched && i === 2);
+            {['Upload Resume', 'Match Roles'].map((step, i) => {
+              const done = (i === 0 && !!analysis);
+              const active = (!analysis && i === 0) || (analysis && i === 1);
               return (
                 <div key={step} className="flex items-center gap-1.5">
                   <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
@@ -267,7 +211,7 @@ export default function JobMatches() {
                     {done ? <CheckCircle className="w-3 h-3" /> : <span className="w-3.5 h-3.5 rounded-full bg-current/20 flex items-center justify-center text-[8px]">{i+1}</span>}
                     {step}
                   </div>
-                  {i < 2 && <ChevronRight className="w-3 h-3 text-slate-300" />}
+                  {i < 1 && <ChevronRight className="w-3 h-3 text-slate-300" />}
                 </div>
               );
             })}
@@ -292,15 +236,14 @@ export default function JobMatches() {
             {/* Feature intro */}
             <div className="mb-6">
               <h2 className="text-xl font-bold text-slate-900 mb-1">AI Resume Analyzer</h2>
-              <p className="text-sm text-slate-500">Upload your resume to discover which roles you match and find real job listings worldwide.</p>
+              <p className="text-sm text-slate-500">Upload your resume to discover which roles you match and get detailed insights.</p>
             </div>
 
-            {/* Feature pills */}
+          {/* Feature pills */}
             <div className="flex flex-wrap gap-2 mb-6">
               {[
                 { icon: <Target className="w-3.5 h-3.5" />, label: 'Role match accuracy scores' },
-                { icon: <Globe className="w-3.5 h-3.5" />, label: 'USA · India · UK · Canada jobs' },
-                { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Salary & demand insights' },
+                { icon: <TrendingUp className="w-3.5 h-3.5" />, label: 'Skills & experience insights' },
               ].map(f => (
                 <div key={f.label} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-600 shadow-sm">
                   <span className="text-emerald-600">{f.icon}</span>
@@ -371,11 +314,10 @@ export default function JobMatches() {
             )}
 
             {/* How it works */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
               {[
                 { num: '1', title: 'Upload Resume', desc: 'We parse your .doc or .docx file securely', icon: <FileText className="w-4 h-4 text-emerald-600" /> },
                 { num: '2', title: 'AI Role Matching', desc: 'Get up to 10 roles with accuracy scores', icon: <Sparkles className="w-4 h-4 text-teal-600" /> },
-                { num: '3', title: 'Find Real Jobs', desc: 'Browse live listings from top job boards', icon: <Briefcase className="w-4 h-4 text-emerald-700" /> },
               ].map(step => (
                 <div key={step.num} className="bg-white border border-slate-200 rounded-xl p-4 flex gap-3">
                   <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
@@ -451,14 +393,13 @@ export default function JobMatches() {
                 <h2 className="text-sm font-bold text-slate-900">
                   {analysis.roles.length} Eligible Job Roles
                 </h2>
-                <span className="text-xs text-slate-400">— click a role to expand details & find jobs</span>
+                <span className="text-xs text-slate-400">— click a role to expand details</span>
               </div>
 
               <div className="divide-y divide-slate-100">
                 {analysis.roles
                   .sort((a, b) => b.matchPercent - a.matchPercent)
                   .map((role, idx) => {
-                    const isSelected = selectedRole?.roleName === role.roleName;
                     const isExpanded = expandedRole === role.roleName;
                     const why = role.whyExplanation;
                     return (
@@ -466,18 +407,15 @@ export default function JobMatches() {
                         {/* ── Role row ── */}
                         <div
                           className={`px-5 py-4 flex items-center gap-4 transition-colors cursor-pointer ${
-                            isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'
+                            isExpanded ? 'bg-emerald-50' : 'hover:bg-slate-50'
                           }`}
                           onClick={() => {
-                            setSelectedRole(role);
-                            setJobs([]);
-                            setJobsSearched(false);
                             setExpandedRole(isExpanded ? null : role.roleName);
                           }}
                         >
                           {/* Match % circle */}
                           <div className={`shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2 font-black text-sm tabular-nums ${
-                            isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : `border-slate-200 ${matchTextColor(role.matchPercent)}`
+                            isExpanded ? 'border-emerald-500 bg-emerald-500 text-white' : `border-slate-200 ${matchTextColor(role.matchPercent)}`
                           }`}>
                             {role.matchPercent}
                             <span className="text-[8px] font-bold opacity-70">%</span>
@@ -499,7 +437,7 @@ export default function JobMatches() {
                           </div>
 
                           <div className="shrink-0 flex items-center gap-2">
-                            {isSelected && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                            {isExpanded && <CheckCircle className="w-4 h-4 text-emerald-600" />}
                             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                           </div>
                         </div>
@@ -594,13 +532,6 @@ export default function JobMatches() {
                               </div>
                             )}
 
-                            {/* Find jobs CTA */}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedRole(role); setJobs([]); setJobsSearched(false); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors"
-                            >
-                              <Search className="w-4 h-4" /> Find Jobs for {role.roleName}
-                            </button>
                           </div>
                         )}
                       </div>
@@ -608,145 +539,6 @@ export default function JobMatches() {
                   })}
               </div>
             </div>
-
-            {/* ── Job Search Panel ──────────────────────────────────────── */}
-            {selectedRole && (
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden fade-up">
-                {/* Panel header */}
-                <div className="bg-gradient-to-r from-emerald-700 to-teal-700 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-                  <div>
-                    <p className="text-white font-bold text-sm">{selectedRole.roleName} — Job Listings</p>
-                    <p className="text-emerald-200 text-xs mt-0.5">Live results from top job boards worldwide</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Country dropdown */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setCountryOpen(v => !v)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-xs font-semibold transition-all backdrop-blur-sm"
-                      >
-                        <span>{selectedCountryInfo.flag}</span>
-                        <span>{selectedCountryInfo.label}</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform ${countryOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {countryOpen && (
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-30 w-52 overflow-hidden">
-                          {COUNTRIES.map(c => (
-                            <button
-                              key={c.code}
-                              onClick={() => { setSelectedCountry(c.code); setCountryOpen(false); }}
-                              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-emerald-50 transition-colors ${selectedCountry === c.code ? 'bg-emerald-50' : ''}`}
-                            >
-                              <span className="text-base">{c.flag}</span>
-                              <div className="flex-1">
-                                <p className="text-xs font-bold text-slate-800">{c.label}</p>
-                                <p className="text-[9px] text-slate-400">{c.description}</p>
-                              </div>
-                              {selectedCountry === c.code && <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={handleSearchJobs}
-                      disabled={jobsLoading}
-                      className="flex items-center gap-1.5 px-4 py-1.5 bg-white text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-50 transition-all shadow-sm disabled:opacity-60"
-                    >
-                      {jobsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                      {jobsLoading ? 'Searching…' : 'Find Jobs'}
-                    </button>
-                  </div>
-                </div>
-
-
-                {/* Jobs list */}
-                <div className="p-4">
-                  {jobsLoading && (
-                    <div className="text-center py-10">
-                      <Loader2 className="w-7 h-7 text-emerald-600 animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-slate-500">Searching in {selectedCountryInfo.label}…</p>
-                    </div>
-                  )}
-
-                  {jobsError && (
-                    <div className="flex items-center gap-3 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-                      <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                      <p className="text-sm text-red-700 flex-1">{jobsError}</p>
-                      <button onClick={handleSearchJobs} className="text-xs text-red-600 font-bold hover:underline shrink-0">Retry</button>
-                    </div>
-                  )}
-
-                  {!jobsLoading && jobsSearched && jobs.length === 0 && !jobsError && (
-                    <div className="text-center py-10">
-                      <p className="text-sm font-semibold text-slate-700 mb-1">No results found</p>
-                      <p className="text-xs text-slate-400 mb-4">Try a different country or role</p>
-                      <button onClick={handleSearchJobs} className="px-4 py-2 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-700 transition-colors">Try Again</button>
-                    </div>
-                  )}
-
-                  {!jobsLoading && jobs.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold text-slate-600">{jobs.length} listings · {selectedCountryInfo.flag} {selectedCountryInfo.label}</p>
-                        <button onClick={handleSearchJobs} className="flex items-center gap-1 text-[10px] text-emerald-600 hover:text-emerald-800 font-bold">
-                          <RotateCcw className="w-3 h-3" /> Refresh
-                        </button>
-                      </div>
-
-                      {jobs.map(job => (
-                        <a
-                          key={job.id}
-                          href={job.applyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group flex items-start gap-3 p-3.5 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30 rounded-xl transition-all duration-150"
-                        >
-                          <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden shrink-0">
-                            {job.logo
-                              ? <img src={job.logo} alt={job.company} className="w-full h-full object-contain" />
-                              : <Building2 className="w-4 h-4 text-slate-400" />
-                            }
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors truncate">{job.title}</p>
-                                <p className="text-[11px] text-slate-500 font-semibold">{job.company}</p>
-                              </div>
-                              <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-emerald-500 transition-colors shrink-0 mt-0.5" />
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {job.location && (
-                                <span className="flex items-center gap-1 text-[10px] text-slate-500">
-                                  <MapPin className="w-3 h-3" />{job.location}
-                                </span>
-                              )}
-                              {job.isRemote && <span className="px-1.5 py-0.5 bg-teal-50 border border-teal-200 text-teal-700 text-[9px] font-bold rounded">Remote</span>}
-                              <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-semibold rounded">{job.employmentType}</span>
-                              {job.salary && <span className="text-[10px] text-emerald-700 font-bold">{job.salary}</span>}
-                              {job.postedAt && (
-                                <span className="flex items-center gap-1 text-[10px] text-slate-400">
-                                  <Clock className="w-3 h-3" />
-                                  {(() => {
-                                    const diff = Math.floor((Date.now() - new Date(job.postedAt!).getTime()) / 86400000);
-                                    return diff === 0 ? 'Today' : diff === 1 ? '1d ago' : `${diff}d ago`;
-                                  })()}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Skills gap now shown inside expanded WHY section per role */}
           </div>
