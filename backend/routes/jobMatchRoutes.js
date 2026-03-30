@@ -53,7 +53,7 @@ router.post('/analyze-resume', upload.single('resume'), async (req, res) => {
       return res.status(500).json({ error: 'Server config error: OpenAI key missing.' });
     }
 
-    // Call OpenAI — detect matched job roles with match %
+    // ── PASS 1: Full role analysis ─────────────────────────────────────────
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -66,38 +66,62 @@ router.post('/analyze-resume', upload.single('resume'), async (req, res) => {
           {
             role: 'system',
             content:
-              'You are an expert career advisor. Analyze resumes and identify job role matches with accuracy percentages. Always return valid JSON only.',
+              'You are a senior technical recruiter and career advisor. Analyze resumes deeply and return precise, honest role matching data. Always return valid JSON only — no markdown, no extra text.',
           },
           {
             role: 'user',
-            content: `Analyze this resume and return the top 6-10 job roles this person is best suited for.
+            content: `Carefully analyze this resume and return ALL eligible job roles this person qualifies for (no limit — include every role from 50% match and above).
 
-For each role provide:
-- roleName: exact job title (e.g., "Frontend Developer", "Data Analyst")
-- matchPercent: integer 0-100 (how well the resume matches this role)
-- category: broad category like "Software Engineering", "Data Science", "Design", etc.
-- keySkillsMatched: array of up to 5 skills from the resume that match this role
-- missingSkills: array of up to 3 important skills missing for this role
-- avgSalaryUSD: estimated annual salary range in USD (e.g., "$80,000 - $120,000")
-- demandLevel: "High" | "Medium" | "Low" (current market demand)
+IMPORTANT RULES:
+- Extract the EXACT total experience by reading all job titles, companies and dates mentioned in the resume. Calculate months and years precisely.
+- DO NOT make up skills or experience — only use what is explicitly in the resume.
+- Match percent must honestly reflect the resume evidence (do not inflate).
+- Include ALL roles the person is eligible for, sorted by matchPercent descending.
+
+For EACH role provide:
+- roleName: exact professional job title
+- matchPercent: integer 50-100 based ONLY on resume evidence
+- demandLevel: "High" | "Medium" | "Low"
 - experienceLevel: "Entry" | "Mid" | "Senior"
-- summary: 1 sentence about why they fit this role
+- whyExplanation: a detailed step-by-step explanation object with:
+    {
+      "overallReason": "1-2 sentences summarizing why this match %",
+      "skillsMatched": [{ "skill": "React", "evidence": "Used in 3 projects mentioned in resume" }],
+      "keywordsFound": ["keyword1", "keyword2"],
+      "technicalStrengths": ["strength1", "strength2"],
+      "experienceAlignment": "How years/level of experience aligns",
+      "missingSkills": [{ "skill": "GraphQL", "impact": "Would raise match by ~5%" }],
+      "steps": [
+        "Step 1: ...",
+        "Step 2: ...",
+        "Step 3: ..."
+      ]
+    }
 
-Return ONLY a valid JSON object:
+Return ONLY this valid JSON object:
 {
-  "candidateName": "Name if found, else null",
-  "experienceSummary": "2-3 sentence overall career summary",
-  "totalExperienceYears": number or null,
-  "topSkills": ["skill1", "skill2", ...],
-  "roles": [ { "roleName", "matchPercent", "category", "keySkillsMatched", "missingSkills", "avgSalaryUSD", "demandLevel", "experienceLevel", "summary" } ]
+  "candidateName": "Full name if found in resume or null",
+  "totalExperienceLabel": "e.g. 3 years 6 months or 5 years",
+  "totalExperienceYears": precise decimal number like 3.5 or null,
+  "experienceSummary": "2-3 sentence professional summary of the candidate based on their actual resume",
+  "topSkills": ["top skill 1", "top skill 2", "...up to 8"],
+  "roles": [
+    {
+      "roleName": "",
+      "matchPercent": 0,
+      "demandLevel": "High",
+      "experienceLevel": "Mid",
+      "whyExplanation": { ... }
+    }
+  ]
 }
 
-Resume:
-${resumeText.substring(0, 6000)}`,
+Resume text:
+${resumeText.substring(0, 7000)}`,
           },
         ],
-        temperature: 0.4,
-        max_tokens: 2000,
+        temperature: 0.2,
+        max_tokens: 4000,
       }),
     });
 
@@ -116,6 +140,55 @@ ${resumeText.substring(0, 6000)}`,
       analysis = JSON.parse(jsonMatch ? jsonMatch[1] : raw);
     } catch {
       return res.status(500).json({ error: 'Failed to parse AI response. Please try again.' });
+    }
+
+    // ── PASS 2: Self-verification (double-check) ──────────────────────────────
+    try {
+      const verifyRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: 'You are a quality reviewer. Validate and correct resume analysis JSON. Return corrected JSON only, no markdown.' },
+            {
+              role: 'user',
+              content: `Review this resume analysis against the original resume. Check:
+1. Is totalExperienceYears accurate based on actual job dates in the resume?
+2. Are matchPercent values honest and evidence-based?
+3. Are all skills mentioned in whyExplanation actually present in the resume?
+4. Fix any inaccuracies and return the corrected full JSON (same schema, no changes to schema).
+
+Original resume (first 3000 chars): ${resumeText.substring(0, 3000)}
+
+Analysis to verify:
+${JSON.stringify(analysis, null, 2)}`,
+            },
+          ],
+          temperature: 0.1,
+          max_tokens: 4000,
+        }),
+      });
+
+      if (verifyRes.ok) {
+        const vData = await verifyRes.json();
+        const vRaw = vData.choices[0].message.content;
+        try {
+          const vMatch = vRaw.match(/```json\n([\s\S]*?)\n```/) || vRaw.match(/```\n([\s\S]*?)\n```/);
+          const verified = JSON.parse(vMatch ? vMatch[1] : vRaw);
+          // Only replace if verification returned a valid object with roles
+          if (verified?.roles && Array.isArray(verified.roles)) {
+            analysis = verified;
+          }
+        } catch { /* keep original if verification parse fails */ }
+      }
+    } catch (verifyErr) {
+      console.warn('Verification pass failed (non-fatal):', verifyErr.message);
+    }
+
+    // Ensure roles are sorted by matchPercent desc
+    if (analysis.roles) {
+      analysis.roles.sort((a, b) => b.matchPercent - a.matchPercent);
     }
 
     // Cache in DB for the user

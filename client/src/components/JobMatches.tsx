@@ -1,30 +1,37 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Upload, FileText, Search, Globe, ChevronRight, ChevronLeft,
+  Upload, FileText, Search, Globe, ChevronLeft, ChevronRight,
   ExternalLink, X, CheckCircle, TrendingUp, AlertCircle,
   MapPin, Clock, Building2, Loader2, RotateCcw, ChevronDown,
-  ArrowRight, Target, Award, Briefcase, Sparkles
+  Target, Award, Briefcase, Sparkles
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
+interface WhyExplanation {
+  overallReason: string;
+  skillsMatched: { skill: string; evidence: string }[];
+  keywordsFound: string[];
+  technicalStrengths: string[];
+  experienceAlignment: string;
+  missingSkills: { skill: string; impact: string }[];
+  steps: string[];
+}
+
 interface MatchedRole {
   roleName: string;
   matchPercent: number;
-  category: string;
-  keySkillsMatched: string[];
-  missingSkills: string[];
-  avgSalaryUSD: string;
   demandLevel: 'High' | 'Medium' | 'Low';
   experienceLevel: 'Entry' | 'Mid' | 'Senior';
-  summary: string;
+  whyExplanation?: WhyExplanation;
 }
 
 interface ResumeAnalysis {
   candidateName: string | null;
   experienceSummary: string;
   totalExperienceYears: number | null;
+  totalExperienceLabel: string | null;
   topSkills: string[];
   roles: MatchedRole[];
 }
@@ -120,6 +127,7 @@ async function fetchSavedAnalysis(): Promise<{ analysis: ResumeAnalysis; fileNam
 export default function JobMatches() {
   const navigate = useNavigate();
 
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [dragging, setDragging]       = useState(false);
   const [uploading, setUploading]     = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -400,15 +408,14 @@ export default function JobMatches() {
                 {analysis.candidateName && (
                   <p className="text-xs font-semibold text-slate-700 mt-0.5">
                     {analysis.candidateName}
-                    {analysis.totalExperienceYears ? ` · ${analysis.totalExperienceYears} yrs experience` : ''}
+                    {(analysis.totalExperienceLabel || analysis.totalExperienceYears) &&
+                      ` · ${analysis.totalExperienceLabel || `${analysis.totalExperienceYears} yrs`} experience`
+                    }
                   </p>
                 )}
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{analysis.experienceSummary}</p>
+                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{analysis.experienceSummary}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {analysis.topSkills.slice(0, 3).map(s => (
-                  <span key={s} className="hidden lg:inline-flex px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-semibold rounded">{s}</span>
-                ))}
                 <button
                   onClick={resetAll}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 rounded-lg transition-all"
@@ -431,9 +438,9 @@ export default function JobMatches() {
               <div className="px-5 py-3.5 border-b border-slate-100 flex items-center gap-2">
                 <Award className="w-4 h-4 text-emerald-600" />
                 <h2 className="text-sm font-bold text-slate-900">
-                  {analysis.roles.length} Matched Roles
+                  {analysis.roles.length} Eligible Job Roles
                 </h2>
-                <span className="text-xs text-slate-400">— select a role to find jobs</span>
+                <span className="text-xs text-slate-400">— click a role to expand details & find jobs</span>
               </div>
 
               <div className="divide-y divide-slate-100">
@@ -441,58 +448,151 @@ export default function JobMatches() {
                   .sort((a, b) => b.matchPercent - a.matchPercent)
                   .map((role, idx) => {
                     const isSelected = selectedRole?.roleName === role.roleName;
+                    const isExpanded = expandedRole === role.roleName;
+                    const why = role.whyExplanation;
                     return (
-                      <button
-                        key={role.roleName + idx}
-                        onClick={() => { setSelectedRole(role); setJobs([]); setJobsSearched(false); }}
-                        className={`w-full text-left px-5 py-4 flex items-center gap-4 transition-colors group ${
-                          isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'
-                        }`}
-                      >
-                        {/* Match % circle */}
-                        <div className={`shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2 font-black text-sm tabular-nums ${
-                          isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : `border-slate-200 ${matchTextColor(role.matchPercent)}`
-                        }`}>
-                          {role.matchPercent}
-                          <span className="text-[8px] font-bold opacity-70">%</span>
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <p className="text-sm font-bold text-slate-900 leading-tight">{role.roleName}</p>
-                            <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded border ${DEMAND_STYLE[role.demandLevel]}`}>{role.demandLevel} Demand</span>
-                            <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded border ${EXP_STYLE[role.experienceLevel]}`}>{role.experienceLevel}</span>
+                      <div key={role.roleName + idx}>
+                        {/* ── Role row ── */}
+                        <div
+                          className={`px-5 py-4 flex items-center gap-4 transition-colors cursor-pointer ${
+                            isSelected ? 'bg-emerald-50' : 'hover:bg-slate-50'
+                          }`}
+                          onClick={() => {
+                            setSelectedRole(role);
+                            setJobs([]);
+                            setJobsSearched(false);
+                            setExpandedRole(isExpanded ? null : role.roleName);
+                          }}
+                        >
+                          {/* Match % circle */}
+                          <div className={`shrink-0 w-12 h-12 rounded-xl flex flex-col items-center justify-center border-2 font-black text-sm tabular-nums ${
+                            isSelected ? 'border-emerald-500 bg-emerald-500 text-white' : `border-slate-200 ${matchTextColor(role.matchPercent)}`
+                          }`}>
+                            {role.matchPercent}
+                            <span className="text-[8px] font-bold opacity-70">%</span>
                           </div>
 
-                          {/* Match bar */}
-                          <div className="h-1 bg-slate-100 rounded-full overflow-hidden mb-2 w-full max-w-sm">
-                            <div
-                              className={`bar-grow h-full rounded-full ${matchBarColor(role.matchPercent)}`}
-                              style={{ width: `${role.matchPercent}%` }}
-                            />
-                          </div>
-
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-[10px] text-slate-500 truncate max-w-xs">{role.summary}</span>
-                            <span className="text-[10px] font-bold text-slate-700 shrink-0">{role.avgSalaryUSD}</span>
-                          </div>
-
-                          {role.keySkillsMatched.length > 0 && (
-                            <div className="flex gap-1.5 mt-2 flex-wrap">
-                              {role.keySkillsMatched.slice(0, 4).map(s => (
-                                <span key={s} className="px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-semibold rounded">{s}</span>
-                              ))}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <p className="text-sm font-bold text-slate-900 leading-tight">{role.roleName}</p>
+                              <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded border ${DEMAND_STYLE[role.demandLevel]}`}>{role.demandLevel} Demand</span>
+                              <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded border ${EXP_STYLE[role.experienceLevel]}`}>{role.experienceLevel}</span>
                             </div>
-                          )}
+                            {/* Match bar */}
+                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full max-w-sm">
+                              <div
+                                className={`bar-grow h-full rounded-full ${matchBarColor(role.matchPercent)}`}
+                                style={{ width: `${role.matchPercent}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-2">
+                            {isSelected && <CheckCircle className="w-4 h-4 text-emerald-600" />}
+                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
                         </div>
 
-                        <div className="shrink-0">
-                          {isSelected
-                            ? <CheckCircle className="w-5 h-5 text-emerald-600" />
-                            : <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
-                          }
-                        </div>
-                      </button>
+                        {/* ── Expandable WHY explanation ── */}
+                        {isExpanded && why && (
+                          <div className="bg-slate-50 border-t border-slate-100 px-5 py-5 space-y-4 fade-up">
+
+                            {/* Overall reason */}
+                            <div className="flex gap-3">
+                              <div className="w-1 bg-emerald-400 rounded-full shrink-0" />
+                              <p className="text-[13px] text-slate-700 font-medium leading-relaxed">{why.overallReason}</p>
+                            </div>
+
+                            {/* Skills matched */}
+                            {why.skillsMatched?.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">✅ Skills Matched</p>
+                                <div className="space-y-1.5">
+                                  {why.skillsMatched.map((sm, i) => (
+                                    <div key={i} className="flex items-start gap-2">
+                                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded shrink-0">{sm.skill}</span>
+                                      <span className="text-[11px] text-slate-600 leading-snug">{sm.evidence}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Keywords found */}
+                            {why.keywordsFound?.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">🔑 Keywords Found in Resume</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {why.keywordsFound.map((kw, i) => (
+                                    <span key={i} className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold rounded">{kw}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Technical strengths */}
+                            {why.technicalStrengths?.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">💪 Technical Strengths</p>
+                                <div className="space-y-1">
+                                  {why.technicalStrengths.map((s, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+                                      <span className="text-[11px] text-slate-700">{s}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Experience alignment */}
+                            {why.experienceAlignment && (
+                              <div className="p-3 bg-white border border-slate-200 rounded-lg">
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">📅 Experience Alignment</p>
+                                <p className="text-[12px] text-slate-700">{why.experienceAlignment}</p>
+                              </div>
+                            )}
+
+                            {/* Step by step */}
+                            {why.steps?.length > 0 && (
+                              <div>
+                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">📋 Step-by-Step Analysis</p>
+                                <div className="space-y-2">
+                                  {why.steps.map((step, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                      <span className="w-5 h-5 rounded-full bg-emerald-600 text-white text-[9px] font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                                      <span className="text-[12px] text-slate-700 leading-relaxed">{step.replace(/^Step \d+:\s*/i, '')}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Missing skills */}
+                            {why.missingSkills?.length > 0 && (
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-2">⚠️ Skills to Add (to improve match)</p>
+                                <div className="space-y-1.5">
+                                  {why.missingSkills.map((ms, i) => (
+                                    <div key={i} className="flex items-start gap-2">
+                                      <span className="px-2 py-0.5 bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold rounded shrink-0">{ms.skill}</span>
+                                      <span className="text-[11px] text-amber-700">{ms.impact}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Find jobs CTA */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedRole(role); setJobs([]); setJobsSearched(false); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors"
+                            >
+                              <Search className="w-4 h-4" /> Find Jobs for {role.roleName}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
               </div>
@@ -550,16 +650,6 @@ export default function JobMatches() {
                   </div>
                 </div>
 
-                {/* Skills gap hint */}
-                {selectedRole.missingSkills.length > 0 && (
-                  <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2 flex-wrap">
-                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span className="text-xs text-amber-700 font-semibold">Skills to bridge:</span>
-                    {selectedRole.missingSkills.map(s => (
-                      <span key={s} className="px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-700 text-[9px] font-bold rounded">{s}</span>
-                    ))}
-                  </div>
-                )}
 
                 {/* Jobs list */}
                 <div className="p-4">
@@ -657,28 +747,7 @@ export default function JobMatches() {
               </div>
             )}
 
-            {/* ── Skills Gap Card ───────────────────────────────────────── */}
-            {selectedRole && selectedRole.missingSkills.length > 0 && (
-              <div className="bg-white border border-amber-200 rounded-xl p-4 flex gap-3 shadow-sm fade-up">
-                <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-4 h-4 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold text-slate-800 mb-1">Improve your <span className="text-emerald-700">{selectedRole.roleName}</span> match</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {selectedRole.missingSkills.map(skill => (
-                      <div key={skill} className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200 rounded-lg">
-                        <ArrowRight className="w-3 h-3 text-amber-500" />
-                        <span className="text-xs font-semibold text-amber-800">{skill}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Learning these could raise your match from <strong className="text-slate-700">{selectedRole.matchPercent}%</strong> → <strong className="text-emerald-700">{Math.min(selectedRole.matchPercent + 15, 98)}%</strong>
-                  </p>
-                </div>
-              </div>
-            )}
+            {/* Skills gap now shown inside expanded WHY section per role */}
           </div>
         )}
       </div>
