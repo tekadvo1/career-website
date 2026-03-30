@@ -52,28 +52,120 @@ router.post('/analyze-resume', upload.single('resume'), async (req, res) => {
     if (!apiKey) {
       return res.status(500).json({ error: 'Server config error: OpenAI key missing.' });
     }
+    // ── PASS 0: Extract job dates → compute precise experience in Node.js ──────
+    let preciseExperienceLabel = null;
+    let preciseExperienceYears = null;
 
-    // ── PASS 1: Full role analysis ─────────────────────────────────────────
+    try {
+      const expRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a resume parser. Extract ONLY work experience dates. Return valid JSON only — no markdown, no explanation.',
+            },
+            {
+              role: 'user',
+              content: `Read this resume and extract every job position with its exact start and end dates.
+For jobs that are still ongoing (current), use today: ${new Date().toISOString().slice(0, 7)}.
+
+Return ONLY this JSON (no other text):
+{
+  "jobs": [
+    { "title": "Job Title", "company": "Company", "startDate": "YYYY-MM", "endDate": "YYYY-MM", "isCurrent": false }
+  ]
+}
+
+Rules:
+- If only year given (e.g. 2022), use YYYY-01 for start and YYYY-12 for end.
+- If month + year given (e.g. March 2021), convert to 2021-03.
+- Include ALL paid employment positions with clear date ranges.
+
+Resume:
+${resumeText.substring(0, 5000)}`,
+            },
+          ],
+          temperature: 0,
+          max_tokens: 800,
+        }),
+      });
+
+      if (expRes.ok) {
+        const expData = await expRes.json();
+        const expRaw = expData.choices[0].message.content;
+        try {
+          const expMatch = expRaw.match(/```json\n([\s\S]*?)\n```/) || expRaw.match(/```\n([\s\S]*?)\n```/);
+          const expParsed = JSON.parse(expMatch ? expMatch[1] : expRaw);
+
+          if (expParsed?.jobs && Array.isArray(expParsed.jobs) && expParsed.jobs.length > 0) {
+            const periods = expParsed.jobs
+              .filter(j => j.startDate && j.endDate)
+              .map(j => {
+                const [sy, sm] = j.startDate.split('-').map(Number);
+                const [ey, em] = j.endDate.split('-').map(Number);
+                return { start: sy * 12 + (sm || 1), end: ey * 12 + (em || 12) };
+              })
+              .filter(p => p.end >= p.start)
+              .sort((a, b) => a.start - b.start);
+
+            // Merge overlapping periods so parallel jobs aren't double-counted
+            const merged = [];
+            for (const p of periods) {
+              if (merged.length === 0 || p.start > merged[merged.length - 1].end) {
+                merged.push({ ...p });
+              } else {
+                merged[merged.length - 1].end = Math.max(merged[merged.length - 1].end, p.end);
+              }
+            }
+
+            const totalMonths = merged.reduce((sum, p) => sum + (p.end - p.start), 0);
+            if (totalMonths > 0) {
+              const years = Math.floor(totalMonths / 12);
+              const months = totalMonths % 12;
+              preciseExperienceYears = Math.round((totalMonths / 12) * 10) / 10;
+              if (years > 0 && months > 0) {
+                preciseExperienceLabel = `${years} year${years !== 1 ? 's' : ''} ${months} month${months !== 1 ? 's' : ''}`;
+              } else if (years > 0) {
+                preciseExperienceLabel = `${years} year${years !== 1 ? 's' : ''}`;
+              } else {
+                preciseExperienceLabel = `${months} month${months !== 1 ? 's' : ''}`;
+              }
+              console.log(`[JobMatch] Computed experience: ${preciseExperienceLabel} (${totalMonths} months from ${merged.length} periods)`);
+            }
+          }
+        } catch (e) {
+          console.warn('[JobMatch] Experience parse failed (non-fatal):', e.message);
+        }
+      }
+    } catch (e) {
+      console.warn('[JobMatch] Experience extraction pass failed (non-fatal):', e.message);
+    }
+
+    // ── PASS 1: Full role analysis (pre-computed experience injected) ──────────
+    const experienceInstruction = preciseExperienceLabel
+      ? `CRITICAL: The candidate's EXACT total experience has been mathematically calculated as ${preciseExperienceLabel} (${preciseExperienceYears} years). You MUST use exactly these values in totalExperienceLabel and totalExperienceYears — do NOT recalculate or modify them.`
+      : 'Extract total experience from the job dates in the resume as precisely as possible.';
+
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content:
-              'You are a senior technical recruiter and career advisor. Analyze resumes deeply and return precise, honest role matching data. Always return valid JSON only — no markdown, no extra text.',
+            content: 'You are a senior technical recruiter and career advisor. Analyze resumes deeply and return precise, honest role matching data. Always return valid JSON only — no markdown, no extra text.',
           },
           {
             role: 'user',
             content: `Carefully analyze this resume and return ALL eligible job roles this person qualifies for (no limit — include every role from 50% match and above).
 
-IMPORTANT RULES:
-- Extract the EXACT total experience by reading all job titles, companies and dates mentioned in the resume. Calculate months and years precisely.
+${experienceInstruction}
+
+RULES:
 - DO NOT make up skills or experience — only use what is explicitly in the resume.
 - Match percent must honestly reflect the resume evidence (do not inflate).
 - Include ALL roles the person is eligible for, sorted by matchPercent descending.
@@ -83,40 +175,27 @@ For EACH role provide:
 - matchPercent: integer 50-100 based ONLY on resume evidence
 - demandLevel: "High" | "Medium" | "Low"
 - experienceLevel: "Entry" | "Mid" | "Senior"
-- whyExplanation: a detailed step-by-step explanation object with:
-    {
-      "overallReason": "1-2 sentences summarizing why this match %",
-      "skillsMatched": [{ "skill": "React", "evidence": "Used in 3 projects mentioned in resume" }],
-      "keywordsFound": ["keyword1", "keyword2"],
-      "technicalStrengths": ["strength1", "strength2"],
-      "experienceAlignment": "How years/level of experience aligns",
-      "missingSkills": [{ "skill": "GraphQL", "impact": "Would raise match by ~5%" }],
-      "steps": [
-        "Step 1: ...",
-        "Step 2: ...",
-        "Step 3: ..."
-      ]
-    }
+- whyExplanation: {
+    "overallReason": "1-2 sentences summarizing why this match %",
+    "skillsMatched": [{ "skill": "React", "evidence": "Used in 3 projects mentioned in resume" }],
+    "keywordsFound": ["keyword1", "keyword2"],
+    "technicalStrengths": ["strength1", "strength2"],
+    "experienceAlignment": "How years/level of experience aligns to this role",
+    "missingSkills": [{ "skill": "GraphQL", "impact": "Would raise match by ~5%" }],
+    "steps": ["Step 1: ...", "Step 2: ...", "Step 3: ..."]
+  }
 
-Return ONLY this valid JSON object:
+Return ONLY this valid JSON:
 {
-  "candidateName": "Full name if found in resume or null",
-  "totalExperienceLabel": "e.g. 3 years 6 months or 5 years",
-  "totalExperienceYears": precise decimal number like 3.5 or null,
-  "experienceSummary": "2-3 sentence professional summary of the candidate based on their actual resume",
-  "topSkills": ["top skill 1", "top skill 2", "...up to 8"],
-  "roles": [
-    {
-      "roleName": "",
-      "matchPercent": 0,
-      "demandLevel": "High",
-      "experienceLevel": "Mid",
-      "whyExplanation": { ... }
-    }
-  ]
+  "candidateName": "Full name or null",
+  "totalExperienceLabel": "${preciseExperienceLabel || 'compute from resume'}",
+  "totalExperienceYears": ${preciseExperienceYears !== null ? preciseExperienceYears : 'null'},
+  "experienceSummary": "2-3 sentence professional summary based on actual resume",
+  "topSkills": ["skill1", "skill2", "...up to 8"],
+  "roles": [{ "roleName": "", "matchPercent": 0, "demandLevel": "High", "experienceLevel": "Mid", "whyExplanation": {} }]
 }
 
-Resume text:
+Resume:
 ${resumeText.substring(0, 7000)}`,
           },
         ],
@@ -124,6 +203,7 @@ ${resumeText.substring(0, 7000)}`,
         max_tokens: 4000,
       }),
     });
+
 
     if (!openaiRes.ok) {
       const err = await openaiRes.json();
