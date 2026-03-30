@@ -85,7 +85,7 @@ Rules:
 - Include ALL paid employment positions with clear date ranges.
 
 Resume:
-${resumeText.substring(0, 5000)}`,
+${resumeText.substring(0, 25000)}`,
             },
           ],
           temperature: 0,
@@ -199,7 +199,7 @@ Return ONLY this valid JSON:
 }
 
 Resume:
-${resumeText.substring(0, 7000)}`,
+${resumeText.substring(0, 25000)}`,
           },
         ],
         temperature: 0.2,
@@ -252,7 +252,7 @@ ${resumeText.substring(0, 7000)}`,
 
 IMPORTANT: Do NOT change totalExperienceLabel or totalExperienceYears — keep them exactly as they are.
 
-Resume (first 2000 chars): ${resumeText.substring(0, 2000)}
+Resume (first 15000 chars): ${resumeText.substring(0, 15000)}
 
 Analysis: ${JSON.stringify(analysis)}`,
             },
