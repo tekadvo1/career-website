@@ -200,21 +200,21 @@ export default function JobPortal() {
                 <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm shadow-emerald-200">
                   <Search className="w-4 h-4 text-white" />
                 </div>
-              <div>
-                <h1 className="text-base font-black text-slate-900 leading-tight">Live Job Portal</h1>
-                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Real-Time Search</p>
+                <div>
+                  <h1 className="text-base font-black text-slate-900 leading-tight">Live Job Portal</h1>
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Real-Time Search</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-slate-600">Active Pipeline</span>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-slate-600">Active Pipeline</span>
-            </div>
-          </div>
         </div>
-      </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">

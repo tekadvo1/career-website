@@ -7,6 +7,7 @@ import {
   Target, Award, Briefcase, Sparkles
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
+import Sidebar from './Sidebar';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface WhyExplanation {
@@ -186,28 +187,22 @@ export default function JobMatches() {
     setUploadError(null);
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-        .fade-up { animation: fadeUp 0.4s ease both; }
-        @keyframes barGrow { from { width:0; } to {} }
-        .bar-grow { animation: barGrow 0.9s cubic-bezier(.4,0,.2,1) both; }
-      `}</style>
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="tools" /></div>
 
-      {/* ── Sticky Header ─────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/tools')}
-              className="flex items-center gap-1 text-slate-500 hover:text-emerald-700 text-xs font-semibold transition-colors group"
-            >
-              <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-              Tools
-            </button>
-            <span className="text-slate-300 text-sm">/</span>
+      <div className="flex-1 w-full flex flex-col min-h-0 relative overflow-y-auto pb-20">
+        <style>{`
+          @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+          .fade-up { animation: fadeUp 0.4s ease both; }
+          @keyframes barGrow { from { width:0; } to {} }
+          .bar-grow { animation: barGrow 0.9s cubic-bezier(.4,0,.2,1) both; }
+        `}</style>
+
+        {/* ── Sticky Header ─────────────────────────────────────────────────── */}
+        <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
                 <Briefcase className="w-3.5 h-3.5 text-white" />
@@ -240,7 +235,7 @@ export default function JobMatches() {
       </div>
 
       {/* ── Body ─────────────────────────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full">
 
         {loadingSaved ? (
           <div className="flex flex-col items-center justify-center py-24">
@@ -606,6 +601,7 @@ export default function JobMatches() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
