@@ -38,6 +38,8 @@ export default function JobPortal() {
   const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<string>('All');
+  const [filterRemote, setFilterRemote] = useState<boolean>(false);
+  const [filterFullTime, setFilterFullTime] = useState<boolean>(false);
   const [jobs, setJobs] = useState<JobListing[]>([]);
 
   useEffect(() => {
@@ -101,9 +103,16 @@ export default function JobPortal() {
     fetchTargetRoles();
   }, [navigate]);
 
-  const filteredJobs = activeTab === 'All' 
+  let filteredJobs = activeTab === 'All' 
     ? jobs 
     : jobs.filter(j => j.role === activeTab);
+
+  if (filterRemote) {
+    filteredJobs = filteredJobs.filter(j => j.isRemote || j.location.toLowerCase().includes('remote'));
+  }
+  if (filterFullTime) {
+    filteredJobs = filteredJobs.filter(j => j.employmentType.toLowerCase().replace(/[^a-z]/g, '').includes('fulltime'));
+  }
 
   if (loading) {
     return (
@@ -184,8 +193,18 @@ export default function JobPortal() {
               We are tracking live postings across the web exclusively for your selected target roles. Filter by role below or browse all opportunities.
             </p>
           </div>
-          <div className="shrink-0 flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-bold rounded-lg transition-all shadow-sm">
+          <div className="shrink-0 flex flex-wrap items-center gap-3">
+            <button 
+              onClick={() => setFilterRemote(!filterRemote)}
+              className={`flex items-center gap-2 px-4 py-2 border text-sm font-bold rounded-lg transition-all shadow-sm ${filterRemote ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}>
+              <Globe className="w-4 h-4" /> Remote Only
+            </button>
+            <button 
+              onClick={() => setFilterFullTime(!filterFullTime)}
+              className={`flex items-center gap-2 px-4 py-2 border text-sm font-bold rounded-lg transition-all shadow-sm ${filterFullTime ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}>
+              <Briefcase className="w-4 h-4" /> Full-Time
+            </button>
+            <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg transition-all shadow-sm">
               <RefreshCw className="w-4 h-4 text-slate-400" /> Refresh Feed
             </button>
           </div>

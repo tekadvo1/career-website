@@ -524,7 +524,8 @@ router.get('/live-jobs', async (req, res) => {
       }
     };
 
-    const url = `https://jsearch.p.rapidapi.com/search?query=${query}&page=1&num_pages=1&country=us&date_posted=all`;
+    // Fetch multiple pages (30+ jobs per role) specifically from the last 24 hours (today)
+    const url = `https://jsearch.p.rapidapi.com/search?query=${query}&page=1&num_pages=3&country=us&date_posted=today`;
     const response = await fetch(url, options);
     
     if (!response.ok) {
