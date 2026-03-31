@@ -309,6 +309,30 @@ const updateSchema = async () => {
       );
     `);
 
+    // Create live_jobs table (High-Performance Real-time Cache)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS live_jobs (
+        id VARCHAR(255) PRIMARY KEY,
+        role TEXT NOT NULL,
+        title TEXT NOT NULL,
+        company TEXT NOT NULL,
+        location TEXT,
+        is_remote BOOLEAN DEFAULT FALSE,
+        apply_url TEXT,
+        logo_url TEXT,
+        employment_type VARCHAR(100),
+        salary VARCHAR(100),
+        posted_at TIMESTAMP WITH TIME ZONE,
+        description TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // In case tables were already created with smaller VARCHARs, forcibly update columns to TEXT
+    await client.query(`ALTER TABLE live_jobs ALTER COLUMN role TYPE TEXT`);
+    await client.query(`ALTER TABLE live_jobs ALTER COLUMN title TYPE TEXT`);
+    await client.query(`ALTER TABLE live_jobs ALTER COLUMN company TYPE TEXT`);
+
     // Add is_admin column to users if not exists
     await client.query(`
       DO $$

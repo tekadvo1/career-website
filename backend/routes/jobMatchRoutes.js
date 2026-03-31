@@ -542,7 +542,7 @@ router.get('/live-jobs', async (req, res) => {
     const options = {
       method: 'GET',
       headers: {
-        'x-rapidapi-key': process.env.RAPIDAPI_KEY || '53fd7904e8msh410bfe6c2a5698ap1d2d6fjsn3670c8c50870',
+        'x-rapidapi-key': '53fd7904e8msh410bfe6c2a5698ap1d2d6fjsn3670c8c50870', // Hardcoded from user screenshot
         'x-rapidapi-host': 'jsearch.p.rapidapi.com'
       }
     };
