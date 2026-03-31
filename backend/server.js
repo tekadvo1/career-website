@@ -366,6 +366,18 @@ const updateSchema = async () => {
       );
     `);
 
+    // Create linkedin_analyses table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS linkedin_analyses (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        profile_url VARCHAR(500),
+        resume_filename VARCHAR(255),
+        analysis_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // Set admin flag for primary admin email
     await client.query(`
       UPDATE users SET is_admin = TRUE WHERE email = 'supportfindstreak@tekadvo.com'

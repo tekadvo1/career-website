@@ -8,7 +8,8 @@ import {
   Terminal,
   MessageSquare,
   ChevronRight,
-  Briefcase
+  Briefcase,
+  Linkedin
 } from 'lucide-react';
 
 export default function ToolsPage() {
@@ -55,6 +56,14 @@ export default function ToolsPage() {
       route: '/interview-guide',
       badge: 'NEW',
       bgColor: 'bg-pink-100',
+    },
+    {
+      label: 'LinkedIn Optimizer',
+      subtitle: 'Analyze & Score Profile',
+      icon: <Linkedin className="w-5 h-5 text-sky-600" />,
+      route: '/linkedin-analyzer',
+      badge: 'NEW',
+      bgColor: 'bg-sky-100',
     },
     {
       label: 'Job Matches',

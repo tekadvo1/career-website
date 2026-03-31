@@ -39,6 +39,7 @@ import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
 import JobMatches from './components/JobMatches';
 import JobPortal from './components/JobPortal';
+import LinkedInAnalysis from './components/LinkedInAnalysis';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -152,6 +153,8 @@ function App() {
           <Route path="/tools"                   element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
           <Route path="/job-matches"             element={<ProtectedRoute><JobMatches /></ProtectedRoute>} />
           <Route path="/job-search-portal"       element={<ProtectedRoute><JobPortal /></ProtectedRoute>} />
+          <Route path="/linkedin-analyzer"       element={<ProtectedRoute><LinkedInAnalysis /></ProtectedRoute>} />
+          
           {/* Admin routes — use their own admin token guard, NOT regular ProtectedRoute */}
           <Route path="/admin-login"             element={<AdminLogin />} />
           <Route path="/admindashboard"          element={<AdminDashboard />} />
