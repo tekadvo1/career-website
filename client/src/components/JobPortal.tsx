@@ -23,6 +23,7 @@ interface JobListing {
   employmentType: string;
   description: string;
   matchScore: number;
+  isNew: boolean;
 }
 
 const getPostedAgo = (dateString: string) => {
@@ -103,6 +104,40 @@ export default function JobPortal() {
     fetchTargetRoles();
   }, [navigate]);
 
+  const handleRefreshFeed = async () => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      // Force fetching completely fresh data from RapidAPI for each role
+      const rolePromises = targetRoles.map(async (role: string) => {
+        const jobRes = await fetch(`${API_BASE}/api/job-match/live-jobs?role=${encodeURIComponent(role)}&refresh=true`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const jobData = await jobRes.json();
+        if (jobData.success && jobData.data) {
+          return jobData.data.map((job: any) => ({
+            ...job, role, matchScore: Math.floor(Math.random() * 10 + 85)
+          }));
+        }
+        return [];
+      });
+
+      const results = await Promise.allSettled(rolePromises);
+      let newAllJobs: JobListing[] = [];
+      results.forEach(res => {
+        if (res.status === 'fulfilled' && res.value.length > 0) {
+          newAllJobs = [...newAllJobs, ...res.value];
+        }
+      });
+      newAllJobs.sort((a, b) => b.matchScore - a.matchScore);
+      setJobs(newAllJobs);
+    } catch (err) {
+      console.error('Refresh Failed', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   let filteredJobs = activeTab === 'All' 
     ? jobs 
     : jobs.filter(j => j.role === activeTab);
@@ -113,6 +148,9 @@ export default function JobPortal() {
   if (filterFullTime) {
     filteredJobs = filteredJobs.filter(j => j.employmentType.toLowerCase().replace(/[^a-z]/g, '').includes('fulltime'));
   }
+
+  const newlyFoundJobs = filteredJobs.filter(j => j.isNew);
+  const previouslySavedJobs = filteredJobs.filter(j => !j.isNew);
 
   if (loading) {
     return (
@@ -204,7 +242,7 @@ export default function JobPortal() {
               className={`flex items-center gap-2 px-4 py-2 border text-sm font-bold rounded-lg transition-all shadow-sm ${filterFullTime ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}>
               <Briefcase className="w-4 h-4" /> Full-Time
             </button>
-            <button onClick={() => window.location.reload()} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg transition-all shadow-sm">
+            <button onClick={handleRefreshFeed} className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg transition-all shadow-sm">
               <RefreshCw className="w-4 h-4 text-slate-400" /> Refresh Feed
             </button>
           </div>
@@ -249,77 +287,108 @@ export default function JobPortal() {
           </div>
 
           {/* RIGHT MAIN: JOB FEED */}
-          <div className="lg:col-span-9 space-y-4 fade-up" style={{ animationDelay: '0.2s' }}>
+          <div className="lg:col-span-9 space-y-8 fade-up" style={{ animationDelay: '0.2s' }}>
             {filteredJobs.length === 0 ? (
               <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center shadow-sm">
                 <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-6 h-6 text-slate-400" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-2">No active postings found right now.</h3>
-                <p className="text-sm text-slate-500">We continuously scan job boards. Check back soon for updates to this role.</p>
+                <p className="text-sm text-slate-500">We continuously scan job boards. Check back soon or click Refresh Feed to bypass the cache.</p>
               </div>
             ) : (
-              filteredJobs.map((job) => (
-                <div key={job.id} className="group bg-white border border-slate-200 hover:border-emerald-300 rounded-2xl p-5 shadow-sm transition-all duration-200 flex flex-col sm:flex-row gap-5">
-                  
-                  <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shrink-0 p-3 group-hover:scale-105 transition-transform duration-300">
-                    <img src={job.logo || `https://logo.clearbit.com/${job.company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`} 
-                         onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
-                         className="w-full h-full object-contain"
-                         alt={job.company} />
-                    <Building2 className="w-6 h-6 text-slate-300 hidden" />
-                  </div>
-
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <div className="flex items-start justify-between gap-4 mb-1">
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-tight mb-1">
-                          {job.title}
-                        </h3>
-                        <p className="text-sm font-semibold text-slate-600">{job.company}</p>
-                      </div>
-                      
-                      {/* Top right match badge (desktop) */}
-                      <div className="hidden sm:flex flex-col items-end">
-                        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full whitespace-nowrap">
-                          <Target className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-[11px] font-black text-emerald-700">{job.matchScore}% Match</span>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-medium mt-1.5 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {getPostedAgo(job.postedAt)}
-                        </span>
-                      </div>
+              <>
+                {newlyFoundJobs.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                       <span className="flex h-3 w-3 relative">
+                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                         <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                       </span>
+                       <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Brand New Finds (Just Added)</h3>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
-                        {job.isRemote ? <Globe className="w-3 h-3 text-teal-600" /> : <MapPin className="w-3 h-3 text-slate-400" />}
-                        {job.location}
-                      </span>
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
-                        <DollarSign className="w-3 h-3 text-slate-400" />
-                        {job.salary}
-                      </span>
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
-                        <Briefcase className="w-3 h-3 text-slate-400" />
-                        {job.employmentType}
-                      </span>
+                    {newlyFoundJobs.map((job) => (
+                      <JobCard key={job.id} job={job} />
+                    ))}
+                  </div>
+                )}
+                
+                {previouslySavedJobs.length > 0 && (
+                  <div className="space-y-4 pt-4">
+                    <div className="flex items-center gap-3 mb-2">
+                       <div className="w-3 h-3 rounded-full bg-slate-300" />
+                       <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Previously Sourced (Active 24hr)</h3>
                     </div>
+                    {previouslySavedJobs.map((job) => (
+                      <JobCard key={job.id} job={job} />
+                    ))}
                   </div>
-
-                  <div className="shrink-0 flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 sm:pl-4 sm:border-l border-slate-100">
-                    <button onClick={() => window.open(job.applyUrl, '_blank')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
-                      Apply <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                    <button className="p-2.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors" title="Save Job">
-                      <Bookmark className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))
+                )}
+              </>
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function JobCard({ job }: { job: JobListing }) {
+  return (
+    <div className="group bg-white border border-slate-200 hover:border-emerald-300 rounded-2xl p-5 shadow-sm transition-all duration-200 flex flex-col sm:flex-row gap-5 relative overflow-hidden">
+      {job.isNew && <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none before:content-[''] before:absolute before:top-[-8px] before:right-[-8px] before:border-[24px] before:border-transparent before:border-t-emerald-500 before:border-r-emerald-500 before:rotate-45" />}
+      
+      <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shrink-0 p-3 group-hover:scale-105 transition-transform duration-300">
+        <img src={job.logo || `https://logo.clearbit.com/${job.company.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`} 
+             onError={(e) => { e.currentTarget.style.display='none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }}
+             className="w-full h-full object-contain"
+             alt={job.company} />
+        <Building2 className="w-6 h-6 text-slate-300 hidden" />
+      </div>
+
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
+        <div className="flex items-start justify-between gap-4 mb-1">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-tight mb-1">
+              {job.title}
+            </h3>
+            <p className="text-sm font-semibold text-slate-600">{job.company}</p>
+          </div>
+          
+          <div className="hidden sm:flex flex-col items-end">
+            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full whitespace-nowrap">
+              <Target className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="text-[11px] font-black text-emerald-700">{job.matchScore}% Match</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-medium mt-1.5 flex items-center gap-1">
+              <Clock className="w-3 h-3" /> {getPostedAgo(job.postedAt)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
+            {job.isRemote ? <Globe className="w-3 h-3 text-teal-600" /> : <MapPin className="w-3 h-3 text-slate-400" />}
+            {job.location}
+          </span>
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
+            <DollarSign className="w-3 h-3 text-slate-400" />
+            {job.salary}
+          </span>
+          <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
+            <Briefcase className="w-3 h-3 text-slate-400" />
+            {job.employmentType}
+          </span>
+        </div>
+      </div>
+
+      <div className="shrink-0 flex sm:flex-col items-center justify-end gap-2 mt-4 sm:mt-0 sm:pl-4 sm:border-l border-slate-100 relative z-10">
+        <button onClick={() => window.open(job.applyUrl, '_blank')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-emerald-600 text-white text-sm font-bold rounded-xl transition-colors shadow-sm">
+          Apply <ExternalLink className="w-3.5 h-3.5" />
+        </button>
+        <button className="p-2.5 border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-400 hover:text-slate-600 rounded-xl transition-colors" title="Save Job">
+          <Bookmark className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

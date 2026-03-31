@@ -507,14 +507,37 @@ router.get('/target-roles', async (req, res) => {
   }
 });
 
-// Fetch Live Jobs via JSearch API (RapidAPI)
+// Fetch Live Jobs via DB Cache & JSearch API (RapidAPI)
 router.get('/live-jobs', async (req, res) => {
   try {
-    const { role } = req.query;
+    const { role, refresh } = req.query;
     if (!role) {
       return res.status(400).json({ error: 'Role parameter is required' });
     }
 
+    // 1. Try serving straight from our blazingly fast database cache
+    const cachedJobsRes = await pool.query("SELECT *, (created_at > NOW() - INTERVAL '5 minutes') AS is_new FROM live_jobs WHERE role = $1 ORDER BY posted_at DESC", [role]);
+    
+    // If jobs exist and user didn't specifically force a hard refresh
+    if (cachedJobsRes.rows.length > 0 && refresh !== 'true') {
+      const mappedJobs = cachedJobsRes.rows.map(job => ({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        location: job.location,
+        applyUrl: job.apply_url,
+        logo: job.logo_url,
+        isRemote: job.is_remote,
+        employmentType: job.employment_type,
+        salary: job.salary,
+        postedAt: job.posted_at,
+        description: job.description,
+        isNew: job.is_new
+      }));
+      return res.json({ success: true, data: mappedJobs, source: 'cache' });
+    }
+
+    // 2. Fetch perfectly fresh jobs via JSearch
     const query = encodeURIComponent(`${role} jobs in USA`);
     const options = {
       method: 'GET',
@@ -533,25 +556,39 @@ router.get('/live-jobs', async (req, res) => {
     }
 
     const result = await response.json();
+    const standardJobs = result.data || [];
     
-    // Map JSearch response structure to our frontend's expected properties
-    const standardJobs = (result.data || []).map(job => ({
-      id: job.job_id,
-      title: job.job_title,
-      company: job.employer_name,
-      location: job.job_city && job.job_state ? `${job.job_city}, ${job.job_state}` : (job.job_country || 'Remote/USA'),
-      applyUrl: job.job_apply_link || job.job_google_link || '#',
-      logo: job.employer_logo || null,
-      isRemote: job.job_is_remote === true,
-      employmentType: job.job_employment_type || 'Full-time',
-      salary: job.job_min_salary && job.job_max_salary 
+    // 3. Save entirely new un-duplicated queries directly to live_jobs
+    for (const job of standardJobs) {
+      if (!job.job_id) continue;
+      
+      const loc = job.job_city && job.job_state ? `${job.job_city}, ${job.job_state}` : (job.job_country || 'Remote/USA');
+      const salary = job.job_min_salary && job.job_max_salary 
           ? `$${(job.job_min_salary/1000).toFixed(0)}k - $${(job.job_max_salary/1000).toFixed(0)}k/yr` 
-          : 'Competitive Salary',
-      postedAt: job.job_posted_at_timestamp ? new Date(job.job_posted_at_timestamp * 1000).toISOString() : new Date().toISOString(),
-      description: job.job_description ? job.job_description.substring(0, 300) + '...' : ''
+          : 'Competitive Salary';
+      const postedAt = job.job_posted_at_timestamp ? new Date(job.job_posted_at_timestamp * 1000).toISOString() : new Date().toISOString();
+      
+      await pool.query(`
+        INSERT INTO live_jobs (id, role, title, company, location, is_remote, apply_url, logo_url, employment_type, salary, posted_at, description)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ON CONFLICT (id) DO NOTHING
+      `, [
+        job.job_id, role, job.job_title || 'Untitled', job.employer_name || 'Unknown', loc, job.job_is_remote === true, 
+        job.job_apply_link || job.job_google_link || '#', job.employer_logo || null, job.job_employment_type || 'Full-time', 
+        salary, postedAt, job.job_description ? job.job_description.substring(0, 300) + '...' : ''
+      ]);
+    }
+
+    // 4. Return from database so UI captures proper `is_new` math
+    const newCachedJobsRes = await pool.query("SELECT *, (created_at > NOW() - INTERVAL '5 minutes') AS is_new FROM live_jobs WHERE role = $1 ORDER BY posted_at DESC", [role]);
+    const finalMapped = newCachedJobsRes.rows.map(job => ({
+        id: job.id, title: job.title, company: job.company, location: job.location,
+        applyUrl: job.apply_url, logo: job.logo_url, isRemote: job.is_remote,
+        employmentType: job.employment_type, salary: job.salary, postedAt: job.posted_at,
+        description: job.description, isNew: job.is_new
     }));
 
-    res.json({ success: true, data: standardJobs });
+    res.json({ success: true, data: finalMapped, source: 'api' });
   } catch (err) {
     console.error('Error fetching JSearch live jobs:', err);
     res.status(500).json({ error: 'Failed to fetch live jobs from vendor.' });
