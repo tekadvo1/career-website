@@ -14,8 +14,7 @@ import {
   ChevronUp,
   Code,
   PanelLeftClose,
-  PanelLeftOpen,
-  Zap
+  PanelLeftOpen
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
@@ -115,7 +114,6 @@ export default function Sidebar({ activePage }: SidebarProps) {
 
   const displayName = user?.name || user?.username || "";
   const initials = displayName ? displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0,2) : "G";
-  const aiCredits = user?.ai_credits ?? 20;
 
   const isActive = (route: string) => {
     if (activePage) {
@@ -148,7 +146,6 @@ export default function Sidebar({ activePage }: SidebarProps) {
             >
               <Menu className="w-6 h-6 text-slate-700" />
             </button>
-          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
               <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded flex items-center justify-center shadow-sm">
                  <Code className="w-4 h-4 text-white" />

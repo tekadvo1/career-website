@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Upload, FileText, ChevronLeft, ChevronRight,
+  Upload, FileText, ChevronRight,
   X, CheckCircle, TrendingUp, AlertCircle, Check,
   Loader2, RotateCcw, ChevronDown, ArrowRight,
-  Target, Award, Briefcase, Sparkles
+  Target, Award, Briefcase, Sparkles,
+  CheckCircle2, Key, Zap, CalendarDays, ListChecks, AlertTriangle
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
 import Sidebar from './Sidebar';
@@ -491,7 +492,7 @@ export default function JobMatches() {
                             {/* Skills matched */}
                             {why.skillsMatched?.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">✅ Skills Matched</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500"/> Skills Matched</p>
                                 <div className="space-y-1.5">
                                   {why.skillsMatched.map((sm, i) => (
                                     <div key={i} className="flex items-start gap-2">
@@ -506,7 +507,7 @@ export default function JobMatches() {
                             {/* Keywords found */}
                             {why.keywordsFound?.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">🔑 Keywords Found in Resume</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2"><Key className="w-3.5 h-3.5 text-blue-500"/> Keywords Found in Resume</p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {why.keywordsFound.map((kw, i) => (
                                     <span key={i} className="px-2 py-0.5 bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold rounded">{kw}</span>
@@ -518,7 +519,7 @@ export default function JobMatches() {
                             {/* Technical strengths */}
                             {why.technicalStrengths?.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">💪 Technical Strengths</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2"><Zap className="w-3.5 h-3.5 text-amber-500"/> Technical Strengths</p>
                                 <div className="space-y-1">
                                   {why.technicalStrengths.map((s, i) => (
                                     <div key={i} className="flex items-center gap-2">
@@ -533,7 +534,7 @@ export default function JobMatches() {
                             {/* Experience alignment */}
                             {why.experienceAlignment && (
                               <div className="p-3 bg-white border border-slate-200 rounded-lg">
-                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1">📅 Experience Alignment</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1"><CalendarDays className="w-3.5 h-3.5 text-indigo-500"/> Experience Alignment</p>
                                 <p className="text-[12px] text-slate-700">{why.experienceAlignment}</p>
                               </div>
                             )}
@@ -541,7 +542,7 @@ export default function JobMatches() {
                             {/* Step by step */}
                             {why.steps?.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">📋 Step-by-Step Analysis</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2"><ListChecks className="w-3.5 h-3.5 text-slate-500"/> Step-by-Step Analysis</p>
                                 <div className="space-y-2">
                                   {why.steps.map((step, i) => (
                                     <div key={i} className="flex items-start gap-3">
@@ -556,7 +557,7 @@ export default function JobMatches() {
                             {/* Missing skills */}
                             {why.missingSkills?.length > 0 && (
                               <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-2">⚠️ Skills to Add (to improve match)</p>
+                                <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 uppercase tracking-wide mb-2"><AlertTriangle className="w-3.5 h-3.5 text-amber-600"/> Skills to Add (to improve match)</p>
                                 <div className="space-y-1.5">
                                   {why.missingSkills.map((ms, i) => (
                                     <div key={i} className="flex items-start gap-2">
