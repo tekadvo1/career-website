@@ -325,6 +325,7 @@ export default function JobPortal() {
           </div>
         </div>
       </div>
+      </div>
     </div>
   );
 }
