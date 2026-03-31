@@ -507,4 +507,54 @@ router.get('/target-roles', async (req, res) => {
   }
 });
 
+// Fetch Live Jobs via JSearch API (RapidAPI)
+router.get('/live-jobs', async (req, res) => {
+  try {
+    const { role } = req.query;
+    if (!role) {
+      return res.status(400).json({ error: 'Role parameter is required' });
+    }
+
+    const query = encodeURIComponent(`${role} jobs in USA`);
+    const options = {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key': process.env.RAPIDAPI_KEY || '53fd7904e8msh410bfe6c2a5698ap1d2d6fjsn3670c8c50870',
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com'
+      }
+    };
+
+    const url = `https://jsearch.p.rapidapi.com/search?query=${query}&page=1&num_pages=1&country=us&date_posted=all`;
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+        throw new Error(`JSearch API Error: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Map JSearch response structure to our frontend's expected properties
+    const standardJobs = (result.data || []).map(job => ({
+      id: job.job_id,
+      title: job.job_title,
+      company: job.employer_name,
+      location: job.job_city && job.job_state ? `${job.job_city}, ${job.job_state}` : (job.job_country || 'Remote/USA'),
+      applyUrl: job.job_apply_link || job.job_google_link || '#',
+      logo: job.employer_logo || null,
+      isRemote: job.job_is_remote === true,
+      employmentType: job.job_employment_type || 'Full-time',
+      salary: job.job_min_salary && job.job_max_salary 
+          ? `$${(job.job_min_salary/1000).toFixed(0)}k - $${(job.job_max_salary/1000).toFixed(0)}k/yr` 
+          : 'Competitive Salary',
+      postedAt: job.job_posted_at_timestamp ? new Date(job.job_posted_at_timestamp * 1000).toISOString() : new Date().toISOString(),
+      description: job.job_description ? job.job_description.substring(0, 300) + '...' : ''
+    }));
+
+    res.json({ success: true, data: standardJobs });
+  } catch (err) {
+    console.error('Error fetching JSearch live jobs:', err);
+    res.status(500).json({ error: 'Failed to fetch live jobs from vendor.' });
+  }
+});
+
 module.exports = router;
