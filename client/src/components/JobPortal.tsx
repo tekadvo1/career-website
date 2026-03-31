@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Briefcase, ChevronLeft, Building2, MapPin, Clock,
+  Briefcase, Building2, MapPin, Clock,
   ExternalLink, Search, RefreshCw, Bookmark,
   AlertCircle, Loader2, DollarSign, Globe, Target
 } from 'lucide-react';
 import { getToken } from '../utils/auth';
+import Sidebar from './Sidebar';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -182,28 +183,23 @@ export default function JobPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 font-sans pb-20">
-      <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-        .fade-up { animation: fadeUp 0.4s ease both; }
-      `}</style>
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+      <div className="z-50 shrink-0"><Sidebar activePage="tools" /></div>
 
-      {/* ── Sticky Header ─────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/tools/job-matches')}
-              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
-              title="Back to Setup"
-            >
-              <ChevronLeft className="w-5 h-5 -ml-0.5" />
-            </button>
-            <div className="w-px h-6 bg-slate-200" />
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm shadow-emerald-200">
-                <Search className="w-4 h-4 text-white" />
-              </div>
+      <div className="flex-1 w-full flex flex-col min-h-0 relative overflow-y-auto pb-20">
+        <style>{`
+          @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+          .fade-up { animation: fadeUp 0.4s ease both; }
+        `}</style>
+
+        {/* ── Sticky Header ─────────────────────────────────────────────────── */}
+        <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm shadow-emerald-200">
+                  <Search className="w-4 h-4 text-white" />
+                </div>
               <div>
                 <h1 className="text-base font-black text-slate-900 leading-tight">Live Job Portal</h1>
                 <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Real-Time Search</p>
