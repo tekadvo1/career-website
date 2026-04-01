@@ -140,14 +140,16 @@ IMPORTANT: You MUST respond with ONLY valid JSON in exactly this structure, no e
       `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+        generationConfig: { temperature: 0.2 },
       },
       { timeout: 60000 }
     );
 
     const jsonStr = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!jsonStr) throw new Error('Empty response from Gemini API.');
-    const parsedData = JSON.parse(jsonStr);
+    // Strip markdown code fences if present (e.g. ```json ... ```)
+    const cleanJson = jsonStr.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+    const parsedData = JSON.parse(cleanJson);
 
     // ── Validate required keys exist ──
     const required = ['overallScore', 'headline', 'summary', 'experience', 'skills'];
