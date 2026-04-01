@@ -6,7 +6,7 @@ const mammoth = require('mammoth');
 const pool = require('../config/db');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { OpenAI } = require('openai'); // Already installed — used with Gemini's OpenAI-compatible endpoint
+const { OpenAI } = require('openai'); // kept for future use
 
 // Multer — resume uploads max 5MB
 const upload = multer({
@@ -135,14 +135,18 @@ IMPORTANT: You MUST respond with ONLY valid JSON in exactly this structure, no e
 }
 `;
 
-    const aiResponse = await client.chat.completions.create({
-      model: 'gemini-2.0-flash',
-      messages: [{ role: 'user', content: prompt }],
-      response_format: { type: 'json_object' },
-      temperature: 0.2,
-    });
+    // ── Direct Gemini REST API (most reliable — no SDK naming issues) ──
+    const geminiRes = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+      },
+      { timeout: 60000 }
+    );
 
-    const jsonStr = aiResponse.choices[0].message.content;
+    const jsonStr = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!jsonStr) throw new Error('Empty response from Gemini API.');
     const parsedData = JSON.parse(jsonStr);
 
     // ── Validate required keys exist ──
