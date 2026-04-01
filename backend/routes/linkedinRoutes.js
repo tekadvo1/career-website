@@ -116,7 +116,7 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
+      model: "gemini-1.5-pro-002",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: linkedinSchema,
@@ -176,12 +176,7 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
     const errorDetails = error?.response?.data?.error || error;
     console.error('LinkedIn Analysis Error:', errorDetails);
     
-    // Check if error is specifically about the model
-    if (error.message && error.message.includes('404 Not Found')) {
-      return res.status(500).json({ error: 'Google AI API is taking a moment to sync your new paid billing account. Please wait 2 minutes and try again. Model: gemini-1.5-pro' });
-    }
-    
-    res.status(500).json({ error: error.message || 'Failed to generate analysis.' });
+    res.status(500).json({ error: `Gemini Error: ${error.message || 'Failed to generate analysis'}` });
   }
 });
 
