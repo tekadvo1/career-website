@@ -3,8 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
-const pool = require('../db');
-const { requireAuth } = require('../middlewares/auth');
+const pool = require('../config/db');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
@@ -50,7 +49,7 @@ const linkedinSchema = {
 };
 
 // 1) Fetch saved analysis for user
-router.get('/saved', requireAuth, async (req, res) => {
+router.get('/saved', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM linkedin_analyses WHERE user_id = $1', [req.user.id]);
     if (result.rows.length > 0) {
@@ -65,7 +64,7 @@ router.get('/saved', requireAuth, async (req, res) => {
 });
 
 // 2) Analyze new profile
-router.post('/analyze', requireAuth, upload.single('resume'), async (req, res) => {
+router.post('/analyze', upload.single('resume'), async (req, res) => {
   try {
     let { profileInput } = req.body; // Can be a URL or pasted text
     if (!profileInput) return res.status(400).json({ error: 'LinkedIn profile link or text is required.' });
