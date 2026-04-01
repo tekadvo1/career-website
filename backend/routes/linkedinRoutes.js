@@ -14,7 +14,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '');
+// genAI is initialized per-request so it always picks up the live env var
 
 const linkedinSchema = {
   type: SchemaType.OBJECT,
@@ -112,16 +112,18 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       }
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: 'Gemini API key missing.' });
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Gemini API key missing. Please set GEMINI_API_KEY in Railway environment variables.' });
     }
 
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-pro",
+      model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: linkedinSchema,
-        temperature: 0.1,
+        temperature: 0.2,
       }
     });
 
@@ -174,8 +176,11 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
 
     res.json({ analysis: parsedData, fileName, profileUrl: originalUrl });
   } catch (error) {
-    console.error('LinkedIn Analysis Error:', error);
-    res.status(500).json({ error: 'Failed to generate analysis.' });
+    console.error('LinkedIn Analysis Error:', error?.message || error);
+    if (error?.status) console.error('Gemini API status:', error.status);
+    if (error?.errorDetails) console.error('Gemini error details:', JSON.stringify(error.errorDetails));
+    const msg = error?.message || 'Failed to generate analysis.';
+    res.status(500).json({ error: msg });
   }
 });
 
