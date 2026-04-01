@@ -137,7 +137,7 @@ IMPORTANT: You MUST respond with ONLY valid JSON in exactly this structure, no e
 
     // ── Direct Gemini REST API (most reliable — no SDK naming issues) ──
     const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.2 },
