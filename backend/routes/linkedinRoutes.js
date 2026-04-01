@@ -137,7 +137,7 @@ IMPORTANT: You MUST respond with ONLY valid JSON in exactly this structure, no e
 
     // ── Direct Gemini REST API (most reliable — no SDK naming issues) ──
     const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
@@ -171,10 +171,12 @@ IMPORTANT: You MUST respond with ONLY valid JSON in exactly this structure, no e
     res.json({ analysis: parsedData, fileName, profileUrl: originalUrl });
 
   } catch (error) {
-    console.error('LinkedIn Analysis Error:', error?.message || error);
-    if (error?.status)       console.error('API Status:', error.status);
-    if (error?.error)        console.error('API Error body:', JSON.stringify(error.error));
-    res.status(500).json({ error: error?.message || 'Failed to generate analysis.' });
+    const geminiErr = error?.response?.data?.error;
+    const msg = geminiErr
+      ? `Gemini API Error [${geminiErr.code}]: ${geminiErr.message}`
+      : error?.message || 'Failed to generate analysis.';
+    console.error('LinkedIn Analysis Error:', msg);
+    res.status(500).json({ error: msg });
   }
 });
 
