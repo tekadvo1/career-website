@@ -116,6 +116,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const projectStructureRoutes = require('./routes/projectStructureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
+const linkedinRoutes = require('./routes/linkedinRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 const { adminProtect } = require('./middleware/adminMiddleware');
@@ -148,6 +149,7 @@ app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
 app.use('/api/job-match',   protect, jobMatchRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
+app.use('/api/linkedin',    protect, linkedinRoutes);
 app.use('/api/admin',       adminProtect, adminRoutes);  // Uses admin JWT, NOT user JWT
 
 // Database schema update for caching (allow NULL user_id)

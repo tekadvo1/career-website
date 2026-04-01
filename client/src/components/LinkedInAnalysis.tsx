@@ -139,7 +139,7 @@ export default function LinkedInAnalysis() {
         <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm shrink-0">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-md shadow-indigo-200">
+              <div className="w-9 h-9 bg-gradient-to-br from-teal-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md shadow-teal-200">
                 <Linkedin className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -173,10 +173,10 @@ export default function LinkedInAnalysis() {
               <div className="w-full max-w-md">
                 <div className="flex justify-center mb-10">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-xl shadow-indigo-200">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 flex items-center justify-center shadow-xl shadow-teal-200">
                       <Sparkles className="w-10 h-10 text-white animate-pulse" />
                     </div>
-                    <div className="absolute -inset-2 bg-gradient-to-br from-indigo-400 to-purple-400 rounded-3xl opacity-20 animate-ping" />
+                    <div className="absolute -inset-2 bg-gradient-to-br from-teal-400 to-emerald-400 rounded-3xl opacity-20 animate-ping" />
                   </div>
                 </div>
 
@@ -186,20 +186,20 @@ export default function LinkedInAnalysis() {
                     const active = i === loadingStep;
                     return (
                       <div key={i} className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-500 ${
-                        active ? 'bg-indigo-50 border-indigo-200 shadow-sm' :
+                        active ? 'bg-teal-50 border-teal-200 shadow-sm' :
                         done   ? 'bg-emerald-50 border-emerald-200 opacity-80' :
                                  'bg-white border-slate-200 opacity-40'}`}>
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                          active ? 'bg-indigo-600' : done ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                          active ? 'bg-teal-600' : done ? 'bg-emerald-500' : 'bg-slate-200'}`}>
                           {done
                             ? <CheckCheck className="w-5 h-5 text-white" />
                             : <StepIcon className={`w-5 h-5 ${active ? 'text-white animate-spin' : 'text-slate-400'}`} />}
                         </div>
                         <div className="flex-1">
-                          <p className={`text-sm font-bold ${active ? 'text-indigo-900' : done ? 'text-emerald-800' : 'text-slate-400'}`}>{label}</p>
-                          <p className={`text-xs ${active ? 'text-indigo-500' : done ? 'text-emerald-600' : 'text-slate-300'}`}>{sub}</p>
+                          <p className={`text-sm font-bold ${active ? 'text-teal-900' : done ? 'text-emerald-800' : 'text-slate-400'}`}>{label}</p>
+                          <p className={`text-xs ${active ? 'text-teal-500' : done ? 'text-emerald-600' : 'text-slate-300'}`}>{sub}</p>
                         </div>
-                        {active && <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />}
+                        {active && <Loader2 className="w-4 h-4 text-teal-500 animate-spin shrink-0" />}
                       </div>
                     );
                   })}
@@ -213,12 +213,12 @@ export default function LinkedInAnalysis() {
             <div className="max-w-2xl mx-auto">
               {/* Hero */}
               <div className="text-center mb-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-teal-100 text-teal-700 rounded-full text-xs font-bold mb-4">
                   <Sparkles className="w-3.5 h-3.5" /> AI-Powered Profile Audit
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-3">
                   Make recruiters{' '}
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">stop scrolling</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">stop scrolling</span>
                 </h2>
                 <p className="text-slate-500 text-sm leading-relaxed max-w-md mx-auto">
                   Our AI audits your LinkedIn profile against real recruiter patterns and generates exact copy-paste improvements for every section.
@@ -228,8 +228,8 @@ export default function LinkedInAnalysis() {
               {/* Feature pills */}
               <div className="grid grid-cols-3 gap-3 mb-7">
                 {[
-                  { Icon: Target,  label: '4 Sections Scored',  sub: 'Headline · Summary · XP · Skills', bg: 'bg-indigo-50',  ic: 'text-indigo-600'  },
-                  { Icon: Zap,     label: 'Copy-Paste Rewrites', sub: 'AI writes the correction for you', bg: 'bg-purple-50',  ic: 'text-purple-600'  },
+                  { Icon: Target,  label: '4 Sections Scored',  sub: 'Headline · Summary · XP · Skills', bg: 'bg-teal-50',  ic: 'text-teal-600'  },
+                  { Icon: Zap,     label: 'Copy-Paste Rewrites', sub: 'AI writes the correction for you', bg: 'bg-emerald-50',  ic: 'text-emerald-600'  },
                   { Icon: Shield,  label: '100% Private',        sub: 'Data is never stored publicly',    bg: 'bg-emerald-50', ic: 'text-emerald-600' },
                 ].map(({ Icon, label, sub, bg, ic }) => (
                   <div key={label} className="bg-white border border-slate-200 rounded-xl p-3 text-center shadow-sm">
@@ -245,13 +245,13 @@ export default function LinkedInAnalysis() {
               {/* Mode tabs */}
               <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
                 <button onClick={() => setMode('url')}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'url' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'url' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                   🔗 URL Only
                 </button>
                 <button onClick={() => setMode('url-resume')}
-                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'url-resume' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'url-resume' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
                   📄 URL + Resume
-                  <span className="text-[10px] px-1.5 py-0.5 bg-indigo-600 text-white rounded-full font-black">PRO</span>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-teal-600 text-white rounded-full font-black">PRO</span>
                 </button>
               </div>
 
@@ -260,14 +260,14 @@ export default function LinkedInAnalysis() {
                 {/* URL */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-2">
-                    <Linkedin className="w-4 h-4 text-indigo-600" /> LinkedIn Profile URL
+                    <Linkedin className="w-4 h-4 text-teal-600" /> LinkedIn Profile URL
                   </label>
                   <input type="text"
                     placeholder="https://linkedin.com/in/yourprofile"
                     value={urlInput}
                     onChange={e => setUrlInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium text-sm outline-none" />
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 transition-all font-medium text-sm outline-none" />
                   <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     Open your LinkedIn profile → copy the URL from the browser address bar
@@ -278,8 +278,8 @@ export default function LinkedInAnalysis() {
                 {mode === 'url-resume' && (
                   <div className="border-t border-dashed border-slate-200 pt-5">
                     <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-1">
-                      <FileText className="w-4 h-4 text-purple-600" /> Upload Resume
-                      <span className="text-[10px] font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Highly Recommended</span>
+                      <FileText className="w-4 h-4 text-emerald-600" /> Upload Resume
+                      <span className="text-[10px] font-black text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">Highly Recommended</span>
                     </label>
                     <p className="text-[11px] text-slate-400 mb-3">We'll detect what's on your resume that you forgot to add to LinkedIn.</p>
                     {resumeFile ? (
@@ -293,9 +293,9 @@ export default function LinkedInAnalysis() {
                         </button>
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 transition-all group">
-                        <Upload className="w-6 h-6 text-slate-400 group-hover:text-indigo-500 mb-2 transition-colors" />
-                        <p className="text-sm font-bold text-slate-600 group-hover:text-indigo-700 transition-colors">Click to upload resume</p>
+                      <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer hover:bg-teal-50 hover:border-teal-400 transition-all group">
+                        <Upload className="w-6 h-6 text-slate-400 group-hover:text-teal-500 mb-2 transition-colors" />
+                        <p className="text-sm font-bold text-slate-600 group-hover:text-teal-700 transition-colors">Click to upload resume</p>
                         <p className="text-xs text-slate-400 mt-1">.PDF or .DOCX · Max 5 MB</p>
                         <input type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileChange} />
                       </label>
@@ -304,16 +304,16 @@ export default function LinkedInAnalysis() {
                 )}
 
                 {mode === 'url-resume' && (
-                  <div className="flex items-start gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-                    <Sparkles className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-indigo-700">
+                  <div className="flex items-start gap-2 p-3 bg-teal-50 border border-teal-100 rounded-xl">
+                    <Sparkles className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-teal-700">
                       <strong>Pro Mode:</strong> AI cross-references your resume with LinkedIn and pinpoints exact missing skills, achievements, and certifications.
                     </p>
                   </div>
                 )}
 
                 <button onClick={handleAnalyze} disabled={!urlInput.trim()}
-                  className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-[0.99]">
+                  className="w-full py-3.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-teal-200 flex items-center justify-center gap-2 active:scale-[0.99]">
                   <Sparkles className="w-4 h-4" />
                   {mode === 'url-resume' ? 'Analyze Profile + Resume' : 'Analyze My LinkedIn Profile'}
                   <ChevronRight className="w-4 h-4" />
@@ -327,8 +327,8 @@ export default function LinkedInAnalysis() {
 
               {/* Score banner */}
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-2xl">
-                <div className="absolute -top-20 -right-10 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -left-10 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -top-20 -right-10 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 -left-10 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
 
                 <div className="relative flex flex-col sm:flex-row items-center gap-8">
                   {/* Ring */}
@@ -354,7 +354,7 @@ export default function LinkedInAnalysis() {
 
                   <div className="flex-1 text-center sm:text-left z-10">
                     <div className="flex items-center gap-2 mb-2 justify-center sm:justify-start">
-                      <Target className="w-5 h-5 text-indigo-400" />
+                      <Target className="w-5 h-5 text-teal-400" />
                       <h2 className="text-xl font-black text-white">Profile Audit Complete</h2>
                     </div>
                     <p className="text-slate-400 text-sm mb-4 leading-relaxed max-w-lg">
@@ -368,7 +368,7 @@ export default function LinkedInAnalysis() {
                     </p>
                     {originalUrl?.startsWith('http') && (
                       <a href={originalUrl} target="_blank" rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-indigo-300 hover:text-indigo-100 transition-colors font-semibold">
+                        className="inline-flex items-center gap-1.5 text-xs text-teal-300 hover:text-teal-100 transition-colors font-semibold">
                         <Linkedin className="w-3.5 h-3.5" /> View LinkedIn Profile →
                       </a>
                     )}
@@ -406,12 +406,12 @@ export default function LinkedInAnalysis() {
                   const isSkills = key === 'skills';
                   const skillsData = data as typeof analysis.skills;
                   return (
-                    <div key={key} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all flex flex-col overflow-hidden">
+                    <div key={key} className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md hover:border-teal-200 transition-all flex flex-col overflow-hidden">
                       {/* Card header */}
                       <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <Icon className="w-4 h-4 text-indigo-600" />
+                          <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                            <Icon className="w-4 h-4 text-teal-600" />
                           </div>
                           <h3 className="font-black text-slate-900 text-sm">{label}</h3>
                         </div>
@@ -430,7 +430,7 @@ export default function LinkedInAnalysis() {
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">✅ Pro Correction</span>
                             <button onClick={() => handleCopy(data.correction, key)}
-                              className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50 transition-colors">
+                              className="flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-teal-600 px-2 py-1 rounded-lg hover:bg-teal-50 transition-colors">
                               {copiedKey === key
                                 ? <><CheckCheck className="w-3 h-3 text-emerald-500" /> Copied!</>
                                 : <><Copy className="w-3 h-3" /> Copy</>}
@@ -443,11 +443,11 @@ export default function LinkedInAnalysis() {
 
                         {/* Missing skills chips */}
                         {isSkills && skillsData.missingSkills?.length > 0 && (
-                          <div className="p-3.5 bg-indigo-50 rounded-xl border border-indigo-100">
-                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-2.5 block">🚀 Add These Keywords</span>
+                          <div className="p-3.5 bg-teal-50 rounded-xl border border-teal-100">
+                            <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest mb-2.5 block">🚀 Add These Keywords</span>
                             <div className="flex flex-wrap gap-1.5">
                               {skillsData.missingSkills.map((sk, i) => (
-                                <span key={i} className="px-2.5 py-1 bg-indigo-600 text-white text-[11px] font-bold rounded-lg shadow-sm">{sk}</span>
+                                <span key={i} className="px-2.5 py-1 bg-teal-600 text-white text-[11px] font-bold rounded-lg shadow-sm">{sk}</span>
                               ))}
                             </div>
                           </div>
@@ -460,33 +460,33 @@ export default function LinkedInAnalysis() {
 
               {/* Resume gap analysis */}
               {analysis.resumeComparison && analysis.resumeComparison !== 'No resume uploaded.' && (
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-6">
-                  <h3 className="text-base font-black text-purple-900 flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center shrink-0">
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-6">
+                  <h3 className="text-base font-black text-emerald-900 flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shrink-0">
                       <FileText className="w-4 h-4 text-white" />
                     </div>
                     Resume vs LinkedIn Gap Analysis
                   </h3>
-                  <p className="text-sm text-purple-800 leading-relaxed font-medium">{analysis.resumeComparison}</p>
+                  <p className="text-sm text-emerald-800 leading-relaxed font-medium">{analysis.resumeComparison}</p>
                 </div>
               )}
 
               {/* CTA */}
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 text-center shadow-xl shadow-indigo-100">
-                <Star className="w-8 h-8 text-indigo-200 mx-auto mb-3 fill-indigo-300" />
+              <div className="bg-gradient-to-r from-teal-600 to-emerald-600 rounded-2xl p-6 text-center shadow-xl shadow-teal-100">
+                <Star className="w-8 h-8 text-teal-200 mx-auto mb-3 fill-teal-300" />
                 <h3 className="text-lg font-black text-white mb-2">Apply These Changes Now</h3>
-                <p className="text-indigo-200 text-sm mb-5">
+                <p className="text-teal-200 text-sm mb-5">
                   Use the <strong>Copy</strong> buttons above to grab each correction, then paste directly into your LinkedIn profile sections.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   {originalUrl?.startsWith('http') && (
                     <a href={originalUrl} target="_blank" rel="noreferrer"
-                      className="px-5 py-2.5 bg-white text-indigo-700 text-sm font-bold rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 justify-center">
+                      className="px-5 py-2.5 bg-white text-teal-700 text-sm font-bold rounded-xl shadow-sm hover:shadow-md transition-all flex items-center gap-2 justify-center">
                       <Linkedin className="w-4 h-4" /> Open My LinkedIn
                     </a>
                   )}
                   <button onClick={() => { setAnalysis(null); setUrlInput(''); setResumeFile(null); }}
-                    className="px-5 py-2.5 border border-indigo-400 text-white text-sm font-bold rounded-xl hover:bg-white/10 transition-all flex items-center gap-2 justify-center">
+                    className="px-5 py-2.5 border border-teal-400 text-white text-sm font-bold rounded-xl hover:bg-white/10 transition-all flex items-center gap-2 justify-center">
                     <RefreshCw className="w-4 h-4" /> Analyze Another Profile
                   </button>
                 </div>
