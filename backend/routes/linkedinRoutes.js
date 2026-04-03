@@ -114,9 +114,44 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       return res.status(500).json({ error: 'Gemini API key missing. Please set GEMINI_API_KEY in Railway environment variables.' });
     }
 
+    // ── BULLETPROOF FIX: Auto-Detect Available Model ──
+    let targetModel = "gemini-1.5-flash"; // Default fallback
+    try {
+      const modelsRes = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const availableModels = modelsRes.data.models || [];
+      
+      const preferredOrder = [
+        'models/gemini-1.5-pro',
+        'models/gemini-1.5-pro-latest',
+        'models/gemini-1.5-flash',
+        'models/gemini-1.5-flash-latest',
+        'models/gemini-2.0-flash',
+        'models/gemini-pro'
+      ];
+
+      let found = false;
+      for (const pref of preferredOrder) {
+        if (availableModels.some(m => m.name === pref && m.supportedGenerationMethods?.includes('generateContent'))) {
+          targetModel = pref.replace('models/', '');
+          found = true;
+          break;
+        }
+      }
+      
+      // If none of our preferred models exist, pick ANY gemini model that supports generation
+      if (!found) {
+        const anyGemini = availableModels.find(m => m.name.includes('gemini') && m.supportedGenerationMethods?.includes('generateContent'));
+        if (anyGemini) targetModel = anyGemini.name.replace('models/', '');
+      }
+    } catch (listErr) {
+      console.warn("Failed to dynamically list models, sticking to default:", listErr.message);
+    }
+
+    console.log(`Using dynamically resolved model: ${targetModel}`);
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: targetModel,
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: linkedinSchema,
