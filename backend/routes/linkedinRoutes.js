@@ -114,51 +114,6 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       return res.status(500).json({ error: 'Gemini API key missing. Please set GEMINI_API_KEY in Railway environment variables.' });
     }
 
-    // ── BULLETPROOF FIX: Auto-Detect Available Model ──
-    let targetModel = "gemini-1.5-flash"; // Default fallback
-    try {
-      const modelsRes = await axios.get(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      const availableModels = modelsRes.data.models || [];
-      
-      const preferredOrder = [
-        'models/gemini-1.5-pro',
-        'models/gemini-1.5-pro-latest',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-flash-latest',
-        'models/gemini-2.0-flash',
-        'models/gemini-pro'
-      ];
-
-      let found = false;
-      for (const pref of preferredOrder) {
-        if (availableModels.some(m => m.name === pref && m.supportedGenerationMethods?.includes('generateContent'))) {
-          targetModel = pref.replace('models/', '');
-          found = true;
-          break;
-        }
-      }
-      
-      // If none of our preferred models exist, pick ANY gemini model that supports generation
-      if (!found) {
-        const anyGemini = availableModels.find(m => m.name.includes('gemini') && m.supportedGenerationMethods?.includes('generateContent'));
-        if (anyGemini) targetModel = anyGemini.name.replace('models/', '');
-      }
-    } catch (listErr) {
-      console.warn("Failed to dynamically list models, sticking to default:", listErr.message);
-    }
-
-    console.log(`Using dynamically resolved model: ${targetModel}`);
-
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: targetModel,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: linkedinSchema,
-        temperature: 0.2,
-      }
-    });
-
     const prompt = `
       You are a senior LinkedIn profile strategist who has helped 1,000+ professionals land jobs at FAANG, startups, and Fortune 500 companies. You are brutally honest and always provide highly specific, copy-paste-ready advice.
 
@@ -190,7 +145,50 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       Important: Write all corrections in first person where appropriate. Make them professional, ATS-optimized, and recruiter-friendly.
     `;
 
-    const aiResult = await model.generateContent(prompt);
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // ── BULLETPROOF FIX Part 2: Dynamic Fallback Loop ──
+    // The ListModels API sometimes falsely advertises models that return "404 Not Found"
+    // when attempting to actually generate content. So we explicitly try them in order.
+    const fallbackOrder = [
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+      "gemini-1.5-flash-latest",
+      "gemini-1.5-pro-latest",
+      "gemini-2.0-flash",
+      "gemini-pro"
+    ];
+
+    let aiResult = null;
+    let successfulModel = null;
+    let lastError = null;
+
+    for (const modelName of fallbackOrder) {
+      try {
+        console.log(`Attempting LinkedIn analysis with Gemini model: ${modelName}`);
+        const currentModel = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: linkedinSchema,
+            temperature: 0.2,
+          }
+        });
+        
+        aiResult = await currentModel.generateContent(prompt);
+        successfulModel = modelName;
+        console.log(`✅ Successfully generated with model: ${successfulModel}`);
+        break; // Stop looping once we get a successful generation
+      } catch (err) {
+        lastError = err;
+        console.warn(`⚠️ Model ${modelName} failed (${err.message}). Trying fallback...`);
+      }
+    }
+
+    if (!aiResult) {
+      throw lastError || new Error("All Gemini fallback models failed.");
+    }
+
     const jsonStr = aiResult.response.text();
     const parsedData = JSON.parse(jsonStr);
 
