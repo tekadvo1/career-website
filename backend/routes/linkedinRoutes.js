@@ -6,7 +6,7 @@ const mammoth = require('mammoth');
 const pool = require('../config/db');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
+const { OpenAI } = require('openai');
 
 // Setting up multer for resume uploads (max 5MB)
 const upload = multer({
@@ -15,35 +15,42 @@ const upload = multer({
 });
 
 const linkedinSchema = {
-  type: SchemaType.OBJECT,
+  type: "object",
   properties: {
-    overallScore: { type: SchemaType.INTEGER, description: "Total percentage score of the profile out of 100" },
+    overallScore: { type: "integer", description: "Total percentage score of the profile out of 100" },
     headline: {
-      type: SchemaType.OBJECT,
-      properties: { score: { type: SchemaType.INTEGER, description: "1 to 10" }, mistake: { type: SchemaType.STRING }, correction: { type: SchemaType.STRING } },
-      required: ["score", "mistake", "correction"]
+      type: "object",
+      properties: { score: { type: "integer", description: "1 to 10" }, mistake: { type: "string" }, correction: { type: "string" } },
+      required: ["score", "mistake", "correction"],
+      additionalProperties: false
     },
     summary: {
-      type: SchemaType.OBJECT,
-      properties: { score: { type: SchemaType.INTEGER, description: "1 to 10" }, mistake: { type: SchemaType.STRING }, correction: { type: SchemaType.STRING } },
-      required: ["score", "mistake", "correction"]
+      type: "object",
+      properties: { score: { type: "integer" }, mistake: { type: "string" }, correction: { type: "string" } },
+      required: ["score", "mistake", "correction"],
+      additionalProperties: false
     },
     experience: {
-      type: SchemaType.OBJECT,
-      properties: { score: { type: SchemaType.INTEGER, description: "1 to 10" }, mistake: { type: SchemaType.STRING }, correction: { type: SchemaType.STRING } },
-      required: ["score", "mistake", "correction"]
+      type: "object",
+      properties: { score: { type: "integer" }, mistake: { type: "string" }, correction: { type: "string" } },
+      required: ["score", "mistake", "correction"],
+      additionalProperties: false
     },
     skills: {
-      type: SchemaType.OBJECT,
-      properties: { score: { type: SchemaType.INTEGER, description: "1 to 10" }, mistake: { type: SchemaType.STRING }, correction: { type: SchemaType.STRING }, missingSkills: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } } },
-      required: ["score", "mistake", "correction", "missingSkills"]
+      type: "object",
+      properties: {
+        score: { type: "integer" },
+        mistake: { type: "string" },
+        correction: { type: "string" },
+        missingSkills: { type: "array", items: { type: "string" } }
+      },
+      required: ["score", "mistake", "correction", "missingSkills"],
+      additionalProperties: false
     },
-    resumeComparison: {
-      type: SchemaType.STRING,
-      description: "If a resume was uploaded, outline specifically what strengths were on the resume that they forgot to include in their LinkedIn profile."
-    }
+    resumeComparison: { type: "string", description: "Comparison if resume exists" }
   },
-  required: ["overallScore", "headline", "summary", "experience", "skills"]
+  required: ["overallScore", "headline", "summary", "experience", "skills", "resumeComparison"],
+  additionalProperties: false
 };
 
 // 1) Fetch saved analysis for user
@@ -67,34 +74,44 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
     let { profileInput } = req.body; // Can be a URL or pasted text
     if (!profileInput) return res.status(400).json({ error: 'LinkedIn profile link or text is required.' });
 
-    let profileText = profileInput;
+    let profileText = '';
     let originalUrl = null;
 
-    // If they pasted a URL, let's try to extract basic metadata
+    // ── 1. PROXYCURL LINKEDIN URL SCRAPING (Like Resume Worded) ──
+    // This is the correct API to extract real data from a LinkedIn URL.
     if (profileInput.trim().startsWith('http')) {
       originalUrl = profileInput.trim();
-      try {
-        const response = await axios.get(originalUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36' },
-          timeout: 5000
-        });
-        const $ = cheerio.load(response.data);
-        const title = $('title').text() || '';
-        const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
-        
-        // If LinkedIn throws an auth wall, the title usually contains "Log In" or "Sign Up"
-        if (title.toLowerCase().includes('log in') || title.toLowerCase().includes('sign in')) {
-          profileText = `[SYSTEM NOTE: LinkedIn actively blocked access to the user's URL (${originalUrl}). NO PROFILE DATA WAS SCRAPED.]`;
-        } else {
-          profileText = `LinkedIn URL: ${originalUrl}\nExtracted Title / Headline: ${title}\nExtracted About / Summary: ${metaDesc}\n\n(Note: Full page content might be hidden behind LinkedIn privacy walls, analyze heavily based on this summary and the resume if provided.)`;
+      const proxycurlKey = process.env.PROXYCURL_API_KEY?.trim();
+      
+      if (proxycurlKey) {
+        try {
+          console.log("Fetching LinkedIn data via Proxycurl...");
+          const response = await axios.get(`https://nubela.co/proxycurl/api/v2/linkedin`, {
+            params: { url: originalUrl, use_cache: 'if-present' },
+            headers: { 'Authorization': `Bearer ${proxycurlKey}` }
+          });
+          
+          const p = response.data;
+          profileText = `
+            Name: ${p.full_name}
+            Headline: ${p.headline}
+            Summary: ${p.summary}
+            Experiences: ${p.experiences?.map(e => `${e.title} at ${e.company} (${e.starts_at?.year} - ${e.ends_at?.year || 'Present'}): ${e.description}`).join(' | ')}
+            Education: ${p.education?.map(edu => `${edu.degree_name} at ${edu.school}`).join(' | ')}
+          `;
+        } catch (err) {
+          console.warn("Proxycurl failed:", err.message);
+          profileText = `[LinkedIn data extraction failed. Please check Proxycurl API limit or upload Resume.]`;
         }
-      } catch (e) {
-        console.warn('Scraping failed (LinkedIn blocked), using URL as pure AI prompt:', e.message);
-        profileText = `[SYSTEM NOTE: LinkedIn actively blocked access to the user's URL (${originalUrl}). NO PROFILE DATA WAS SCRAPED.]`;
+      } else {
+        // Fallback if no Proxycurl API key is provided
+        profileText = `[SYSTEM NOTE: To extract data directly from a LinkedIn URL without being blocked, you must set PROXYCURL_API_KEY in your environment. Currently, no valid data was scraped.]`;
       }
+    } else {
+      profileText = profileInput; // PURE TEXT PASTE
     }
 
-    // Process uploaded resume if any
+    // ── 2. PROCESS RESUME ──
     let resumeText = '';
     let fileName = null;
     if (req.file) {
@@ -115,10 +132,13 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       }
     }
 
-    const apiKey = process.env.GEMINI_API_KEY?.trim();
-    if (!apiKey) {
-      return res.status(500).json({ error: 'Gemini API key missing. Please set GEMINI_API_KEY in Railway environment variables.' });
+    // ── 3. AI GENERATION (OPENAI) ──
+    const openAIApiKey = process.env.OPENAI_API_KEY?.trim();
+    if (!openAIApiKey) {
+      return res.status(500).json({ error: 'OpenAI API key missing. Please set OPENAI_API_KEY in Railway.' });
     }
+
+    const openai = new OpenAI({ apiKey: openAIApiKey });
 
     const prompt = `
       You are a senior LinkedIn profile strategist who has helped 1,000+ professionals land jobs at top companies. You are brutally honest.
@@ -136,8 +156,8 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       Your task: Perform a rigorous LinkedIn profile audit to maximize recruiter attraction.
 
       CRITICAL RULES:
-      1. DO NOT HALLUCINATE OR INVENT FAKE PROFILES. If the Extracted Profile Content says "NO PROFILE DATA WAS SCRAPED" and there is NO resume provided, you MUST inform the user that LinkedIn blocked their URL and you need their resume, and set the overallScore to 0. Do not invent a fake "Software Engineer at Amazon."
-      2. If "NO PROFILE DATA WAS SCRAPED" but they DID provide a resume, base the ENTIRE LinkedIn optimization on their resume. Write the exact perfect LinkedIn profile they should construct using their resume data.
+      1. DO NOT HALLUCINATE OR INVENT FAKE PROFILES. If the Extracted Profile Content says "no valid data was scraped" and there is NO resume provided, you MUST inform the user they need to configure their scraping API or upload a resume, and set the overallScore to 0. Do not invent a fake "Software Engineer at Amazon."
+      2. If you only have a resume, base the ENTIRE LinkedIn optimization on their resume. Write the exact perfect LinkedIn profile they should construct using their resume data.
       3. overallScore: A realistic percentage (0-100).
       4. For each section (headline, summary, experience, skills):
          - score: 1 to 10.
@@ -147,54 +167,24 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       6. resumeComparison: If a resume was provided, explain the gap between the profile (if any) and the resume. If no profile was scraped, use this to summarize what you deduced from the resume. If no resume at all, output "No resume uploaded."
     `;
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    console.log("Generating analysis via OpenAI (gpt-4o-mini)...");
     
-    // ── BULLETPROOF FIX Part 2: Dynamic Fallback Loop ──
-    // The ListModels API sometimes falsely advertises models that return "404 Not Found"
-    // when attempting to actually generate content. So we explicitly try them in order.
-    const fallbackOrder = [
-      "gemini-2.5-flash",
-      "gemini-2.5-pro",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash",
-      "gemini-1.5-pro",
-      "gemini-1.5-flash-latest",
-      "gemini-1.5-pro-latest",
-      "gemini-pro"
-    ];
-
-    let aiResult = null;
-    let successfulModel = null;
-    let lastError = null;
-
-    for (const modelName of fallbackOrder) {
-      try {
-        console.log(`Attempting LinkedIn analysis with Gemini model: ${modelName}`);
-        const currentModel = genAI.getGenerativeModel({
-          model: modelName,
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: linkedinSchema,
-            temperature: 0.2,
-          }
-        });
-        
-        aiResult = await currentModel.generateContent(prompt);
-        successfulModel = modelName;
-        console.log(`✅ Successfully generated with model: ${successfulModel}`);
-        break; // Stop looping once we get a successful generation
-      } catch (err) {
-        lastError = err;
-        console.warn(`⚠️ Model ${modelName} failed (${err.message}). Trying fallback...`);
+    // We use GPT-4o-mini as it is universally reliable and lightning fast.
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "linkedin_analysis",
+          schema: linkedinSchema
+        }
       }
-    }
+    });
 
-    if (!aiResult) {
-      throw lastError || new Error("All Gemini fallback models failed.");
-    }
-
-    const jsonStr = aiResult.response.text();
-    const parsedData = JSON.parse(jsonStr);
+    const aiResultStr = aiResponse.choices[0].message.content;
+    const parsedData = JSON.parse(aiResultStr);
 
     // Save to DB (UPSERT)
     await pool.query(
