@@ -131,8 +131,12 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
         return res.status(400).json({ error: 'Failed to process resume file.' });
       }
     }
+    // ── 3. VALIDATE DATA PRESENCE ──
+    if (profileText.includes("no valid data was scraped") && !resumeText) {
+      return res.status(400).json({ error: "LinkedIn blocked our servers from reading your URL. To bypass this, please configure a PROXYCURL_API_KEY in your server environment, OR upload your resume so we can process your data securely." });
+    }
 
-    // ── 3. AI GENERATION (OPENAI) ──
+    // ── 4. AI GENERATION (OPENAI) ──
     const openAIApiKey = process.env.OPENAI_API_KEY?.trim();
     if (!openAIApiKey) {
       return res.status(500).json({ error: 'OpenAI API key missing. Please set OPENAI_API_KEY in Railway.' });
