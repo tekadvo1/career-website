@@ -75,13 +75,14 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
       originalUrl = profileInput.trim();
       try {
         const response = await axios.get(originalUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36' },
           timeout: 5000
         });
         const $ = cheerio.load(response.data);
         const title = $('title').text() || '';
-        const metaDesc = $('meta[name="description"]').attr('content') || '';
-        profileText = `URL: ${originalUrl}\n\nTitle: ${title}\n\nDescription: ${metaDesc}\n\nHTML Text Extract: ${$('body').text().substring(0, 3000)}`;
+        const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
+        
+        profileText = `LinkedIn URL: ${originalUrl}\nExtracted Title / Headline: ${title}\nExtracted About / Summary: ${metaDesc}\n\n(Note: Full page content is hidden behind LinkedIn privacy walls, analyze heavily based on this summary and the resume if provided.)`;
       } catch (e) {
         console.warn('Scraping failed (LinkedIn blocked), using URL as pure AI prompt:', e.message);
         profileText = `The user provided this LinkedIn profile URL: ${originalUrl}. Please do your best to analyze based on URL alone, or if you cannot, give generic strong advice for the components of a LinkedIn profile.`;
