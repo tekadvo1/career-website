@@ -151,11 +151,13 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
     // The ListModels API sometimes falsely advertises models that return "404 Not Found"
     // when attempting to actually generate content. So we explicitly try them in order.
     const fallbackOrder = [
+      "gemini-2.5-flash",
+      "gemini-2.5-pro",
+      "gemini-2.0-flash",
       "gemini-1.5-flash",
       "gemini-1.5-pro",
       "gemini-1.5-flash-latest",
       "gemini-1.5-pro-latest",
-      "gemini-2.0-flash",
       "gemini-pro"
     ];
 
