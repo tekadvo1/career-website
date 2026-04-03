@@ -82,10 +82,15 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
         const title = $('title').text() || '';
         const metaDesc = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
         
-        profileText = `LinkedIn URL: ${originalUrl}\nExtracted Title / Headline: ${title}\nExtracted About / Summary: ${metaDesc}\n\n(Note: Full page content is hidden behind LinkedIn privacy walls, analyze heavily based on this summary and the resume if provided.)`;
+        // If LinkedIn throws an auth wall, the title usually contains "Log In" or "Sign Up"
+        if (title.toLowerCase().includes('log in') || title.toLowerCase().includes('sign in')) {
+          profileText = `[SYSTEM NOTE: LinkedIn actively blocked access to the user's URL (${originalUrl}). NO PROFILE DATA WAS SCRAPED.]`;
+        } else {
+          profileText = `LinkedIn URL: ${originalUrl}\nExtracted Title / Headline: ${title}\nExtracted About / Summary: ${metaDesc}\n\n(Note: Full page content might be hidden behind LinkedIn privacy walls, analyze heavily based on this summary and the resume if provided.)`;
+        }
       } catch (e) {
         console.warn('Scraping failed (LinkedIn blocked), using URL as pure AI prompt:', e.message);
-        profileText = `The user provided this LinkedIn profile URL: ${originalUrl}. Please do your best to analyze based on URL alone, or if you cannot, give generic strong advice for the components of a LinkedIn profile.`;
+        profileText = `[SYSTEM NOTE: LinkedIn actively blocked access to the user's URL (${originalUrl}). NO PROFILE DATA WAS SCRAPED.]`;
       }
     }
 
@@ -116,34 +121,30 @@ router.post('/analyze', upload.single('resume'), async (req, res) => {
     }
 
     const prompt = `
-      You are a senior LinkedIn profile strategist who has helped 1,000+ professionals land jobs at FAANG, startups, and Fortune 500 companies. You are brutally honest and always provide highly specific, copy-paste-ready advice.
+      You are a senior LinkedIn profile strategist who has helped 1,000+ professionals land jobs at top companies. You are brutally honest.
 
-      User's LinkedIn Profile Content (URL extracted or pasted text):
+      User's Extracted Profile Content:
       ---
       ${profileText}
       ---
 
-      ${resumeText ? `User's Resume Content — cross-reference this carefully with the LinkedIn profile:
+      ${resumeText ? `User's Uploaded Resume (USE THIS AS THE PRIMARY SOURCE OF TRUTH):
       ---
       ${resumeText}
-      ---` : 'No resume provided. Perform a standalone LinkedIn profile analysis.'}
+      ---` : 'No resume provided.'}
 
       Your task: Perform a rigorous LinkedIn profile audit to maximize recruiter attraction.
 
-      Rules:
-      1. overallScore: A realistic percentage score from 0–100. Be critical — most profiles score between 35–65.
-      2. For each section (headline, summary, experience, skills):
-         - score: A score from 1 to 10. Be critical.
-         - mistake: Identify the SPECIFIC problem. Reference actual content from the profile where possible. Never be generic.
-         - correction: Write the EXACT improved version they can copy-paste directly into LinkedIn right now.
-           - Headline: Write a powerful, keyword-rich 220-character headline using the format: [Title] | [Value Prop] | [Keywords].
-           - Summary: Write a compelling 3-paragraph About section in first person that starts with a hook, highlights achievements, and ends with a call to action.
-           - Experience: Rewrite 2–3 bullet points for their most recent role using strong action verbs + quantified impact (use realistic estimates if needed).
-           - Skills: Give 4–5 specific actionable tips to improve their skills section (e.g., reordering, adding endorsements, pinning key skills).
-      3. missingSkills: List 10–15 specific, high-demand keywords and tools that recruiters in this field actively search for, which are NOT visible on the profile. Be very industry-specific.
-      4. resumeComparison: If a resume was provided, list SPECIFIC achievements, certifications, projects, metrics, and tools from the resume that are completely missing from their LinkedIn profile. Name the actual items. If no resume: respond with "No resume uploaded."
-
-      Important: Write all corrections in first person where appropriate. Make them professional, ATS-optimized, and recruiter-friendly.
+      CRITICAL RULES:
+      1. DO NOT HALLUCINATE OR INVENT FAKE PROFILES. If the Extracted Profile Content says "NO PROFILE DATA WAS SCRAPED" and there is NO resume provided, you MUST inform the user that LinkedIn blocked their URL and you need their resume, and set the overallScore to 0. Do not invent a fake "Software Engineer at Amazon."
+      2. If "NO PROFILE DATA WAS SCRAPED" but they DID provide a resume, base the ENTIRE LinkedIn optimization on their resume. Write the exact perfect LinkedIn profile they should construct using their resume data.
+      3. overallScore: A realistic percentage (0-100).
+      4. For each section (headline, summary, experience, skills):
+         - score: 1 to 10.
+         - mistake: Identify the problem based ONLY on the provided text/resume.
+         - correction: Write the EXACT improved version they can copy-paste.
+      5. missingSkills: List 10 to 15 specific keywords they should add.
+      6. resumeComparison: If a resume was provided, explain the gap between the profile (if any) and the resume. If no profile was scraped, use this to summarize what you deduced from the resume. If no resume at all, output "No resume uploaded."
     `;
 
     const genAI = new GoogleGenerativeAI(apiKey);
