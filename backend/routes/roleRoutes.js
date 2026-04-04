@@ -5,7 +5,7 @@ const realtimeRoutes = require('./realtimeRoutes');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
-  const { role, userId, experienceLevel = 'Beginner', country = 'USA', learningPath } = req.body;
+  const { role, userId, experienceLevel = 'Beginner', country = 'USA', learningPath, forceRefresh = false } = req.body;
 
   if (!role) {
     return res.status(400).json({ error: 'Role is required' });

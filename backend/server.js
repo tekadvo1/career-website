@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '.env') });
 
 // Catch uncaught errors so the server doesn't die silently
 process.on('uncaughtException', (err) => {
