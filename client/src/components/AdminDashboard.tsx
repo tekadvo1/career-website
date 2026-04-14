@@ -46,6 +46,31 @@ const ToastContainer = ({ toasts, remove }: { toasts: ToastItem[]; remove: (id: 
   );
 };
 
+// ─── Generic Confirm Modal ──────────────────────────────────────────────
+const GenericConfirmModal = ({ title, message, onConfirm, onCancel, confirmText = 'Confirm', confirmColor = 'bg-rose-600 hover:bg-rose-700' }: any) => (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="p-6 text-center">
+        <div className="w-14 h-14 bg-rose-50 rounded-full flex items-center justify-center mb-5 mx-auto border-4 border-rose-100">
+          <AlertTriangle className="w-6 h-6 text-rose-500" />
+        </div>
+        <h3 className="font-black text-xl text-slate-900 tracking-tight mb-2">{title}</h3>
+        <p className="text-sm font-medium text-slate-500 leading-relaxed">{message}</p>
+      </div>
+      <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex flex-col sm:flex-row items-center gap-3">
+        <button onClick={onCancel}
+          className="w-full sm:w-1/2 py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-50 transition-colors shadow-sm">
+          Cancel
+        </button>
+        <button onClick={onConfirm}
+          className={`w-full sm:w-1/2 py-2.5 text-white font-bold rounded-xl text-sm transition-colors shadow-md ${confirmColor}`}>
+          {confirmText}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 // ─── Confirm Delete Modal ──────────────────────────────────────────────
 const ConfirmDeleteModal = ({ user, onConfirm, onCancel }: { user: any; onConfirm: () => void; onCancel: () => void }) => (
   <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -305,6 +330,7 @@ export default function AdminDashboard() {
   // Toast & confirm modal state
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [maintenanceConfirmTarget, setMaintenanceConfirmTarget] = useState<boolean | null>(null);
   const toastId = useRef(0);
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
@@ -407,6 +433,25 @@ export default function AdminDashboard() {
     setBroadcastMsg(''); setBroadcastSubject('');
   };
 
+  const executeMaintenanceToggle = async () => {
+    if (maintenanceConfirmTarget === null) return;
+    try {
+      const res = await apiFetch('/api/admin/maintenance', {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: maintenanceConfirmTarget, message: maintenance.message || "We're currently down for scheduled maintenance. Check back soon." })
+      }).then(r => r.json());
+      
+      if (res.success) {
+        setMaintenance(prev => ({ ...prev, active: maintenanceConfirmTarget }));
+        showToast(maintenanceConfirmTarget ? 'Maintenance mode ACTIVATED' : 'Maintenance mode DEACTIVATED', maintenanceConfirmTarget ? 'warning' : 'success');
+      }
+    } catch(err) {
+      showToast('Failed to toggle maintenance mode', 'error');
+    }
+    setMaintenanceConfirmTarget(null);
+  };
+
   if (!adminToken) return null;
 
   const tabs = [
@@ -432,6 +477,20 @@ export default function AdminDashboard() {
         />
       )}
 
+      {/* Maintenance Confirm Modal */}
+      {maintenanceConfirmTarget !== null && (
+        <GenericConfirmModal 
+          title={maintenanceConfirmTarget ? "Enable Maintenance" : "Disable Maintenance"}
+          message={maintenanceConfirmTarget 
+            ? "Are you sure? This will instantly lock out ALL regular users from the platform and display the Maintenance Screen." 
+            : "Are you sure you want to disable maintenance mode? The platform will become instantly available to all users."}
+          confirmText={maintenanceConfirmTarget ? "Yes, Block Users" : "Yes, Re-open"}
+          confirmColor={maintenanceConfirmTarget ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"}
+          onConfirm={executeMaintenanceToggle}
+          onCancel={() => setMaintenanceConfirmTarget(null)}
+        />
+      )}
+
       {selectedUser && <UserDetailModal userId={selectedUser} onClose={() => setSelectedUser(null)} token={adminToken} />}
 
       {/* Top Bar */}
@@ -453,21 +512,7 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => {
-              if (maintenance.active || window.confirm("Are you sure? This will instantly lock out ALL regular users from the platform with the Maintenance Screen.")) {
-                const newStatus = !maintenance.active;
-                apiFetch('/api/admin/maintenance', {
-                  method: 'PATCH',
-                  headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ active: newStatus, message: maintenance.message || "We're currently down for scheduled maintenance. Check back soon." })
-                }).then(r => r.json()).then(res => {
-                  if (res.success) {
-                    setMaintenance(prev => ({ ...prev, active: newStatus }));
-                    showToast(newStatus ? 'Maintenance mode ACTIVATED' : 'Maintenance mode DEACTIVATED', newStatus ? 'warning' : 'success');
-                  }
-                }).catch(() => showToast('Failed to toggle maintenance mode', 'error'));
-              }
-            }}
+          <button onClick={() => setMaintenanceConfirmTarget(!maintenance.active)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors ${maintenance.active ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 shadow-sm shadow-rose-100' : 'bg-white text-slate-500 border-slate-200 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50'}`}>
             <AlertTriangle className={`w-3.5 h-3.5 ${maintenance.active ? 'text-rose-500' : ''}`} /> 
             {maintenance.active ? 'Disable Maintenance' : 'Enable Maintenance'}
@@ -973,25 +1018,7 @@ export default function AdminDashboard() {
                     <p className="text-xs text-slate-500 mt-1 max-w-sm">When active, users cannot login or access the platform. Admin dashboard remains accessible.</p>
                   </div>
                   <button
-                    onClick={async () => {
-                      if (maintenance.active || window.confirm("Are you sure? This will instantly lock out ALL regular users from the platform.")) {
-                        const newStatus = !maintenance.active;
-                        try {
-                          const res = await apiFetch('/api/admin/maintenance', {
-                            method: 'PATCH',
-                            headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ active: newStatus, message: maintenance.message })
-                          }).then(r => r.json());
-                          
-                          if (res.success) {
-                            setMaintenance(prev => ({ ...prev, active: newStatus }));
-                            showToast(newStatus ? 'Maintenance mode ACTIVATED' : 'Maintenance mode DEACTIVATED', newStatus ? 'warning' : 'success');
-                          }
-                        } catch(err) {
-                          showToast('Failed to toggle maintenance mode', 'error');
-                        }
-                      }
-                    }}
+                    onClick={() => setMaintenanceConfirmTarget(!maintenance.active)}
                     className={`px-5 py-2.5 rounded-xl font-black text-sm shadow-md transition-all whitespace-nowrap ${maintenance.active 
                       ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200' 
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'}`}
