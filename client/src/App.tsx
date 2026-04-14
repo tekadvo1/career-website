@@ -106,13 +106,20 @@ function App() {
   const [loadingConfig, setLoadingConfig] = useState(true);
 
   useEffect(() => {
-    fetch('/api/public/maintenance')
-      .then(r => r.json())
-      .then(res => {
-        if (res && res.active !== undefined) setMaintenance(res);
-        setLoadingConfig(false);
-      })
-      .catch(() => setLoadingConfig(false));
+    const checkMaintenance = () => {
+      fetch(`/api/public/maintenance?t=${Date.now()}`, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(res => {
+          if (res && res.active !== undefined) setMaintenance(res);
+          setLoadingConfig(false);
+        })
+        .catch(() => setLoadingConfig(false));
+    };
+
+    checkMaintenance(); // initial check
+    const interval = setInterval(checkMaintenance, 15000); // check every 15 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (loadingConfig) return <div className="min-h-screen bg-white" />;
