@@ -453,11 +453,32 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button onClick={() => {
+              if (maintenance.active || window.confirm("Are you sure? This will instantly lock out ALL regular users from the platform with the Maintenance Screen.")) {
+                const newStatus = !maintenance.active;
+                apiFetch('/api/admin/maintenance', {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ active: newStatus, message: maintenance.message || "We're currently down for scheduled maintenance. Check back soon." })
+                }).then(r => r.json()).then(res => {
+                  if (res.success) {
+                    setMaintenance(prev => ({ ...prev, active: newStatus }));
+                    showToast(newStatus ? 'Maintenance mode ACTIVATED' : 'Maintenance mode DEACTIVATED', newStatus ? 'warning' : 'success');
+                  }
+                }).catch(() => showToast('Failed to toggle maintenance mode', 'error'));
+              }
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border rounded-lg transition-colors ${maintenance.active ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 shadow-sm shadow-rose-100' : 'bg-white text-slate-500 border-slate-200 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50'}`}>
+            <AlertTriangle className={`w-3.5 h-3.5 ${maintenance.active ? 'text-rose-500' : ''}`} /> 
+            {maintenance.active ? 'Disable Maintenance' : 'Enable Maintenance'}
+          </button>
+          
           <button onClick={() => { fetchData(); if (activeTab === 'users') fetchUsers(); }}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors text-slate-600">
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-emerald-600' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
+          
           <button onClick={() => {
             sessionStorage.removeItem('findstreak_admin_token');
             sessionStorage.removeItem('adminEmail');
