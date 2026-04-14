@@ -166,7 +166,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   };
 
   useEffect(() => {
-    loadRealtimeStats();
+    Promise.resolve().then(() => loadRealtimeStats());
     
     // SETUP REAL-TIME STREAM
     const userStr = sessionStorage.getItem('user');

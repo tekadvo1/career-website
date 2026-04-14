@@ -28,7 +28,7 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   // We only attach the JWT token if the request is going to our own backend (e.g., relative URLs starting with '/' or same origin)
   const isLocalRequest = url.startsWith('/') || url.startsWith(window.location.origin);
 
-  if (token && isLocalRequest) {
+  if (token && isLocalRequest && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 

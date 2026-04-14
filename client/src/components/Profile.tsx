@@ -313,7 +313,7 @@ export default function Profile({ isPublic = false }: { isPublic?: boolean }) {
           setLiveStreak(data.totalStreak);
         }
         
-        let newActivity: any[] = [];
+        const newActivity: any[] = [];
         let completedArr: any[] = [];
         let inProgressProject: any = null;
         let roleProjects: any[] = [];

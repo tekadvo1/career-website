@@ -30,31 +30,17 @@ const sendAdminEmail = async (subject, html) => {
 // ── GET /api/admin/stats ─ Overview metrics ───────────────────────
 router.get('/stats', async (req, res) => {
   try {
-    const [
-      totalUsers,
-      newToday,
-      newWeek,
-      newMonth,
-      totalRoadmaps,
-      totalProjects,
-      totalQuiz,
-      totalChats,
-      totalFeedback,
-      onboardedUsers,
-      creditsUsed
-    ] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users'),
-      pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '1 day'"),
-      pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
-      pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'"),
-      pool.query('SELECT COUNT(*) FROM role_analyses'),
-      pool.query('SELECT COUNT(*) FROM user_projects'),
-      pool.query('SELECT COUNT(*) FROM quiz_results'),
-      pool.query('SELECT COUNT(*) FROM chat_sessions'),
-      pool.query('SELECT COUNT(*) FROM feedback').catch(() => ({ rows: [{ count: 0 }] })),
-      pool.query("SELECT COUNT(*) FROM users WHERE onboarding_completed = TRUE"),
-      pool.query('SELECT COALESCE(SUM(20 - COALESCE(ai_credits, 20)), 0) as used FROM users'),
-    ]);
+    const totalUsers = await pool.query('SELECT COUNT(*) FROM users');
+    const newToday = await pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '1 day'");
+    const newWeek = await pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'");
+    const newMonth = await pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '30 days'");
+    const totalRoadmaps = await pool.query('SELECT COUNT(*) FROM role_analyses');
+    const totalProjects = await pool.query('SELECT COUNT(*) FROM user_projects');
+    const totalQuiz = await pool.query('SELECT COUNT(*) FROM quiz_results');
+    const totalChats = await pool.query('SELECT COUNT(*) FROM chat_sessions');
+    const totalFeedback = await pool.query('SELECT COUNT(*) FROM feedback').catch(() => ({ rows: [{ count: 0 }] }));
+    const onboardedUsers = await pool.query("SELECT COUNT(*) FROM users WHERE onboarding_completed = TRUE");
+    const creditsUsed = await pool.query('SELECT COALESCE(SUM(20 - COALESCE(ai_credits, 20)), 0) as used FROM users');
 
     res.json({
       success: true,
@@ -142,10 +128,9 @@ router.get('/users', async (req, res) => {
       ? `SELECT COUNT(*) FROM users WHERE email ILIKE $1 OR username ILIKE $1`
       : `SELECT COUNT(*) FROM users`;
 
-    const [users, total] = await Promise.all([
-      pool.query(query, params),
-      pool.query(countQuery, search ? [`%${search}%`] : [])
-    ]);
+    const usersRes = await pool.query(query, params);
+    const total = await pool.query(countQuery, search ? [`%${search}%`] : []);
+    const users = usersRes;
 
     res.json({
       success: true,
@@ -165,14 +150,12 @@ router.get('/user/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [user, projects, roadmap, quizzes, achievements, chats] = await Promise.all([
-      pool.query('SELECT * FROM users WHERE id = $1', [id]),
-      pool.query("SELECT id, title, status, role, created_at FROM user_projects WHERE user_id = $1 ORDER BY created_at DESC", [id]),
-      pool.query("SELECT role, topic_name, completed_at FROM roadmap_progress WHERE user_id = $1 ORDER BY completed_at DESC LIMIT 20", [id]),
-      pool.query("SELECT role, score, total_questions, completed_at FROM quiz_results WHERE user_id = $1 ORDER BY completed_at DESC LIMIT 10", [id]),
-      pool.query("SELECT achievement_id, earned_at FROM user_achievements WHERE user_id = $1", [id]),
-      pool.query("SELECT id, title, role, updated_at FROM chat_sessions WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 5", [id]),
-    ]);
+    const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    const projects = await pool.query("SELECT id, title, status, role, created_at FROM user_projects WHERE user_id = $1 ORDER BY created_at DESC", [id]);
+    const roadmap = await pool.query("SELECT role, topic_name, completed_at FROM roadmap_progress WHERE user_id = $1 ORDER BY completed_at DESC LIMIT 20", [id]);
+    const quizzes = await pool.query("SELECT role, score, total_questions, completed_at FROM quiz_results WHERE user_id = $1 ORDER BY completed_at DESC LIMIT 10", [id]);
+    const achievements = await pool.query("SELECT achievement_id, earned_at FROM user_achievements WHERE user_id = $1", [id]);
+    const chats = await pool.query("SELECT id, title, role, updated_at FROM chat_sessions WHERE user_id = $1 ORDER BY updated_at DESC LIMIT 5", [id]);
 
     if (!user.rows[0]) return res.status(404).json({ error: 'User not found' });
 
@@ -302,12 +285,10 @@ router.patch('/feedback/:id', async (req, res) => {
 // ── GET /api/admin/activity ─ Recent platform activity ────────────
 router.get('/activity', async (req, res) => {
   try {
-    const [newUsers, recentProjects, recentProgress, recentFeedback] = await Promise.all([
-      pool.query("SELECT username, email, created_at FROM users ORDER BY created_at DESC LIMIT 5"),
-      pool.query("SELECT up.title, up.role, u.username, up.created_at FROM user_projects up JOIN users u ON up.user_id = u.id ORDER BY up.created_at DESC LIMIT 5"),
-      pool.query("SELECT rp.topic_name, rp.role, u.username, rp.completed_at FROM roadmap_progress rp JOIN users u ON rp.user_id = u.id ORDER BY rp.completed_at DESC LIMIT 5"),
-      pool.query("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 5").catch(() => ({ rows: [] })),
-    ]);
+    const newUsers = await pool.query("SELECT username, email, created_at FROM users ORDER BY created_at DESC LIMIT 5");
+    const recentProjects = await pool.query("SELECT up.title, up.role, u.username, up.created_at FROM user_projects up JOIN users u ON up.user_id = u.id ORDER BY up.created_at DESC LIMIT 5");
+    const recentProgress = await pool.query("SELECT rp.topic_name, rp.role, u.username, rp.completed_at FROM roadmap_progress rp JOIN users u ON rp.user_id = u.id ORDER BY rp.completed_at DESC LIMIT 5");
+    const recentFeedback = await pool.query("SELECT * FROM feedback ORDER BY created_at DESC LIMIT 5").catch(() => ({ rows: [] }));
 
     const feed = [
       ...newUsers.rows.map(r => ({ type: 'signup', text: `${r.username} signed up`, time: r.created_at })),
@@ -391,13 +372,11 @@ router.get('/top-users', async (req, res) => {
 // ── GET /api/admin/platform-summary ─ KPIs and growth ────────────
 router.get('/platform-summary', async (req, res) => {
   try {
-    const [avgStreak, avgCredits, streakUsers, topCountries, recentLogins] = await Promise.all([
-      pool.query('SELECT ROUND(AVG(current_streak),1) as avg FROM users'),
-      pool.query('SELECT ROUND(AVG(ai_credits),0) as avg FROM users'),
-      pool.query("SELECT COUNT(*) FROM users WHERE current_streak > 0"),
-      pool.query(`SELECT COALESCE(location, 'Unknown') as country, COUNT(*) as count FROM users GROUP BY location ORDER BY count DESC LIMIT 5`),
-      pool.query(`SELECT username, email, last_active_date FROM users WHERE last_active_date IS NOT NULL ORDER BY last_active_date DESC LIMIT 6`),
-    ]);
+    const avgStreak = await pool.query('SELECT ROUND(AVG(current_streak),1) as avg FROM users');
+    const avgCredits = await pool.query('SELECT ROUND(AVG(ai_credits),0) as avg FROM users');
+    const streakUsers = await pool.query("SELECT COUNT(*) FROM users WHERE current_streak > 0");
+    const topCountries = await pool.query(`SELECT COALESCE(location, 'Unknown') as country, COUNT(*) as count FROM users GROUP BY location ORDER BY count DESC LIMIT 5`);
+    const recentLogins = await pool.query(`SELECT username, email, last_active_date FROM users WHERE last_active_date IS NOT NULL ORDER BY last_active_date DESC LIMIT 6`);
 
     res.json({
       success: true,

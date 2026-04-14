@@ -87,7 +87,7 @@ export default function Sidebar({ activePage }: SidebarProps) {
     try {
       const stored = localStorage.getItem('findstreak_cleared_badges');
       if (stored) {
-        setClearedBadges(JSON.parse(stored));
+        Promise.resolve().then(() => setClearedBadges(JSON.parse(stored)));
       }
     } catch { /* ignore */ }
   }, []);

@@ -131,8 +131,7 @@ export default function LandingHeader() {
   }, []);
 
   useEffect(() => {
-    setFeaturesOpen(false);
-    setMobileOpen(false);
+    Promise.resolve().then(() => { setFeaturesOpen(false); setMobileOpen(false); });
   }, [location.pathname]);
 
   const handleNavClick = (href: string) => {

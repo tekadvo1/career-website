@@ -1,0 +1,229 @@
+
+D:\project\career website new\career-website-fullstack\client\src\components\AILearningAssistant.tsx
+  182:6   warning  React Hook useEffect has missing dependencies: 'messages.length' and 'role'. Either include them or remove the dependency array    react-hooks/exhaustive-deps
+  243:25  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                                                       @typescript-eslint/no-unused-vars
+  264:6   warning  React Hook useEffect has a missing dependency: 'location.state'. Either include it or remove the dependency array                  react-hooks/exhaustive-deps
+  309:6   warning  React Hook useEffect has missing dependencies: 'LOCAL_STORAGE_KEY' and 'role'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  617:21  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                                                       @typescript-eslint/no-unused-vars
+  683:17  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                     @typescript-eslint/no-unused-vars
+  946:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  947:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  948:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  949:36  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  950:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  951:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  952:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  953:36  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  954:45  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+  955:37  warning  'node' is defined but never used. Allowed unused args must match /^_/u                                                             @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\Achievements.tsx
+  95:6  warning  React Hook useEffect has missing dependencies: 'fetchAchievements', 'navigate', 'token', and 'user'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\AdminDashboard.tsx
+  635:34  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\AdminLogin.tsx
+  45:14  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\Dashboard.tsx
+  121:13  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                  @typescript-eslint/no-unused-vars
+  153:13  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                  @typescript-eslint/no-unused-vars
+  169:13  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                  @typescript-eslint/no-unused-vars
+  185:13  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                  @typescript-eslint/no-unused-vars
+  197:6   warning  React Hook useEffect has a missing dependency: 'location.state'. Either include it or remove the dependency array                                               react-hooks/exhaustive-deps
+  297:6   warning  React Hook useEffect has missing dependencies: 'location.state?.analysis' and 'recommendedProjects.length'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\ForgotPassword.tsx
+  31:14  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\LearningRoadmap.tsx
+  240:16  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u      @typescript-eslint/no-unused-vars
+  256:24  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u    @typescript-eslint/no-unused-vars
+  301:19  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u      @typescript-eslint/no-unused-vars
+  380:16  warning  'error' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  477:25  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u      @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\Missions.tsx
+  160:21  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  274:19  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u    @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\MyProjects.tsx
+  105:6  warning  React Hook useEffect has missing dependencies: '_rawRole' and 'selectedRole'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\Portfolio.tsx
+  169:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\project\career website new\career-website-fullstack\client\src\components\Portfolio.tsx:169:5
+  167 |
+  168 |   useEffect(() => {
+> 169 |     loadRealtimeStats();
+      |     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  170 |     
+  171 |     // SETUP REAL-TIME STREAM
+  172 |     const userStr = sessionStorage.getItem('user');  react-hooks/set-state-in-effect
+  194:22  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  284:16  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\Profile.tsx
+  414:15  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                         @typescript-eslint/no-unused-vars
+  446:6   warning  React Hook useEffect has missing dependencies: 'isPublic' and 'loadRealtimeStats'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\ProjectSetupModal.tsx
+  85:14  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\ProjectWorkspace.tsx
+  293:6  warning  React Hook useEffect has a missing dependency: 'user.id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\QuizGame.tsx
+  62:16  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\RealTimeMockInterview.tsx
+   73:25  warning  'interimTranscript' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  129:18  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\ResetPassword.tsx
+  18:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\project\career website new\career-website-fullstack\client\src\components\ResetPassword.tsx:18:7
+  16 |   useEffect(() => {
+  17 |     if (!token) {
+> 18 |       setStatus('error');
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  19 |       setMessage('Invalid or missing token.');
+  20 |     }
+  21 |   }, [token]);  react-hooks/set-state-in-effect
+  57:14  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\RoadmapGuideView.tsx
+  114:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  115:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  116:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  117:32  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  118:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  119:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  120:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  121:32  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  122:41  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  123:33  warning  'node' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\RoadmapTree.tsx
+   49:3   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+  126:25  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                           @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\RoleAnalysis.tsx
+  241:6  warning  React Hook useEffect has missing dependencies: 'location.state?.country', 'location.state?.experienceLevel', and 'location.state?.learningPath'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\Sidebar.tsx
+  90:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\project\career website new\career-website-fullstack\client\src\components\Sidebar.tsx:90:9
+  88 |       const stored = localStorage.getItem('findstreak_cleared_badges');
+  89 |       if (stored) {
+> 90 |         setClearedBadges(JSON.parse(stored));
+     |         ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  91 |       }
+  92 |     } catch { /* ignore */ }
+  93 |   }, []);  react-hooks/set-state-in-effect
+
+D:\project\career website new\career-website-fullstack\client\src\components\TaskGuideView.tsx
+  63:6  warning  React Hook useEffect has a missing dependency: 'fetchGuide'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\TechGuideView.tsx
+   51:16  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+   92:14  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  149:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  150:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  151:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  152:38  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  153:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  154:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  155:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  156:39  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  208:38  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  209:41  warning  'node' is defined but never used. Allowed unused args must match /^_/u          @typescript-eslint/no-unused-vars
+  209:47  warning  'inline' is defined but never used. Allowed unused args must match /^_/u        @typescript-eslint/no-unused-vars
+  209:55  warning  'className' is defined but never used. Allowed unused args must match /^_/u     @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\TechStack.tsx
+  31:22  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u    @typescript-eslint/no-unused-vars
+  38:22  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  48:22  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\VerifyEmail.tsx
+  15:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\project\career website new\career-website-fullstack\client\src\components\VerifyEmail.tsx:15:7
+  13 |   useEffect(() => {
+  14 |     if (!token) {
+> 15 |       setStatus('error');
+     |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  16 |       setMessage('Invalid verification link. Token is missing.');
+  17 |       return;
+  18 |     }  react-hooks/set-state-in-effect
+  38:16  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\Workspaces.tsx
+   73:6   warning  React Hook useEffect has missing dependencies: 'fetchWorkspaces' and 'user'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  109:18  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                                                     @typescript-eslint/no-unused-vars
+  129:14  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                                                     @typescript-eslint/no-unused-vars
+  163:14  warning  'err' is defined but never used. Allowed unused caught errors must match /^_/u                                                   @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\components\landing\LandingHeader.tsx
+  134:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+D:\project\career website new\career-website-fullstack\client\src\components\landing\LandingHeader.tsx:134:5
+  132 |
+  133 |   useEffect(() => {
+> 134 |     setFeaturesOpen(false);
+      |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  135 |     setMobileOpen(false);
+  136 |   }, [location.pathname]);
+  137 |  react-hooks/set-state-in-effect
+
+D:\project\career website new\career-website-fullstack\client\src\components\roadmap\AIChatAssistant.tsx
+  37:8  warning  React Hook useEffect has missing dependencies: 'chatMessages.length' and 'handleSendChat'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\project\career website new\career-website-fullstack\client\src\components\roadmap\QuizModal.tsx
+  43:8   warning  React Hook useEffect has a missing dependency: 'generateQuiz'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  68:26  warning  'e' is defined but never used. Allowed unused caught errors must match /^_/u                                     @typescript-eslint/no-unused-vars
+
+D:\project\career website new\career-website-fullstack\client\src\contexts\AlertContext.tsx
+  19:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+D:\project\career website new\career-website-fullstack\client\src\contexts\WorkspaceContext.tsx
+  61:14  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+✖ 90 problems (5 errors, 85 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

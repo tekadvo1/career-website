@@ -50,11 +50,17 @@ const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
   const user = getUser<{ onboarding_completed?: boolean }>();
 
   if (token && user) {
+    let shouldClear = false;
+    let redirectPath = "";
     try {
-      if (user.onboarding_completed) return <Navigate to="/dashboard" replace />;
-      return <Navigate to="/onboarding" replace />;
+      redirectPath = user.onboarding_completed ? "/dashboard" : "/onboarding";
     } catch {
+      shouldClear = true;
+    }
+    if (shouldClear) {
       clearSession();
+    } else if (redirectPath) {
+      return <Navigate to={redirectPath} replace />;
     }
   }
   return children;
@@ -71,14 +77,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/signin" replace />;
   }
 
+  let shouldClear = false;
+  let needsOnboarding = false;
   try {
     // Logged in but hasn't finished onboarding → send them there first
     if (!user.onboarding_completed && window.location.pathname !== '/onboarding') {
-      return <Navigate to="/onboarding" replace />;
+      needsOnboarding = true;
     }
   } catch {
+    shouldClear = true;
+  }
+
+  if (shouldClear) {
     clearSession();
     return <Navigate to="/signin" replace />;
+  }
+
+  if (needsOnboarding) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return children;
