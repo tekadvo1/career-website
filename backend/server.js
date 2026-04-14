@@ -281,7 +281,7 @@ const updateSchema = async () => {
 
     // Create system settings table for Maintenance mode
     await client.query(`
-      CREATE TABLE IF NOT EXISTS platform_settings (
+      CREATE TABLE IF NOT EXISTS sys_maintenance_config (
         setting_key VARCHAR(255) PRIMARY KEY,
         setting_value JSONB NOT NULL
       );
@@ -289,7 +289,7 @@ const updateSchema = async () => {
     
     // Ensure default maintenance setting exists
     await client.query(`
-      INSERT INTO platform_settings (setting_key, setting_value)
+      INSERT INTO sys_maintenance_config (setting_key, setting_value)
       VALUES ('maintenance_mode', '{"active": false, "message": "Down for maintenance. We will be back soon."}'::jsonb)
       ON CONFLICT (setting_key) DO NOTHING;
     `);
@@ -324,7 +324,7 @@ app.get('/api/health/db', async (req, res) => {
 app.get('/api/public/maintenance', async (req, res) => {
   try {
     const dbClient = await pool.connect();
-    const result = await dbClient.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
+    const result = await dbClient.query("SELECT setting_value FROM sys_maintenance_config WHERE setting_key = 'maintenance_mode'");
     dbClient.release();
     res.json(result.rows[0]?.setting_value || { active: false });
   } catch (err) {

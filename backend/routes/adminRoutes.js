@@ -340,7 +340,7 @@ router.get('/system-health', async (req, res) => {
 // ── GET /api/admin/maintenance ─ Get maintenance status ───────────
 router.get('/maintenance', async (req, res) => {
   try {
-    const result = await pool.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
+    const result = await pool.query("SELECT setting_value FROM sys_maintenance_config WHERE setting_key = 'maintenance_mode'");
     res.json({ success: true, maintenance: result.rows[0]?.setting_value || { active: false, message: '' } });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch maintenance mode' });
@@ -352,7 +352,7 @@ router.patch('/maintenance', async (req, res) => {
   try {
     const { active, message } = req.body;
     await pool.query(
-      `INSERT INTO platform_settings (setting_key, setting_value) 
+      `INSERT INTO sys_maintenance_config (setting_key, setting_value) 
        VALUES ('maintenance_mode', $1) 
        ON CONFLICT (setting_key) DO UPDATE SET setting_value = $1`,
       [JSON.stringify({ active, message })]
