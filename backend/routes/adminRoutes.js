@@ -337,6 +337,33 @@ router.get('/system-health', async (req, res) => {
   }
 });
 
+// ── GET /api/admin/maintenance ─ Get maintenance status ───────────
+router.get('/maintenance', async (req, res) => {
+  try {
+    const result = await pool.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
+    res.json({ success: true, maintenance: result.rows[0]?.setting_value || { active: false, message: '' } });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch maintenance mode' });
+  }
+});
+
+// ── PATCH /api/admin/maintenance ─ Update maintenance status ────────
+router.patch('/maintenance', async (req, res) => {
+  try {
+    const { active, message } = req.body;
+    await pool.query(
+      `INSERT INTO platform_settings (setting_key, setting_value) 
+       VALUES ('maintenance_mode', $1) 
+       ON CONFLICT (setting_key) DO UPDATE SET setting_value = $1`,
+      [JSON.stringify({ active, message })]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Maintenance error:', err);
+    res.status(500).json({ error: 'Failed to update maintenance mode' });
+  }
+});
+
 // ── POST /api/admin/notify-admin ─ Trigger admin email alert ──────
 router.post('/notify-admin', async (req, res) => {
   try {

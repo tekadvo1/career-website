@@ -279,6 +279,21 @@ const updateSchema = async () => {
       UPDATE users SET is_admin = TRUE WHERE email = 'supportfindstreak@tekadvo.com'
     `).catch(() => {});
 
+    // Create system settings table for Maintenance mode
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS platform_settings (
+        setting_key VARCHAR(255) PRIMARY KEY,
+        setting_value JSONB NOT NULL
+      );
+    `);
+    
+    // Ensure default maintenance setting exists
+    await client.query(`
+      INSERT INTO platform_settings (setting_key, setting_value)
+      VALUES ('maintenance_mode', '{"active": false, "message": "Down for maintenance. We will be back soon."}'::jsonb)
+      ON CONFLICT (setting_key) DO NOTHING;
+    `);
+
     client.release();
     console.log('Schema updated for role caching');
   } catch (err) {
@@ -323,6 +338,18 @@ if (fs.existsSync(distPath)) {
   app.get('/', (req, res) => res.json({ status: 'API running', env: process.env.NODE_ENV }));
   console.log('No dist folder found — API-only mode');
 }
+
+// Global public route for fetching maintenance status (Fast loading)
+app.get('/api/public/maintenance', async (req, res) => {
+  try {
+    const dbClient = await pool.connect();
+    const result = await dbClient.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
+    dbClient.release();
+    res.json(result.rows[0]?.setting_value || { active: false });
+  } catch (err) {
+    res.json({ active: false }); // Failsafe
+  }
+});
 
 
 // Initialize Cron Jobs

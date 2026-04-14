@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import SignUp from './components/SignUp';
 import SignIn from './components/SignIn';
@@ -102,6 +102,44 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 
 function App() {
+  const [maintenance, setMaintenance] = useState({ active: false, message: '' });
+  const [loadingConfig, setLoadingConfig] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/public/maintenance')
+      .then(r => r.json())
+      .then(res => {
+        if (res && res.active !== undefined) setMaintenance(res);
+        setLoadingConfig(false);
+      })
+      .catch(() => setLoadingConfig(false));
+  }, []);
+
+  if (loadingConfig) return <div className="min-h-screen bg-white" />;
+
+  const isRouteAdmin = window.location.pathname.startsWith('/admindashboard') || window.location.pathname.startsWith('/admin-login');
+
+  if (maintenance.active && !isRouteAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+          <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-emerald-100">
+            <span className="text-4xl" role="img" aria-label="tools">🛠️</span>
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 mb-3">Scheduled Maintenance</h1>
+          <p className="text-sm font-semibold text-slate-600 leading-relaxed mb-6">
+            {maintenance.message || "We're currently down for scheduled maintenance. Check back soon."}
+          </p>
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Please check back later
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <ScrollToTop />

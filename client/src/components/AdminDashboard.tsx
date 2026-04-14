@@ -281,6 +281,7 @@ export default function AdminDashboard() {
   const adminEmail = sessionStorage.getItem('adminEmail') || '';
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [maintenance, setMaintenance] = useState({ active: false, message: '' });
   const [stats, setStats] = useState<any>(null);
   const [signupTrends, setSignupTrends] = useState<any[]>([]);
   const [topRoles, setTopRoles] = useState<any[]>([]);
@@ -323,7 +324,7 @@ export default function AdminDashboard() {
     setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${adminToken}` };
-      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes, topUsersRes, summaryRes] = await Promise.all([
+      const [statsRes, trendsRes, rolesRes, feedbackRes, activityRes, healthRes, topUsersRes, summaryRes, maintRes] = await Promise.all([
         apiFetch('/api/admin/stats', { headers }).then(r => r.json()),
         apiFetch('/api/admin/signup-trends', { headers }).then(r => r.json()),
         apiFetch('/api/admin/top-roles', { headers }).then(r => r.json()),
@@ -332,6 +333,7 @@ export default function AdminDashboard() {
         apiFetch('/api/admin/system-health', { headers }).then(r => r.json()),
         apiFetch('/api/admin/top-users', { headers }).then(r => r.json()),
         apiFetch('/api/admin/platform-summary', { headers }).then(r => r.json()),
+        apiFetch('/api/admin/maintenance', { headers }).then(r => r.json()),
       ]);
       if (statsRes.success) setStats(statsRes.stats);
       if (trendsRes.success) setSignupTrends(trendsRes.trends.map((t: any) => ({ date: new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), count: parseInt(t.count) })));
@@ -341,6 +343,7 @@ export default function AdminDashboard() {
       if (healthRes.success) setHealth(healthRes.health);
       if (topUsersRes.success) setTopUsers(topUsersRes.users);
       if (summaryRes.success) setSummary(summaryRes.summary);
+      if (maintRes?.success) setMaintenance(maintRes.maintenance || { active: false, message: '' });
     } catch (err) {
       console.error('Admin fetch error:', err);
     } finally {
@@ -932,6 +935,79 @@ export default function AdminDashboard() {
             ) : (
               <div className="flex items-center justify-center py-20"><RefreshCw className="w-8 h-8 animate-spin text-emerald-500" /></div>
             )}
+
+            {/* Maintenance Mode Panel */}
+            <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-rose-50 to-transparent rounded-bl-[100px] pointer-events-none" />
+              <SectionHeader title="Platform Maintenance Mode" subtitle="Block user access completely and display a customized maintenance screen" />
+              
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-5 mt-4 space-y-4 relative z-10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="font-bold text-slate-900 flex items-center gap-2">
+                      Status: {maintenance.active 
+                        ? <span className="text-rose-600 bg-rose-100 px-2 py-0.5 rounded text-xs">ACTIVE</span> 
+                        : <span className="text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded text-xs">INACTIVE</span>}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm">When active, users cannot login or access the platform. Admin dashboard remains accessible.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (maintenance.active || window.confirm("Are you sure? This will instantly lock out ALL regular users from the platform.")) {
+                        const newStatus = !maintenance.active;
+                        try {
+                          const res = await apiFetch('/api/admin/maintenance', {
+                            method: 'PATCH',
+                            headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ active: newStatus, message: maintenance.message })
+                          }).then(r => r.json());
+                          
+                          if (res.success) {
+                            setMaintenance(prev => ({ ...prev, active: newStatus }));
+                            showToast(newStatus ? 'Maintenance mode ACTIVATED' : 'Maintenance mode DEACTIVATED', newStatus ? 'warning' : 'success');
+                          }
+                        } catch(err) {
+                          showToast('Failed to toggle maintenance mode', 'error');
+                        }
+                      }
+                    }}
+                    className={`px-5 py-2.5 rounded-xl font-black text-sm shadow-md transition-all whitespace-nowrap ${maintenance.active 
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200' 
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'}`}
+                  >
+                    {maintenance.active ? 'Disable Maintenance' : 'Activate Maintenance'}
+                  </button>
+                </div>
+
+                <div className="pt-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-2">Message Displayed to Users</label>
+                  <textarea 
+                    rows={2}
+                    value={maintenance.message}
+                    onChange={e => setMaintenance(prev => ({ ...prev, message: e.target.value }))}
+                    placeholder="e.g. FindStreak is currently undergoing scheduled maintenance. We'll be back in 10 hours!"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:border-rose-300 focus:ring-4 focus:ring-rose-50 resize-none"
+                  />
+                </div>
+                <div className="flex justify-end pt-1">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const res = await apiFetch('/api/admin/maintenance', {
+                          method: 'PATCH',
+                          headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ active: maintenance.active, message: maintenance.message })
+                        }).then(r => r.json());
+                        if (res.success) showToast('Maintenance message saved', 'success');
+                      } catch(err) { showToast('Failed to save message', 'error'); }
+                    }}
+                    className="px-4 py-2 bg-slate-900 border border-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm"
+                  >
+                    Save Configuration
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* API Health check button */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
