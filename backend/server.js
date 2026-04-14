@@ -320,6 +320,18 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
+// Global public route for fetching maintenance status (Fast loading)
+app.get('/api/public/maintenance', async (req, res) => {
+  try {
+    const dbClient = await pool.connect();
+    const result = await dbClient.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
+    dbClient.release();
+    res.json(result.rows[0]?.setting_value || { active: false });
+  } catch (err) {
+    res.json({ active: false }); // Failsafe
+  }
+});
+
 // Serve static assets — always serve in any environment when dist exists
 const distPath = path.join(__dirname, '../client/dist');
 if (fs.existsSync(distPath)) {
@@ -338,19 +350,6 @@ if (fs.existsSync(distPath)) {
   app.get('/', (req, res) => res.json({ status: 'API running', env: process.env.NODE_ENV }));
   console.log('No dist folder found — API-only mode');
 }
-
-// Global public route for fetching maintenance status (Fast loading)
-app.get('/api/public/maintenance', async (req, res) => {
-  try {
-    const dbClient = await pool.connect();
-    const result = await dbClient.query("SELECT setting_value FROM platform_settings WHERE setting_key = 'maintenance_mode'");
-    dbClient.release();
-    res.json(result.rows[0]?.setting_value || { active: false });
-  } catch (err) {
-    res.json({ active: false }); // Failsafe
-  }
-});
-
 
 // Initialize Cron Jobs
 require('./cron/streakEmails');
