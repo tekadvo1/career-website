@@ -14,14 +14,14 @@ cron.schedule('0 9 * * *', async () => {
     const usersRes = await client.query(`
       SELECT id, name, username, email, free_time_schedule
       FROM users 
-      WHERE (email IS NOT NULL OR free_time_schedule IS NOT NULL) AND daily_email_enabled = true
+      WHERE email IS NOT NULL AND daily_email_enabled = true
     `);
     const users = usersRes.rows;
 
     let successCount = 0;
     for (const user of users) {
        const sent = await sendDailyScheduleEmail({
-         email: user.free_time_schedule || user.email,
+         email: user.email,
          name: user.name || user.username || 'Developer'
        });
        if (sent) successCount++;
