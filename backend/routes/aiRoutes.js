@@ -188,15 +188,15 @@ router.post('/guide', checkAICredits, async (req, res) => {
 
 // GET /api/ai/chat-history - Sync user's previous chats from mobile/desktop
 router.get('/chat-history', async (req, res) => {
-    const { userId, role } = req.query;
-    if (!userId || !role) {
-        return res.status(400).json({ error: 'userId and role are required' });
+    const { userId } = req.query;
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
     }
 
     try {
         const result = await pool.query(
-            "SELECT id, title, messages, updated_at FROM chat_sessions WHERE user_id = $1 AND role = $2 ORDER BY updated_at DESC",
-            [userId, role]
+            "SELECT id, title, messages, updated_at FROM chat_sessions WHERE user_id = $1 ORDER BY updated_at DESC",
+            [userId]
         );
         
         const history = result.rows.map(row => ({
@@ -209,22 +209,22 @@ router.get('/chat-history', async (req, res) => {
         res.json({ success: true, history });
     } catch (err) {
         console.error('Error fetching chat history:', err);
-        res.status(500).json({ error: 'Failed to fetch tracking history' });
+        res.status(500).json({ error: 'Failed to fetch chat history' });
     }
 });
 
 // POST /api/ai/chat-history - Push changes from frontend client to persistent DB
 router.post('/chat-history', async (req, res) => {
     const { userId, role, chatHistory } = req.body;
-    if (!userId || !role || !Array.isArray(chatHistory)) {
-        return res.status(400).json({ error: 'userId, role, and an array of chatHistory data are required' });
+    if (!userId || !Array.isArray(chatHistory)) {
+        return res.status(400).json({ error: 'userId and chatHistory array are required' });
     }
 
     try {
         const client = await pool.connect();
         await client.query('BEGIN');
         
-        // Clear old ones entirely to replace easily or merge via upsert
+        // Upsert every session the client knows about
         for (const session of chatHistory) {
              const messagesObj = JSON.stringify(session.messages);
              const updatedAt = new Date(session.updatedAt || Date.now());
@@ -232,21 +232,20 @@ router.post('/chat-history', async (req, res) => {
                 INSERT INTO chat_sessions (id, user_id, title, messages, updated_at, role) 
                 VALUES ($1, $2, $3, $4, $5, $6) 
                 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role
-             `, [session.id, userId, session.title, messagesObj, updatedAt, role]);
+             `, [session.id, userId, session.title, messagesObj, updatedAt, role || session.role || 'General']);
         }
         
-        // Remove ones not in the latest history list anymore FOR THIS ROLE
+        // Only delete sessions the user explicitly removed (not present in current list)
         if (chatHistory.length > 0) {
             const currentIds = chatHistory.map(c => c.id);
-            await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND role = $2 AND id != ALL($3)', [userId, role, currentIds]);
-        } else {
-             await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND role = $2', [userId, role]);
+            await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND id != ALL($2)', [userId, currentIds]);
         }
 
         await client.query('COMMIT');
         client.release();
         res.json({ success: true, message: 'Chat history synchronized successfully' });
     } catch (err) {
+        console.error('Chat history sync error:', err);
         res.status(500).json({ error: 'Failed to synchronize chats' });
     }
 });
