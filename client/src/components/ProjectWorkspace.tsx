@@ -13,7 +13,6 @@ import {
   Send,
   Lightbulb,
   FileText,
-  Star,
 } from "lucide-react";
 
 import { TaskGuideView } from "./TaskGuideView";
@@ -104,6 +103,7 @@ export default function ProjectWorkspace() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [showGuideView, setShowGuideView] = useState(false);
   const [showRightSidebar, setShowRightSidebar] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   
   const [totalXP, setTotalXP] = useState(0);
   const [level, setLevel] = useState(1);
@@ -113,7 +113,7 @@ export default function ProjectWorkspace() {
       id: "1",
       role: "assistant",
       content:
-        "👋 Welcome! I'm FindStreak AI, your real-time project assistant.\n\n✅ Context-aware guidance\n✅ Real-time technical support\n✅ Progress tracking and hints\n\nHow can I help you with this project today?",
+        "👋 Welcome! I'm your Project Guide AI, here to help you learn and build this project step-by-step.\n\n💡 I can explain concepts, help debug code, or guide you on what to do next.\n\nClick on any task to view its detailed guide, or ask me a question below!",
       timestamp: new Date(),
     },
   ]);
@@ -293,26 +293,19 @@ export default function ProjectWorkspace() {
   }, [project, role, navigate, preLoadedCurriculum]);
 
   // Handle Send Message (REALTIME OPENAI INTEGRATION)
-  const handleSendMessage = async (customPrompt?: string) => {
-    const messageToSend = customPrompt || inputMessage;
-    if (!messageToSend.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: messageToSend,
+      content: inputMessage,
       timestamp: new Date(),
     };
 
-    const historyForAI = [...messages, userMessage];
-
-    if (!customPrompt) {
-      setMessages(historyForAI);
-      setInputMessage("");
-    } else {
-      setMessages(prev => [...prev, userMessage]);
-    }
-    
+    const currentMsg = inputMessage;
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
     setIsTyping(true);
 
     try {
@@ -320,8 +313,7 @@ export default function ProjectWorkspace() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: messageToSend,
-                conversationHistory: historyForAI,
+                message: currentMsg,
                 context: {
                     type: 'project',
                     projectTitle: project?.title || 'Personal Project',
@@ -336,16 +328,16 @@ export default function ProjectWorkspace() {
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: data.reply || "I encountered an error connecting to FindStreak AI. Please try again.",
+            content: data.reply || "I encountered an error connecting to OpenAI. Please try again.",
             timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
     } catch (err) {
-        console.error("AI Error:", err);
+        console.error("OpenAI Error:", err);
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: "Connection lost. Please check your internet and try again.",
+            content: "I encountered a network error. Ensure your backend server is running.",
             timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
@@ -364,6 +356,25 @@ export default function ProjectWorkspace() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Proactive "Are you stuck?" Hint
+  useEffect(() => {
+    if (!selectedTaskId) return;
+    const timer = setTimeout(() => {
+      const isCompleted = steps.some(s => s.tasks.some(t => t.id === selectedTaskId && t.completed));
+      if (!isCompleted) {
+        const aiResponse: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "🤔 I noticed you've been reviewing this task for a bit. Need a hint, want to see a simplified example, or need an error explained?",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiResponse]);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearTimeout(timer);
+  }, [selectedTaskId, steps]);
 
   const handleStepClick = (stepId: string) => {
     setSteps((prev) =>
@@ -454,23 +465,38 @@ export default function ProjectWorkspace() {
     );
     const progressPercent = Math.round((completedTasks / (totalTasks || 1)) * 100);
 
-    const prompt = `System Command: Generate a real-time progress insight for my project. 
-    Status: ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%). 
-    Context: I am working on ${project?.title}. 
-    Provide a brief, encouraging expert analysis of my pace and what I should focus on next.`;
-    
-    handleSendMessage(prompt);
+    const nextIncompleteStep = steps.find(s => !s.completed);
+    const nextIncompleteTask = nextIncompleteStep?.tasks.find(t => !t.completed);
+
+    const insights = `📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%)\n⭐ Level ${level} with ${totalXP} XP\n🏆 ${completedSteps} of ${steps.length} steps completed\n\n**Next Recommendation:**\n${nextIncompleteTask ? `➡️ Focus on: "${nextIncompleteTask.text}"` : "🎉 All tasks completed!"}`;
+
+    const aiResponse: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: insights,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, aiResponse]);
   };
 
   const getSmartHints = () => {
     const currentStepTasks = selectedStep?.tasks || [];
     const nextUncompletedTask = currentStepTasks.find(t => !t.completed);
 
-    const prompt = `System Command: Give me a smart technical hint for my current task: "${nextUncompletedTask?.text || 'Project Setup'}". 
-    Context: Project is ${project?.title}. 
-    Provide 1-2 sentences of professional advice or a small code tip to help me move faster.`;
+    let hints = `💡 **Smart Hint AI**\n\n`;
+    if (nextUncompletedTask) {
+      hints += `**Current Task:** ${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!`;
+    }
 
-    handleSendMessage(prompt);
+    const aiResponse: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: hints,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, aiResponse]);
   };
 
   const completedSteps = steps.filter((s) => s.completed).length;
@@ -506,9 +532,44 @@ export default function ProjectWorkspace() {
             </div>
           </div>
           
-            <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2 uppercase">
-              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
+          <div className="flex items-center gap-4 shrink-0">
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2 transition-colors ${showNotifications ? 'text-slate-900 bg-slate-100 rounded-lg' : 'text-slate-400 hover:text-slate-900'}`}
+              >
+                <Bell className="w-[18px] h-[18px]" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
+              </button>
+
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 overflow-hidden transform origin-top-right transition-all">
+                    <div className="px-4 pb-2 mb-2 border-b border-slate-100 flex items-center justify-between pt-3">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Notifications</p>
+                      <button className="text-[10px] text-emerald-600 font-bold hover:underline" onClick={() => setShowNotifications(false)}>Mark all read</button>
+                    </div>
+                    <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer border-l-2 border-emerald-500 bg-emerald-50/30">
+                      <p className="text-[13px] text-slate-800 font-semibold mb-0.5">Welcome to your workspace!</p>
+                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">Start by reviewing the Engineering Pipeline tasks on the left. Click on any task to open its detailed guide.</p>
+                      <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wider">Just now</p>
+                    </div>
+                    <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
+                      <p className="text-[13px] text-slate-800 font-semibold mb-0.5">Project Guide AI is online</p>
+                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">Your real-time assistant is ready. Ask questions or request debugging help anytime.</p>
+                      <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wider">2 mins ago</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
+            
+            <button className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2 uppercase">
+              {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
+            </button>
+          </div>
         </div>
         
         {/* Progress Tracker Bar */}
@@ -712,9 +773,9 @@ export default function ProjectWorkspace() {
                   <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900"></div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-[13px] tracking-wide">Copilot Engine</h3>
+                  <h3 className="font-bold text-white text-[13px] tracking-wide">Project Guide AI</h3>
                   <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">
-                      Systems Online
+                      REAL-TIME ASSISTANT
                   </p>
                 </div>
               </div>
@@ -778,22 +839,41 @@ export default function ProjectWorkspace() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Action Buttons */}
-            <div className="px-5 py-3 bg-white border-t border-slate-100 flex gap-2">
-                <button
-                  onClick={getProgressInsights}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  Metrics
-                </button>
-                <button
-                  onClick={getSmartHints}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
-                >
-                  <Lightbulb className="w-3.5 h-3.5" />
-                  Hints
-                </button>
+            {/* Action Buttons & Suggested Prompts */}
+            <div className="px-5 py-3 bg-white border-t border-slate-100 flex flex-col gap-3">
+                <div className="flex gap-2">
+                    <button
+                      onClick={getProgressInsights}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Metrics
+                    </button>
+                    <button
+                      onClick={getSmartHints}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" />
+                      Hints
+                    </button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 pt-1">
+                    {["Show me an example", "Explain my error", "Teach me the concept"].map((prompt, i) => (
+                        <button 
+                            key={i}
+                            onClick={() => {
+                                setInputMessage(prompt);
+                                setTimeout(() => {
+                                    if (inputRef.current) inputRef.current.focus();
+                                }, 10);
+                            }}
+                            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm flex-1 whitespace-nowrap text-center"
+                        >
+                            {prompt}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {/* Input Form */}
