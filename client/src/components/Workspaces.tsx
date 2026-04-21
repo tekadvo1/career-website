@@ -85,7 +85,7 @@ export default function Workspaces() {
       const data = await res.json();
       let fetchedWorkspaces = data.workspaces || [];
 
-      const last = sessionStorage.getItem('lastRoleAnalysis');
+      const last = localStorage.getItem('lastRoleAnalysis') || sessionStorage.getItem('lastRoleAnalysis');
       if (last) {
         try {
           const parsed = JSON.parse(last);
@@ -121,7 +121,7 @@ export default function Workspaces() {
 
   const currentActiveTarget = () => {
     try {
-      const last = sessionStorage.getItem('lastRoleAnalysis');
+    const last = localStorage.getItem('lastRoleAnalysis') || sessionStorage.getItem('lastRoleAnalysis');
       if (last) {
         const parsed = JSON.parse(last);
         return parsed.role;
