@@ -14,53 +14,71 @@ const openai = new OpenAI({
 
 router.post('/chat', checkAICredits, async (req, res) => {
     try {
-        const { message, context, role } = req.body;
-        // userId checked and credit deducted via checkAICredits middleware
+        const { message, context, role, conversationHistory } = req.body;
 
         const isProjectContext = context?.type === 'project';
-        
+
         let systemPrompt = '';
 
         if (isProjectContext) {
-             systemPrompt = `You are an expert Senior Software Engineer and Mentor helping a user build a portfolio project.
-             
-             Current Project: ${context.projectTitle}
-             Current Task: ${context.currentTask}
-             Role Target: ${role || 'Software Engineer'}
+            systemPrompt = `You are FindStreak AI — an expert Senior Software Engineer and Pair Programmer mentoring a user on a real portfolio project.
 
-             Your goal is to be a "Pair Programmer":
-             1. Explain the current task concepts clearly.
-             2. If the user asks for code, provide clean, commented, production-ready snippets impacting the specific task.
-             3. If the user shares an error, debug it precisely.
-             4. Do NOT just give the answer—explain WHY so they learn.
-             
-             Keep responses focused on the immediate task unless asked otherwise.`;
+Project: ${context.projectTitle}
+Current Task: ${context.currentTask}
+Target Role: ${role || 'Software Engineer'}
+
+Your approach:
+- Guide without just handing over answers. Explain the WHY behind every solution.
+- When the user shares code or an error, debug it precisely and explain what went wrong.
+- Provide clean, production-ready code examples when asked.
+- Be direct and technical. Reference earlier parts of the conversation naturally.`;
         } else {
-             systemPrompt = `You are an expert AI Career Mentor and Technical Tutor specializing in ${role || 'Software Engineering'}.
-        
-            The user is currently viewing a learning roadmap.
-            Context provided by the user: "${context?.description || context || 'No specific context'}".
-            
-            Your goal is to:
-            1. Answer the user's question clearly and concisely.
-            2. If they are asking about a specific resource or topic mentioned in the context, explain it simply.
-            3. Provide practical examples if applicable.
-            
-            Be encouraging, professional, and helpful.`;
+            systemPrompt = `You are FindStreak AI — an expert career mentor and technical assistant specialising in ${role || 'Software Engineering'}.
+
+Your personality:
+- Direct, knowledgeable, and encouraging — like a senior engineer who genuinely wants to help
+- Conversational and natural, never robotic or overly formal
+- Real, specific, actionable answers — never vague filler
+
+Your capabilities:
+- Career guidance, role transitions, and skill gap analysis for ${role || 'Software Engineering'}
+- Technical explanations, code reviews, debugging help
+- Interview preparation, resume advice, project strategy
+- Learning roadmap guidance and resource recommendations
+
+Rules:
+- Remember and reference earlier parts of the conversation — never repeat context already given
+- Be specific. If asked for code, provide clean working examples with explanations.
+- Use markdown: headers, bullets, and code blocks where it helps clarity.
+- Stay focused on career and technical topics related to ${role || 'Software Engineering'}.`;
+        }
+
+        // Build full message array with conversation history — like ChatGPT
+        const messages = [{ role: 'system', content: systemPrompt }];
+
+        if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+            // Send last 20 messages to stay within token limits
+            const recent = conversationHistory.slice(-20);
+            for (const msg of recent) {
+                if (msg.type === 'user' && msg.content) {
+                    messages.push({ role: 'user', content: msg.content });
+                } else if (msg.type === 'assistant' && msg.content) {
+                    messages.push({ role: 'assistant', content: msg.content });
+                }
+            }
+        } else {
+            messages.push({ role: 'user', content: message });
         }
 
         const requestOptions = {
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: message }
-            ],
+            model: 'gpt-4o',
+            messages,
             max_tokens: 2500,
             temperature: 0.7,
         };
 
-        if (req.body.responseFormat === 'json' || message.includes('Format exactly as JSON')) {
-            requestOptions.response_format = { type: "json_object" };
+        if (req.body.responseFormat === 'json') {
+            requestOptions.response_format = { type: 'json_object' };
         }
 
         if (req.body.stream) {
@@ -68,11 +86,11 @@ router.post('/chat', checkAICredits, async (req, res) => {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
-            
+
             try {
                 const stream = await openai.chat.completions.create(requestOptions);
                 for await (const chunk of stream) {
-                    const content = chunk.choices[0]?.delta?.content || "";
+                    const content = chunk.choices[0]?.delta?.content || '';
                     if (content) {
                         res.write(`data: ${JSON.stringify({ content })}\n\n`);
                     }
@@ -87,10 +105,7 @@ router.post('/chat', checkAICredits, async (req, res) => {
         }
 
         const completion = await openai.chat.completions.create(requestOptions);
-
-        const reply = completion.choices[0].message.content;
-
-        res.json({ reply });
+        res.json({ reply: completion.choices[0].message.content });
     } catch (error) {
         console.error('AI Chat Error:', error);
         res.status(500).json({ error: 'Failed to generate response' });

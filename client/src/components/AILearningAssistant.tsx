@@ -486,89 +486,15 @@ export default function AILearningAssistant() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Capture conversation BEFORE adding the new user message (for history context)
+    const historyForAI = [...messages, userMessage];
+
+    setMessages(historyForAI);
     setInputMessage("");
     setIsTyping(true);
 
-    const lowerMessage = currentInput.toLowerCase();
-
-    // Check for hardcoded intercept patterns first
-    if (lowerMessage.includes("setup") || lowerMessage.includes("how to start") || lowerMessage.includes("guide") || lowerMessage.includes("step by step")) {
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: "Here's a comprehensive step-by-step setup guide for building a Task Manager Dashboard project. Follow each step carefully! 📚",
-          timestamp: new Date(),
-          setupGuide: {
-            projectName: "Task Manager Dashboard",
-            steps: [
-              {
-                number: 1,
-                title: "Create React Project",
-                description: "Initialize a new React project using Vite for fast development.",
-                code: "npm create vite@latest task-manager -- --template react\ncd task-manager\nnpm install",
-                tips: ["Use Vite for faster build times", "Make sure Node.js 16+ is installed"],
-              },
-              {
-                number: 2,
-                title: "Install Required Dependencies",
-                description: "Add Tailwind CSS and essential libraries for your project.",
-                code: "npm install -D tailwindcss postcss autoprefixer\nnpx tailwindcss init -p\nnpm install lucide-react",
-                tips: ["Lucide provides beautiful icons", "Tailwind makes styling easier"],
-              },
-              {
-                 number: 3,
-                 title: "Create Task State Management",
-                 description: "Build the core state logic using React hooks.",
-                 code: "const [tasks, setTasks] = useState([])\nconst [newTask, setNewTask] = useState('')\n\nconst addTask = () => {\n  if (!newTask.trim()) return\n  setTasks([...tasks, { id: Date.now(), text: newTask, completed: false }])\n  setNewTask('')\n}",
-                 tips: ["Use Date.now() for unique IDs", "Always validate input before adding tasks"],
-              }
-            ],
-          },
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsTyping(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerMessage.includes("error") || lowerMessage.includes("bug") || lowerMessage.includes("debug") || lowerMessage.includes("fix my code")) {
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: "assistant",
-          content: "I can help you debug common issues! Here are solutions to the most frequent problems developers face when building dashboard projects. 🔧",
-          timestamp: new Date(),
-          debuggingHelp: {
-            errorType: "Common Dashboard Issues",
-            commonIssues: [
-              {
-                issue: "Tasks not saving to sessionStorage",
-                solution: "Make sure you're using useEffect correctly and stringifying/parsing JSON data. Check browser console for quota errors.",
-                code: "// ✅ Correct way\nuseEffect(() => {\n  sessionStorage.setItem('tasks', JSON.stringify(tasks))\n}, [tasks])",
-              },
-              {
-                issue: "State not updating immediately",
-                solution: "React state updates are asynchronous. Use the updated value in the next render or useEffect, not immediately after setState.",
-                code: "// ❌ Wrong - won't show updated value\nsetTasks([...tasks, newTask])\nconsole.log(tasks) // Still shows old value!\n\n// ✅ Correct - use in next render or useEffect\nuseEffect(() => {\n  console.log(tasks) // Shows updated value\n}, [tasks])",
-              },
-            ],
-          },
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
-        setIsTyping(false);
-      }, 1000);
-      return;
-    }
-
-    // Default: Hit real backend /api/ai/chat
+    // Every message goes to real AI — no fake intercepts
     try {
-      let contextStr = "User is asking for general AI assistance in their programming career.";
-      if (eli5Mode) {
-        contextStr += " ELI5 MODE IS ACTIVE: You MUST explain this concept as simply as possible, using relatable metaphors that a 5-year-old would understand. Break down hard terms. IMPORTANT: Heavily use EMOJIS (🚀, 💡, 🧩, etc) and visual symbols to make the explanation fun, engaging, and extremely easy to understand for the user.";
-      }
-
       const assistantMsgId = (Date.now() + 1).toString();
       setMessages((prev) => [...prev, {
         id: assistantMsgId,
@@ -582,16 +508,16 @@ export default function AILearningAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: currentInput,
-          context: contextStr,
-          role: role,
+          conversationHistory: historyForAI, // full history for real memory
+          role,
           stream: true,
+          ...(eli5Mode && {
+            context: "ELI5 MODE: Explain as simply as possible using metaphors and emojis 🚀💡🧩. Make it fun and easy."
+          }),
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch");
-      }
-
+      if (!res.ok) throw new Error("Failed to fetch");
       if (!res.body) throw new Error("No stream body");
 
       const reader = res.body.getReader();
@@ -602,16 +528,17 @@ export default function AILearningAssistant() {
         const { done, value } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-        for (const line of lines) {
+        for (const line of chunk.split("\n")) {
           if (line.startsWith("data: ") && !line.includes("[DONE]")) {
             try {
               const data = JSON.parse(line.slice(6));
               if (data.content) {
                 streamedContent += data.content;
-                setMessages(prev => prev.map(m => m.id === assistantMsgId ? { ...m, content: streamedContent } : m));
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantMsgId ? { ...m, content: streamedContent } : m
+                ));
               }
-            } catch(e) {}
+            } catch (e) {}
           }
         }
       }
@@ -620,7 +547,7 @@ export default function AILearningAssistant() {
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: "Oops! AI is currently offline. Please try again later.",
+        content: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: new Date()
       }]);
     } finally {
