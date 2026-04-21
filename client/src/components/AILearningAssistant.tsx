@@ -94,7 +94,7 @@ export default function AILearningAssistant() {
 
   const loadChatHistory = (): ChatSession[] => {
     try {
-      const saved = sessionStorage.getItem(LOCAL_STORAGE_KEY);
+      const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         return parsed.map((session: any) => ({
@@ -290,11 +290,11 @@ export default function AILearningAssistant() {
     }
   }, [messages, currentChatId]);
 
-  // Persist chatHistory to sessionStorage AND backend whenever it changes
+  // Persist chatHistory to localStorage AND backend whenever it changes
   useEffect(() => {
     if (!syncRef.current) return; // Prevent overwriting DB before initial GET finishes
     try {
-      sessionStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
 
       if (user?.id) {
          apiFetch('/api/ai/chat-history', {
