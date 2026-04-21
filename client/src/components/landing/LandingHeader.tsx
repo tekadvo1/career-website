@@ -3,10 +3,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Zap, ChevronDown,
-  BrainCircuit, Code2, Target, MessageSquare,
+  BrainCircuit, Code2, MessageSquare,
   Briefcase, BookOpen, BarChart3,
-  Mic, Gamepad2, Layers,
-  Map, FileText, ArrowRight, Sparkles
+  Mic, Layers,
+  Map, ArrowRight, Sparkles
 } from 'lucide-react';
 
 const featureGroups = [
@@ -16,14 +16,12 @@ const featureGroups = [
       { icon: BrainCircuit, color: 'text-teal-600', bg: 'bg-teal-50', label: 'AI Role Analysis', desc: 'Upload your resume — AI maps your exact skill gaps instantly', path: '/signup' },
       { icon: Map, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Learning Roadmap', desc: 'Phase-by-phase personalised roadmap for your target role', path: '/signup' },
       { icon: Layers, color: 'text-cyan-600', bg: 'bg-cyan-50', label: 'Career Workspaces', desc: 'Manage multiple tech role paths at the same time', path: '/signup' },
-      { icon: FileText, color: 'text-teal-600', bg: 'bg-teal-50', label: 'Resume Upload & Parse', desc: 'AI reads your PDF/DOCX resume and builds your profile', path: '/signup' },
     ],
   },
   {
     heading: 'Learn & Build',
     items: [
       { icon: Code2, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Project Workspace', desc: 'Daily real-world tasks inside industry-style projects', path: '/signup' },
-      { icon: Target, color: 'text-amber-600', bg: 'bg-amber-50', label: 'Daily Missions & Streaks', desc: 'XP-based daily tasks that build consistent learning habits', path: '/signup' },
       { icon: MessageSquare, color: 'text-teal-600', bg: 'bg-teal-50', label: 'AI Learning Assistant', desc: '24/7 AI chat — guides every task without giving the answer', path: '/signup' },
       { icon: BookOpen, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Resources Hub', desc: 'Curated learning materials matched to your roadmap phase', path: '/signup' },
     ],
@@ -31,7 +29,6 @@ const featureGroups = [
   {
     heading: 'Practice & Prove',
     items: [
-      { icon: Gamepad2, color: 'text-violet-600', bg: 'bg-violet-50', label: 'Quiz Game', desc: 'Knowledge quizzes per role and phase — gamified learning', path: '/signup' },
       { icon: Mic, color: 'text-rose-600', bg: 'bg-rose-50', label: 'Real-time Mock Interview', desc: 'AI-powered live mock interviews with instant feedback', path: '/signup' },
       { icon: BarChart3, color: 'text-teal-600', bg: 'bg-teal-50', label: 'Interview Guide', desc: 'Role-specific technical & behavioural question sets', path: '/signup' },
       { icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50', label: 'Portfolio Builder', desc: 'Auto-generated shareable portfolio from your real projects', path: '/signup' },
@@ -61,7 +58,7 @@ function FeaturesDropdown({ onClose }: { onClose: () => void }) {
             <span className="text-sm font-bold text-slate-900">FindStreak Platform Features</span>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-[10px] font-semibold uppercase tracking-widest">
-            <Sparkles className="w-2.5 h-2.5" /> Powered by AI
+            <Sparkles className="w-2.5 h-2.5" /> Powered by FindStreak
           </span>
         </div>
 
