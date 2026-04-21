@@ -240,12 +240,14 @@ export default function Workspaces() {
       }
 
       if (response.ok && data.success) {
-        sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+        const roleData = JSON.stringify({
           role: workspace.role,
           analysis: data.data,
           timestamp: new Date().getTime(),
           workspaceId: workspace.id
-        }));
+        });
+        sessionStorage.setItem('lastRoleAnalysis', roleData);
+        localStorage.setItem('lastRoleAnalysis', roleData); // persist across devices & sessions
         
         // Remove individual workspace caching when switching
         const visitedStr = sessionStorage.getItem('visitedWorkspaces');

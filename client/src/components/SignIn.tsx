@@ -43,11 +43,14 @@ export default function SignIn() {
       setToken(data.token);
       setUser(data.user);
 
-      // Cache the active workspace analysis locally for synchronous component rendering (DB is source of truth via current_workspace_id)
+      // Write to both: sessionStorage for current-tab speed, localStorage for cross-device/session persistence
       if (data.user.lastRoleAnalysis) {
-          sessionStorage.setItem('lastRoleAnalysis', JSON.stringify(data.user.lastRoleAnalysis));
+          const roleJson = JSON.stringify(data.user.lastRoleAnalysis);
+          sessionStorage.setItem('lastRoleAnalysis', roleJson);
+          localStorage.setItem('lastRoleAnalysis', roleJson);
       } else {
           sessionStorage.removeItem('lastRoleAnalysis');
+          localStorage.removeItem('lastRoleAnalysis');
       }
 
       console.log('User logged in:', data);

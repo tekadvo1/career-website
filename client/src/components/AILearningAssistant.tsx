@@ -84,7 +84,8 @@ interface DebugIssue {
 export default function AILearningAssistant() {
   const navigate = useNavigate();
   const location = useLocation();
-  const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
+  // Read from localStorage first (cross-device), fall back to sessionStorage (same-tab)
+  const lastStateRaw = localStorage.getItem('lastRoleAnalysis') || sessionStorage.getItem('lastRoleAnalysis');
   const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
   const _rawAIRole = location.state?.role || lastRoleState?.role || "Software Engineer";
   const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
