@@ -91,7 +91,7 @@ export default function AILearningAssistant() {
   const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
   const user = (getUser() ?? {});
 
-  const LOCAL_STORAGE_KEY = `findstreak_ai_chat_history_user_${(user as any)?.id || 'guest'}`;
+  const LOCAL_STORAGE_KEY = `findstreak_ai_chat_history_${role.replace(/\s+/g, '_').toLowerCase()}`;
 
   const loadChatHistory = (): ChatSession[] => {
     try {
@@ -154,7 +154,7 @@ export default function AILearningAssistant() {
   // Sync historical chat states globally across mobile & web environments
   useEffect(() => {
     if (user?.id) {
-       apiFetch(`/api/ai/chat-history?userId=${user.id}`)
+       apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}`)
          .then(res => res.json())
          .then(data => {
             if (data.success && data.history && data.history.length > 0) {
