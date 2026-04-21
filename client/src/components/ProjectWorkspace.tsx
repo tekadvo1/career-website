@@ -113,7 +113,7 @@ export default function ProjectWorkspace() {
       id: "1",
       role: "assistant",
       content:
-        "👋 Welcome! I'm FindStreak AI, your real-time assistant for this guide.\n\n✅ My responses are generated via OpenAI API.\n✅ Your completed tasks and XP instantly sync to PostgreSQL.\n✅ Start checking off steps to build your streak!\n\nClick on any step or ask me a question about this project.",
+        "👋 Welcome! I'm FindStreak AI, your real-time project assistant.\n\n✅ Context-aware guidance\n✅ Real-time technical support\n✅ Progress tracking and hints\n\nHow can I help you with this project today?",
       timestamp: new Date(),
     },
   ]);
@@ -293,19 +293,26 @@ export default function ProjectWorkspace() {
   }, [project, role, navigate, preLoadedCurriculum]);
 
   // Handle Send Message (REALTIME OPENAI INTEGRATION)
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async (customPrompt?: string) => {
+    const messageToSend = customPrompt || inputMessage;
+    if (!messageToSend.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: inputMessage,
+      content: messageToSend,
       timestamp: new Date(),
     };
 
-    const currentMsg = inputMessage;
-    setMessages((prev) => [...prev, userMessage]);
-    setInputMessage("");
+    const historyForAI = [...messages, userMessage];
+
+    if (!customPrompt) {
+      setMessages(historyForAI);
+      setInputMessage("");
+    } else {
+      setMessages(prev => [...prev, userMessage]);
+    }
+    
     setIsTyping(true);
 
     try {
@@ -313,7 +320,8 @@ export default function ProjectWorkspace() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: currentMsg,
+                message: messageToSend,
+                conversationHistory: historyForAI,
                 context: {
                     type: 'project',
                     projectTitle: project?.title || 'Personal Project',
@@ -328,16 +336,16 @@ export default function ProjectWorkspace() {
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: data.reply || "I encountered an error connecting to OpenAI. Please try again.",
+            content: data.reply || "I encountered an error connecting to FindStreak AI. Please try again.",
             timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
     } catch (err) {
-        console.error("OpenAI Error:", err);
+        console.error("AI Error:", err);
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: "I encountered a network error. Ensure your backend server is running.",
+            content: "Connection lost. Please check your internet and try again.",
             timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiResponse]);
@@ -446,38 +454,23 @@ export default function ProjectWorkspace() {
     );
     const progressPercent = Math.round((completedTasks / (totalTasks || 1)) * 100);
 
-    const nextIncompleteStep = steps.find(s => !s.completed);
-    const nextIncompleteTask = nextIncompleteStep?.tasks.find(t => !t.completed);
-
-    const insights = `📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%)\n⭐ Level ${level} with ${totalXP} XP\n🏆 ${completedSteps} of ${steps.length} steps completed\n\n**Next Recommendation:**\n${nextIncompleteTask ? `➡️ Focus on: "${nextIncompleteTask.text}"` : "🎉 All tasks completed!"}`;
-
-    const aiResponse: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: insights,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiResponse]);
+    const prompt = `System Command: Generate a real-time progress insight for my project. 
+    Status: ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%). 
+    Context: I am working on ${project?.title}. 
+    Provide a brief, encouraging expert analysis of my pace and what I should focus on next.`;
+    
+    handleSendMessage(prompt);
   };
 
   const getSmartHints = () => {
     const currentStepTasks = selectedStep?.tasks || [];
     const nextUncompletedTask = currentStepTasks.find(t => !t.completed);
 
-    let hints = `💡 **Smart Hint AI**\n\n`;
-    if (nextUncompletedTask) {
-      hints += `**Current Task:** ${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!`;
-    }
+    const prompt = `System Command: Give me a smart technical hint for my current task: "${nextUncompletedTask?.text || 'Project Setup'}". 
+    Context: Project is ${project?.title}. 
+    Provide 1-2 sentences of professional advice or a small code tip to help me move faster.`;
 
-    const aiResponse: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: hints,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiResponse]);
+    handleSendMessage(prompt);
   };
 
   const completedSteps = steps.filter((s) => s.completed).length;
@@ -513,25 +506,9 @@ export default function ProjectWorkspace() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4 shrink-0">
-            {/* XP and Level Display - Enterprise Look */}
-            <div className="hidden md:flex items-center gap-3 px-4 py-1.5 bg-slate-50 border border-slate-200 rounded-md">
-              <Star className="w-3.5 h-3.5 text-slate-400 fill-slate-800" />
-              <div className="flex items-center gap-3 text-[12px] font-bold tracking-widest uppercase">
-                <span className="text-slate-500">LVL {level}</span>
-                <span className="text-slate-900">{totalXP} XP</span>
-              </div>
-            </div>
-
-            <button className="relative p-2 text-slate-400 hover:text-slate-900 transition-colors">
-              <Bell className="w-[18px] h-[18px]" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full"></span>
-            </button>
-            
-            <button className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2 uppercase">
+            <div className="w-8 h-8 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold text-[11px] hover:bg-black transition-colors shadow-sm ml-2 uppercase">
               {user?.name ? user.name.slice(0, 2).toUpperCase() : 'U'}
-            </button>
-          </div>
+            </div>
         </div>
         
         {/* Progress Tracker Bar */}
