@@ -208,6 +208,49 @@ Your role:
   }
 });
 
+// ── POST /api/project-structure/save-advisor ─────────────────────────────────
+// Saves a Project Advisor result (tech stack + structure) to project_structures_custom
+router.post('/save-advisor', async (req, res) => {
+  const { userId, type, goal, level, recs, structure } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+  if (!type || !goal) return res.status(400).json({ error: 'type and goal are required' });
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO project_structures_custom (user_id, role, description, structure_data)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, created_at`,
+      [userId, type, goal, JSON.stringify({ level, recs, structure })]
+    );
+    return res.json({ success: true, id: result.rows[0].id, savedAt: result.rows[0].created_at });
+  } catch (err) {
+    console.error('Save advisor error:', err);
+    res.status(500).json({ error: 'Failed to save advisor result' });
+  }
+});
+
+// ── GET /api/project-structure/my-advisors ────────────────────────────────────
+// Fetches all saved advisor results for a user
+router.get('/my-advisors', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  try {
+    const result = await pool.query(
+      `SELECT id, role, description, structure_data, created_at
+       FROM project_structures_custom
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId]
+    );
+    return res.json({ success: true, advisors: result.rows });
+  } catch (err) {
+    console.error('Fetch advisors error:', err);
+    res.status(500).json({ error: 'Failed to fetch saved advisors' });
+  }
+});
+
 // ── Keep legacy GET route for backward compat ─────────────────────────────────
 router.get('/:role', async (req, res) => {
   const role = decodeURIComponent(req.params.role);
