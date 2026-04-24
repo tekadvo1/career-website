@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ProjectAdvisor from './ProjectAdvisor';
@@ -16,6 +16,17 @@ import {
 export default function ToolsPage() {
   const navigate = useNavigate();
   const [showAdvisor, setShowAdvisor] = useState(false);
+
+  // Restore advisor if user refreshed mid-flow
+  useEffect(() => {
+    const saved = sessionStorage.getItem('advisor_state');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.step && parsed.step > 1) setShowAdvisor(true);
+      } catch (_e) { /* ignore */ }
+    }
+  }, []);
 
   // ── If the advisor is open, render it full-screen (replaces content area) ──
   if (showAdvisor) {

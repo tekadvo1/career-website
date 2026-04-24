@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '../utils/apiFetch';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import {
@@ -24,6 +24,28 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
   const [recTab,    setRecTab]    = useState<'languages' | 'frameworks' | 'tools' | 'deployment'>('languages');
   const [saving,    setSaving]    = useState(false);
   const [saved,     setSaved]     = useState(false);
+
+  // ── Restore state from sessionStorage on mount (survives refresh) ──────────
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('advisor_state');
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.step)      setStep(s.step);
+      if (s.type)      setType(s.type);
+      if (s.goal)      setGoal(s.goal);
+      if (s.level)     setLevel(s.level);
+      if (s.recs)      setRecs(s.recs);
+      if (s.structure) setStructure(s.structure);
+    } catch (_e) { /* ignore corrupted data */ }
+  }, []);
+
+  // ── Persist state to sessionStorage whenever key values change ────────────
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('advisor_state', JSON.stringify({ step, type, goal, level, recs, structure }));
+    } catch (_e) { /* ignore */ }
+  }, [step, type, goal, level, recs, structure]);
 
   const typedSummary = useTypewriter(recs?.summary ?? '', 14);
 
@@ -101,6 +123,7 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
   };
 
   const resetAll = () => {
+    sessionStorage.removeItem('advisor_state');
     setStep(1); setType(''); setGoal('');
     setRecs(null); setStructure(null); setSaved(false); setError('');
   };
@@ -118,7 +141,7 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
       <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-3 md:px-6 flex items-center gap-4">
           <button
-            onClick={onClose}
+            onClick={() => { sessionStorage.removeItem('advisor_state'); onClose(); }}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500 shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
