@@ -8,7 +8,7 @@ import {
   Search, Flame, ChevronRight,
   Target, Clock, CheckCircle,
   Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2,
-  Rocket, BookOpen, Map, Globe, ArrowRight
+  Rocket, Map, Globe, ArrowRight
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
