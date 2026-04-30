@@ -40,12 +40,21 @@ interface Project {
 }
 
 /* ─── Real-time snapshot from SSE ─────────────────────────────────────────── */
+interface JourneyData {
+  onboardingComplete:  boolean;
+  hasRoleAnalysis:     boolean;
+  hasProjectStructure: boolean;
+  hasActiveProject:    boolean;
+  hasCompletedProject: boolean;
+  isPublicProfile:     boolean;
+}
 interface DashSnapshot {
   projects: Project[];
   totalXP: number;
   activeCount: number;
   completedCount: number;
   savedCount: number;
+  journey?: JourneyData;
   timestamp: string;
 }
 
@@ -81,13 +90,15 @@ export default function Dashboard() {
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const [searchTerm,    setSearchTerm]    = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [setupProject,    setSetupProject]    = useState<Project | null>(null); // independent state for setup modal
+  const [setupProject,    setSetupProject]    = useState<Project | null>(null);
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'|'trending'|'undo'>('recommended');
   const [lastSync, setLastSync] = useState(new Date());
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deletePromptProject, setDeletePromptProject] = useState<Project | null>(null);
+  // Journey state — sourced entirely from SSE snapshot (PostgreSQL), no localStorage
+  const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
 
   const handleSaveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
@@ -226,14 +237,14 @@ export default function Dashboard() {
     );
     const mapped = workspaceProjects.map(mapDbProject);
     setUserProjects(mapped);
-    
-    // Compute stats for current workspace since backend sends global snapshot
     setRtStats({
-      totalXP:        snap.totalXP, // keep global totalXP or adapt to workspace
+      totalXP:        snap.totalXP,
       activeCount:    mapped.filter(p => p.status === 'active').length,
       completedCount: mapped.filter(p => p.status === 'completed').length,
       savedCount:     mapped.filter(p => p.status === 'saved').length,
     });
+    // Journey data from DB — no localStorage, no guessing
+    if (snap.journey) setJourneyData(snap.journey);
     setLastSync(new Date());
   }, [selectedRole, _rawRole]);
 
@@ -443,25 +454,18 @@ export default function Dashboard() {
       {/* ── MAIN ── */}
       <div className="flex flex-col min-h-[calc(100vh-145px)]">
 
-        {/* ── Journey Banner — shown when user has NO active projects ── */}
-        {userProjects.filter(p => p.status === 'active').length === 0 && !isLoading && (() => {
-          // Dynamically compute which steps are done from real data
-          const hasRole     = !!(() => { try { return sessionStorage.getItem('lastRoleAnalysis'); } catch { return null; } })();
-          const hasStack    = !!(() => { try { return localStorage.getItem('findstreak_visited_techstack'); } catch { return null; } })();
-          const hasAdvisor  = !!(() => { try { return localStorage.getItem('findstreak_advisor_completed'); } catch { return null; } })();
-          const hasBuilt    = userProjects.filter(p => p.status === 'completed').length > 0;
-          const hasPortfolio= !!(() => { try { const u: any = JSON.parse(sessionStorage.getItem('user') || '{}'); return u.is_public; } catch { return null; } })();
+        {/* ── Journey Banner — DB-driven via SSE snapshot, no localStorage ── */}
+        {!isLoading && journeyData && !journeyData.hasActiveProject && (() => {
           const steps = [
-            { icon: <Map className="w-4 h-4" />,     step: '1', label: 'Pick Your Role',   sub: 'Role Analysis',       done: hasRole,    route: '/role-analysis' },
-            { icon: <BookOpen className="w-4 h-4" />, step: '2', label: 'Learn the Stack', sub: 'Tech Stack & Roadmap', done: hasStack,   route: '/tech-stack'    },
-            { icon: <Sparkles className="w-4 h-4" />, step: '3', label: 'Design with AI', sub: 'Project Advisor',      done: hasAdvisor, route: '/tools'          },
-            { icon: <Rocket className="w-4 h-4" />,  step: '4', label: 'Build It',         sub: 'Pick a project below', done: hasBuilt,   route: '/dashboard'     },
-            { icon: <Globe className="w-4 h-4" />,   step: '5', label: 'Show the World',   sub: 'Portfolio & Profile', done: hasPortfolio,route: '/portfolio'    },
+            { icon: <Map className="w-4 h-4" />,     n: 1, label: 'Pick Your Role',   sub: 'Role Analysis',        done: journeyData.hasRoleAnalysis,      route: '/role-analysis' },
+            { icon: <Sparkles className="w-4 h-4" />, n: 2, label: 'Design with AI',  sub: 'Project Advisor',      done: journeyData.hasProjectStructure,  route: '/tools'         },
+            { icon: <Rocket className="w-4 h-4" />,  n: 3, label: 'Build It',          sub: 'Pick a project below', done: journeyData.hasCompletedProject,  route: '/dashboard'     },
+            { icon: <Globe className="w-4 h-4" />,   n: 4, label: 'Show the World',    sub: 'Portfolio & Profile',  done: journeyData.isPublicProfile,       route: '/portfolio'     },
           ];
-          const nextStep = steps.find(s => !s.done);
+          const next = steps.find(s => !s.done);
           return (
             <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-lg">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-lg border border-white/5">
                 <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
                 <div className="relative z-10">
@@ -469,27 +473,27 @@ export default function Dashboard() {
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30 uppercase tracking-wider">
                       <Rocket className="w-3 h-3" /> Your Journey
                     </span>
-                    {nextStep && (
-                      <span className="text-slate-400 text-[11px]">· Next: <span className="text-emerald-400 font-bold">{nextStep.label}</span></span>
+                    {next && (
+                      <span className="text-slate-400 text-[11px]">· Next: <span className="text-emerald-400 font-bold">{next.label}</span></span>
                     )}
                   </div>
                   <h2 className="text-white font-extrabold text-xl md:text-2xl mb-1">Ready to build something real?</h2>
-                  <p className="text-slate-400 text-sm mb-5">Follow these steps — or pick a project below to jump straight to Step 4.</p>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
+                  <p className="text-slate-400 text-sm mb-5">Complete each step — or pick a project card below to jump straight to building.</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
                     {steps.map((s) => (
-                      <button key={s.step} onClick={() => navigate(s.route)}
+                      <button key={s.n} onClick={() => navigate(s.route)}
                         className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left hover:scale-[1.02] ${
-                          s.done ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
-                               : nextStep?.step === s.step ? 'bg-white/10 border-emerald-500/40 hover:bg-white/15'
-                               : 'bg-white/5 border-white/10 hover:bg-white/10'
+                          s.done           ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
+                          : next?.n === s.n ? 'bg-white/10 border-emerald-500/40 hover:bg-white/15'
+                                           : 'bg-white/5 border-white/10 hover:bg-white/10'
                         }`}
                       >
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1 ${
-                          s.done ? 'bg-emerald-500 text-white' : nextStep?.step === s.step ? 'bg-emerald-500/30 text-emerald-400' : 'bg-white/10 text-slate-400'
+                          s.done ? 'bg-emerald-500 text-white' : next?.n === s.n ? 'bg-emerald-500/30 text-emerald-400' : 'bg-white/10 text-slate-400'
                         }`}>{s.done ? <CheckCircle className="w-4 h-4" /> : s.icon}</div>
                         <span className={`text-[11px] font-black uppercase tracking-wider ${
-                          s.done ? 'text-emerald-400' : nextStep?.step === s.step ? 'text-emerald-500' : 'text-slate-500'
-                        }`}>Step {s.step}</span>
+                          s.done ? 'text-emerald-400' : next?.n === s.n ? 'text-emerald-500' : 'text-slate-500'
+                        }`}>Step {s.n}</span>
                         <span className="text-white font-bold text-xs leading-tight">{s.label}</span>
                         <span className="text-slate-500 text-[10px]">{s.sub}</span>
                       </button>
@@ -498,11 +502,11 @@ export default function Dashboard() {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button onClick={() => navigate('/tools')}
                       className="flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-all text-sm shadow-md">
-                      <Sparkles className="w-4 h-4" /> Design My Own Project <ArrowRight className="w-4 h-4" />
+                      <Sparkles className="w-4 h-4" /> Design My Project with AI <ArrowRight className="w-4 h-4" />
                     </button>
                     <button onClick={() => navigate('/role-analysis')}
                       className="flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all text-sm border border-white/10">
-                      <Map className="w-4 h-4" /> Re-run Role Analysis
+                      <Map className="w-4 h-4" /> {journeyData.hasRoleAnalysis ? 'Re-run Role Analysis' : 'Start Role Analysis'}
                     </button>
                   </div>
                 </div>

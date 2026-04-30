@@ -112,7 +112,11 @@ async function recordDailyActivity(userId) {
 
 // ─── Helper: fetch the full dashboard snapshot from PostgreSQL ────────────────
 async function getUserDashboardData(userId) {
-  const [projResult, xpResult, streak, roadmapResult, missionsResult, missionsXpResult] = await Promise.all([
+  const [
+    projResult, xpResult, streak,
+    roadmapResult, missionsResult, missionsXpResult,
+    journeyResult
+  ] = await Promise.all([
     pool.query(
       `SELECT id, title, description, role, status, progress_data, project_data, last_updated, created_at
        FROM user_projects WHERE user_id = $1 ORDER BY last_updated DESC`,
@@ -135,6 +139,19 @@ async function getUserDashboardData(userId) {
     pool.query(
       `SELECT COALESCE(SUM(xp_earned), 0) as total_xp FROM user_missions WHERE user_id = $1 AND status = 'completed'`,
       [userId]
+    ),
+    // ── Journey progress — 5 steps, all from DB ──────────────────────────────
+    pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM role_analyses      WHERE user_id = $1) > 0      AS has_role_analysis,
+         (SELECT COUNT(*) FROM project_structures WHERE user_id = $1) > 0      AS has_project_structure,
+         (SELECT COUNT(*) FROM user_projects      WHERE user_id = $1
+           AND status IN ('active','completed'))   > 0                          AS has_active_project,
+         (SELECT COUNT(*) FROM user_projects      WHERE user_id = $1
+           AND status = 'completed')               > 0                          AS has_completed_project,
+         (SELECT COALESCE(is_public, false)        FROM users WHERE id = $1)   AS is_public_profile,
+         (SELECT COALESCE(onboarding_completed, false) FROM users WHERE id=$1) AS onboarding_complete`,
+      [userId]
     )
   ]);
 
@@ -143,6 +160,8 @@ async function getUserDashboardData(userId) {
     project_data:  typeof p.project_data  === 'string' ? JSON.parse(p.project_data)  : p.project_data,
     progress_data: typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : p.progress_data,
   }));
+
+  const j = journeyResult.rows[0] || {};
 
   return {
     projects,
@@ -154,9 +173,19 @@ async function getUserDashboardData(userId) {
     roadmapProgress: roadmapResult.rows,
     missions: missionsResult.rows,
     missionsTotalXp: parseInt(missionsXpResult.rows[0]?.total_xp || 0, 10),
+    // ── Journey: computed from real DB rows, zero client-side heuristics ─────
+    journey: {
+      onboardingComplete:   !!j.onboarding_complete,
+      hasRoleAnalysis:      !!j.has_role_analysis,
+      hasProjectStructure:  !!j.has_project_structure,
+      hasActiveProject:     !!j.has_active_project,
+      hasCompletedProject:  !!j.has_completed_project,
+      isPublicProfile:      !!j.is_public_profile,
+    },
     timestamp:      new Date().toISOString(),
   };
 }
+
 
 // ─── POST /api/realtime/notify ────────────────────────────────────────────────
 // Internal endpoint — called by other routes after DB writes to push live updates
