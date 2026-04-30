@@ -157,10 +157,9 @@ export default function FloatingAIAssistant() {
         <button
           onClick={() => { setOpen(true); setMinimised(false); }}
           aria-label="Open AI Assistant"
-          className={`fixed bottom-20 right-6 z-[200] w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_8px_30px_rgba(16,185,129,0.45)] flex items-center justify-center text-white transition-all hover:scale-110 hover:shadow-[0_12px_40px_rgba(16,185,129,0.5)] ${pulse ? 'animate-bounce' : ''}`}
+          className={`fixed bottom-6 left-6 z-[200] w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_8px_30px_rgba(16,185,129,0.45)] flex items-center justify-center text-white transition-all hover:scale-110 hover:shadow-[0_12px_40px_rgba(16,185,129,0.5)] ${pulse ? 'animate-bounce' : ''}`}
         >
           <Sparkles className="w-6 h-6" />
-          {/* Pulse ring */}
           {pulse && (
             <span className="absolute inset-0 rounded-2xl bg-emerald-400 opacity-40 animate-ping" />
           )}
@@ -170,8 +169,8 @@ export default function FloatingAIAssistant() {
       {/* ── Chat panel ───────────────────────────────────────────────────── */}
       {open && (
         <div
-          className={`fixed bottom-20 right-6 z-[200] w-[360px] sm:w-[400px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
-            minimised ? 'h-[56px]' : 'h-[520px]'
+          className={`fixed bottom-20 left-6 z-[200] w-[calc(100vw-3rem)] sm:w-[400px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
+            minimised ? 'h-[56px]' : 'h-[520px] max-h-[calc(100dvh-6rem)]'
           }`}
         >
           {/* Header */}
