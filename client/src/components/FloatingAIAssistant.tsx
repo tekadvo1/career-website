@@ -57,7 +57,11 @@ function renderContent(text: string) {
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-export default function FloatingAIAssistant() {
+export default function FloatingAIAssistant({
+  onOpenChange,
+}: {
+  onOpenChange?: (open: boolean) => void;
+}) {
   const location  = useLocation();
   const ctx       = getPageContext(location.pathname);
   const user      = getUser<{ name?: string; role?: string }>();
@@ -72,6 +76,11 @@ export default function FloatingAIAssistant() {
 
   const [open,      setOpen]      = useState(false);
   const [minimised, setMinimised] = useState(false);
+
+  const setOpenWithCallback = (val: boolean) => {
+    setOpen(val);
+    onOpenChange?.(val);
+  };
   const [msgs,      setMsgs]      = useState<Msg[]>([]);
   const [input,     setInput]     = useState('');
   const [typing,    setTyping]    = useState(false);
@@ -155,9 +164,9 @@ export default function FloatingAIAssistant() {
       {/* ── Floating button ───────────────────────────────────────────────── */}
       {!open && (
         <button
-          onClick={() => { setOpen(true); setMinimised(false); }}
+          onClick={() => { setOpenWithCallback(true); setMinimised(false); }}
           aria-label="Open AI Assistant"
-          className={`fixed bottom-20 right-6 z-[200] w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_8px_30px_rgba(16,185,129,0.45)] flex items-center justify-center text-white transition-all hover:scale-110 hover:shadow-[0_12px_40px_rgba(16,185,129,0.5)] ${pulse ? 'animate-bounce' : ''}`}
+          className={`fixed bottom-20 right-6 z-[300] w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-[0_8px_30px_rgba(16,185,129,0.45)] flex items-center justify-center text-white transition-all hover:scale-110 hover:shadow-[0_12px_40px_rgba(16,185,129,0.5)] ${pulse ? 'animate-bounce' : ''}`}
         >
           <Sparkles className="w-6 h-6" />
           {pulse && (
@@ -169,7 +178,7 @@ export default function FloatingAIAssistant() {
       {/* ── Chat panel ───────────────────────────────────────────────────── */}
       {open && (
         <div
-          className={`fixed bottom-20 right-6 z-[200] w-[calc(100vw-3rem)] sm:w-[400px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
+          className={`fixed bottom-20 right-6 z-[300] w-[calc(100vw-3rem)] sm:w-[400px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.18)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
             minimised ? 'h-[56px]' : 'h-[520px] max-h-[calc(100dvh-6rem)]'
           }`}
         >
@@ -196,7 +205,7 @@ export default function FloatingAIAssistant() {
                 className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 {minimised ? <ChevronDown className="w-3.5 h-3.5 rotate-180" /> : <Minimize2 className="w-3.5 h-3.5" />}
               </button>
-              <button onClick={() => setOpen(false)} title="Close"
+              <button onClick={() => setOpenWithCallback(false)} title="Close"
                 className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                 <X className="w-3.5 h-3.5" />
               </button>
