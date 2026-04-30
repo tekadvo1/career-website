@@ -43,6 +43,7 @@ import AdminLogin from './components/AdminLogin';
 import ScrollToTop from './components/ScrollToTop';
 import FeedbackWidget from './components/FeedbackWidget';
 import { getToken, getUser, clearSession } from './utils/auth';
+import FloatingAIAssistant from './components/FloatingAIAssistant';
 
 // ── Redirect logged-in users away from auth/landing pages ─────────────────────
 const RedirectIfLoggedIn = ({ children }: { children: React.ReactNode }) => {
@@ -216,6 +217,7 @@ function App() {
 
         </Routes>
         <FeedbackWidget />
+        <FloatingAIAssistant />
       </div>
     </BrowserRouter>
   );
