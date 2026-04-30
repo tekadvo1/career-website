@@ -59,6 +59,8 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
     setLoadStage('recs');
     setLoading(true);
     setError('');
+    // Mark tech-stack step as visited for Journey tracker
+    try { localStorage.setItem('findstreak_visited_techstack', '1'); } catch (_e) { /* ignore */ }
     try {
       const res  = await apiFetch('/api/ai/chat', {
         method: 'POST',
@@ -99,6 +101,8 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
       const parsed: ProjectStructure = typeof data.reply === 'string' ? JSON.parse(data.reply) : data.reply;
       setStructure(parsed);
       setStep(4);
+      // Mark advisor completed for Journey tracker
+      try { localStorage.setItem('findstreak_advisor_completed', '1'); } catch (_e) { /* ignore */ }
     } catch (_e) {
       setError('Could not generate structure. Please try again.');
     }

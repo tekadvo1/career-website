@@ -7,7 +7,8 @@ import { getToken, getUser } from '../utils/auth';
 import {
   Search, Flame, ChevronRight,
   Target, Clock, CheckCircle,
-  Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2
+  Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2,
+  Rocket, BookOpen, Map, Globe, ArrowRight
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -442,6 +443,74 @@ export default function Dashboard() {
       {/* ── MAIN ── */}
       <div className="flex flex-col min-h-[calc(100vh-145px)]">
 
+        {/* ── Journey Banner — shown when user has NO active projects ── */}
+        {userProjects.filter(p => p.status === 'active').length === 0 && !isLoading && (() => {
+          // Dynamically compute which steps are done from real data
+          const hasRole     = !!(() => { try { return sessionStorage.getItem('lastRoleAnalysis'); } catch { return null; } })();
+          const hasStack    = !!(() => { try { return localStorage.getItem('findstreak_visited_techstack'); } catch { return null; } })();
+          const hasAdvisor  = !!(() => { try { return localStorage.getItem('findstreak_advisor_completed'); } catch { return null; } })();
+          const hasBuilt    = userProjects.filter(p => p.status === 'completed').length > 0;
+          const hasPortfolio= !!(() => { try { const u: any = JSON.parse(sessionStorage.getItem('user') || '{}'); return u.is_public; } catch { return null; } })();
+          const steps = [
+            { icon: <Map className="w-4 h-4" />,     step: '1', label: 'Pick Your Role',   sub: 'Role Analysis',       done: hasRole,    route: '/role-analysis' },
+            { icon: <BookOpen className="w-4 h-4" />, step: '2', label: 'Learn the Stack', sub: 'Tech Stack & Roadmap', done: hasStack,   route: '/tech-stack'    },
+            { icon: <Sparkles className="w-4 h-4" />, step: '3', label: 'Design with AI', sub: 'Project Advisor',      done: hasAdvisor, route: '/tools'          },
+            { icon: <Rocket className="w-4 h-4" />,  step: '4', label: 'Build It',         sub: 'Pick a project below', done: hasBuilt,   route: '/dashboard'     },
+            { icon: <Globe className="w-4 h-4" />,   step: '5', label: 'Show the World',   sub: 'Portfolio & Profile', done: hasPortfolio,route: '/portfolio'    },
+          ];
+          const nextStep = steps.find(s => !s.done);
+          return (
+            <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-lg">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30 uppercase tracking-wider">
+                      <Rocket className="w-3 h-3" /> Your Journey
+                    </span>
+                    {nextStep && (
+                      <span className="text-slate-400 text-[11px]">· Next: <span className="text-emerald-400 font-bold">{nextStep.label}</span></span>
+                    )}
+                  </div>
+                  <h2 className="text-white font-extrabold text-xl md:text-2xl mb-1">Ready to build something real?</h2>
+                  <p className="text-slate-400 text-sm mb-5">Follow these steps — or pick a project below to jump straight to Step 4.</p>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
+                    {steps.map((s) => (
+                      <button key={s.step} onClick={() => navigate(s.route)}
+                        className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left hover:scale-[1.02] ${
+                          s.done ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
+                               : nextStep?.step === s.step ? 'bg-white/10 border-emerald-500/40 hover:bg-white/15'
+                               : 'bg-white/5 border-white/10 hover:bg-white/10'
+                        }`}
+                      >
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1 ${
+                          s.done ? 'bg-emerald-500 text-white' : nextStep?.step === s.step ? 'bg-emerald-500/30 text-emerald-400' : 'bg-white/10 text-slate-400'
+                        }`}>{s.done ? <CheckCircle className="w-4 h-4" /> : s.icon}</div>
+                        <span className={`text-[11px] font-black uppercase tracking-wider ${
+                          s.done ? 'text-emerald-400' : nextStep?.step === s.step ? 'text-emerald-500' : 'text-slate-500'
+                        }`}>Step {s.step}</span>
+                        <span className="text-white font-bold text-xs leading-tight">{s.label}</span>
+                        <span className="text-slate-500 text-[10px]">{s.sub}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button onClick={() => navigate('/tools')}
+                      className="flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-all text-sm shadow-md">
+                      <Sparkles className="w-4 h-4" /> Design My Own Project <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => navigate('/role-analysis')}
+                      className="flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all text-sm border border-white/10">
+                      <Map className="w-4 h-4" /> Re-run Role Analysis
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Today's Mission Banner */}
         {userProjects.length > 0 && userProjects[0].status === 'active' && (() => {
           const proj   = userProjects[0];
@@ -560,11 +629,26 @@ export default function Dashboard() {
             </div>
           ) : filteredProjects.length > 0 ? (
             <>
-              <p className="text-slate-500 text-xs md:text-sm mb-3">
-                Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
-                {activeTab === 'recommended' && <span className="ml-1 text-emerald-600 font-medium">· AI-personalised for you</span>}
-                {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
-              </p>
+              {/* ── Recommended tab helper strip ── */}
+              {activeTab === 'recommended' && (
+                <div className="mb-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 justify-between">
+                  <p className="text-slate-500 text-xs md:text-sm">
+                    Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
+                    <span className="ml-1 text-emerald-600 font-medium">· AI-personalised for you</span>
+                    {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
+                  </p>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <Rocket className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                    <span className="text-emerald-700 text-xs font-semibold">Click any card → Start project → Build step-by-step with AI</span>
+                  </div>
+                </div>
+              )}
+              {activeTab !== 'recommended' && (
+                <p className="text-slate-500 text-xs md:text-sm mb-3">
+                  Found <span className="font-bold text-slate-800">{filteredProjects.length}</span> projects
+                  {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
+                </p>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-stretch">
                 {filteredProjects.map(project => {
                   const ds = diffStyle(project.difficulty);
@@ -684,6 +768,27 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
+                {/* Design Your Own card — only in recommended/trending tab */}
+                {(activeTab === 'recommended' || activeTab === 'trending') && (
+                  <div
+                    onClick={() => navigate('/tools')}
+                    className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg border border-slate-700 overflow-hidden hover:shadow-lg hover:border-emerald-600/50 transition-all duration-200 cursor-pointer flex flex-col h-full min-h-[200px] group"
+                  >
+                    <div className="h-1 flex-shrink-0 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                    <div className="p-4 flex-1 flex flex-col items-center justify-center text-center gap-3">
+                      <div className="w-12 h-12 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
+                        <Sparkles className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-extrabold text-sm mb-1">Design Your Own Project</p>
+                        <p className="text-slate-400 text-xs leading-relaxed">Use the AI Project Advisor to pick your stack and get a custom folder structure</p>
+                      </div>
+                      <div className="flex items-center gap-1 text-emerald-400 text-xs font-bold group-hover:gap-2 transition-all">
+                        Open Project Advisor <ArrowRight className="w-3 h-3" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (

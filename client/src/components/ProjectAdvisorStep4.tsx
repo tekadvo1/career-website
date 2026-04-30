@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Save, CheckCheck, Send, Sparkles, Loader2, Database } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Save, CheckCheck, Send, Sparkles, Loader2, Database, Rocket, ArrowRight } from 'lucide-react';
 import { FileTreeNode, type ProjectStructure, type DatabaseTable } from './ProjectAdvisorHelpers';
 import { sendChatMessage } from './ProjectAdvisorSteps';
+import { apiFetch } from '../utils/apiFetch';
+import { getUser } from '../utils/auth';
 
 // ── Database table card ───────────────────────────────────────────────────────
 function TableCard({ table }: { table: DatabaseTable }) {
@@ -165,6 +168,70 @@ export function Step4({
   onSave: () => void; onReset: () => void;
 }) {
   const [tab, setTab] = useState<'frontend' | 'backend' | 'database' | 'env' | 'workflow'>('frontend');
+  const [launching, setLaunching] = useState(false);
+  const navigate = useNavigate();
+
+  // ── Create project in DB and navigate to workspace ────────────────────────
+  const handleStartBuilding = async () => {
+    setLaunching(true);
+    try {
+      const user = getUser<{ id?: number; role?: string }>();
+      const role = (() => {
+        try { return JSON.parse(sessionStorage.getItem('lastRoleAnalysis') || '{}').role || 'Software Engineer'; }
+        catch { return 'Software Engineer'; }
+      })();
+
+      // Build a minimal project payload that the dashboard ProjectSetupModal expects
+      const projectPayload = {
+        title: goal,
+        description: structure.overview || `Build: ${goal}`,
+        difficulty: 'Intermediate',
+        duration: '4-8 weeks',
+        matchScore: 95,
+        tags: [structure.stack || 'Custom Stack'],
+        tools: structure.workflow?.slice(0, 3) || [],
+        languages: [],
+        whyRecommended: ['AI-generated project from Project Advisor'],
+        skillsToDevelop: [],
+        setupGuide: { title: 'AI Project', steps: structure.workflow || [] },
+        curriculumStats: { modules: 1, tasks: structure.workflow?.length || 5, deployment: true, codeReview: false },
+        metrics: { matchIncrease: '+15%', xp: 500, timeEstimate: '4-8 weeks', roleRelevance: role },
+      };
+
+      // Save to DB via the role/start-project endpoint
+      const res = await apiFetch('/api/role/start-project', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: user?.id,
+          project: projectPayload,
+          role,
+          status: 'active',
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Clear advisor state so user starts fresh next time
+        sessionStorage.removeItem('advisor_state');
+        // Navigate to project workspace with the new project
+        navigate('/project-workspace', {
+          state: {
+            project: { ...projectPayload, id: String(data.projectId || 'new'), status: 'active' },
+            role,
+            fromAdvisor: true,
+          },
+        });
+      } else {
+        // Fallback: go to dashboard so user can find the saved project
+        sessionStorage.removeItem('advisor_state');
+        navigate('/dashboard');
+      }
+    } catch (_e) {
+      sessionStorage.removeItem('advisor_state');
+      navigate('/dashboard');
+    }
+    setLaunching(false);
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -267,9 +334,44 @@ export function Step4({
             </div>
           )}
 
+          {/* ── Start Building CTA ── */}
+          <div className="mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-5 text-white shadow-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-extrabold text-base leading-tight">Your structure is ready!</p>
+                <p className="text-emerald-100 text-xs mt-0.5">Click below to start building with step-by-step AI guidance</p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={handleStartBuilding}
+                disabled={launching}
+                className="flex-1 flex items-center justify-center gap-2 px-5 py-3 bg-white text-emerald-700 font-black rounded-xl hover:bg-emerald-50 transition-all text-sm shadow-sm disabled:opacity-70"
+              >
+                {launching ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Setting up workspace…</>
+                ) : (
+                  <><Rocket className="w-4 h-4" /> Start Building This Project <ArrowRight className="w-4 h-4" /></>
+                )}
+              </button>
+              {!saved && (
+                <button
+                  onClick={onSave}
+                  disabled={saving || saved}
+                  className="flex items-center justify-center gap-1.5 px-4 py-3 bg-white/20 hover:bg-white/30 text-white font-bold rounded-xl transition-all text-sm border border-white/20"
+                >
+                  <Save className="w-4 h-4" /> Save for Later
+                </button>
+              )}
+            </div>
+          </div>
+
           <button
             onClick={onReset}
-            className="w-full mt-5 bg-white border border-slate-200 text-slate-600 font-semibold py-3 rounded-xl hover:border-slate-300 hover:text-slate-900 transition-all text-sm"
+            className="w-full mt-3 bg-white border border-slate-200 text-slate-500 font-semibold py-2.5 rounded-xl hover:border-slate-300 hover:text-slate-900 transition-all text-sm"
           >
             ← Start Over with a New Project
           </button>
