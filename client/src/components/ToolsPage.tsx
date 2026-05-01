@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ProjectAdvisor from './ProjectAdvisor';
-import { apiFetch } from '../utils/apiFetch';
-import { getUser } from '../utils/auth';
 import {
   Search,
   Sparkles,
@@ -18,8 +16,6 @@ import {
 export default function ToolsPage() {
   const navigate = useNavigate();
   const [showAdvisor, setShowAdvisor] = useState(false);
-  const [pastAdvisors, setPastAdvisors] = useState<any[]>([]);
-  const [loadingAdvisors, setLoadingAdvisors] = useState(true);
 
   // Restore advisor if user refreshed mid-flow
   useEffect(() => {
@@ -31,35 +27,6 @@ export default function ToolsPage() {
       } catch (_e) { /* ignore */ }
     }
   }, []);
-
-  // Fetch past advisors
-  useEffect(() => {
-    const user = getUser<{ id?: number }>();
-    if (!user?.id) {
-      setLoadingAdvisors(false);
-      return;
-    }
-    apiFetch(`/api/project-structure/my-advisors?userId=${user.id}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setPastAdvisors(data.advisors);
-        setLoadingAdvisors(false);
-      })
-      .catch(() => setLoadingAdvisors(false));
-  }, [showAdvisor]); // Re-fetch when advisor is closed (might have saved a new one)
-
-  // ── Resume past advisor session ──────────────────────────────────────────
-  const resumeAdvisor = (adv: any) => {
-    sessionStorage.setItem('advisor_state', JSON.stringify({
-      step: 4,
-      type: adv.role,
-      goal: adv.description,
-      level: adv.structure_data?.level || 'intermediate',
-      recs: adv.structure_data?.recs,
-      structure: adv.structure_data?.structure,
-    }));
-    setShowAdvisor(true);
-  };
 
   // ── If the advisor is open, render it full-screen (replaces content area) ──
   if (showAdvisor) {
@@ -174,74 +141,6 @@ export default function ToolsPage() {
           ))}
         </div>
       </div>
-
-      {/* ── Past Structures Section ───────────────────────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 pb-12 md:px-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FolderTree className="w-4 h-4 text-slate-400" />
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Your Past Structures</h2>
-        </div>
-
-        {loadingAdvisors ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : pastAdvisors.length === 0 ? (
-          <div className="bg-white border border-slate-200 border-dashed rounded-xl p-8 text-center">
-            <p className="text-slate-500 text-sm">You haven't generated any project structures yet.</p>
-            <button
-              onClick={() => setShowAdvisor(true)}
-              className="mt-3 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
-            >
-              Start the Project Advisor →
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pastAdvisors.map(adv => (
-              <div
-                key={adv.id}
-                onClick={() => resumeAdvisor(adv)}
-                className="bg-white border border-slate-200 hover:border-emerald-300 rounded-xl p-4 cursor-pointer group transition-all hover:shadow-md flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded uppercase tracking-wider">
-                      {adv.role}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {new Date(adv.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-800 line-clamp-1">{adv.description}</h3>
-                  <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                    {adv.structure_data?.structure?.projectDescription || 'Detailed AI-generated project architecture'}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    {adv.structure_data?.structure?.techStack?.slice(0, 3).map((tech: string) => (
-                      <span key={tech} className="text-[10px] font-medium text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded">
-                        {tech}
-                      </span>
-                    ))}
-                    {(adv.structure_data?.structure?.techStack?.length || 0) > 3 && (
-                      <span className="text-[10px] font-medium text-slate-400 px-1.5 py-0.5">
-                        +{(adv.structure_data.structure.techStack.length - 3)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[10px] font-bold text-emerald-600 group-hover:text-emerald-700 flex items-center gap-1 transition-colors">
-                    View Structure <ChevronRight className="w-3 h-3" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
     </div>
   );
 }
