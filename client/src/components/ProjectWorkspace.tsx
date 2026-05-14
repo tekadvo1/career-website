@@ -2,11 +2,10 @@ import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft, CheckCircle2, TrendingUp, Bell, ChevronRight,
-  Circle, CheckCircle, Sparkles, Send, Lightbulb, FileText,
+  ArrowLeft, CheckCircle2, Bell, ChevronRight,
+  Circle, CheckCircle, Sparkles, Send, FileText,
   Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
-  Flame, Play, MessageSquare, Coffee,
-  Star, Target, Clock, FolderOpen
+  Flame, Play, Coffee, Target, Clock
 } from "lucide-react";
 
 // Task type detection from task text
@@ -455,49 +454,6 @@ export default function ProjectWorkspace() {
     
     setSteps(updatedSteps);
     persistProgress(updatedSteps, updatedXp);
-  };
-
-  // Progress Insights
-  const getProgressInsights = () => {
-    const totalTasks = steps.reduce((acc, step) => acc + step.tasks.length, 0);
-    const completedTasks = steps.reduce(
-      (acc, step) => acc + step.tasks.filter(t => t.completed).length,
-      0
-    );
-    const progressPercent = Math.round((completedTasks / (totalTasks || 1)) * 100);
-
-    const nextIncompleteStep = steps.find(s => !s.completed);
-    const nextIncompleteTask = nextIncompleteStep?.tasks.find(t => !t.completed);
-
-    const insights = `📊 **Your Progress Insights**\n\n**Overall Progress:**\n🎯 ${completedTasks} of ${totalTasks} tasks completed (${progressPercent}%)\n⭐ Level ${level} with ${totalXP} XP\n🏆 ${completedSteps} of ${steps.length} steps completed\n\n**Next Recommendation:**\n${nextIncompleteTask ? `➡️ Focus on: "${nextIncompleteTask.text}"` : "🎉 All tasks completed!"}`;
-
-    const aiResponse: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: insights,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiResponse]);
-  };
-
-  const getSmartHints = () => {
-    const currentStepTasks = selectedStep?.tasks || [];
-    const nextUncompletedTask = currentStepTasks.find(t => !t.completed);
-
-    let hints = `💡 **Smart Hint AI**\n\n`;
-    if (nextUncompletedTask) {
-      hints += `**Current Task:** ${nextUncompletedTask.text}\nI recommend you jump directly into your IDE and create the files for this assignment. If you get an error message, paste it here so I can fix it for you!`;
-    }
-
-    const aiResponse: Message = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: hints,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiResponse]);
   };
 
   const completedSteps = steps.filter((s) => s.completed).length;
