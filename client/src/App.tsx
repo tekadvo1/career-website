@@ -37,6 +37,7 @@ import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
+import GettingStarted from './components/GettingStarted';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -207,6 +208,7 @@ function App() {
           <Route path="/project-structure"       element={<ProtectedRoute><ProjectStructurePage /></ProtectedRoute>} />
           <Route path="/settings"                element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/tools"                   element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+          <Route path="/getting-started"         element={<ProtectedRoute><GettingStarted /></ProtectedRoute>} />
           {/* Admin routes — use their own admin token guard, NOT regular ProtectedRoute */}
           <Route path="/admin-login"             element={<AdminLogin />} />
           <Route path="/admindashboard"          element={<AdminDashboard />} />

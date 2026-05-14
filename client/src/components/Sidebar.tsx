@@ -14,7 +14,8 @@ import {
   ChevronUp,
   Code,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  HelpCircle
 } from 'lucide-react';
 import { getUser } from '../utils/auth';
 
@@ -31,6 +32,13 @@ interface SidebarProps {
 }
 
 const navItems: NavItem[] = [
+  {
+    label: 'Getting Started',
+    subtitle: 'How FindStreak works',
+    icon: <HelpCircle className="w-5 h-5 text-emerald-600" />,
+    route: '/getting-started',
+    badge: 'GUIDE',
+  },
   {
     label: 'Project Dashboard',
     subtitle: 'Browse AI projects',

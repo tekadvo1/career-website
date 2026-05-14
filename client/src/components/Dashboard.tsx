@@ -508,6 +508,10 @@ export default function Dashboard() {
                       className="flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all text-sm border border-white/10">
                       <Map className="w-4 h-4" /> {journeyData.hasRoleAnalysis ? 'Re-run Role Analysis' : 'Start Role Analysis'}
                     </button>
+                    <button onClick={() => navigate('/getting-started')}
+                      className="flex items-center justify-center gap-2 px-5 py-3 bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white font-semibold rounded-xl transition-all text-sm border border-white/5">
+                      How it works →
+                    </button>
                   </div>
                 </div>
               </div>
