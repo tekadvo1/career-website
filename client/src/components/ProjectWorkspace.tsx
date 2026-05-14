@@ -2,18 +2,26 @@ import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
-  CheckCircle2,
-  TrendingUp,
-  Bell,
-  ChevronRight,
-  Circle,
-  CheckCircle,
-  Sparkles,
-  Send,
-  Lightbulb,
-  FileText,
+  ArrowLeft, CheckCircle2, TrendingUp, Bell, ChevronRight,
+  Circle, CheckCircle, Sparkles, Send, Lightbulb, FileText,
+  Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
+  Flame, Trophy, Play, SkipForward, MessageSquare, Coffee,
+  Star, Target, Clock, ChevronDown, FolderOpen, Folder
 } from "lucide-react";
+
+// Task type detection from task text
+const getTaskMeta = (text: string): { icon: React.ReactNode; color: string; type: string; time: string } => {
+  const t = text.toLowerCase();
+  if (t.includes('install') || t.includes('npm') || t.includes('setup') || t.includes('configure'))
+    return { icon: <Terminal className="w-3.5 h-3.5" />, color: 'text-orange-500 bg-orange-50 border-orange-200', type: 'CLI', time: '~15 min' };
+  if (t.includes('git') || t.includes('commit') || t.includes('push') || t.includes('branch'))
+    return { icon: <GitBranch className="w-3.5 h-3.5" />, color: 'text-purple-500 bg-purple-50 border-purple-200', type: 'Git', time: '~10 min' };
+  if (t.includes('test') || t.includes('quiz') || t.includes('check'))
+    return { icon: <HelpCircle className="w-3.5 h-3.5" />, color: 'text-yellow-600 bg-yellow-50 border-yellow-200', type: 'Quiz', time: '~20 min' };
+  if (t.includes('read') || t.includes('learn') || t.includes('understand') || t.includes('review'))
+    return { icon: <BookOpen className="w-3.5 h-3.5" />, color: 'text-blue-500 bg-blue-50 border-blue-200', type: 'Read', time: '~25 min' };
+  return { icon: <Code2 className="w-3.5 h-3.5" />, color: 'text-emerald-600 bg-emerald-50 border-emerald-200', type: 'Code', time: '~30 min' };
+};
 
 import { TaskGuideView } from "./TaskGuideView";
 import { RightSidebar } from "./RightSidebar";
@@ -572,12 +580,17 @@ export default function ProjectWorkspace() {
           </div>
         </div>
         
-        {/* Progress Tracker Bar */}
-        <div className="w-full bg-slate-100 h-[2px]">
-          <div
-            className="h-full bg-slate-900 transition-all duration-700 ease-in-out"
-            style={{ width: `${progressPercentage}%` }}
-          />
+        {/* VS Code-style progress bar */}
+        <div className="w-full bg-slate-800 h-[3px]">
+          <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700" style={{ width: `${progressPercentage}%` }} />
+        </div>
+        {/* VS Code-style status bar */}
+        <div className="bg-[#007acc] px-4 py-0.5 flex items-center gap-4 text-white text-[11px] font-medium">
+          <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> main</span>
+          <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {completedSteps}/{steps.length} modules</span>
+          <span className="flex items-center gap-1 ml-auto"><Zap className="w-3 h-3 text-yellow-300" /> {totalXP} XP</span>
+          <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-300" /> Lv.{level}</span>
+          <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-300" /> {progressPercentage}% Complete</span>
         </div>
       </div>
 
@@ -587,15 +600,28 @@ export default function ProjectWorkspace() {
         {/* Left Column - Pipeline Tasks */}
         <div className="w-full flex-1 min-h-0 lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
           {!showGuideView ? (
-            <div className="max-w-4xl max-auto">
-              <div className="flex items-end justify-between mb-8">
+            <div className="max-w-4xl">
+              {/* Project header */}
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Engineering Pipeline</h2>
-                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Execution Backlog</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <FolderOpen className="w-4 h-4 text-yellow-500" />
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Project Workspace</span>
+                  </div>
+                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{project?.title || 'My Project'}</h3>
+                  <p className="text-sm text-slate-500 mt-1">{steps.length} modules · {steps.reduce((a,s)=>a+s.tasks.length,0)} tasks total</p>
                 </div>
-                <Badge className="bg-slate-100 text-slate-600 border border-slate-200 rounded px-2.5 py-1 text-[11px] uppercase tracking-widest">
-                  {steps.length} Modules
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                    <Target className="w-3 h-3" /> {progressPercentage}% done
+                  </span>
+                  {steps.find(s => !s.completed) && (
+                    <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} className="text-[11px] text-blue-600 hover:underline flex items-center gap-1">
+                      <Play className="w-3 h-3" /> Continue where you left off
+                    </button>
+                  )}
+                </div>
+              </div>
               </div>
 
               <div className="space-y-4">
@@ -667,52 +693,49 @@ export default function ProjectWorkspace() {
                        <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-200 border-t border-slate-100 bg-slate-50/50 pt-5 mt-2">
                         
                         <div className="space-y-2 mb-8">
-                          <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4">
-                              Task Sequence
+                          <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
+                            <FolderOpen className="w-3.5 h-3.5 text-yellow-500" /> Tasks in this module
                           </h4>
-                          {step.tasks.map((task) => (
+                          {step.tasks.map((task, tIdx) => {
+                            const meta = getTaskMeta(task.text);
+                            const isNext = !task.completed && step.tasks.slice(0, tIdx).every(t => t.completed);
+                            return (
                             <div
                               key={task.id}
-                              className={`group flex items-center gap-4 p-4 rounded-xl border transition-all ${
-                                task.completed
-                                  ? "bg-transparent border-transparent"
-                                  : "bg-white border-slate-200 shadow-sm hover:border-slate-300"
+                              className={`group flex items-start gap-3 p-4 rounded-xl border transition-all ${
+                                task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' :
+                                isNext ? 'bg-blue-50 border-blue-300 shadow-md ring-1 ring-blue-200' :
+                                'bg-white border-slate-200 shadow-sm hover:border-slate-300'
                               }`}
                             >
-                              <button 
-                                className={`flex-shrink-0 focus:outline-none transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-slate-500'}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleTaskToggle(step.id, task.id);
-                                }}
-                              >
-                                {task.completed ? (
-                                  <CheckCircle2 className="w-6 h-6 fill-emerald-50" />
-                                ) : (
-                                  <Circle className="w-6 h-6" />
-                                )}
+                              {/* Checkbox */}
+                              <button className={`flex-shrink-0 mt-0.5 transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-400'}`}
+                                onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }}>
+                                {task.completed ? <CheckCircle2 className="w-5 h-5 fill-emerald-50" /> : <Circle className="w-5 h-5" />}
                               </button>
-                              
-                              <p className={`text-[14px] flex-1 tracking-tight ${task.completed ? "text-slate-400 font-medium line-through" : "text-slate-900 font-bold"}`}>
-                                  {task.text}
-                              </p>
 
-                              <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleTaskClick(task.id);
-                                }}
-                                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold tracking-widest uppercase rounded border transition-colors ${
-                                  task.completed 
-                                    ? "bg-transparent border-slate-200 text-slate-400" 
-                                    : "bg-white border-slate-200 text-slate-700 hover:border-slate-800 hover:bg-slate-900 hover:text-white"
-                                }`}
-                              >
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  {isNext && <span className="text-[10px] font-black text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1"><Play className="w-2.5 h-2.5" /> Start Here</span>}
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${meta.color}`}>{meta.icon}{meta.type}</span>
+                                  <span className="text-[10px] text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{meta.time}</span>
+                                </div>
+                                <p className={`text-[13px] font-semibold leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.text}</p>
+                              </div>
+
+                              {/* Docs button */}
+                              <button onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
+                                className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold rounded-lg border transition-all ${
+                                  task.completed ? 'border-slate-100 text-slate-300' :
+                                  isNext ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-sm' :
+                                  'bg-white border-slate-200 text-slate-600 hover:border-slate-800 hover:bg-slate-900 hover:text-white'
+                                }`}>
                                 <FileText className="w-3 h-3" />
-                                Docs
+                                {isNext ? 'Open Guide' : 'Docs'}
                               </button>
                             </div>
-                          ))}
+                          );})}
                         </div>
 
                         <div className="flex items-center gap-4 pt-5 border-t border-slate-200/60">
@@ -765,20 +788,26 @@ export default function ProjectWorkspace() {
         <div className="w-full lg:w-[35%] xl:w-[30%] h-full hidden lg:flex flex-col border-t lg:border-t-0 lg:border-l border-slate-200 bg-white">
           <div className="h-full flex flex-col w-full relative">
             
-            {/* AI Header */}
-            <div className="bg-slate-900 p-5 shrink-0 flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-slate-800 rounded shadow-inner flex items-center justify-center relative border border-slate-700">
-                  <Sparkles className="w-4 h-4 text-slate-300" />
-                  <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-900"></div>
+            {/* AI Header - VS Code style */}
+            <div className="bg-[#1e1e1e] shrink-0 border-b border-[#3c3c3c]">
+              <div className="flex items-center gap-0 border-b border-[#3c3c3c]">
+                <div className="px-4 py-2.5 border-r border-[#3c3c3c] flex items-center gap-2 bg-[#252526]">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[12px] text-slate-300 font-medium">AI Co-pilot</span>
+                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full ml-1 animate-pulse" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-white text-[13px] tracking-wide">Project Guide AI</h3>
-                  <p className="text-[9px] text-slate-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">
-                      REAL-TIME ASSISTANT
-                  </p>
+                <div className="px-3 py-2.5 flex items-center gap-2">
+                  <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="text-[11px] text-slate-500">Ask anything about your project</span>
                 </div>
               </div>
+              {/* Context strip */}
+              {selectedStep && (
+                <div className="px-4 py-2 flex items-center gap-2 bg-[#252526]">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Context:</span>
+                  <span className="text-[11px] text-blue-400 font-medium truncate">{selectedStep.title}</span>
+                </div>
+              )}
             </div>
 
             {/* AI Messages Area */}
@@ -839,63 +868,41 @@ export default function ProjectWorkspace() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Action Buttons & Suggested Prompts */}
-            <div className="px-5 py-3 bg-white border-t border-slate-100 flex flex-col gap-3">
-                <div className="flex gap-2">
-                    <button
-                      onClick={getProgressInsights}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
-                    >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      Metrics
-                    </button>
-                    <button
-                      onClick={getSmartHints}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 hover:bg-slate-50 border border-slate-200 rounded text-[11px] font-bold uppercase tracking-widest text-slate-600 hover:text-slate-900 transition-colors"
-                    >
-                      <Lightbulb className="w-3.5 h-3.5" />
-                      Hints
-                    </button>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 pt-1">
-                    {["Show me an example", "Explain my error", "Teach me the concept"].map((prompt, i) => (
-                        <button 
-                            key={i}
-                            onClick={() => {
-                                setInputMessage(prompt);
-                                setTimeout(() => {
-                                    if (inputRef.current) inputRef.current.focus();
-                                }, 10);
-                            }}
-                            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-[11px] font-bold text-slate-600 hover:text-emerald-700 hover:border-emerald-200 hover:bg-emerald-50 transition-all shadow-sm flex-1 whitespace-nowrap text-center"
-                        >
-                            {prompt}
-                        </button>
-                    ))}
-                </div>
+            {/* Quick Actions - VS Code command palette style */}
+            <div className="bg-[#252526] border-t border-[#3c3c3c] px-3 py-2 flex flex-col gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { label: 'Help on this task', icon: <HelpCircle className="w-3 h-3" />, prompt: `Help me with: ${selectedStep?.tasks.find(t=>!t.completed)?.text || 'current task'}` },
+                  { label: 'Show example code', icon: <Code2 className="w-3 h-3" />, prompt: 'Show me a code example for this task' },
+                  { label: 'Explain concept', icon: <BookOpen className="w-3 h-3" />, prompt: `Explain the concept behind: ${selectedStep?.title}` },
+                  { label: 'I am stuck', icon: <Coffee className="w-3 h-3" />, prompt: `I'm stuck on: ${selectedStep?.tasks.find(t=>!t.completed)?.text}. Give me a hint` },
+                  { label: 'My progress', icon: <TrendingUp className="w-3 h-3" />, fn: getProgressInsights },
+                  { label: 'Smart hint', icon: <Lightbulb className="w-3 h-3" />, fn: getSmartHints },
+                ].map((a, i) => (
+                  <button key={i} onClick={() => { if (a.fn) { a.fn(); } else { setInputMessage(a.prompt!); setTimeout(() => inputRef.current?.focus(), 10); } }}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#2d2d2d] hover:bg-[#37373d] border border-[#3c3c3c] rounded text-[10px] text-slate-300 font-medium transition-colors text-left">
+                    <span className="text-emerald-400">{a.icon}</span>{a.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Input Form */}
-            <div className="p-4 bg-white border-t border-slate-100 shrink-0">
-              <div className="flex items-center gap-2 bg-slate-50 rounded border border-slate-200 p-1 focus-within:border-slate-800 transition-colors">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={inputMessage}
+            {/* Input - VS Code terminal style */}
+            <div className="p-3 bg-[#1e1e1e] border-t border-[#3c3c3c] shrink-0">
+              <div className="flex items-center gap-2 bg-[#3c3c3c] rounded border border-[#555] focus-within:border-blue-500 transition-colors">
+                <span className="text-emerald-400 text-[12px] font-mono pl-3 select-none">›</span>
+                <input ref={inputRef} type="text" value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Query copilot..."
-                  className="flex-1 bg-transparent border-none focus:outline-none text-[13px] font-medium text-slate-900 placeholder:text-slate-400 px-3 py-1.5"
+                  placeholder="Ask your AI co-pilot..."
+                  className="flex-1 bg-transparent border-none focus:outline-none text-[13px] text-slate-200 placeholder:text-slate-500 py-2 font-mono"
                 />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim()}
-                  className="w-8 h-8 bg-slate-900 text-white rounded flex items-center justify-center hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5 ml-0.5" />
+                <button onClick={handleSendMessage} disabled={!inputMessage.trim()}
+                  className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-sm flex items-center justify-center transition-colors disabled:opacity-30 mr-1 flex-shrink-0">
+                  <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
+              <p className="text-[10px] text-slate-600 mt-1.5 text-center">Enter to send · Shift+Enter for new line</p>
             </div>
 
           </div>
