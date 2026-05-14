@@ -355,6 +355,14 @@ if (fs.existsSync(distPath)) {
 require('./cron/streakEmails');
 require('./cron/dailyReminders');
 
+// Global error handler for things like malformed URIs
+app.use((err, req, res, next) => {
+  if (err instanceof URIError) {
+    return res.status(400).json({ error: 'Bad Request - Invalid URI' });
+  }
+  next(err);
+});
+
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server running on port ${port}`);
   console.log(`NODE_ENV: ${process.env.NODE_ENV}`);

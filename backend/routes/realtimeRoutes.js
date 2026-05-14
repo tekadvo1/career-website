@@ -144,7 +144,7 @@ async function getUserDashboardData(userId) {
     pool.query(
       `SELECT
          (SELECT COUNT(*) FROM role_analyses      WHERE user_id = $1) > 0      AS has_role_analysis,
-         (SELECT COUNT(*) FROM project_structures WHERE user_id = $1) > 0      AS has_project_structure,
+         (SELECT COUNT(*) FROM project_structures_custom WHERE user_id = $1) > 0      AS has_project_structure,
          (SELECT COUNT(*) FROM user_projects      WHERE user_id = $1
            AND status IN ('active','completed'))   > 0                          AS has_active_project,
          (SELECT COUNT(*) FROM user_projects      WHERE user_id = $1

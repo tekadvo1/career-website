@@ -12,7 +12,7 @@ cron.schedule('0 9 * * *', async () => {
     
     // Fetch users with email to send reminders
     const usersRes = await client.query(`
-      SELECT id, name, username, email, free_time_schedule
+      SELECT id, username, email, free_time_schedule
       FROM users 
       WHERE email IS NOT NULL AND daily_email_enabled = true
     `);
