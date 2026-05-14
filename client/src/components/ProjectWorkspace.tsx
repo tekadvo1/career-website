@@ -573,17 +573,21 @@ export default function ProjectWorkspace() {
           </div>
         </div>
         
-        {/* VS Code-style progress bar */}
-        <div className="w-full bg-slate-800 h-[3px]">
-          <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-700" style={{ width: `${progressPercentage}%` }} />
+        {/* Premium Progress Bar */}
+        <div className="w-full bg-slate-100 h-[3px]">
+          <div className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-700 ease-out" style={{ width: `${progressPercentage}%` }} />
         </div>
-        {/* VS Code-style status bar */}
-        <div className="bg-[#007acc] px-4 py-0.5 flex items-center gap-4 text-white text-[11px] font-medium">
-          <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> main</span>
-          <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {completedSteps}/{steps.length} modules</span>
-          <span className="flex items-center gap-1 ml-auto"><Zap className="w-3 h-3 text-yellow-300" /> {totalXP} XP</span>
-          <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-300" /> Lv.{level}</span>
-          <span className="flex items-center gap-1"><Star className="w-3 h-3 text-yellow-300" /> {progressPercentage}% Complete</span>
+        
+        {/* Sleek Stats Strip */}
+        <div className="bg-slate-50 border-b border-slate-200 px-6 lg:px-10 py-2.5 flex items-center justify-between overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="flex items-center gap-6 text-[12px] font-semibold text-slate-600">
+            <span className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-teal-500" /> {completedSteps} / {steps.length} Modules</span>
+            <span className="flex items-center gap-2"><Target className="w-3.5 h-3.5 text-emerald-500" /> {progressPercentage}% Completed</span>
+          </div>
+          <div className="flex items-center gap-4 text-[12px] font-bold">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200"><Flame className="w-3.5 h-3.5" /> Level {level}</span>
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-50 text-yellow-600 border border-yellow-200"><Zap className="w-3.5 h-3.5" /> {totalXP} XP</span>
+          </div>
         </div>
       </div>
 
@@ -595,22 +599,26 @@ export default function ProjectWorkspace() {
           {!showGuideView ? (
             <div className="max-w-4xl">
               {/* Project header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <FolderOpen className="w-4 h-4 text-yellow-500" />
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Project Workspace</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
+                      <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+                    </div>
+                    <span className="text-[11px] font-bold text-teal-600 uppercase tracking-widest">Learning Curriculum</span>
                   </div>
-                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">{project?.title || 'My Project'}</h3>
-                  <p className="text-sm text-slate-500 mt-1">{steps.length} modules · {steps.reduce((a,s)=>a+s.tasks.length,0)} tasks total</p>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{project?.title || 'My Project'}</h3>
+                  <p className="text-[13px] font-medium text-slate-500 mt-2 flex items-center gap-2">
+                    <span>{steps.length} modules</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                    <span>{steps.reduce((a,s)=>a+s.tasks.length,0)} tasks total</span>
+                  </p>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
-                    <Target className="w-3 h-3" /> {progressPercentage}% done
-                  </span>
+                <div className="flex flex-col md:items-end gap-3 shrink-0">
                   {steps.find(s => !s.completed) && (
-                    <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} className="text-[11px] text-blue-600 hover:underline flex items-center gap-1">
-                      <Play className="w-3 h-3" /> Continue where you left off
+                    <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} 
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-md shadow-teal-500/20 transition-all hover:-translate-y-0.5">
+                      <Play className="w-4 h-4 fill-white" /> Continue Learning
                     </button>
                   )}
                 </div>
@@ -684,9 +692,9 @@ export default function ProjectWorkspace() {
                     {step.expanded && (
                        <div className="px-6 pb-6 animate-in slide-in-from-top-2 duration-200 border-t border-slate-100 bg-slate-50/50 pt-5 mt-2">
                         
-                        <div className="space-y-2 mb-8">
-                          <h4 className="text-[10px] font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
-                            <FolderOpen className="w-3.5 h-3.5 text-yellow-500" /> Tasks in this module
+                        <div className="space-y-3 mb-8">
+                          <h4 className="text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
+                             Tasks in this module
                           </h4>
                           {step.tasks.map((task, tIdx) => {
                             const meta = getTaskMeta(task.text);
@@ -694,37 +702,39 @@ export default function ProjectWorkspace() {
                             return (
                             <div
                               key={task.id}
-                              className={`group flex items-start gap-3 p-4 rounded-xl border transition-all ${
-                                task.completed ? 'bg-slate-50/50 border-slate-100 opacity-60' :
-                                isNext ? 'bg-blue-50 border-blue-300 shadow-md ring-1 ring-blue-200' :
+                              className={`group flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border transition-all ${
+                                task.completed ? 'bg-slate-50 border-slate-200 opacity-70' :
+                                isNext ? 'bg-white border-teal-300 shadow-md ring-1 ring-teal-50/50' :
                                 'bg-white border-slate-200 shadow-sm hover:border-slate-300'
                               }`}
                             >
-                              {/* Checkbox */}
-                              <button className={`flex-shrink-0 mt-0.5 transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-400'}`}
-                                onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }}>
-                                {task.completed ? <CheckCircle2 className="w-5 h-5 fill-emerald-50" /> : <Circle className="w-5 h-5" />}
-                              </button>
+                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                {/* Checkbox */}
+                                <button className={`flex-shrink-0 mt-0.5 transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-400'}`}
+                                  onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }}>
+                                  {task.completed ? <CheckCircle2 className="w-5 h-5 fill-emerald-50" /> : <Circle className="w-5 h-5" />}
+                                </button>
 
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  {isNext && <span className="text-[10px] font-black text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1"><Play className="w-2.5 h-2.5" /> Start Here</span>}
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${meta.color}`}>{meta.icon}{meta.type}</span>
-                                  <span className="text-[10px] text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{meta.time}</span>
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                    {isNext && <span className="text-[10px] font-black text-white bg-gradient-to-r from-teal-500 to-emerald-500 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider flex items-center gap-1"><Play className="w-2.5 h-2.5 fill-white" /> Start Here</span>}
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${meta.color}`}>{meta.icon}{meta.type}</span>
+                                    <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{meta.time}</span>
+                                  </div>
+                                  <p className={`text-[14px] font-semibold leading-snug ${task.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{task.text}</p>
                                 </div>
-                                <p className={`text-[13px] font-semibold leading-snug ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.text}</p>
                               </div>
 
                               {/* Docs button */}
                               <button onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
-                                className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold rounded-lg border transition-all ${
-                                  task.completed ? 'border-slate-100 text-slate-300' :
-                                  isNext ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 shadow-sm' :
-                                  'bg-white border-slate-200 text-slate-600 hover:border-slate-800 hover:bg-slate-900 hover:text-white'
+                                className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 sm:w-auto w-full text-[12px] font-bold rounded-xl border transition-all ${
+                                  task.completed ? 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200 hover:text-slate-600' :
+                                  isNext ? 'bg-slate-900 border-slate-900 text-white hover:bg-black shadow-md' :
+                                  'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
                                 }`}>
-                                <FileText className="w-3 h-3" />
-                                {isNext ? 'Open Guide' : 'Docs'}
+                                <FileText className="w-3.5 h-3.5" />
+                                {isNext ? 'Open Guide' : 'View Docs'}
                               </button>
                             </div>
                           );})}
@@ -780,30 +790,31 @@ export default function ProjectWorkspace() {
         <div className="w-full lg:w-[35%] xl:w-[30%] h-full hidden lg:flex flex-col border-t lg:border-t-0 lg:border-l border-slate-200 bg-white">
           <div className="h-full flex flex-col w-full relative">
             
-            {/* AI Header - VS Code style */}
-            <div className="bg-[#1e1e1e] shrink-0 border-b border-[#3c3c3c]">
-              <div className="flex items-center gap-0 border-b border-[#3c3c3c]">
-                <div className="px-4 py-2.5 border-r border-[#3c3c3c] flex items-center gap-2 bg-[#252526]">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[12px] text-slate-300 font-medium">AI Co-pilot</span>
-                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full ml-1 animate-pulse" />
+            {/* Premium AI Header */}
+            <div className="bg-white shrink-0 border-b border-slate-100 shadow-sm z-10">
+              <div className="p-5 flex items-center gap-3">
+                <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center border border-teal-100 relative shadow-inner">
+                  <Sparkles className="w-5 h-5 text-teal-600" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm" />
                 </div>
-                <div className="px-3 py-2.5 flex items-center gap-2">
-                  <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="text-[11px] text-slate-500">Ask anything about your project</span>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-[15px] tracking-tight">Project Guide AI</h3>
+                  <p className="text-[11px] font-semibold text-teal-600 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-pulse" /> Online & Ready
+                  </p>
                 </div>
               </div>
               {/* Context strip */}
               {selectedStep && (
-                <div className="px-4 py-2 flex items-center gap-2 bg-[#252526]">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-wider">Context:</span>
-                  <span className="text-[11px] text-blue-400 font-medium truncate">{selectedStep.title}</span>
+                <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex-shrink-0">Context</span>
+                  <span className="text-[12px] font-semibold text-slate-700 truncate">{selectedStep.title}</span>
                 </div>
               )}
             </div>
 
             {/* AI Messages Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5 bg-white scrollbar-thin scrollbar-thumb-slate-200">
+            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-6 bg-[#fafafa] scrollbar-thin scrollbar-thumb-slate-200">
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -819,10 +830,10 @@ export default function ProjectWorkspace() {
                   
                   <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
                     <div
-                      className={`rounded-xl ${message.role === "user" ? "rounded-tr-sm" : "rounded-tl-sm"} p-3.5 shadow-sm text-[13px] leading-relaxed font-medium ${
+                      className={`rounded-2xl p-4 shadow-sm text-[14px] leading-relaxed font-medium ${
                         message.role === "assistant"
-                          ? "bg-slate-50 text-slate-800 border border-slate-200"
-                          : "bg-slate-900 text-white"
+                          ? "bg-white text-slate-800 border border-slate-200 rounded-tl-sm shadow-[0_2px_10px_rgba(0,0,0,0.02)]"
+                          : "bg-gradient-to-br from-teal-500 to-emerald-500 text-white rounded-tr-sm shadow-emerald-500/20"
                       }`}
                     >
                       <p className="whitespace-pre-wrap">
@@ -860,41 +871,38 @@ export default function ProjectWorkspace() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Actions - VS Code command palette style */}
-            <div className="bg-[#252526] border-t border-[#3c3c3c] px-3 py-2 flex flex-col gap-2">
-              <div className="grid grid-cols-2 gap-1.5">
+            {/* Premium Quick Actions */}
+            <div className="bg-slate-50 border-t border-slate-200 p-4 shrink-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 px-1">Suggested Prompts</p>
+              <div className="flex flex-wrap gap-2">
                 {[
-                  { label: 'Help on this task', icon: <HelpCircle className="w-3 h-3" />, prompt: `Help me with: ${selectedStep?.tasks.find(t=>!t.completed)?.text || 'current task'}` },
-                  { label: 'Show example code', icon: <Code2 className="w-3 h-3" />, prompt: 'Show me a code example for this task' },
-                  { label: 'Explain concept', icon: <BookOpen className="w-3 h-3" />, prompt: `Explain the concept behind: ${selectedStep?.title}` },
-                  { label: 'I am stuck', icon: <Coffee className="w-3 h-3" />, prompt: `I'm stuck on: ${selectedStep?.tasks.find(t=>!t.completed)?.text}. Give me a hint` },
-                  { label: 'My progress', icon: <TrendingUp className="w-3 h-3" />, fn: getProgressInsights },
-                  { label: 'Smart hint', icon: <Lightbulb className="w-3 h-3" />, fn: getSmartHints },
+                  { label: 'Help on task', icon: <HelpCircle className="w-3.5 h-3.5" />, prompt: `Help me with: ${selectedStep?.tasks.find(t=>!t.completed)?.text || 'current task'}` },
+                  { label: 'Show code', icon: <Code2 className="w-3.5 h-3.5" />, prompt: 'Show me a code example for this task' },
+                  { label: 'Explain', icon: <BookOpen className="w-3.5 h-3.5" />, prompt: `Explain the concept behind: ${selectedStep?.title}` },
+                  { label: 'I am stuck', icon: <Coffee className="w-3.5 h-3.5" />, prompt: `I'm stuck on: ${selectedStep?.tasks.find(t=>!t.completed)?.text}. Give me a hint` },
                 ].map((a, i) => (
-                  <button key={i} onClick={() => { if (a.fn) { a.fn(); } else { setInputMessage(a.prompt!); setTimeout(() => inputRef.current?.focus(), 10); } }}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#2d2d2d] hover:bg-[#37373d] border border-[#3c3c3c] rounded text-[10px] text-slate-300 font-medium transition-colors text-left">
-                    <span className="text-emerald-400">{a.icon}</span>{a.label}
+                  <button key={i} onClick={() => { setInputMessage(a.prompt!); setTimeout(() => inputRef.current?.focus(), 10); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-200 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-teal-700 transition-all shadow-sm">
+                    {a.icon} {a.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Input - VS Code terminal style */}
-            <div className="p-3 bg-[#1e1e1e] border-t border-[#3c3c3c] shrink-0">
-              <div className="flex items-center gap-2 bg-[#3c3c3c] rounded border border-[#555] focus-within:border-blue-500 transition-colors">
-                <span className="text-emerald-400 text-[12px] font-mono pl-3 select-none">›</span>
+            {/* Premium Input */}
+            <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+              <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1.5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all shadow-inner">
                 <input ref={inputRef} type="text" value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask your AI co-pilot..."
-                  className="flex-1 bg-transparent border-none focus:outline-none text-[13px] text-slate-200 placeholder:text-slate-500 py-2 font-mono"
+                  className="flex-1 bg-transparent border-none focus:outline-none text-[14px] font-medium text-slate-800 placeholder:text-slate-400 px-3 py-2"
                 />
                 <button onClick={handleSendMessage} disabled={!inputMessage.trim()}
-                  className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-sm flex items-center justify-center transition-colors disabled:opacity-30 mr-1 flex-shrink-0">
-                  <Send className="w-3.5 h-3.5" />
+                  className="w-10 h-10 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white rounded-lg flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-teal-500/20 flex-shrink-0">
+                  <Send className="w-4 h-4 ml-0.5" />
                 </button>
               </div>
-              <p className="text-[10px] text-slate-600 mt-1.5 text-center">Enter to send · Shift+Enter for new line</p>
             </div>
 
           </div>
