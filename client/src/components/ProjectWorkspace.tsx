@@ -5,8 +5,8 @@ import {
   ArrowLeft, CheckCircle2, TrendingUp, Bell, ChevronRight,
   Circle, CheckCircle, Sparkles, Send, Lightbulb, FileText,
   Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
-  Flame, Trophy, Play, SkipForward, MessageSquare, Coffee,
-  Star, Target, Clock, ChevronDown, FolderOpen, Folder
+  Flame, Play, MessageSquare, Coffee,
+  Star, Target, Clock, FolderOpen
 } from "lucide-react";
 
 // Task type detection from task text
@@ -621,7 +621,6 @@ export default function ProjectWorkspace() {
                     </button>
                   )}
                 </div>
-              </div>
               </div>
 
               <div className="space-y-4">
