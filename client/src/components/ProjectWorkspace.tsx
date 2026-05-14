@@ -49,13 +49,6 @@ function Card({ children, className, ...props }: any) {
   );
 }
 
-function Badge({ children, className, ...props }: any) {
-  return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${className || ''}`} {...props}>
-      {children}
-    </span>
-  );
-}
 
 interface Step {
   id: string;
