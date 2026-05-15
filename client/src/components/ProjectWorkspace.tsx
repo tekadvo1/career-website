@@ -5,7 +5,8 @@ import {
   ArrowLeft, CheckCircle2, Bell, ChevronRight,
   Circle, CheckCircle, Sparkles, Send, FileText,
   Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
-  Flame, Play, Coffee, Target, Clock
+  Flame, Play, Coffee, Target, Clock, Loader2, LayoutDashboard,
+  ChevronDown, ChevronUp, DownloadCloud
 } from "lucide-react";
 
 // Task type detection from task text
@@ -105,6 +106,14 @@ export default function ProjectWorkspace() {
   const [showRightSidebar, setShowRightSidebar] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   
+  // New fancy features state
+  const [verifyingTasks, setVerifyingTasks] = useState<Record<string, { status: 'running' | 'success', logs: string[] }>>({});
+  const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
+  const [subTaskProgress, setSubTaskProgress] = useState<Record<string, Record<string, boolean>>>({});
+  const [focusMode, setFocusMode] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(25 * 60);
+  const [timerActive, setTimerActive] = useState(false);
+
   const [totalXP, setTotalXP] = useState(0);
   const [level, setLevel] = useState(1);
   
@@ -357,6 +366,72 @@ export default function ProjectWorkspace() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Timer logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timerActive && timerSeconds > 0) {
+      interval = setInterval(() => {
+        setTimerSeconds(prev => prev - 1);
+      }, 1000);
+    } else if (timerSeconds === 0) {
+      setTimerActive(false);
+      // Could play a chime here
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timerSeconds]);
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const simulateVerification = async (stepId: string, taskId: string) => {
+    setVerifyingTasks(prev => ({ ...prev, [taskId]: { status: 'running', logs: ['> Initializing environment...'] } }));
+    
+    const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+    
+    await delay(600);
+    setVerifyingTasks(prev => ({
+      ...prev,
+      [taskId]: { status: 'running', logs: [...prev[taskId].logs, '> Checking file structure...'] }
+    }));
+    
+    await delay(800);
+    setVerifyingTasks(prev => ({
+      ...prev,
+      [taskId]: { status: 'running', logs: [...prev[taskId].logs, '> Running unit tests (2/2 passed)...'] }
+    }));
+
+    await delay(700);
+    setVerifyingTasks(prev => ({
+      ...prev,
+      [taskId]: { status: 'success', logs: [...prev[taskId].logs, '✅ Verification complete. Code accepted.'] }
+    }));
+
+    await delay(1000);
+    handleTaskToggle(stepId, taskId);
+    setVerifyingTasks(prev => {
+      const copy = { ...prev };
+      delete copy[taskId];
+      return copy;
+    });
+  };
+
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }));
+  };
+
+  const toggleSubTask = (taskId: string, subId: string) => {
+    setSubTaskProgress(prev => {
+      const taskProgress = prev[taskId] || {};
+      return {
+        ...prev,
+        [taskId]: { ...taskProgress, [subId]: !taskProgress[subId] }
+      };
+    });
+  };
+
   // Proactive "Are you stuck?" Hint
   useEffect(() => {
     if (!selectedTaskId) return;
@@ -541,6 +616,10 @@ export default function ProjectWorkspace() {
             <span className="flex items-center gap-2"><Target className="w-3.5 h-3.5 text-emerald-500" /> {progressPercentage}% Completed</span>
           </div>
           <div className="flex items-center gap-4 text-[12px] font-bold">
+            <button onClick={() => setTimerActive(!timerActive)} className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all ${timerActive ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-sm animate-pulse' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+              <Clock className="w-3.5 h-3.5" />
+              {formatTime(timerSeconds)}
+            </button>
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200"><Flame className="w-3.5 h-3.5" /> Level {level}</span>
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-50 text-yellow-600 border border-yellow-200"><Zap className="w-3.5 h-3.5" /> {totalXP} XP</span>
           </div>
@@ -571,12 +650,17 @@ export default function ProjectWorkspace() {
                   </p>
                 </div>
                 <div className="flex flex-col md:items-end gap-3 shrink-0">
-                  {steps.find(s => !s.completed) && (
-                    <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} 
-                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-md shadow-teal-500/20 transition-all hover:-translate-y-0.5">
-                      <Play className="w-4 h-4 fill-white" /> Continue Learning
+                  <div className="flex items-center gap-2">
+                    <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm">
+                      <DownloadCloud className="w-4 h-4 text-slate-500" /> Project Assets
                     </button>
-                  )}
+                    {steps.find(s => !s.completed) && (
+                      <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} 
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-md shadow-teal-500/20 transition-all hover:-translate-y-0.5">
+                        <Play className="w-4 h-4 fill-white" /> Continue Learning
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -658,40 +742,95 @@ export default function ProjectWorkspace() {
                             return (
                             <div
                               key={task.id}
-                              className={`group flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border transition-all ${
+                              className={`group flex flex-col p-4 rounded-xl border transition-all cursor-pointer ${
                                 task.completed ? 'bg-slate-50 border-slate-200 opacity-70' :
                                 isNext ? 'bg-white border-teal-300 shadow-md ring-1 ring-teal-50/50' :
                                 'bg-white border-slate-200 shadow-sm hover:border-slate-300'
                               }`}
+                              onClick={() => toggleTaskExpanded(task.id)}
                             >
-                              <div className="flex items-start gap-3 flex-1 min-w-0">
-                                {/* Checkbox */}
-                                <button className={`flex-shrink-0 mt-0.5 transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-400'}`}
-                                  onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }}>
-                                  {task.completed ? <CheckCircle2 className="w-5 h-5 fill-emerald-50" /> : <Circle className="w-5 h-5" />}
-                                </button>
+                              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                                {/* Left Side Checkbox/Status */}
+                                <div className="flex-shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
+                                  {verifyingTasks[task.id] ? (
+                                    verifyingTasks[task.id].status === 'running' 
+                                      ? <Loader2 className="w-5 h-5 text-teal-500 animate-spin" />
+                                      : <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                  ) : (
+                                    <button className={`transition-transform active:scale-90 ${task.completed ? 'text-emerald-500' : 'text-slate-300 hover:text-emerald-400'}`}
+                                      onClick={() => {
+                                        if (isNext && !task.completed) simulateVerification(step.id, task.id);
+                                        else handleTaskToggle(step.id, task.id);
+                                      }}>
+                                      {task.completed ? <CheckCircle2 className="w-5 h-5 fill-emerald-50" /> : <Circle className="w-5 h-5" />}
+                                    </button>
+                                  )}
+                                </div>
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                    {isNext && <span className="text-[10px] font-black text-white bg-gradient-to-r from-teal-500 to-emerald-500 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider flex items-center gap-1"><Play className="w-2.5 h-2.5 fill-white" /> Start Here</span>}
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${meta.color}`}>{meta.icon}{meta.type}</span>
-                                    <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{meta.time}</span>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      {isNext && <span className="text-[10px] font-black text-white bg-gradient-to-r from-teal-500 to-emerald-500 px-2 py-0.5 rounded shadow-sm uppercase tracking-wider flex items-center gap-1"><Play className="w-2.5 h-2.5 fill-white" /> Start Here</span>}
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 ${meta.color}`}>{meta.icon}{meta.type}</span>
+                                      <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" />{meta.time}</span>
+                                    </div>
+                                    <button className="text-slate-400 hover:text-slate-700">
+                                      {expandedTasks[task.id] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                    </button>
                                   </div>
                                   <p className={`text-[14px] font-semibold leading-snug ${task.completed ? 'line-through text-slate-500' : 'text-slate-800'}`}>{task.text}</p>
+                                  
+                                  {/* Verification Terminal Simulation */}
+                                  {verifyingTasks[task.id] && (
+                                    <div className="mt-3 bg-slate-900 rounded-lg p-3 overflow-hidden shadow-inner font-mono text-[11px] text-emerald-400 space-y-1">
+                                      {verifyingTasks[task.id].logs.map((log, i) => (
+                                        <p key={i} className="animate-in slide-in-from-left-2 opacity-90">{log}</p>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Subtasks View */}
+                                  {expandedTasks[task.id] && !task.completed && !verifyingTasks[task.id] && (
+                                    <div className="mt-4 pt-4 border-t border-slate-100 space-y-2 animate-in slide-in-from-top-2">
+                                      {["Review requirement docs", "Implement core logic", "Test edge cases"].map((subText, i) => {
+                                        const subId = `sub-${i}`;
+                                        const isChecked = subTaskProgress[task.id]?.[subId] || false;
+                                        return (
+                                          <div key={i} className="flex items-center gap-2" onClick={(e) => { e.stopPropagation(); toggleSubTask(task.id, subId); }}>
+                                            <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${isChecked ? 'bg-teal-500 border-teal-500 text-white' : 'border-slate-300 bg-slate-50'}`}>
+                                              {isChecked && <CheckCircle className="w-3 h-3" />}
+                                            </div>
+                                            <span className={`text-[12px] font-medium transition-all ${isChecked ? 'text-slate-400 line-through' : 'text-slate-600'}`}>{subText}</span>
+                                          </div>
+                                        );
+                                      })}
+                                      {isNext && (
+                                        <div className="pt-3 flex items-center justify-between">
+                                          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Complete all steps</span>
+                                          <button onClick={(e) => { e.stopPropagation(); simulateVerification(step.id, task.id); }} 
+                                            className="px-4 py-1.5 bg-slate-900 text-white text-[11px] font-bold rounded shadow-sm hover:bg-black transition-colors flex items-center gap-1.5">
+                                            <Terminal className="w-3 h-3" /> Run Checks
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Docs button (Hidden on mobile if expanded to save space, but visible otherwise) */}
+                                <div className="sm:block mt-2 sm:mt-0" onClick={(e) => e.stopPropagation()}>
+                                  <button onClick={() => handleTaskClick(task.id)}
+                                    className={`flex items-center justify-center gap-1.5 px-4 py-2 sm:w-auto w-full text-[12px] font-bold rounded-xl border transition-all ${
+                                      task.completed ? 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200 hover:text-slate-600' :
+                                      isNext ? 'bg-slate-900 border-slate-900 text-white hover:bg-black shadow-md' :
+                                      'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+                                    }`}>
+                                    <FileText className="w-3.5 h-3.5" />
+                                    {isNext ? 'Open Guide' : 'View Docs'}
+                                  </button>
                                 </div>
                               </div>
-
-                              {/* Docs button */}
-                              <button onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
-                                className={`flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2 sm:w-auto w-full text-[12px] font-bold rounded-xl border transition-all ${
-                                  task.completed ? 'bg-slate-100 border-slate-200 text-slate-400 hover:bg-slate-200 hover:text-slate-600' :
-                                  isNext ? 'bg-slate-900 border-slate-900 text-white hover:bg-black shadow-md' :
-                                  'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
-                                }`}>
-                                <FileText className="w-3.5 h-3.5" />
-                                {isNext ? 'Open Guide' : 'View Docs'}
-                              </button>
                             </div>
                           );})}
                         </div>
