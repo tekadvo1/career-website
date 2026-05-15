@@ -667,7 +667,18 @@ export default function ProjectWorkspace() {
                             <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Download Resources</p>
                           </div>
                           
-                          <button onClick={() => { showAlert("Starter code downloaded successfully", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                          <button onClick={() => { 
+                              const blob = new Blob(['// Boilerplate Code'], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = 'Starter_Code.zip';
+                              a.click();
+                              URL.revokeObjectURL(url);
+                              showAlert("Starter code downloaded successfully", "success"); 
+                              setShowAssetsMenu(false); 
+                            }} 
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><FileJson className="w-4 h-4 text-blue-600" /></div>
                             <div>
                               <p className="text-[13px] text-slate-800 font-semibold">Starter_Code.zip</p>
@@ -675,7 +686,18 @@ export default function ProjectWorkspace() {
                             </div>
                           </button>
                           
-                          <button onClick={() => { showAlert("Design files downloaded", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                          <button onClick={() => { 
+                              const blob = new Blob(['// Figma Mockups'], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = 'Figma_Designs.fig';
+                              a.click();
+                              URL.revokeObjectURL(url);
+                              showAlert("Design files downloaded", "success"); 
+                              setShowAssetsMenu(false); 
+                            }} 
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-pink-600" /></div>
                             <div>
                               <p className="text-[13px] text-slate-800 font-semibold">Figma_Designs.fig</p>
@@ -683,7 +705,18 @@ export default function ProjectWorkspace() {
                             </div>
                           </button>
                           
-                          <button onClick={() => { showAlert("Schema downloaded", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                          <button onClick={() => { 
+                              const blob = new Blob(['CREATE TABLE users (id SERIAL PRIMARY KEY);'], { type: 'text/plain' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = 'Database_Schema.sql';
+                              a.click();
+                              URL.revokeObjectURL(url);
+                              showAlert("Schema downloaded", "success"); 
+                              setShowAssetsMenu(false); 
+                            }} 
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><Database className="w-4 h-4 text-emerald-600" /></div>
                             <div>
                               <p className="text-[13px] text-slate-800 font-semibold">Database_Schema.sql</p>
