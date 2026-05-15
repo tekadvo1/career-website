@@ -5,7 +5,7 @@ import {
   ArrowLeft, CheckCircle2, Bell, ChevronRight,
   Circle, CheckCircle, Sparkles, Send, FileText,
   Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
-  Flame, Play, Coffee, Target, Clock, Loader2, LayoutDashboard,
+  Flame, Play, Coffee, Target, Clock, Loader2,
   ChevronDown, ChevronUp, DownloadCloud
 } from "lucide-react";
 
@@ -110,7 +110,6 @@ export default function ProjectWorkspace() {
   const [verifyingTasks, setVerifyingTasks] = useState<Record<string, { status: 'running' | 'success', logs: string[] }>>({});
   const [expandedTasks, setExpandedTasks] = useState<Record<string, boolean>>({});
   const [subTaskProgress, setSubTaskProgress] = useState<Record<string, Record<string, boolean>>>({});
-  const [focusMode, setFocusMode] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(25 * 60);
   const [timerActive, setTimerActive] = useState(false);
 
@@ -368,7 +367,7 @@ export default function ProjectWorkspace() {
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setTimeout>;
     if (timerActive && timerSeconds > 0) {
       interval = setInterval(() => {
         setTimerSeconds(prev => prev - 1);
