@@ -6,7 +6,7 @@ import {
   Circle, CheckCircle, Sparkles, Send, FileText,
   Code2, BookOpen, Terminal, GitBranch, HelpCircle, Zap,
   Flame, Play, Coffee, Target, Clock, Loader2,
-  ChevronDown, ChevronUp, DownloadCloud
+  ChevronDown, ChevronUp, DownloadCloud, FileJson, Image as ImageIcon, Database
 } from "lucide-react";
 
 // Task type detection from task text
@@ -112,6 +112,7 @@ export default function ProjectWorkspace() {
   const [subTaskProgress, setSubTaskProgress] = useState<Record<string, Record<string, boolean>>>({});
   const [timerSeconds, setTimerSeconds] = useState(25 * 60);
   const [timerActive, setTimerActive] = useState(false);
+  const [showAssetsMenu, setShowAssetsMenu] = useState(false);
 
   const [totalXP, setTotalXP] = useState(0);
   const [level, setLevel] = useState(1);
@@ -649,10 +650,50 @@ export default function ProjectWorkspace() {
                   </p>
                 </div>
                 <div className="flex flex-col md:items-end gap-3 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <button className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm">
+                  <div className="flex items-center gap-2 relative">
+                    <button 
+                      onClick={() => setShowAssetsMenu(!showAssetsMenu)}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm"
+                    >
                       <DownloadCloud className="w-4 h-4 text-slate-500" /> Project Assets
                     </button>
+                    
+                    {/* Assets Dropdown */}
+                    {showAssetsMenu && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowAssetsMenu(false)} />
+                        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 transform origin-top-right transition-all">
+                          <div className="px-4 pb-2 mb-2 border-b border-slate-100 flex items-center justify-between pt-1">
+                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Download Resources</p>
+                          </div>
+                          
+                          <button onClick={() => { showAlert("Starter code downloaded successfully", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center"><FileJson className="w-4 h-4 text-blue-600" /></div>
+                            <div>
+                              <p className="text-[13px] text-slate-800 font-semibold">Starter_Code.zip</p>
+                              <p className="text-[11px] text-slate-500">React + Vite Boilerplate</p>
+                            </div>
+                          </button>
+                          
+                          <button onClick={() => { showAlert("Design files downloaded", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-pink-600" /></div>
+                            <div>
+                              <p className="text-[13px] text-slate-800 font-semibold">Figma_Designs.fig</p>
+                              <p className="text-[11px] text-slate-500">UI Mockups & Assets</p>
+                            </div>
+                          </button>
+                          
+                          <button onClick={() => { showAlert("Schema downloaded", "success"); setShowAssetsMenu(false); }} className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center"><Database className="w-4 h-4 text-emerald-600" /></div>
+                            <div>
+                              <p className="text-[13px] text-slate-800 font-semibold">Database_Schema.sql</p>
+                              <p className="text-[11px] text-slate-500">PostgreSQL tables</p>
+                            </div>
+                          </button>
+                        </div>
+                      </>
+                    )}
+
                     {steps.find(s => !s.completed) && (
                       <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} 
                         className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-md shadow-teal-500/20 transition-all hover:-translate-y-0.5">
