@@ -630,12 +630,13 @@ export default function ProjectWorkspace() {
       {/* Main Content - Two Column Layout */}
       <div className="h-[calc(100dvh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
         
-        {/* Left Column - Pipeline Tasks & Split Pane */}
+        {/* Left Column - Pipeline Tasks & Guide */}
         <div className="w-full flex-1 min-h-0 lg:w-[65%] xl:w-[70%] flex relative overflow-hidden bg-[#fafafa]">
           
-          {/* Task List (shrinks when pane is open) */}
-          <div className={`h-full overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 transition-all duration-300 ${showGuideView && selectedTaskId ? 'hidden md:block w-full md:w-[45%] border-r border-slate-200 bg-white' : 'w-full'}`}>
-            <div className="max-w-4xl mx-auto">
+          {/* Task List */}
+          {!(showGuideView && selectedTaskId) && (
+            <div className="h-full w-full overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 animate-in fade-in duration-300">
+              <div className="max-w-4xl mx-auto">
               {/* Project header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
@@ -961,12 +962,13 @@ export default function ProjectWorkspace() {
                   </Card>
                 ))}
               </div>
+              </div>
             </div>
-          </div> {/* Close Task List */}
+          )} {/* Close Task List Condition */}
 
-          {/* Split Pane - Task Guide View */}
+          {/* Task Guide View */}
           {showGuideView && selectedTaskId && (
-            <div className="w-full md:w-[55%] h-full bg-white animate-in slide-in-from-right-8 duration-300 border-l border-slate-200 shadow-xl z-20 flex flex-col absolute md:relative inset-0 md:inset-auto">
+            <div className="w-full h-full bg-white animate-in slide-in-from-right-8 duration-300 z-20 flex flex-col">
               <TaskGuideView
                 task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
                 projectTitle={project?.title}
