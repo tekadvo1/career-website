@@ -9,7 +9,7 @@ import {
   Search, Flame, ChevronRight,
   Target, Clock, CheckCircle,
   Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2,
-  Rocket, Map, Globe, ArrowRight
+  Rocket, Map, Globe, ArrowRight, Activity
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -105,6 +105,7 @@ export default function Dashboard() {
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
   // Full snapshot forwarded to LiveActivityFeed
   const [liveSnapshot, setLiveSnapshot] = useState<DashSnapshot | null>(null);
+  const [showActivityDropdown, setShowActivityDropdown] = useState(false);
 
   const handleSaveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
@@ -440,6 +441,58 @@ export default function Dashboard() {
                 className="p-2 border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-500 transition-colors" title="Refresh AI projects">
                 <RotateCcw className="w-4 h-4" />
               </button>
+
+              {/* Activity Dropdown Toggle */}
+              <div className="relative">
+                <button onClick={() => setShowActivityDropdown(!showActivityDropdown)}
+                  className={`p-2 border rounded-lg transition-colors flex items-center justify-center ${showActivityDropdown ? 'bg-slate-100 border-slate-300 text-slate-900' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`} title="Activity & Stats">
+                  <Activity className="w-4 h-4" />
+                  {isLive && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />}
+                </button>
+
+                {showActivityDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowActivityDropdown(false)} />
+                    <div className="absolute right-0 mt-2 w-[320px] bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden transform origin-top-right transition-all flex flex-col gap-4 p-4 max-h-[80vh] overflow-y-auto">
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-emerald-500" /> Activity & Stats
+                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {isLive ? 'LIVE' : 'Connecting…'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <LiveActivityFeed
+                        isLive={isLive}
+                        snapshot={liveSnapshot}
+                        defaultCollapsed={false}
+                      />
+
+                      {/* Quick Stats card */}
+                      <div className="bg-slate-50 rounded-xl border border-slate-200 shadow-sm p-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Session Stats</p>
+                        <div className="space-y-2.5">
+                          {[
+                            { label: 'Total XP',    value: rtStats.totalXP,       color: 'text-amber-600',   bg: 'bg-amber-50'  },
+                            { label: 'Active',      value: rtStats.activeCount,    color: 'text-blue-600',    bg: 'bg-blue-50'   },
+                            { label: 'Completed',   value: rtStats.completedCount, color: 'text-emerald-600', bg: 'bg-emerald-50'},
+                            { label: 'Saved',       value: rtStats.savedCount,     color: 'text-purple-600',  bg: 'bg-purple-50' },
+                          ].map(s => (
+                            <div key={s.label} className="flex items-center justify-between">
+                              <span className="text-xs text-slate-500 font-medium">{s.label}</span>
+                              <span className={`text-xs font-black ${s.color} px-2 py-0.5 rounded-full ${s.bg}`}>{s.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Find Trending */}
               <button onClick={handleGenerateTrending} disabled={isTrendLoading}
@@ -828,39 +881,6 @@ export default function Dashboard() {
         </main>
         </div>{/* end flex flex-col min-h */}
         </div>{/* end inner scrollable column */}
-
-      {/* ── Live Activity Feed — sticky right panel on xl+ ─────────── */}
-      <div className="hidden xl:flex flex-col gap-4 w-[280px] flex-shrink-0 sticky top-[69px] h-fit self-start py-4 pr-6">
-        <LiveActivityFeed
-          isLive={isLive}
-          snapshot={liveSnapshot}
-          defaultCollapsed={false}
-        />
-
-        {/* Quick Stats card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Session Stats</p>
-          <div className="space-y-2.5">
-            {[
-              { label: 'Total XP',    value: rtStats.totalXP,       color: 'text-amber-600',   bg: 'bg-amber-50'  },
-              { label: 'Active',      value: rtStats.activeCount,    color: 'text-blue-600',    bg: 'bg-blue-50'   },
-              { label: 'Completed',   value: rtStats.completedCount, color: 'text-emerald-600', bg: 'bg-emerald-50'},
-              { label: 'Saved',       value: rtStats.savedCount,     color: 'text-purple-600',  bg: 'bg-purple-50' },
-            ].map(s => (
-              <div key={s.label} className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 font-medium">{s.label}</span>
-                <span className={`text-xs font-black ${s.color} px-2 py-0.5 rounded-full ${s.bg}`}>{s.value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-1.5">
-            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-            <span className="text-[9px] text-slate-400 font-medium">
-              {isLive ? `Synced ${lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Connecting…'}
-            </span>
-          </div>
-        </div>
-      </div>
       </div>{/* end row wrapper */}
 
       {/* ── Project Detail Modal ── */}
