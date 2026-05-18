@@ -113,6 +113,7 @@ export default function ProjectWorkspace() {
   const [timerSeconds, setTimerSeconds] = useState(25 * 60);
   const [timerActive, setTimerActive] = useState(false);
   const [showAssetsMenu, setShowAssetsMenu] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
 
   const [totalXP, setTotalXP] = useState(0);
   const [level, setLevel] = useState(1);
@@ -629,10 +630,12 @@ export default function ProjectWorkspace() {
       {/* Main Content - Two Column Layout */}
       <div className="h-[calc(100dvh-70px)] flex flex-col lg:flex-row max-w-[1800px] mx-auto overflow-hidden">
         
-        {/* Left Column - Pipeline Tasks */}
-        <div className="w-full flex-1 min-h-0 lg:w-[65%] xl:w-[70%] overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 bg-[#fafafa]">
-          {!showGuideView ? (
-            <div className="max-w-4xl">
+        {/* Left Column - Pipeline Tasks & Split Pane */}
+        <div className="w-full flex-1 min-h-0 lg:w-[65%] xl:w-[70%] flex relative overflow-hidden bg-[#fafafa]">
+          
+          {/* Task List (shrinks when pane is open) */}
+          <div className={`h-full overflow-y-auto px-6 lg:px-10 py-8 scrollbar-thin scrollbar-thumb-slate-200 transition-all duration-300 ${showGuideView && selectedTaskId ? 'hidden md:block w-full md:w-[45%] border-r border-slate-200 bg-white' : 'w-full'}`}>
+            <div className="max-w-4xl mx-auto">
               {/* Project header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
@@ -870,11 +873,26 @@ export default function ProjectWorkspace() {
                                         const subId = `sub-${i}`;
                                         const isChecked = subTaskProgress[task.id]?.[subId] || false;
                                         return (
-                                          <div key={i} className="flex items-center gap-2" onClick={(e) => { e.stopPropagation(); toggleSubTask(task.id, subId); }}>
-                                            <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${isChecked ? 'bg-teal-500 border-teal-500 text-white' : 'border-slate-300 bg-slate-50'}`}>
-                                              {isChecked && <CheckCircle className="w-3 h-3" />}
+                                          <div key={i} className="flex items-center justify-between group py-1">
+                                            <div className="flex items-center gap-2 cursor-pointer" onClick={(e) => { e.stopPropagation(); toggleSubTask(task.id, subId); }}>
+                                              <div className={`w-4 h-4 rounded flex items-center justify-center border transition-all ${isChecked ? 'bg-teal-500 border-teal-500 text-white' : 'border-slate-300 bg-slate-50'}`}>
+                                                {isChecked && <CheckCircle className="w-3 h-3" />}
+                                              </div>
+                                              <span className={`text-[12px] font-medium transition-all ${isChecked ? 'text-slate-400 line-through' : 'text-slate-600'}`}>{subText}</span>
                                             </div>
-                                            <span className={`text-[12px] font-medium transition-all ${isChecked ? 'text-slate-400 line-through' : 'text-slate-600'}`}>{subText}</span>
+                                            <button onClick={(e) => {
+                                                e.stopPropagation();
+                                                setInputMessage(`Help me with: ${subText}`);
+                                                setTimeout(() => {
+                                                  inputRef.current?.focus();
+                                                }, 50);
+                                              }}
+                                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-teal-50 rounded-md text-teal-600 flex items-center gap-1 cursor-pointer"
+                                              title="Ask AI about this step"
+                                            >
+                                              <Sparkles className="w-3 h-3" />
+                                              <span className="text-[10px] font-bold">Ask AI</span>
+                                            </button>
                                           </div>
                                         );
                                       })}
@@ -914,7 +932,11 @@ export default function ProjectWorkspace() {
                               e.stopPropagation();
                               const allCompleted = step.tasks.every((t) => t.completed);
                               if (allCompleted) {
-                                handleStepToggle(step.id);
+                                setShowLevelUp(true);
+                                setTimeout(() => {
+                                   setShowLevelUp(false);
+                                   handleStepToggle(step.id);
+                                }, 3000);
                               } else {
                                 showAlert("Please check off all tasks above to verify module completion.", "warning");
                               }
@@ -940,7 +962,11 @@ export default function ProjectWorkspace() {
                 ))}
               </div>
             </div>
-          ) : selectedTaskId ? (
+          </div> {/* Close Task List */}
+
+          {/* Split Pane - Task Guide View */}
+          {showGuideView && selectedTaskId && (
+            <div className="w-full md:w-[55%] h-full bg-white animate-in slide-in-from-right-8 duration-300 border-l border-slate-200 shadow-xl z-20 flex flex-col absolute md:relative inset-0 md:inset-auto">
               <TaskGuideView
                 task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
                 projectTitle={project?.title}
@@ -951,7 +977,8 @@ export default function ProjectWorkspace() {
                   handleBackToTasks();
                 }}
               />
-          ) : null}
+            </div>
+          )}
         </div>
 
         {/* Right Column - REAL TIME Co-Pilot */}
@@ -1081,6 +1108,27 @@ export default function ProjectWorkspace() {
         isOpen={showRightSidebar} 
         onClose={() => setShowRightSidebar(false)} 
       />
+
+      {/* Gamified Level Up Overlay */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="flex flex-col items-center animate-in zoom-in-50 duration-500">
+            <div className="w-32 h-32 bg-yellow-400 rounded-full flex items-center justify-center shadow-[0_0_100px_rgba(250,204,21,0.5)] mb-8 relative">
+              <Sparkles className="w-16 h-16 text-white animate-pulse" />
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="absolute w-2 h-2 bg-white rounded-full animate-ping" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, animationDelay: `${i * 0.2}s` }} />
+              ))}
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-4 drop-shadow-2xl text-center">MODULE VERIFIED!</h1>
+            <p className="text-xl md:text-2xl text-yellow-300 font-bold mb-8">+150 XP AWARDED</p>
+            <div className="flex gap-2">
+              <span className="w-3 h-3 bg-white rounded-full animate-bounce"></span>
+              <span className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+              <span className="w-3 h-3 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
