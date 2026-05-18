@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import ProjectSetupModal  from './ProjectSetupModal';
-import ProjectDetailModal from './ProjectDetailModal';
+import ProjectOnboardingWizard from './ProjectOnboardingWizard';
 import Sidebar from './Sidebar';
 import LiveActivityFeed from './LiveActivityFeed';
 import { getToken, getUser } from '../utils/auth';
@@ -94,7 +93,7 @@ export default function Dashboard() {
   const [isTrendLoading, setIsTrendLoading] = useState(false);
   const [searchTerm,    setSearchTerm]    = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [setupProject,    setSetupProject]    = useState<Project | null>(null);
+
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<'recommended'|'active'|'completed'|'saved'|'trending'|'undo'>('recommended');
   const [lastSync, setLastSync] = useState(new Date());
@@ -210,7 +209,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (location.state?.setupAiProject) {
-        setSetupProject(location.state.setupAiProject as Project);
+        setSelectedProject(location.state.setupAiProject as Project);
         navigate(location.pathname, { replace: true, state: { ...location.state, setupAiProject: undefined } });
     }
   }, [location.state?.setupAiProject, navigate, location.pathname]);
@@ -370,13 +369,7 @@ export default function Dashboard() {
     setSelectedProject(project);
   };
 
-  /* ── handle "Start This Project" CTA in ProjectDetailModal ──────────────── */
-  const handleStartProject = (project: Project) => {
-    // Always show the schedule setup first — user configures hours, days, OS
-    // then the AI plan generates, then they click Start to go to workspace
-    setSelectedProject(null);
-    setSetupProject(project);
-  };
+
 
   /* ─────────────────────────────────────────────────────────────────────────── */
   return (
@@ -608,7 +601,7 @@ export default function Dashboard() {
                         if (['active', 'completed'].includes(proj.status || '')) {
                            navigate('/project-workspace', { state: { project: proj, role: selectedRole } });
                         } else {
-                           handleStartProject(proj);
+                           setSelectedProject(proj);
                         }
                     }}
                       className="px-6 py-2.5 bg-white text-emerald-700 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 transition-all text-sm shadow-sm w-full md:w-auto">
@@ -883,23 +876,12 @@ export default function Dashboard() {
         </div>{/* end inner scrollable column */}
       </div>{/* end row wrapper */}
 
-      {/* ── Project Detail Modal ── */}
+      {/* ── Project Onboarding Wizard (replaces old Modals) ── */}
       {selectedProject && (
-        <ProjectDetailModal
+        <ProjectOnboardingWizard
           project={selectedProject}
           role={selectedRole}
           onClose={() => setSelectedProject(null)}
-          onStart={handleStartProject}
-        />
-      )}
-
-      {/* ── Setup Modal — completely independent state ── */}
-      {setupProject && (
-        <ProjectSetupModal
-          isOpen={true}
-          onClose={() => setSetupProject(null)}
-          project={setupProject}
-          role={selectedRole}
         />
       )}
 
