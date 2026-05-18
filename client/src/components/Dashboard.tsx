@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import ProjectSetupModal  from './ProjectSetupModal';
 import ProjectDetailModal from './ProjectDetailModal';
 import Sidebar from './Sidebar';
+import LiveActivityFeed from './LiveActivityFeed';
 import { getToken, getUser } from '../utils/auth';
 import {
   Search, Flame, ChevronRight,
@@ -51,9 +52,12 @@ interface JourneyData {
 interface DashSnapshot {
   projects: Project[];
   totalXP: number;
+  totalStreak: number;
   activeCount: number;
   completedCount: number;
   savedCount: number;
+  missions: Array<{ status: string; title?: string; name?: string; xp_reward?: number }>;
+  roadmapProgress: Array<{ role: string; topic_name: string }>;
   journey?: JourneyData;
   timestamp: string;
 }
@@ -99,6 +103,8 @@ export default function Dashboard() {
   const [deletePromptProject, setDeletePromptProject] = useState<Project | null>(null);
   // Journey state — sourced entirely from SSE snapshot (PostgreSQL), no localStorage
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
+  // Full snapshot forwarded to LiveActivityFeed
+  const [liveSnapshot, setLiveSnapshot] = useState<DashSnapshot | null>(null);
 
   const handleSaveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
@@ -245,6 +251,8 @@ export default function Dashboard() {
     });
     // Journey data from DB — no localStorage, no guessing
     if (snap.journey) setJourneyData(snap.journey);
+    // Forward full snapshot to LiveActivityFeed for diffing
+    setLiveSnapshot(snap);
     setLastSync(new Date());
   }, [selectedRole, _rawRole]);
 
@@ -375,14 +383,16 @@ export default function Dashboard() {
       {openMenuId && <div className="fixed inset-0 z-[45]" onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); }} />}
       <div className="z-50 shrink-0"><Sidebar activePage="dashboard" /></div>
 
-      <div className="flex-1 w-full flex flex-col min-h-0 relative overflow-y-auto">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${toast.ok ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
-          {toast.ok ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-          {toast.msg}
-        </div>
-      )}
+      <div className="flex-1 w-full flex min-h-0 relative">
+        {/* ── Main scrollable column ─────────────────────────────────── */}
+        <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
+        {/* Toast */}
+        {toast && (
+          <div className={`fixed top-4 right-4 z-[100] flex items-center gap-3 px-5 py-3 rounded-xl shadow-2xl text-white text-sm font-semibold animate-in slide-in-from-top-2 duration-300 ${toast.ok ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'}`}>
+            {toast.ok ? <CheckCircle className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            {toast.msg}
+          </div>
+        )}
 
       {/* ── HEADER ── */}
       <div className="bg-white border-b border-slate-200">
@@ -582,6 +592,15 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* ── Live Feed strip (mobile / medium — collapsible) ─────────── */}
+        <div className="xl:hidden max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <LiveActivityFeed
+            isLive={isLive}
+            snapshot={liveSnapshot}
+            defaultCollapsed={true}
+          />
         </div>
 
         {/* Project Grid */}
@@ -807,7 +826,42 @@ export default function Dashboard() {
             </div>
           )}
         </main>
+        </div>{/* end flex flex-col min-h */}
+        </div>{/* end inner scrollable column */}
+
+      {/* ── Live Activity Feed — sticky right panel on xl+ ─────────── */}
+      <div className="hidden xl:flex flex-col gap-4 w-[280px] flex-shrink-0 sticky top-[69px] h-fit self-start py-4 pr-6">
+        <LiveActivityFeed
+          isLive={isLive}
+          snapshot={liveSnapshot}
+          defaultCollapsed={false}
+        />
+
+        {/* Quick Stats card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Session Stats</p>
+          <div className="space-y-2.5">
+            {[
+              { label: 'Total XP',    value: rtStats.totalXP,       color: 'text-amber-600',   bg: 'bg-amber-50'  },
+              { label: 'Active',      value: rtStats.activeCount,    color: 'text-blue-600',    bg: 'bg-blue-50'   },
+              { label: 'Completed',   value: rtStats.completedCount, color: 'text-emerald-600', bg: 'bg-emerald-50'},
+              { label: 'Saved',       value: rtStats.savedCount,     color: 'text-purple-600',  bg: 'bg-purple-50' },
+            ].map(s => (
+              <div key={s.label} className="flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">{s.label}</span>
+                <span className={`text-xs font-black ${s.color} px-2 py-0.5 rounded-full ${s.bg}`}>{s.value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+            <span className="text-[9px] text-slate-400 font-medium">
+              {isLive ? `Synced ${lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Connecting…'}
+            </span>
+          </div>
+        </div>
       </div>
+      </div>{/* end row wrapper */}
 
       {/* ── Project Detail Modal ── */}
       {selectedProject && (
@@ -863,7 +917,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
