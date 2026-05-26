@@ -41,6 +41,8 @@ import GettingStarted from './components/GettingStarted';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
+import PaymentPage from './components/course/PaymentPage';
+import PaymentSuccessPage from './components/course/PaymentSuccessPage';
 import { getToken, getUser, clearSession } from './utils/auth';
 import ScrollToTop from './components/ScrollToTop';
 import WidgetDock from './components/WidgetDock';
@@ -182,6 +184,8 @@ function App() {
           {/* ── Public share links (no login needed) ─── */}
           <Route path="/p/:username"          element={<Profile isPublic={true} />} />
           <Route path="/portfolio/:username"  element={<Portfolio isPublic={true} />} />
+          <Route path="/pay/:code"            element={<PaymentPage />} />
+          <Route path="/pay/:code/success"    element={<PaymentSuccessPage />} />
 
           {/* ── Protected app features (login required) ──────────────────── */}
           <Route path="/onboarding"              element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />

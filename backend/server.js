@@ -51,6 +51,11 @@ app.use(cors({
   credentials: true,
 }));
 
+// Invoice routes containing the Stripe webhook handler
+const invoiceRoutes = require('./routes/invoiceRoutes');
+// We must parse the Stripe webhook as raw body BEFORE express.json()
+app.post('/api/pay/webhook', express.raw({ type: 'application/json' }), invoiceRoutes.stripeWebhookHandler);
+
 app.use(express.json());
 
 // Passport middleware
@@ -100,6 +105,8 @@ const contactRoutes = require('./routes/contactRoutes');
 const projectStructureRoutes = require('./routes/projectStructureRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
+const courseRoutes = require('./routes/courseRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 const { adminProtect } = require('./middleware/adminMiddleware');
@@ -119,7 +126,11 @@ app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
 app.use('/api/workspaces',  protect, workspaceRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
+app.use('/api/admin/courses', adminProtect, courseRoutes);
+app.use('/api/admin/customers', adminProtect, customerRoutes);
+app.use('/api/admin/invoices', adminProtect, invoiceRoutes.adminRouter);
 app.use('/api/admin',       adminProtect, adminRoutes);  // Uses admin JWT, NOT user JWT
+app.use('/api/pay',         invoiceRoutes.publicRouter);
 
 // Database schema update for caching (allow NULL user_id)
 const updateSchema = async () => {
@@ -292,6 +303,62 @@ const updateSchema = async () => {
       INSERT INTO sys_maintenance_config (setting_key, setting_value)
       VALUES ('maintenance_mode', '{"active": false, "message": "Down for maintenance. We will be back soon."}'::jsonb)
       ON CONFLICT (setting_key) DO NOTHING;
+    `);
+
+    // --- Admin Course Sales Portal Tables ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(30),
+        notes TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        price DECIMAL(10, 2) NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id SERIAL PRIMARY KEY,
+        invoice_code VARCHAR(50) UNIQUE NOT NULL,
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        customer_name VARCHAR(255) NOT NULL,
+        customer_email VARCHAR(255),
+        customer_phone VARCHAR(30),
+        total_amount DECIMAL(10, 2) NOT NULL,
+        payment_method VARCHAR(50),
+        payment_status VARCHAR(50) DEFAULT 'pending',
+        stripe_session_id VARCHAR(255),
+        paid_at TIMESTAMP WITH TIME ZONE,
+        notes TEXT,
+        created_by INTEGER REFERENCES users(id),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS invoice_items (
+        id SERIAL PRIMARY KEY,
+        invoice_id INTEGER REFERENCES invoices(id) ON DELETE CASCADE,
+        course_id INTEGER REFERENCES courses(id) ON DELETE SET NULL,
+        course_title VARCHAR(255) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        quantity INTEGER DEFAULT 1
+      );
     `);
 
     client.release();

@@ -13,6 +13,10 @@ import {
 } from 'recharts';
 import { apiFetch } from '../utils/apiFetch';
 
+import CustomersTab from './course/CustomersTab';
+import CoursesTab from './course/CoursesTab';
+import InvoicesTab from './course/InvoicesTab';
+
 const ADMIN_TOKEN_KEY = 'findstreak_admin_token';
 
 const COLORS = ['#10b981', '#14b8a6', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#0ea5e9', '#84cc16', '#f97316'];
@@ -461,6 +465,9 @@ export default function AdminDashboard() {
     { id: 'activity', label: 'Live Activity', icon: Activity },
     { id: 'broadcast', label: 'Broadcast', icon: Mail },
     { id: 'health', label: 'System', icon: Server },
+    { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'courses', label: 'Courses', icon: BookOpen },
+    { id: 'invoices', label: 'Invoices', icon: Activity },
   ];
 
   return (
@@ -1083,6 +1090,15 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* ── CUSTOMERS ── */}
+        {activeTab === 'customers' && <CustomersTab />}
+
+        {/* ── COURSES ── */}
+        {activeTab === 'courses' && <CoursesTab />}
+
+        {/* ── INVOICES ── */}
+        {activeTab === 'invoices' && <InvoicesTab />}
 
       </div>
     </div>

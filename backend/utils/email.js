@@ -194,5 +194,52 @@ const sendDailyScheduleEmail = async ({ email, name }) => {
   }
 };
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendContactEmail, sendWeeklyStreakEmail, sendDailyScheduleEmail };
+const sendPaymentLinkEmail = async (email, name, invoiceCode, totalAmount) => {
+  if (!resend) {
+    console.warn("Skipping payment email: RESEND_API_KEY is missing.");
+    return false;
+  }
+
+  try {
+    const paymentUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pay/${invoiceCode}`;
+
+    const { error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM || 'FindStreak <onboarding@resend.dev>',
+      to: [email],
+      subject: `Action Required: Payment for FindStreak Courses`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+          <h2 style="color: #0d9488; text-align: center;">Course Payment Link</h2>
+          <div style="text-align: center; margin: 30px 0;">
+             <p style="font-size: 16px; color: #475569; margin-bottom: 15px;">Hi ${name},</p>
+             <p style="font-size: 16px; color: #475569; margin-bottom: 15px;">Please complete your payment for your selected FindStreak courses.</p>
+             <h1 style="font-size: 36px; color: #0f172a; margin: 10px 0;">$${totalAmount}</h1>
+          </div>
+          <div style="text-align: center; margin-top: 30px;">
+             <a href="${paymentUrl}" style="display: inline-block; padding: 14px 28px; background-color: #0d9488; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Pay Now</a>
+          </div>
+          <p style="margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">You can pay securely via Credit/Debit card or Bank Transfer.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Error sending payment email:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Payment email failed:', err);
+    return false;
+  }
+};
+
+module.exports = { 
+  sendVerificationEmail, 
+  sendPasswordResetEmail, 
+  sendContactEmail, 
+  sendWeeklyStreakEmail, 
+  sendDailyScheduleEmail,
+  sendPaymentLinkEmail
+};
 
