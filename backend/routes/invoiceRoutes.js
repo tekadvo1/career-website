@@ -53,7 +53,7 @@ adminRouter.post('/', async (req, res) => {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
         `, [
             invoiceCode, customer.id, customer.full_name, customer.email,
-            customer.phone, totalAmount, notes, req.user.id
+            customer.phone, totalAmount, notes, req.user?.id || null
         ]);
         const invoice = invRes.rows[0];
         

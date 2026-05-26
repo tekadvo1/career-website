@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
         const { full_name, email, phone, notes } = req.body;
         const result = await pool.query(
             'INSERT INTO customers (full_name, email, phone, notes, created_by) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [full_name, email, phone, notes, req.user.id]
+            [full_name, email, phone, notes, req.user?.id || null]
         );
         res.status(201).json({ success: true, customer: result.rows[0] });
     } catch (err) {
