@@ -28,8 +28,14 @@ export const apiFetch = async (url: string, options: RequestInit = {}): Promise<
   // We only attach the JWT token if the request is going to our own backend (e.g., relative URLs starting with '/' or same origin)
   const isLocalRequest = url.startsWith('/') || url.startsWith(window.location.origin);
 
-  if (token && isLocalRequest && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (isLocalRequest && !headers['Authorization']) {
+    const adminToken = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('findstreak_admin_token') : null;
+    
+    if (url.includes('/api/admin') && adminToken) {
+      headers['Authorization'] = `Bearer ${adminToken}`;
+    } else if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
   }
 
   const response = await fetch(url, { ...options, headers });
