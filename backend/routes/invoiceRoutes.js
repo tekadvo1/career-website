@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../config/db');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 const crypto = require('crypto');
 const { sendPaymentLinkEmail } = require('../utils/email');
 
