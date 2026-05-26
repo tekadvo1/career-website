@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Tag } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Tag, Sparkles } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch';
 import { useAlert } from '../../contexts/AlertContext';
 
@@ -25,6 +25,33 @@ export default function CoursesTab() {
   const [price, setPrice] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
+
+  const generateDescription = async () => {
+    if (!title.trim()) {
+      showAlert('Please enter a course title first to generate a description', 'warning');
+      return;
+    }
+    setGeneratingAi(true);
+    try {
+      const res = await apiFetch('/api/admin/courses/generate-description', {
+        method: 'POST',
+        body: JSON.stringify({ title }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setDescription(data.description);
+        showAlert('Description generated successfully!', 'success');
+      } else {
+        showAlert(data.error || 'Failed to generate description', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showAlert('Error generating description', 'error');
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
 
   useEffect(() => {
     fetchCourses();
@@ -178,8 +205,19 @@ export default function CoursesTab() {
                 <input required type="number" min="0" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" placeholder="e.g. 199.99" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Description</label>
-                <textarea rows={4} value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none" placeholder="Describe the course..." />
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-sm font-semibold text-slate-700">Description</label>
+                  <button 
+                    type="button" 
+                    onClick={generateDescription}
+                    disabled={generatingAi}
+                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors border border-emerald-200 disabled:opacity-50"
+                  >
+                    <Sparkles className={`w-3 h-3 ${generatingAi ? 'animate-pulse' : ''}`} />
+                    {generatingAi ? 'Generating...' : 'AI Generate'}
+                  </button>
+                </div>
+                <textarea rows={6} value={description} onChange={e => setDescription(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none" placeholder="Describe the course..." />
               </div>
               
               <div className="flex items-center gap-2 mt-2">
