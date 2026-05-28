@@ -7,6 +7,29 @@ const { sendPaymentLinkEmail } = require('../utils/email');
 const adminRouter = express.Router();
 const publicRouter = express.Router();
 
+const invoiceClients = new Map();
+
+function addInvoiceClient(code, res) {
+    if (!invoiceClients.has(code)) invoiceClients.set(code, new Set());
+    invoiceClients.get(code).add(res);
+}
+
+function removeInvoiceClient(code, res) {
+    const set = invoiceClients.get(code);
+    if (!set) return;
+    set.delete(res);
+    if (set.size === 0) invoiceClients.delete(code);
+}
+
+function broadcastInvoice(code, event, data) {
+    const set = invoiceClients.get(code);
+    if (!set || set.size === 0) return;
+    const msg = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    set.forEach(res => {
+        try { res.write(msg); } catch (_) {}
+    });
+}
+
 // Generate a random 6-character string for invoice codes
 const generateCode = () => crypto.randomBytes(3).toString('hex');
 
@@ -91,6 +114,11 @@ adminRouter.put('/:id/confirm', async (req, res) => {
             WHERE id = $1 AND payment_status = 'pending' 
             RETURNING *
         `, [req.params.id]);
+        
+        if (result.rows.length > 0) {
+            broadcastInvoice(result.rows[0].invoice_code, 'update', { status: 'paid' });
+        }
+        
         res.json({ success: true, invoice: result.rows[0] });
     } catch (err) {
         console.error(err);
@@ -107,6 +135,11 @@ adminRouter.put('/:id/cancel', async (req, res) => {
             WHERE id = $1 AND payment_status = 'pending' 
             RETURNING *
         `, [req.params.id]);
+        
+        if (result.rows.length > 0) {
+            broadcastInvoice(result.rows[0].invoice_code, 'update', { status: 'cancelled' });
+        }
+        
         res.json({ success: true, invoice: result.rows[0] });
     } catch (err) {
         console.error(err);
@@ -139,6 +172,28 @@ publicRouter.get('/:code', async (req, res) => {
     }
 });
 
+// GET /api/pay/:code/stream
+publicRouter.get('/:code/stream', (req, res) => {
+    const { code } = req.params;
+    
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    addInvoiceClient(code, res);
+
+    const ping = setInterval(() => {
+        try { res.write(`: ping\n\n`); } catch (_) { clearInterval(ping); }
+    }, 25000);
+
+    req.on('close', () => {
+        clearInterval(ping);
+        removeInvoiceClient(code, res);
+    });
+});
+
 // POST /api/pay/:code/stripe
 publicRouter.post('/:code/stripe', async (req, res) => {
     try {
@@ -152,7 +207,7 @@ publicRouter.post('/:code/stripe', async (req, res) => {
         if (invoice.payment_status !== 'pending') return res.status(400).json({ error: 'Invoice already paid or cancelled' });
 
         const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
+            payment_method_types: ['card', 'us_bank_account'],
             line_items: [
                 {
                     price_data: {
@@ -211,6 +266,7 @@ const stripeWebhookHandler = async (req, res) => {
                 WHERE invoice_code = $1
             `, [invoiceCode]);
             console.log(`Invoice ${invoiceCode} marked as paid via Stripe.`);
+            broadcastInvoice(invoiceCode, 'update', { status: 'paid' });
         }
     }
     

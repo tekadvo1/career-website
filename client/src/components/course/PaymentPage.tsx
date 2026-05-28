@@ -36,7 +36,27 @@ export default function PaymentPage() {
       }
     };
     
-    if (code) fetchInvoice();
+    if (code) {
+      fetchInvoice();
+      
+      // Set up real-time SSE listener
+      const eventSource = new EventSource(`/api/pay/${code}/stream`);
+      
+      eventSource.addEventListener('update', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.status === 'paid' || data.status === 'cancelled') {
+             setInvoice(prev => prev ? { ...prev, payment_status: data.status } : null);
+          }
+        } catch (err) {
+          console.error('Error parsing SSE data:', err);
+        }
+      });
+
+      return () => {
+        eventSource.close();
+      };
+    }
   }, [code]);
 
   const handleStripePayment = async () => {
