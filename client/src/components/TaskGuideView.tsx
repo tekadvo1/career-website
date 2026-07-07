@@ -75,7 +75,7 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
   if (!guide) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
       
       {/* Top Navigation banner above hero */}
       <div className="px-6 py-4 border-b border-slate-100">

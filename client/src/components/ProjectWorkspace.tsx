@@ -968,7 +968,7 @@ export default function ProjectWorkspace() {
 
           {/* Task Guide View */}
           {showGuideView && selectedTaskId && (
-            <div className="w-full h-full bg-white animate-in slide-in-from-right-8 duration-300 z-20 flex flex-col">
+            <div className="w-full h-full bg-white animate-in slide-in-from-right-8 duration-300 z-20 flex flex-col overflow-y-auto">
               <TaskGuideView
                 task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
                 projectTitle={project?.title}
