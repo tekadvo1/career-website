@@ -160,10 +160,10 @@ export default function Onboarding() {
     <div className="min-h-[100dvh] w-full overflow-y-auto bg-[#f8fafc] text-slate-800 flex items-start justify-center py-6 md:py-12 px-4">
       {isReturningUser && <Sidebar activePage="onboarding" />}
       
-      <div className="w-full max-w-5xl bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-500">
+      <div className="w-full max-w-4xl bg-white rounded-[24px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-500">
         
         {/* Header Hero */}
-        <div className="bg-gradient-to-br from-teal-700 via-emerald-700 to-teal-900 px-6 py-10 md:py-16 text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-teal-700 via-emerald-700 to-teal-900 px-6 py-8 md:py-10 text-center relative overflow-hidden">
           {/* Decorative background shapes */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
             <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-teal-400 blur-3xl mix-blend-overlay"></div>
@@ -175,19 +175,19 @@ export default function Onboarding() {
               <Sparkles className="w-3.5 h-3.5 mr-2" />
               Career Architect
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
+            <h1 className="text-2xl md:text-4xl font-extrabold text-white mb-3 tracking-tight">
               Where are you heading?
             </h1>
-            <p className="text-teal-50 text-sm md:text-base max-w-xl mx-auto font-medium leading-relaxed">
+            <p className="text-teal-50 text-xs md:text-sm max-w-xl mx-auto font-medium leading-relaxed">
               Tell us your target role or upload your resume. We'll use AI to build a personalized, step-by-step roadmap to get you there.
             </p>
           </div>
         </div>
 
-        <div className="p-6 md:p-10 lg:p-12 space-y-12">
+        <div className="p-5 md:p-8 space-y-8">
           
           {/* SECTION 1: ROLE OR RESUME */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative">
             {/* Desktop Divider */}
             <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white border border-slate-100 rounded-full items-center justify-center text-[11px] font-black text-slate-300 uppercase z-10 shadow-sm">
               OR
@@ -195,7 +195,7 @@ export default function Onboarding() {
 
             {/* LEFT: Role Input */}
             <div className={`transition-all duration-500 ${file ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
-              <h2 className="text-[13px] font-bold text-slate-400 mb-3 uppercase tracking-widest">
+              <h2 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">
                 Option 1: Type a Role
               </h2>
               <div className="relative group">
@@ -204,7 +204,7 @@ export default function Onboarding() {
                 </div>
                 <input
                   type="text"
-                  className="block w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-2xl text-base bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all shadow-sm"
+                  className="block w-full pl-10 pr-4 py-3 border-2 border-slate-100 rounded-xl text-sm bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all shadow-sm"
                   placeholder="e.g. Software Engineer, Product Manager"
                   value={role}
                   onChange={(e) => {
@@ -256,13 +256,13 @@ export default function Onboarding() {
 
             {/* RIGHT: Resume Upload */}
             <div className={`transition-all duration-500 ${role && !file ? 'opacity-40 grayscale' : 'opacity-100'}`}>
-              <h2 className="text-[13px] font-bold text-slate-400 mb-3 uppercase tracking-widest flex items-center justify-between">
+              <h2 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest flex items-center justify-between">
                 Option 2: Upload Resume
                 {file && <span className="text-teal-500 text-[10px] bg-teal-50 px-2 py-0.5 rounded-full normal-case">Active</span>}
               </h2>
               
               <div 
-                className={`w-full min-h-[120px] border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden ${
+                className={`w-full min-h-[100px] border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden ${
                   isDragging 
                     ? 'border-teal-500 bg-teal-50 scale-[1.02]' 
                     : file 
@@ -278,27 +278,27 @@ export default function Onboarding() {
                 
                 {file ? (
                   <div className="text-center z-10 w-full">
-                    <div className="inline-flex p-3 bg-white shadow-sm border border-emerald-100 rounded-full mb-3">
-                      <FileText className="w-6 h-6 text-emerald-600" />
+                    <div className="inline-flex p-2 bg-white shadow-sm border border-emerald-100 rounded-full mb-2">
+                      <FileText className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <p className="text-sm font-bold text-slate-800 mb-1 truncate px-4">{file.name}</p>
-                    <p className="text-[11px] font-semibold text-slate-500 mb-3">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p className="text-xs font-bold text-slate-800 mb-1 truncate px-4">{file.name}</p>
+                    <p className="text-[10px] font-semibold text-slate-500 mb-2">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                     <button 
                       onClick={(e) => { e.stopPropagation(); setFile(null); setAnalysisData(null); }}
-                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center"
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-3 py-1 rounded-lg text-[11px] font-bold transition-colors inline-flex items-center"
                     >
-                      <X className="w-3.5 h-3.5 mr-1.5" /> Remove File
+                      <X className="w-3 h-3 mr-1.5" /> Remove File
                     </button>
                   </div>
                 ) : (
                   <div className="text-center pointer-events-none">
-                    <div className="inline-flex p-3 bg-white shadow-sm border border-slate-100 rounded-full mb-3 text-slate-400">
-                      <Upload className="w-6 h-6" />
+                    <div className="inline-flex p-2 bg-white shadow-sm border border-slate-100 rounded-full mb-2 text-slate-400">
+                      <Upload className="w-5 h-5" />
                     </div>
-                    <p className="text-sm font-bold text-slate-700 mb-1">
+                    <p className="text-xs font-bold text-slate-700 mb-1">
                       Drag & Drop your resume
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-[11px] text-slate-400">
                       PDF or DOCX up to 5MB
                     </p>
                   </div>
@@ -317,20 +317,20 @@ export default function Onboarding() {
 
           {/* SECTION 2: PATH SELECTION (ONLY IF FILE UPLOADED) */}
           <div className={`transition-all duration-700 ease-in-out origin-top ${file ? 'opacity-100 max-h-[1000px] scale-y-100' : 'opacity-0 max-h-0 scale-y-0 overflow-hidden hidden'}`}>
-            <div className="pt-8 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-6">
+            <div className="pt-6 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-xl font-extrabold text-slate-900">How do you want to grow?</h2>
-                  <p className="text-sm text-slate-500 mt-1">Based on your resume, pick a learning direction.</p>
+                  <h2 className="text-lg font-extrabold text-slate-900">How do you want to grow?</h2>
+                  <p className="text-xs text-slate-500 mt-1">Based on your resume, pick a learning direction.</p>
                 </div>
                 {isAnalyzing && (
-                  <div className="hidden sm:flex items-center text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
-                    <Sparkles className="w-4 h-4 mr-2 animate-pulse" /> Analyzing...
+                  <div className="hidden sm:flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5 animate-pulse" /> Analyzing...
                   </div>
                 )}
                 {analysisData && (
-                  <div className="hidden sm:flex items-center text-sm font-bold text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full">
-                    <CheckCircle2 className="w-4 h-4 mr-2" /> Analysis Complete
+                  <div className="hidden sm:flex items-center text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded-full">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Analysis Complete
                   </div>
                 )}
               </div>
@@ -338,21 +338,21 @@ export default function Onboarding() {
               {isAnalyzing ? (
                 // Loading Skeleton
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
-                  <div className="h-48 bg-slate-100 rounded-2xl border border-slate-200"></div>
-                  <div className="h-48 bg-slate-100 rounded-2xl border border-slate-200"></div>
+                  <div className="h-32 bg-slate-100 rounded-xl border border-slate-200"></div>
+                  <div className="h-32 bg-slate-100 rounded-xl border border-slate-200"></div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Card 1: Master */}
                   <button 
                     onClick={() => setSelectedPath('master')}
-                    className={`group text-left rounded-2xl border-2 p-6 transition-all duration-300 flex flex-col items-start ${selectedPath === 'master' ? 'border-teal-500 bg-teal-50/30 shadow-md ring-4 ring-teal-50' : 'border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
+                    className={`group text-left rounded-xl border-2 p-4 transition-all duration-300 flex flex-col items-start ${selectedPath === 'master' ? 'border-teal-500 bg-teal-50/30 shadow-sm ring-2 ring-teal-50' : 'border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
                   >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${selectedPath === 'master' ? 'bg-teal-500' : 'bg-slate-100 group-hover:bg-teal-100'}`}>
-                      <TrendingUp className={`w-6 h-6 ${selectedPath === 'master' ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'}`} />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${selectedPath === 'master' ? 'bg-teal-500' : 'bg-slate-100 group-hover:bg-teal-100'}`}>
+                      <TrendingUp className={`w-5 h-5 ${selectedPath === 'master' ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'}`} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">Master Current Skills</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <h3 className="text-base font-bold text-slate-900 mb-1.5">Master Current Skills</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       Deepen your expertise in {analysisData?.suggestedRole || 'your current role'}. Focus on advanced concepts, optimization, and architecture.
                     </p>
                   </button>
@@ -360,13 +360,13 @@ export default function Onboarding() {
                   {/* Card 2: Expand */}
                   <button 
                     onClick={() => setSelectedPath('expand')}
-                    className={`group text-left rounded-2xl border-2 p-6 transition-all duration-300 flex flex-col items-start ${selectedPath === 'expand' ? 'border-indigo-500 bg-indigo-50/30 shadow-md ring-4 ring-indigo-50' : 'border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50'}`}
+                    className={`group text-left rounded-xl border-2 p-4 transition-all duration-300 flex flex-col items-start ${selectedPath === 'expand' ? 'border-indigo-500 bg-indigo-50/30 shadow-sm ring-2 ring-indigo-50' : 'border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50'}`}
                   >
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${selectedPath === 'expand' ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-100'}`}>
-                      <Plus className={`w-6 h-6 ${selectedPath === 'expand' ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`} />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 transition-colors ${selectedPath === 'expand' ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-100'}`}>
+                      <Plus className={`w-5 h-5 ${selectedPath === 'expand' ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`} />
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-2">Expand & Add New Skills</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <h3 className="text-base font-bold text-slate-900 mb-1.5">Expand & Add New Skills</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">
                       Broaden your horizons by learning trending tools and complementary skills to become more versatile.
                     </p>
                   </button>
@@ -377,18 +377,18 @@ export default function Onboarding() {
 
           {/* SECTION 3: EXPERTISE & COUNTRY (Fades in once goal is provided) */}
           <div className={`transition-all duration-700 delay-150 ease-in-out ${showBottomSections ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-            <div className="pt-8 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               
               <div>
-                <h2 className="text-[13px] font-bold text-slate-400 mb-4 uppercase tracking-widest">
+                <h2 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">
                   Your Current Experience
                 </h2>
-                <div className="flex bg-slate-100 p-1.5 rounded-xl">
+                <div className="flex bg-slate-100 p-1 rounded-lg">
                   {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
                     <button
                       key={level}
                       onClick={() => setExperienceLevel(level)}
-                      className={`flex-1 py-2.5 text-[13px] font-bold rounded-lg transition-all ${
+                      className={`flex-1 py-2 text-xs font-bold rounded transition-all ${
                         experienceLevel === level
                           ? 'bg-white text-teal-700 shadow-sm'
                           : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
@@ -401,14 +401,14 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <h2 className="text-[13px] font-bold text-slate-400 mb-4 uppercase tracking-widest">
+                <h2 className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-widest">
                   Target Location
                 </h2>
                 <div className="relative">
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="block w-full pl-5 pr-10 py-3 border-2 border-slate-100 rounded-xl text-sm font-medium bg-slate-50 text-slate-700 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all appearance-none cursor-pointer"
+                    className="block w-full pl-4 pr-10 py-2.5 border-2 border-slate-100 rounded-lg text-sm font-medium bg-slate-50 text-slate-700 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all appearance-none cursor-pointer"
                   >
                     <option value="USA">United States (USA)</option>
                     <option value="India">India</option>
@@ -427,20 +427,20 @@ export default function Onboarding() {
             </div>
 
             {/* ACTION BUTTON */}
-            <div className="mt-12">
+            <div className="mt-8">
               <button 
                 onClick={handleGenerate}
                 disabled={isAnalyzing || (!role && !file)}
-                className={`w-full py-5 text-white text-lg font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-[0.99] ${
+                className={`w-full py-4 text-white text-base font-bold rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg active:scale-[0.99] ${
                   isAnalyzing || (!role && !file)
                     ? 'bg-slate-300 cursor-not-allowed shadow-none'
                     : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500'
                 }`}
               >
                 {isAnalyzing ? (
-                  <><Sparkles className="animate-pulse w-5 h-5" /> Analyzing Resume...</>
+                  <><Sparkles className="animate-pulse w-4 h-4" /> Analyzing Resume...</>
                 ) : (
-                  <>Build My Career Plan <TrendingUp className="w-5 h-5" /></>
+                  <>Build My Career Plan <TrendingUp className="w-4 h-4" /></>
                 )}
               </button>
             </div>
