@@ -402,7 +402,26 @@ app.get('/api/public/maintenance', async (req, res) => {
 // Serve static assets — always serve in any environment when dist exists
 const distPath = path.join(__dirname, '../client/dist');
 if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
+  // Serve static assets with caching for immutable files
+  app.use(express.static(distPath, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('index.html')) {
+        // Never cache index.html so users always get the newest asset links
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // Cache other static assets (js, css, images) for 1 year since Vite uses content hashes
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
+
+  // Handle missing static assets (e.g., old CSS/JS chunks from previous builds)
+  // We return a 404 instead of serving index.html to prevent MIME type errors and 500s.
+  app.use('/assets', (req, res) => {
+    res.status(404).send('Asset not found');
+  });
 
   // SPA fallback — send index.html for ALL non-API routes so React Router works
   app.get('*', (req, res) => {
