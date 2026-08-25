@@ -38,6 +38,7 @@ const allowedOrigins = [
   'https://findstreak.com',
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://career-website-dev-1.up.railway.app'
 ];
 app.use(cors({
   origin: (origin, callback) => {
