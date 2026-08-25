@@ -114,6 +114,22 @@ export default function Onboarding() {
     }
   };
 
+  const analyzeRole = (targetRole: string) => {
+    if (analysisData?.suggestedRole === targetRole && !file) return; // Already analyzed
+
+    setIsAnalyzing(true);
+    setAnalysisData(null);
+    setSelectedPath(null);
+    setFile(null); // Clear file if they switch to manual role
+
+    // Simulate AI thinking to match the resume experience
+    setTimeout(() => {
+      setAnalysisData({ suggestedRole: targetRole });
+      setSelectedPath('expand');
+      setIsAnalyzing(false);
+    }, 1200);
+  };
+
   const handleGenerate = async () => {
     if (!role && !file) {
       showAlert('Please enter a role or upload a resume to continue.', 'warning');
@@ -154,7 +170,7 @@ export default function Onboarding() {
   };
 
   // Determine if we should show the bottom sections
-  const showBottomSections = role.length > 2 || !!file;
+  const showBottomSections = !!analysisData || role.length > 2 || !!file;
 
   return (
     <div className="min-h-[100dvh] w-full overflow-y-auto bg-[#f8fafc] text-slate-800 flex items-start justify-center py-6 md:py-12 px-4">
@@ -218,7 +234,18 @@ export default function Onboarding() {
                     }
                   }}
                   onFocus={() => role.length > 1 && setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 200);
+                    if (role.length > 2 && role !== analysisData?.suggestedRole && !showSuggestions) {
+                      analyzeRole(role);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && role.length > 2) {
+                      setShowSuggestions(false);
+                      analyzeRole(role);
+                    }
+                  }}
                 />
                 
                 {showSuggestions && suggestions.length > 0 && (
@@ -230,6 +257,7 @@ export default function Onboarding() {
                         onClick={() => {
                           setRole(suggestion);
                           setShowSuggestions(false);
+                          analyzeRole(suggestion);
                         }}
                         onMouseDown={(e) => e.preventDefault()}
                       >
@@ -300,7 +328,7 @@ export default function Onboarding() {
                 )}
 
                 {/* Progress bar background during analysis */}
-                {isAnalyzing && (
+                {isAnalyzing && file && (
                   <div 
                     className="absolute bottom-0 left-0 h-1.5 bg-emerald-500 transition-all duration-300 ease-out z-0" 
                     style={{ width: `${progress}%` }} 
@@ -310,13 +338,13 @@ export default function Onboarding() {
             </div>
           </div>
 
-          {/* SECTION 2: PATH SELECTION (ONLY IF FILE UPLOADED) */}
-          <div className={`transition-all duration-700 ease-in-out origin-top ${file ? 'opacity-100 max-h-[1000px] scale-y-100' : 'opacity-0 max-h-0 scale-y-0 overflow-hidden hidden'}`}>
+          {/* SECTION 2: PATH SELECTION (ONLY IF FILE UPLOADED OR ROLE ANALYZED) */}
+          <div className={`transition-all duration-700 ease-in-out origin-top ${file || analysisData ? 'opacity-100 max-h-[1000px] scale-y-100' : 'opacity-0 max-h-0 scale-y-0 overflow-hidden hidden'}`}>
             <div className="pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between mb-2.5">
                 <div>
                   <h2 className="text-sm font-extrabold text-slate-900">How do you want to grow?</h2>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Based on your resume, pick a learning direction.</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Based on your {file ? 'resume' : 'target role'}, pick a learning direction.</p>
                 </div>
                 {isAnalyzing && (
                   <div className="hidden sm:flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
