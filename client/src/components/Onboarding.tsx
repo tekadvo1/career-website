@@ -1,7 +1,7 @@
 import { apiFetch } from '../utils/apiFetch';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Upload, Sparkles, FileText, X, CheckCircle, TrendingUp, Plus, ChevronDown } from 'lucide-react';
+import { Search, Upload, Sparkles, FileText, X, TrendingUp, Plus, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { useAlert } from '../contexts/AlertContext';
 import Sidebar from './Sidebar';
 import { getUser } from '../utils/auth';
@@ -11,7 +11,6 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Show sidebar only for returning users (already completed onboarding before)
   const isReturningUser = (() => {
     try {
       const user = (getUser() ?? {});
@@ -20,17 +19,20 @@ export default function Onboarding() {
       return false;
     }
   })();
+
   const [role, setRole] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('Beginner');
-  const [country, setCountry] = useState('USA'); // New state for country
+  const [country, setCountry] = useState('USA');
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState<'input' | 'choose-path' | 'choose-level'>('input');
-  const [selectedPath, setSelectedPath] = useState<'master' | 'expand' | null>(null);
+  
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [selectedPath, setSelectedPath] = useState<'master' | 'expand' | null>(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const user = (getUser() ?? {});
@@ -39,16 +41,8 @@ export default function Onboarding() {
     }
   }, [navigate, location]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -56,580 +50,403 @@ export default function Onboarding() {
       validateAndSetFile(e.dataTransfer.files[0]);
     }
   };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       validateAndSetFile(e.target.files[0]);
     }
   };
 
-  const validateAndSetFile = (selectedFile: File) => {
-    // PDF and DOCX are supported
+  const validateAndSetFile = async (selectedFile: File) => {
     const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
     if (validTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
+      setRole(''); // Clear manual role when uploading resume
+      await analyzeResume(selectedFile);
     } else {
       showAlert('Please upload a PDF or DOCX file.', 'error');
     }
   };
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let interval: any;
     if (isAnalyzing) {
       setProgress(0);
       interval = setInterval(() => {
-        setProgress(p => {
-          if (p >= 95) return p;
-          const jump = Math.random() * 15;
-          return Math.min(95, p + jump);
-        });
+        setProgress(p => Math.min(95, p + (Math.random() * 15)));
       }, 500);
     } else {
       setProgress(100);
-      setTimeout(() => setProgress(0), 1000); // reset after a delay when done
     }
     return () => clearInterval(interval);
   }, [isAnalyzing]);
 
-  const handleSubmit = async () => {
+  const analyzeResume = async (uploadedFile: File) => {
+    setIsAnalyzing(true);
+    setAnalysisData(null);
+    setSelectedPath(null);
+
+    const user = (getUser() ?? {});
+    const formData = new FormData();
+    formData.append('resume', uploadedFile);
+    formData.append('userId', (user as any).id || '');
+
+    try {
+      const response = await apiFetch('/api/resume/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze resume');
+      }
+
+      const data = await response.json();
+      setAnalysisData(data.analysis);
+      
+      // Auto-select a path if none is chosen, defaults to expand
+      setSelectedPath('expand');
+    } catch (error: any) {
+      console.error('Error analyzing resume:', error);
+      showAlert(`Analysis Failed. Try entering your role manually.`, 'error');
+      setFile(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerate = async () => {
     if (!role && !file) {
-      showAlert('Please enter a desired role OR upload a PDF resume to continue.', 'warning');
+      showAlert('Please enter a role or upload a resume to continue.', 'warning');
+      return;
+    }
+    if (file && !selectedPath && !isAnalyzing) {
+      showAlert('Please choose a learning path.', 'warning');
+      return;
+    }
+    if (isAnalyzing) {
+      showAlert('Please wait for your resume to finish analyzing.', 'warning');
       return;
     }
 
     const user = (getUser() ?? {});
-
     if (!user.id) {
       showAlert('Session expired. Please sign in again.', 'error');
       navigate('/signin');
       return;
     }
 
-    if (file) {
-      setIsAnalyzing(true);
+    const updatedUser = { ...user, onboarding_completed: true };
+    sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
 
-      const formData = new FormData();
-      formData.append('resume', file);
-      // userId is now sent via JWT token (Authorization header added by apiFetch)
-      // Keep it in body as a fallback too
-      formData.append('userId', (user as any).id);
-
-      try {
-        const response = await apiFetch('/api/resume/analyze', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || 'Failed to analyze resume');
-        }
-
-        const data = await response.json();
-
-        // Mark onboarding complete in sessionStorage
-        const updatedUser = { ...user, onboarding_completed: true };
-        sessionStorage.setItem('user', JSON.stringify(updatedUser));
-
-        // Also persist to DB via dedicated endpoint (belt-and-suspenders)
-        apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
-
-        setAnalysisData(data.analysis);
-        setStep('choose-path');
-      } catch (error: any) {
-        console.error('Error analyzing resume:', error);
-        showAlert(`Resume Analysis Failed: ${error.message || 'Unknown error'}. \n\nPlease try entering your desired role manually instead.`, 'error');
-      } finally {
-        setIsAnalyzing(false);
+    navigate('/role-analysis', {
+      state: {
+        role: analysisData?.suggestedRole || role || 'General Career Path',
+        experienceLevel,
+        country,
+        hasResume: !!file,
+        resumeFileName: file?.name,
+        analysis: null,
+        learningPath: selectedPath,
+        resumeSkills: analysisData
       }
-    } else {
-      // Role-only path — mark onboarding complete in sessionStorage before navigating
-      const updatedUser = { ...user, onboarding_completed: true };
-      sessionStorage.setItem('user', JSON.stringify(updatedUser));
-
-      // Persist to DB
-      apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
-
-      navigate('/role-analysis', {
-        state: {
-          role: role || 'General Career Path',
-          experienceLevel,
-          country,
-          hasResume: false,
-          resumeFileName: null,
-          analysis: null // Explicitly null to trigger fetch in RoleAnalysis
-        }
-      });
-    }
+    });
   };
 
-  // Map step names to step numbers for the progress indicator
-  const stepNumber = step === 'input' ? 1 : step === 'choose-path' ? 2 : 3;
-  const stepLabels = ['Tell us your goal', 'Choose your path', 'Set your level'];
+  // Determine if we should show the bottom sections
+  const showBottomSections = role.length > 2 || !!file;
 
   return (
-    <div className="min-h-[100dvh] w-[100vw] overflow-y-auto flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-[100dvh] w-full overflow-y-auto bg-[#f8fafc] text-slate-800 flex items-start justify-center py-6 md:py-12 px-4">
       {isReturningUser && <Sidebar activePage="onboarding" />}
-      <div className="max-w-4xl xl:max-w-5xl w-full bg-white rounded-3xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.12)] p-5 sm:p-8 lg:p-10 my-auto border border-slate-100">
+      
+      <div className="w-full max-w-5xl bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-500">
         
-        {/* ── Step Progress Indicator ── */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between relative">
-            {/* Connecting line */}
-            <div className="absolute top-4 left-0 right-0 h-0.5 bg-slate-100 z-0" />
-            <div
-              className="absolute top-4 left-0 h-0.5 bg-emerald-500 z-0 transition-all duration-500"
-              style={{ width: stepNumber === 1 ? '0%' : stepNumber === 2 ? '50%' : '100%' }}
-            />
-            {stepLabels.map((label, idx) => {
-              const num = idx + 1;
-              const isDone = stepNumber > num;
-              const isCurrent = stepNumber === num;
-              return (
-                <div key={idx} className="flex flex-col items-center gap-1.5 z-10">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px] border-2 transition-all duration-300 ${
-                    isDone
-                      ? 'bg-emerald-500 border-emerald-500 text-white'
-                      : isCurrent
-                      ? 'bg-white border-emerald-500 text-emerald-600'
-                      : 'bg-white border-slate-200 text-slate-400'
-                  }`}>
-                    {isDone ? '✓' : num}
-                  </div>
-                  <span className={`text-[10px] font-semibold hidden sm:block ${
-                    isCurrent ? 'text-emerald-600' : isDone ? 'text-emerald-500' : 'text-slate-400'
-                  }`}>{label}</span>
-                </div>
-              );
-            })}
+        {/* Header Hero */}
+        <div className="bg-gradient-to-br from-teal-700 via-emerald-700 to-teal-900 px-6 py-10 md:py-16 text-center relative overflow-hidden">
+          {/* Decorative background shapes */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
+            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-teal-400 blur-3xl mix-blend-overlay"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-80 h-80 rounded-full bg-emerald-400 blur-3xl mix-blend-overlay"></div>
           </div>
-        </div>
-        
-        {step === 'input' && (
-          <>
-        {/* Header Section */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold mb-3">
-            <Sparkles className="w-3 h-3 mr-1.5" />
-            Step 1 of 3 — Tell us your goal
+
+          <div className="relative z-10">
+            <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/90 text-xs font-bold tracking-wide uppercase mb-4 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5 mr-2" />
+              Career Architect
+            </div>
+            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 tracking-tight">
+              Where are you heading?
+            </h1>
+            <p className="text-teal-50 text-sm md:text-base max-w-xl mx-auto font-medium leading-relaxed">
+              Tell us your target role or upload your resume. We'll use AI to build a personalized, step-by-step roadmap to get you there.
+            </p>
           </div>
-          <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 mb-2">
-            What career are you aiming for?
-          </h1>
-          <p className="text-slate-500 text-sm">
-            Type your target job role or upload your resume — we'll build your personal learning plan.
-          </p>
         </div>
 
-        {/* Main Content - Side by Side */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 relative">
+        <div className="p-6 md:p-10 lg:p-12 space-y-12">
           
-          {/* Optional OR divider for desktop */}
-          <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-gray-100 rounded-full items-center justify-center text-[11px] font-black text-gray-400 uppercase z-10 shadow-sm">
-            OR
+          {/* SECTION 1: ROLE OR RESUME */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative">
+            {/* Desktop Divider */}
+            <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white border border-slate-100 rounded-full items-center justify-center text-[11px] font-black text-slate-300 uppercase z-10 shadow-sm">
+              OR
+            </div>
+
+            {/* LEFT: Role Input */}
+            <div className={`transition-all duration-500 ${file ? 'opacity-40 grayscale pointer-events-none' : 'opacity-100'}`}>
+              <h2 className="text-[13px] font-bold text-slate-400 mb-3 uppercase tracking-widest">
+                Option 1: Type a Role
+              </h2>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-2xl text-base bg-slate-50 placeholder-slate-400 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all shadow-sm"
+                  placeholder="e.g. Software Engineer, Product Manager"
+                  value={role}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRole(value);
+                    if (value.length > 1) {
+                      const matches = [
+                        "Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer",
+                        "Product Manager", "Product Designer", "UI/UX Designer", "Data Scientist", "Data Analyst", 
+                        "Machine Learning Engineer", "DevOps Engineer", "Cloud Architect", "Cybersecurity Analyst"
+                      ].filter(r => r.toLowerCase().includes(value.toLowerCase()));
+                      setSuggestions(matches);
+                      setShowSuggestions(true);
+                    } else {
+                      setShowSuggestions(false);
+                    }
+                  }}
+                  onFocus={() => role.length > 1 && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                />
+                
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute z-20 w-full mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 max-h-60 overflow-auto">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        className="w-full text-left px-5 py-3 text-sm font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors flex items-center justify-between group/item"
+                        onClick={() => {
+                          setRole(suggestion);
+                          setShowSuggestions(false);
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        {suggestion}
+                        <span className="opacity-0 group-hover/item:opacity-100 text-teal-600 text-xs bg-teal-100 px-2 py-1 rounded-md">Select</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Divider */}
+            <div className="md:hidden flex items-center justify-center -my-2">
+              <div className="w-full h-px bg-slate-100"></div>
+              <span className="px-4 text-[10px] font-black text-slate-300 uppercase bg-white">OR</span>
+              <div className="w-full h-px bg-slate-100"></div>
+            </div>
+
+            {/* RIGHT: Resume Upload */}
+            <div className={`transition-all duration-500 ${role && !file ? 'opacity-40 grayscale' : 'opacity-100'}`}>
+              <h2 className="text-[13px] font-bold text-slate-400 mb-3 uppercase tracking-widest flex items-center justify-between">
+                Option 2: Upload Resume
+                {file && <span className="text-teal-500 text-[10px] bg-teal-50 px-2 py-0.5 rounded-full normal-case">Active</span>}
+              </h2>
+              
+              <div 
+                className={`w-full min-h-[120px] border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all cursor-pointer relative overflow-hidden ${
+                  isDragging 
+                    ? 'border-teal-500 bg-teal-50 scale-[1.02]' 
+                    : file 
+                      ? 'border-emerald-200 bg-emerald-50/50' 
+                      : 'border-slate-200 bg-slate-50 hover:border-teal-400 hover:bg-slate-100'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input type="file" ref={fileInputRef} className="hidden" accept=".doc,.docx,.pdf" onChange={handleFileSelect} />
+                
+                {file ? (
+                  <div className="text-center z-10 w-full">
+                    <div className="inline-flex p-3 bg-white shadow-sm border border-emerald-100 rounded-full mb-3">
+                      <FileText className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 mb-1 truncate px-4">{file.name}</p>
+                    <p className="text-[11px] font-semibold text-slate-500 mb-3">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setFile(null); setAnalysisData(null); }}
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1.5" /> Remove File
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center pointer-events-none">
+                    <div className="inline-flex p-3 bg-white shadow-sm border border-slate-100 rounded-full mb-3 text-slate-400">
+                      <Upload className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 mb-1">
+                      Drag & Drop your resume
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      PDF or DOCX up to 5MB
+                    </p>
+                  </div>
+                )}
+
+                {/* Progress bar background during analysis */}
+                {isAnalyzing && (
+                  <div 
+                    className="absolute bottom-0 left-0 h-1.5 bg-emerald-500 transition-all duration-300 ease-out z-0" 
+                    style={{ width: `${progress}%` }} 
+                  />
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* LEFT SIDE: Role Input */}
-          <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-              What role are you looking for?
-            </h2>
-            
-            <div className="relative mb-3">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                placeholder="e.g. Software Engineer, Product Manager"
-                value={role}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setRole(value);
-                  if (value.length > 1) {
-                    const matches = [
-                      "Software Engineer", "Frontend Developer", "Backend Developer", "Full Stack Developer",
-                      "Product Manager", "Product Designer", "UI/UX Designer",
-                      "Data Scientist", "Data Analyst", "Machine Learning Engineer",
-                      "DevOps Engineer", "Cloud Architect", "Cybersecurity Analyst",
-                      "Mobile App Developer", "Game Developer", "Blockchain Developer",
-                      "QA Engineer", "Technical Writer", "Systems Administrator"
-                    ].filter(r => r.toLowerCase().includes(value.toLowerCase()));
-                    setSuggestions(matches);
-                    setShowSuggestions(true);
-                  } else {
-                    setShowSuggestions(false);
-                  }
-                }}
-                onFocus={() => role.length > 1 && setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-              />
-              
-              {/* AI Suggestions Dropdown */}
-              {showSuggestions && suggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 max-h-48 overflow-auto">
-                  <div className="px-3 py-2 text-xs font-semibold text-indigo-600 bg-indigo-50 border-b border-indigo-100 flex items-center">
-                    <Sparkles className="w-3 h-3 mr-1.5" />
-                    AI Suggested Roles
+          {/* SECTION 2: PATH SELECTION (ONLY IF FILE UPLOADED) */}
+          <div className={`transition-all duration-700 ease-in-out origin-top ${file ? 'opacity-100 max-h-[1000px] scale-y-100' : 'opacity-0 max-h-0 scale-y-0 overflow-hidden hidden'}`}>
+            <div className="pt-8 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-900">How do you want to grow?</h2>
+                  <p className="text-sm text-slate-500 mt-1">Based on your resume, pick a learning direction.</p>
+                </div>
+                {isAnalyzing && (
+                  <div className="hidden sm:flex items-center text-sm font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
+                    <Sparkles className="w-4 h-4 mr-2 animate-pulse" /> Analyzing...
                   </div>
-                  {suggestions.map((suggestion, index) => (
+                )}
+                {analysisData && (
+                  <div className="hidden sm:flex items-center text-sm font-bold text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full">
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> Analysis Complete
+                  </div>
+                )}
+              </div>
+
+              {isAnalyzing ? (
+                // Loading Skeleton
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-pulse">
+                  <div className="h-48 bg-slate-100 rounded-2xl border border-slate-200"></div>
+                  <div className="h-48 bg-slate-100 rounded-2xl border border-slate-200"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Card 1: Master */}
+                  <button 
+                    onClick={() => setSelectedPath('master')}
+                    className={`group text-left rounded-2xl border-2 p-6 transition-all duration-300 flex flex-col items-start ${selectedPath === 'master' ? 'border-teal-500 bg-teal-50/30 shadow-md ring-4 ring-teal-50' : 'border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50'}`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${selectedPath === 'master' ? 'bg-teal-500' : 'bg-slate-100 group-hover:bg-teal-100'}`}>
+                      <TrendingUp className={`w-6 h-6 ${selectedPath === 'master' ? 'text-white' : 'text-slate-400 group-hover:text-teal-600'}`} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">Master Current Skills</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Deepen your expertise in {analysisData?.suggestedRole || 'your current role'}. Focus on advanced concepts, optimization, and architecture.
+                    </p>
+                  </button>
+
+                  {/* Card 2: Expand */}
+                  <button 
+                    onClick={() => setSelectedPath('expand')}
+                    className={`group text-left rounded-2xl border-2 p-6 transition-all duration-300 flex flex-col items-start ${selectedPath === 'expand' ? 'border-indigo-500 bg-indigo-50/30 shadow-md ring-4 ring-indigo-50' : 'border-slate-100 bg-white hover:border-indigo-200 hover:bg-slate-50'}`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-colors ${selectedPath === 'expand' ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-100'}`}>
+                      <Plus className={`w-6 h-6 ${selectedPath === 'expand' ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'}`} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-2">Expand & Add New Skills</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      Broaden your horizons by learning trending tools and complementary skills to become more versatile.
+                    </p>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* SECTION 3: EXPERTISE & COUNTRY (Fades in once goal is provided) */}
+          <div className={`transition-all duration-700 delay-150 ease-in-out ${showBottomSections ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+            <div className="pt-8 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+              
+              <div>
+                <h2 className="text-[13px] font-bold text-slate-400 mb-4 uppercase tracking-widest">
+                  Your Current Experience
+                </h2>
+                <div className="flex bg-slate-100 p-1.5 rounded-xl">
+                  {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
                     <button
-                      key={index}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
-                      onClick={() => {
-                        setRole(suggestion);
-                        setShowSuggestions(false);
-                      }}
-                      onMouseDown={(e) => e.preventDefault()}
+                      key={level}
+                      onClick={() => setExperienceLevel(level)}
+                      className={`flex-1 py-2.5 text-[13px] font-bold rounded-lg transition-all ${
+                        experienceLevel === level
+                          ? 'bg-white text-teal-700 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                      }`}
                     >
-                      {suggestion}
-                      <span className="opacity-0 group-hover:opacity-100 text-indigo-400 text-xs">Select</span>
+                      {level}
                     </button>
                   ))}
                 </div>
-              )}
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-2">
-                Experience Level
-              </label>
-              <div className="flex bg-gray-100 p-1 rounded-lg">
-                {['Beginner', 'Intermediate', 'Advanced'].map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => setExperienceLevel(level)}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                      experienceLevel === level
-                        ? 'bg-white text-indigo-600 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
+              </div>
+
+              <div>
+                <h2 className="text-[13px] font-bold text-slate-400 mb-4 uppercase tracking-widest">
+                  Target Location
+                </h2>
+                <div className="relative">
+                  <select
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="block w-full pl-5 pr-10 py-3 border-2 border-slate-100 rounded-xl text-sm font-medium bg-slate-50 text-slate-700 focus:outline-none focus:ring-0 focus:border-teal-500 focus:bg-white transition-all appearance-none cursor-pointer"
                   >
-                    {level}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-5">
-              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-widest mb-2">
-                Target Country
-              </label>
-              <div className="relative">
-                <select
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  className="block w-full pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none shadow-sm cursor-pointer hover:border-indigo-300"
-                >
-                  <option value="USA">United States (USA)</option>
-                  <option value="India">India</option>
-                  <option value="UK">United Kingdom (UK)</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Australia">Australia</option>
-                  <option value="Germany">Germany</option>
-                  <option value="Singapore">Singapore</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
-
-            <p className="text-[11px] font-medium text-gray-500 mb-4 md:mb-0 leading-relaxed">
-              AI will analyze open projects and suggest the best fits based on your desired role.
-            </p>
-          </div>
-
-          <div className="md:hidden flex items-center justify-center -my-2">
-            <div className="w-full h-px bg-gray-200"></div>
-            <span className="px-3 text-[10px] font-bold text-gray-400 uppercase bg-white">OR</span>
-            <div className="w-full h-px bg-gray-200"></div>
-          </div>
-
-          {/* RIGHT SIDE: Upload Resume */}
-          <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-gray-900 mb-2 uppercase tracking-wide">
-              Upload your resume
-            </h2>
-            
-            <div 
-              className={`flex-1 min-h-[180px] border-2 border-dashed rounded-xl p-5 md:p-8 flex flex-col items-center justify-center transition-all cursor-pointer ${
-                isDragging 
-                  ? 'border-emerald-500 bg-emerald-50' 
-                  : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
-              }`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".doc,.docx,.pdf"
-                onChange={handleFileSelect}
-              />
-              
-              {file ? (
-                <div className="text-center">
-                  <div className="inline-flex p-2 bg-indigo-100 rounded-full mb-2">
-                    <FileText className="w-6 h-6 text-indigo-600" />
+                    <option value="USA">United States (USA)</option>
+                    <option value="India">India</option>
+                    <option value="UK">United Kingdom (UK)</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Singapore">Singapore</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                    <ChevronDown className="w-5 h-5" />
                   </div>
-                  <p className="text-xs font-semibold text-gray-900 mb-1 truncate max-w-full">{file.name}</p>
-                  <p className="text-[10px] text-gray-500 mb-2">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                    className="text-red-600 text-[10px] font-medium hover:text-red-700 inline-flex items-center"
-                  >
-                    <X className="w-3 h-3 mr-1" /> Remove File
-                  </button>
                 </div>
-              ) : (
-                <div className="text-center">
-                  <div className="inline-flex p-2 bg-gray-100 rounded-full mb-2">
-                    <Upload className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <p className="text-sm font-bold text-gray-900 mb-1">
-                    Drop resume here
-                  </p>
-                  <p className="text-[10px] text-gray-500 mb-3">
-                    Support for DOCX
-                  </p>
-                  <button className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
-                    Browse Files
-                  </button>
-                </div>
-              )}
+              </div>
+
             </div>
-            
-            <p className="text-[10px] text-gray-400 text-center mt-2">
-              Max file size: 5MB
-            </p>
+
+            {/* ACTION BUTTON */}
+            <div className="mt-12">
+              <button 
+                onClick={handleGenerate}
+                disabled={isAnalyzing || (!role && !file)}
+                className={`w-full py-5 text-white text-lg font-bold rounded-2xl transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl active:scale-[0.99] ${
+                  isAnalyzing || (!role && !file)
+                    ? 'bg-slate-300 cursor-not-allowed shadow-none'
+                    : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500'
+                }`}
+              >
+                {isAnalyzing ? (
+                  <><Sparkles className="animate-pulse w-5 h-5" /> Analyzing Resume...</>
+                ) : (
+                  <>Build My Career Plan <TrendingUp className="w-5 h-5" /></>
+                )}
+              </button>
+            </div>
           </div>
+
         </div>
-
-        {/* Action Button */}
-        <div className="mt-8 mb-2 flex justify-center">
-          <button 
-            onClick={handleSubmit}
-            disabled={isAnalyzing}
-            className={`relative w-full md:w-3/4 overflow-hidden px-4 md:py-3 py-3.5 bg-emerald-600 text-white text-sm font-semibold rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all flex items-center justify-center shadow-lg hover:shadow-xl ${isAnalyzing ? 'cursor-not-allowed' : ''}`}
-          >
-            {/* Progress bar background */}
-            {isAnalyzing && (
-              <div 
-                className="absolute inset-y-0 left-0 bg-teal-500/50 transition-all duration-300 ease-out z-0" 
-                style={{ width: `${progress}%` }} 
-              />
-            )}
-            
-            <div className="relative z-10 flex items-center justify-center">
-              {isAnalyzing ? (
-                <>
-                  <Sparkles className="animate-pulse -ml-1 mr-2 h-4 w-4 text-white" />
-                  Analyzing your resume... {Math.round(progress)}%
-                </>
-              ) : (
-                file ? '✨ Analyze Resume & Build My Plan' : '→ Build My Career Plan'
-              )}
-            </div>
-          </button>
-        </div>
-        </>
-        )}
-
-        {step === 'choose-path' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full md:max-w-4xl max-w-2xl mx-auto flex flex-col items-center">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-semibold mb-4">
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Step 2 of 3 — Resume Analyzed!
-              </div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
-                How do you want to grow?
-              </h1>
-              <p className="text-slate-500 text-base">
-                Pick the learning approach that matches your current goal.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
-              <h2 className="text-lg font-bold text-slate-800 mb-4">Your Current Skills</h2>
-              
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-slate-600 mb-2">Technical Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysisData?.technicalSkills?.length > 0 ? analysisData.technicalSkills.map((skill: string, idx: number) => (
-                    <span key={idx} className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-sm font-medium">
-                      {skill}
-                    </span>
-                  )) : (
-                    analysisData?.existingSkills?.slice(0, 5).map((skill: any, idx: number) => (
-                      <span key={idx} className="px-3 py-1 bg-teal-50 text-teal-700 border border-teal-200 rounded-full text-sm font-medium">
-                        {skill.name}
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-slate-600 mb-2">Soft Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysisData?.softSkills?.length > 0 ? analysisData.softSkills.map((skill: string, idx: number) => (
-                    <span key={idx} className="px-3 py-1 bg-cyan-50 text-cyan-700 border border-cyan-200 rounded-full text-sm font-medium">
-                      {skill}
-                    </span>
-                  )) : <span className="text-sm text-slate-400">Analysis didn't extract clear soft skills</span>}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-sm text-slate-700 leading-relaxed">
-                {analysisData?.summary || analysisData?.description || "Your resume shows a strong foundation."}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 mb-8">
-              {/* Card 1: Master */}
-              <button 
-                onClick={() => {
-                  setSelectedPath('master');
-                  setStep('choose-level');
-                }}
-                className="group text-left bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-teal-500 hover:shadow-md transition-all flex flex-col items-start"
-              >
-                <div className="w-12 h-12 bg-teal-500 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-teal-700 transition-colors">Develop & Master Current Skills</h3>
-                <p className="text-sm text-slate-600 mb-5 leading-relaxed">
-                  Focus on deepening your expertise in the skills you already have. Perfect for strengthening your foundation and becoming an expert.
-                </p>
-                <ul className="space-y-2 mt-auto">
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
-                    Advanced projects in current stack
-                  </li>
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
-                    Best practices & optimization
-                  </li>
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mr-2.5"></div>
-                    Real-world problem solving
-                  </li>
-                </ul>
-              </button>
-
-              {/* Card 2: Expand */}
-              <button 
-                onClick={() => {
-                  navigate('/role-analysis', {
-                    state: {
-                      role: analysisData?.suggestedRole || role || 'Next Level Role',
-                      hasResume: true,
-                      resumeFileName: file?.name,
-                      analysis: null, // trigger new fetch
-                      learningPath: 'expand', // pass the intent
-                      resumeSkills: analysisData // Forward for UI rendering
-                    }
-                  });
-                }}
-                className="group text-left bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-cyan-500 hover:shadow-md transition-all flex flex-col items-start"
-              >
-                <div className="w-12 h-12 bg-cyan-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-105 transition-transform shadow-sm">
-                  <Plus className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-cyan-700 transition-colors">Add New Skills & Expand</h3>
-                <p className="text-sm text-slate-600 mb-5 leading-relaxed">
-                  Learn complementary skills to expand your capabilities. Great for career pivots and becoming more versatile.
-                </p>
-                <ul className="space-y-2 mt-auto">
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
-                    Trending technologies & tools
-                  </li>
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
-                    Cross-functional skills
-                  </li>
-                  <li className="flex items-center text-sm text-slate-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 mr-2.5"></div>
-                    Industry-demanded expertise
-                  </li>
-                </ul>
-              </button>
-            </div>
-
-            <div className="text-center">
-              <button 
-                onClick={() => setStep('input')}
-                className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                Go Back
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 'choose-level' && (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full md:max-w-2xl max-w-xl mx-auto flex flex-col items-center">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-semibold mb-4">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Step 3 of 3 — Almost there!
-              </div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
-                What's your experience level?
-              </h1>
-              <p className="text-slate-500 text-base">
-                We'll tailor your projects and learning plan to match your current level.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 w-full mb-8">
-              {[
-                { level: 'Beginner', desc: 'Solid foundation, looking to build confidence and deeper understanding.' },
-                { level: 'Intermediate', desc: 'Comfortable with core concepts, ready to conquer advanced features.' },
-                { level: 'Advanced', desc: 'Highly experienced, focusing on architecture and leadership.' }
-              ].map((lvl, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    navigate('/role-analysis', {
-                      state: {
-                        role: analysisData?.suggestedRole || role || 'Expert',
-                        experienceLevel: lvl.level,
-                        hasResume: true,
-                        resumeFileName: file?.name,
-                        analysis: null,
-                        learningPath: selectedPath,
-                        resumeSkills: analysisData // Forward skills for RoleAnalysis UI
-                      }
-                    });
-                  }}
-                  className="group flex flex-col items-start w-full text-left bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:border-teal-500 hover:shadow-md transition-all"
-                >
-                  <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-teal-700 transition-colors">{lvl.level}</h3>
-                  <p className="text-sm text-slate-600">{lvl.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            <button 
-              onClick={() => setStep('choose-path')}
-              className="mt-2 text-sm text-slate-500 hover:text-slate-700 transition-colors underline underline-offset-4 font-medium"
-            >
-              Back to Path Selection
-            </button>
-          </div>
-        )}
-
       </div>
     </div>
   );
