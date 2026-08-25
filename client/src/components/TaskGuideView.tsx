@@ -77,25 +77,32 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
       
-      {/* Top Navigation banner above hero */}
-      <div className="px-6 py-4 border-b border-slate-100">
+      {/* Breadcrumb + Back Button — always clearly visible */}
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        {/* Breadcrumb */}
+        <p className="text-[11px] text-slate-400 font-semibold mb-2 flex items-center gap-1.5">
+          <span className="text-slate-500">{projectTitle || 'Project'}</span>
+          <span>›</span>
+          <span className="text-emerald-600 font-bold truncate max-w-[200px]">{task?.text}</span>
+        </p>
+        {/* Back Button — large and obvious */}
         <button 
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-[#00875a] hover:text-emerald-700 font-bold transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50 hover:text-emerald-700 text-slate-700 font-bold text-[13px] rounded-lg transition-all shadow-sm"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Task List
+          <ArrowLeft className="w-4 h-4" /> ← Back to my tasks
         </button>
       </div>
 
-      {/* Hero Header */}
-      <div className="bg-[#00875a] text-white p-8">
+      {/* Hero Header — improved gradient */}
+      <div className="bg-gradient-to-br from-teal-600 to-emerald-700 text-white p-8">
         <div className="flex items-center gap-4">
           <div className="bg-white/20 p-3 rounded-xl flex-shrink-0">
             <FileText className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">{guide.title || task?.text}</h2>
-            <p className="text-emerald-100 text-sm mt-1">Complete Setup Guide</p>
+            <p className="text-teal-200 text-[11px] font-bold uppercase tracking-widest mb-1">Step-by-Step Guide</p>
+            <h2 className="text-xl font-bold leading-tight">{guide.title || task?.text}</h2>
           </div>
         </div>
       </div>
@@ -182,12 +189,18 @@ export function TaskGuideView({ task, projectTitle, onBack, onMarkComplete }: an
           </div>
         )}
 
-        <div className="mt-12 pt-6 border-t border-slate-100">
+        <div className="mt-12 pt-6 border-t border-slate-100 space-y-3">
           <button 
             onClick={() => { apiFetch('/api/auth/add-xp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ amount: 50 }) }); onMarkComplete(); }}
-            className="w-full py-4 bg-[#00875a] hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-[0.99] text-lg"
+            className="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg active:scale-[0.99] text-lg"
           >
-            <CheckCircle2 className="w-5 h-5" /> Mark Task as Complete (+50 XP) & Return
+            <CheckCircle2 className="w-5 h-5" /> ✓ I've completed this task! (+50 XP)
+          </button>
+          <button
+            onClick={onBack}
+            className="w-full py-3 border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold rounded-xl flex items-center justify-center gap-2 transition-all text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" /> Go back to task list
           </button>
         </div>
       </div>

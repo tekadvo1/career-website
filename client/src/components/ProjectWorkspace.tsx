@@ -554,7 +554,7 @@ export default function ProjectWorkspace() {
               className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-lg text-slate-500 hover:text-slate-900 font-semibold transition-colors text-[13px] tracking-wide shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Workspace</span>
+              <span className="hidden sm:inline">← Back to Dashboard</span>
             </button>
             <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
             <div className="min-w-0 truncate flex items-center gap-3">
@@ -585,8 +585,8 @@ export default function ProjectWorkspace() {
                       <button className="text-[10px] text-emerald-600 font-bold hover:underline" onClick={() => setShowNotifications(false)}>Mark all read</button>
                     </div>
                     <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer border-l-2 border-emerald-500 bg-emerald-50/30">
-                      <p className="text-[13px] text-slate-800 font-semibold mb-0.5">Welcome to your workspace!</p>
-                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">Start by reviewing the Engineering Pipeline tasks on the left. Click on any task to open its detailed guide.</p>
+                      <p className="text-[13px] text-slate-800 font-semibold mb-0.5">Welcome to your project!</p>
+                      <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">Start by reviewing your Learning Plan steps on the left. Click on any task to open its step-by-step guide.</p>
                       <p className="text-[9px] text-slate-400 mt-2 font-bold uppercase tracking-wider">Just now</p>
                     </div>
                     <div className="px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer">
@@ -613,8 +613,8 @@ export default function ProjectWorkspace() {
         {/* Sleek Stats Strip */}
         <div className="bg-slate-50 border-b border-slate-200 px-6 lg:px-10 py-2.5 flex items-center justify-between overflow-x-auto whitespace-nowrap scrollbar-hide">
           <div className="flex items-center gap-6 text-[12px] font-semibold text-slate-600">
-            <span className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-teal-500" /> {completedSteps} / {steps.length} Modules</span>
-            <span className="flex items-center gap-2"><Target className="w-3.5 h-3.5 text-emerald-500" /> {progressPercentage}% Completed</span>
+            <span className="flex items-center gap-2"><CheckCircle className="w-3.5 h-3.5 text-teal-500" /> {completedSteps} of {steps.length} steps done</span>
+            <span className="flex items-center gap-2"><Target className="w-3.5 h-3.5 text-emerald-500" /> {progressPercentage}% Complete</span>
           </div>
           <div className="flex items-center gap-4 text-[12px] font-bold">
             <button onClick={() => setTimerActive(!timerActive)} className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all ${timerActive ? 'bg-rose-50 text-rose-600 border-rose-200 shadow-sm animate-pulse' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
@@ -644,7 +644,7 @@ export default function ProjectWorkspace() {
                     <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
                       <BookOpen className="w-3.5 h-3.5 text-teal-600" />
                     </div>
-                    <span className="text-[11px] font-bold text-teal-600 uppercase tracking-widest">Learning Curriculum</span>
+                    <span className="text-[11px] font-bold text-teal-600 uppercase tracking-widest">Your Learning Plan</span>
                   </div>
                   <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{project?.title || 'My Project'}</h3>
                   <p className="text-[13px] font-medium text-slate-500 mt-2 flex items-center gap-2">
@@ -659,7 +659,7 @@ export default function ProjectWorkspace() {
                       onClick={() => setShowAssetsMenu(!showAssetsMenu)}
                       className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-all shadow-sm"
                     >
-                      <DownloadCloud className="w-4 h-4 text-slate-500" /> Project Assets
+                      <DownloadCloud className="w-4 h-4 text-slate-500" /> Download Files
                     </button>
                     
                     {/* Assets Dropdown */}
@@ -734,7 +734,7 @@ export default function ProjectWorkspace() {
                     {steps.find(s => !s.completed) && (
                       <button onClick={() => { const ns = steps.find(s=>!s.completed); if(ns) handleStepClick(ns.id); }} 
                         className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-md shadow-teal-500/20 transition-all hover:-translate-y-0.5">
-                        <Play className="w-4 h-4 fill-white" /> Continue Learning
+                        <Play className="w-4 h-4 fill-white" /> Resume Where I Left Off
                       </button>
                     )}
                   </div>
@@ -811,7 +811,7 @@ export default function ProjectWorkspace() {
                         
                         <div className="space-y-3 mb-8">
                           <h4 className="text-[11px] font-bold text-slate-400 tracking-widest uppercase mb-4 flex items-center gap-2">
-                             Tasks in this module
+                             Tasks in this step
                           </h4>
                           {step.tasks.map((task, tIdx) => {
                             const meta = getTaskMeta(task.text);
@@ -939,7 +939,7 @@ export default function ProjectWorkspace() {
                                    handleStepToggle(step.id);
                                 }, 3000);
                               } else {
-                                showAlert("Please check off all tasks above to verify module completion.", "warning");
+                                showAlert("Please complete all tasks in this module first.", "warning");
                               }
                             }}
                             className={`transition-all font-bold px-6 py-2.5 rounded-lg flex items-center gap-2 text-[13px] uppercase tracking-wider ${
@@ -951,10 +951,10 @@ export default function ProjectWorkspace() {
                             }`}
                             disabled={!step.tasks.every((t) => t.completed) && !step.completed}
                           >
-                              {step.completed ? "Module Verified" : "Verify Completion"}
+                              {step.completed ? "Module Complete! ✓" : "Mark as Complete"}
                           </Button>
                           <span className="text-[12px] font-medium text-slate-500 tracking-wide">
-                             {step.tasks.filter((t) => t.completed).length} / {step.tasks.length} Verified
+                             {step.tasks.filter((t) => t.completed).length} / {step.tasks.length} Completed
                           </span>
                         </div>
                       </div>
@@ -1121,7 +1121,7 @@ export default function ProjectWorkspace() {
                 <div key={i} className="absolute w-2 h-2 bg-white rounded-full animate-ping" style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, animationDelay: `${i * 0.2}s` }} />
               ))}
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-4 drop-shadow-2xl text-center">MODULE VERIFIED!</h1>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-4 drop-shadow-2xl text-center">MODULE COMPLETE! 🎉</h1>
             <p className="text-xl md:text-2xl text-yellow-300 font-bold mb-8">+150 XP AWARDED</p>
             <div className="flex gap-2">
               <span className="w-3 h-3 bg-white rounded-full animate-bounce"></span>

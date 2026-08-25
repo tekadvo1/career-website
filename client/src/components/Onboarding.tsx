@@ -166,24 +166,61 @@ export default function Onboarding() {
     }
   };
 
+  // Map step names to step numbers for the progress indicator
+  const stepNumber = step === 'input' ? 1 : step === 'choose-path' ? 2 : 3;
+  const stepLabels = ['Tell us your goal', 'Choose your path', 'Set your level'];
+
   return (
-    <div className="min-h-[100dvh] w-[100vw] overflow-y-auto flex items-center justify-center bg-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-[100dvh] w-[100vw] overflow-y-auto flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-4 sm:p-6 lg:p-8">
       {isReturningUser && <Sidebar activePage="onboarding" />}
-      <div className="max-w-4xl xl:max-w-5xl w-full bg-white rounded-3xl shadow-2xl p-5 sm:p-8 lg:p-10 my-auto border border-white/20">
+      <div className="max-w-4xl xl:max-w-5xl w-full bg-white rounded-3xl shadow-[0_20px_60px_-10px_rgba(0,0,0,0.12)] p-5 sm:p-8 lg:p-10 my-auto border border-slate-100">
+        
+        {/* ── Step Progress Indicator ── */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between relative">
+            {/* Connecting line */}
+            <div className="absolute top-4 left-0 right-0 h-0.5 bg-slate-100 z-0" />
+            <div
+              className="absolute top-4 left-0 h-0.5 bg-emerald-500 z-0 transition-all duration-500"
+              style={{ width: stepNumber === 1 ? '0%' : stepNumber === 2 ? '50%' : '100%' }}
+            />
+            {stepLabels.map((label, idx) => {
+              const num = idx + 1;
+              const isDone = stepNumber > num;
+              const isCurrent = stepNumber === num;
+              return (
+                <div key={idx} className="flex flex-col items-center gap-1.5 z-10">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-[13px] border-2 transition-all duration-300 ${
+                    isDone
+                      ? 'bg-emerald-500 border-emerald-500 text-white'
+                      : isCurrent
+                      ? 'bg-white border-emerald-500 text-emerald-600'
+                      : 'bg-white border-slate-200 text-slate-400'
+                  }`}>
+                    {isDone ? '✓' : num}
+                  </div>
+                  <span className={`text-[10px] font-semibold hidden sm:block ${
+                    isCurrent ? 'text-emerald-600' : isDone ? 'text-emerald-500' : 'text-slate-400'
+                  }`}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         
         {step === 'input' && (
           <>
         {/* Header Section */}
-        <div className="text-center mb-5">
-          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-semibold mb-3">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold mb-3">
             <Sparkles className="w-3 h-3 mr-1.5" />
-            AI-Powered Matching
+            Step 1 of 3 — Tell us your goal
           </div>
           <h1 className="text-xl md:text-2xl font-extrabold text-slate-900 mb-2">
-            Let's Find Your Perfect Match
+            What career are you aiming for?
           </h1>
-          <p className="text-slate-600 text-sm">
-            Tell us what you're looking for or upload your resume for instant recommendations.
+          <p className="text-slate-500 text-sm">
+            Type your target job role or upload your resume — we'll build your personal learning plan.
           </p>
         </div>
 
@@ -395,10 +432,10 @@ export default function Onboarding() {
               {isAnalyzing ? (
                 <>
                   <Sparkles className="animate-pulse -ml-1 mr-2 h-4 w-4 text-white" />
-                  Analyzing... {Math.round(progress)}%
+                  Analyzing your resume... {Math.round(progress)}%
                 </>
               ) : (
-                file ? 'Analyze Resume & Build Career Plan' : 'Build My Career Plan'
+                file ? '✨ Analyze Resume & Build My Plan' : '→ Build My Career Plan'
               )}
             </div>
           </button>
@@ -409,15 +446,15 @@ export default function Onboarding() {
         {step === 'choose-path' && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 w-full md:max-w-4xl max-w-2xl mx-auto flex flex-col items-center">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-semibold mb-6 shadow-sm">
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-semibold mb-4">
                 <CheckCircle className="w-4 h-4 mr-2" />
-                Resume Analyzed Successfully
+                Step 2 of 3 — Resume Analyzed!
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
-                Choose Your Learning Path
+                How do you want to grow?
               </h1>
-              <p className="text-slate-600 text-base">
-                Based on your resume analysis, how would you like to grow?
+              <p className="text-slate-500 text-base">
+                Pick the learning approach that matches your current goal.
               </p>
             </div>
 
@@ -543,14 +580,15 @@ export default function Onboarding() {
         {step === 'choose-level' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 w-full md:max-w-2xl max-w-xl mx-auto flex flex-col items-center">
             <div className="text-center mb-8">
-              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="w-6 h-6 text-teal-600" />
+              <div className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-semibold mb-4">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Step 3 of 3 — Almost there!
               </div>
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
-                Select Your Expertise Level
+                What's your experience level?
               </h1>
-              <p className="text-slate-600 text-base">
-                To build your mastery path, tell us your current proficiency level.
+              <p className="text-slate-500 text-base">
+                We'll tailor your projects and learning plan to match your current level.
               </p>
             </div>
 

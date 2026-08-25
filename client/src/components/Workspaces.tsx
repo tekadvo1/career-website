@@ -282,10 +282,10 @@ export default function Workspaces() {
           <div className="bg-white rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] w-full max-w-md overflow-hidden border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
               <h2 className="text-[15px] font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
-                <div className="p-1.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200">
+                <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-md border border-emerald-200">
                   <Plus className="w-4 h-4" />
                 </div>
-                New Workspace
+                New Career Track
               </h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-all">
                 <X className="w-4 h-4" />
@@ -295,11 +295,11 @@ export default function Workspaces() {
             <div className="p-6 overflow-y-auto max-h-[70vh]">
               <div className="space-y-5">
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Workspace Name</label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest">Give it a name</label>
                   <input
                     type="text"
-                    placeholder="e.g., Data Science Journey"
-                    className="w-full text-[13px] font-medium p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-800/20 focus:border-slate-800 transition-all bg-slate-50 hover:bg-white shadow-sm"
+                    placeholder="e.g., My Data Science Journey"
+                    className="w-full text-[13px] font-medium p-2.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-slate-50 hover:bg-white shadow-sm"
                     value={newName}
                     onChange={e => setNewName(e.target.value)}
                   />
@@ -314,15 +314,15 @@ export default function Workspaces() {
                     value={newRole}
                     onChange={e => setNewRole(e.target.value)}
                   />
-                  <div className="mt-2 text-[12px] text-slate-500 font-medium flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <Sparkles className="w-4 h-4 text-slate-600 flex-shrink-0" />
-                    <span>AI Engine will continuously optimize your roadmap.</span>
+                  <div className="mt-2 text-[12px] text-slate-500 font-medium flex items-center gap-2 bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                    <Sparkles className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <span>AI will build a personalized learning plan for this role.</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                    Context (Resume/CV)
+                    Upload Your Resume
                     <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">Optional</span>
                   </label>
                   <input
@@ -369,10 +369,10 @@ export default function Workspaces() {
               <button
                 onClick={handleCreate}
                 disabled={!newName || !newRole || isCreating}
-                className="px-6 py-2 rounded-lg font-bold text-[12px] uppercase tracking-wider text-white bg-slate-900 hover:bg-black transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_4px_14px_rgba(0,0,0,0.15)]"
+                className="px-6 py-2.5 rounded-xl font-bold text-[13px] text-white bg-emerald-600 hover:bg-emerald-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-md"
               >
                 {isCreating ? <Sparkles className="w-3.5 h-3.5 animate-pulse" /> : <Plus className="w-3.5 h-3.5" />}
-                {isCreating ? 'Synchronizing...' : 'Provision'}
+                {isCreating ? 'Creating your path...' : 'Create Career Track'}
               </button>
             </div>
           </div>
@@ -387,21 +387,21 @@ export default function Workspaces() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 shadow-sm bg-slate-900 border border-slate-800 text-white rounded">
+                <div className="p-2 shadow-sm bg-emerald-600 border border-emerald-500 text-white rounded-xl">
                   <Briefcase className="w-5 h-5" />
                 </div>
-                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Workspaces Overview</h1>
+                <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">My Career Tracks</h1>
               </div>
               <p className="text-slate-500 max-w-2xl text-[14px] leading-relaxed mt-2">
-                Manage parallel engineering environments, track capabilities, and recalibrate AI routing.
+                Switch between different careers you're exploring. Each track has its own projects, roadmap, and AI guidance.
               </p>
             </div>
 
-            <div className="flex-shrink-0 bg-white p-4 rounded-xl border border-slate-200 shadow-sm min-w-[220px]">
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Active Context Protocol</p>
-              <div className="flex items-center gap-2.5 text-slate-800 font-bold bg-slate-50 px-3 py-2 rounded border border-slate-200 text-[13px]">
+            <div className="flex-shrink-0 bg-white p-4 rounded-xl border border-emerald-100 shadow-sm min-w-[220px]">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Your Current Goal</p>
+              <div className="flex items-center gap-2.5 text-slate-800 font-bold bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200 text-[13px]">
                 <Award className="w-4 h-4 text-emerald-500" />
-                <span className="truncate max-w-[160px]">{currentRoleActive ? cleanRole(currentRoleActive) : 'Inactive'}</span>
+                <span className="truncate max-w-[160px]">{currentRoleActive ? cleanRole(currentRoleActive) : 'Not set yet'}</span>
               </div>
             </div>
           </div>
@@ -412,13 +412,13 @@ export default function Workspaces() {
             {/* New Workspace Card */}
             <div
               onClick={() => setShowModal(true)}
-              className="bg-[#fafafa] rounded-xl border border-dashed border-slate-300 hover:border-slate-800 hover:bg-slate-50 transition-all duration-200 p-6 flex flex-col items-center justify-center text-center min-h-[200px] group cursor-pointer"
+              className="bg-white rounded-xl border border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 transition-all duration-200 p-6 flex flex-col items-center justify-center text-center min-h-[200px] group cursor-pointer shadow-sm"
             >
-              <div className="w-10 h-10 bg-white border border-slate-200 group-hover:bg-slate-900 group-hover:border-slate-900 group-hover:text-white rounded shadow-sm flex items-center justify-center text-slate-500 mb-4 transition-all duration-200">
-                <Plus className="w-5 h-5" />
+              <div className="w-12 h-12 bg-emerald-50 border-2 border-dashed border-emerald-300 group-hover:bg-emerald-500 group-hover:border-emerald-500 rounded-xl flex items-center justify-center text-emerald-500 group-hover:text-white mb-4 transition-all duration-200">
+                <Plus className="w-6 h-6" />
               </div>
-              <h3 className="text-[15px] font-extrabold text-slate-800 tracking-tight group-hover:text-slate-900 mb-2">Launch Workspace</h3>
-              <p className="text-[12px] text-slate-500 font-medium px-4 leading-relaxed">Instantiate new isolated environment parameters.</p>
+              <h3 className="text-[15px] font-extrabold text-slate-800 tracking-tight group-hover:text-emerald-700 mb-2">+ New Career Track</h3>
+              <p className="text-[12px] text-slate-400 font-medium px-4 leading-relaxed">Start exploring a new career role with AI-powered guidance.</p>
             </div>
 
             {/* Loading State */}
@@ -443,9 +443,9 @@ export default function Workspaces() {
                 >
                   {/* Active badge */}
                   {isActive && (
-                    <div className="absolute top-4 right-4 bg-emerald-50 text-emerald-700 text-[9px] uppercase tracking-widest font-black px-2 py-1 rounded border border-emerald-200 shadow-sm flex items-center gap-1.5">
+                    <div className="absolute top-4 right-4 bg-emerald-50 text-emerald-700 text-[9px] uppercase tracking-widest font-black px-2.5 py-1 rounded-full border border-emerald-200 shadow-sm flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Live
+                      Active
                     </div>
                   )}
 
@@ -462,7 +462,7 @@ export default function Workspaces() {
                       <button
                         onClick={(e) => handleDelete(e, ws.id)}
                         className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all rounded"
-                        title="Destroy workspace"
+                        title="Remove this career track"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -521,20 +521,20 @@ export default function Workspaces() {
                     >
                       {isActive ? (
                         <span className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Synced
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Currently Active
                         </span>
                       ) : isSwitching ? (
-                        <div className="w-full flex items-center bg-slate-900 rounded-md overflow-hidden h-8 relative">
+                        <div className="w-full flex items-center bg-emerald-600 rounded-md overflow-hidden h-8 relative">
                           <div
-                            className="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-[150ms] ease-linear"
+                            className="absolute left-0 top-0 h-full bg-emerald-400 transition-all duration-[150ms] ease-linear"
                             style={{ width: `${loadingProgress}%` }}
                           />
                           <div className="relative z-10 w-full text-center text-white text-[10px] uppercase font-bold tracking-widest flex justify-center items-center gap-1.5 drop-shadow-md">
-                            <Sparkles className="w-3 h-3 animate-pulse" /> Routing {loadingProgress}%
+                            <Sparkles className="w-3 h-3 animate-pulse" /> Switching... {loadingProgress}%
                           </div>
                         </div>
                       ) : (
-                        <> Execute Mount <ArrowRight className="w-3.5 h-3.5" /> </>
+                        <> Switch to this Career <ArrowRight className="w-3.5 h-3.5" /> </>
                       )}
                     </button>
                   </div>
