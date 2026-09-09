@@ -16,7 +16,7 @@ import Profile from './components/Profile';
 import WorkflowLifecycle from './components/WorkflowLifecycle';
 import ProjectWorkspace from './components/ProjectWorkspace';
 import Achievements from './components/Achievements';
-import MyProjects from './components/MyProjects';
+import ProjectsCatalog from './components/ProjectsCatalog';
 import RoadmapGuideView from './components/RoadmapGuideView';
 import RoadmapTree from './components/RoadmapTree';
 import QuizGame from './components/QuizGame';
@@ -200,7 +200,7 @@ function App() {
           <Route path="/quiz-game"               element={<ProtectedRoute><QuizGame /></ProtectedRoute>} />
           <Route path="/workspaces"              element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
           <Route path="/achievements"            element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-          <Route path="/my-projects"             element={<ProtectedRoute><MyProjects /></ProtectedRoute>} />
+          <Route path="/projects"             element={<ProtectedRoute><ProjectsCatalog /></ProtectedRoute>} />
           <Route path="/roadmap-guide"           element={<ProtectedRoute><RoadmapGuideView /></ProtectedRoute>} />
           <Route path="/roadmap-tree"            element={<ProtectedRoute><RoadmapTree /></ProtectedRoute>} />
           <Route path="/portfolio"               element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
