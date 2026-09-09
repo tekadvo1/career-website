@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import { getToken, getUser } from '../utils/auth';
 import {
   Target, CheckCircle, ArrowRight, Sparkles,
-  Briefcase, FolderKanban, Radio, Wifi, BookOpen
+  Briefcase, FolderKanban, Radio, BookOpen
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -58,7 +58,6 @@ export default function Dashboard() {
   /* ---------- state --------------------------------------------------------- */
   const [userProjects,  setUserProjects]  = useState<Project[]>([]);
   const [rtStats,       setRtStats]       = useState({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0, roadmapTopics: 0 });
-  const [isLive,        setIsLive]        = useState(false);
   
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
   const [roleSummaryData, setRoleSummaryData] = useState<any>(null);
@@ -169,7 +168,7 @@ export default function Dashboard() {
     sseRef.current = es;
 
     es.addEventListener('snapshot', (e: MessageEvent) => {
-      try { applySnapshot(JSON.parse(e.data)); setIsLive(true); } catch { /* ignore */ }
+      try { applySnapshot(JSON.parse(e.data)); } catch { /* ignore */ }
     });
     es.addEventListener('project_update', (_e: MessageEvent) => {
       try {
@@ -179,22 +178,23 @@ export default function Dashboard() {
         });
       } catch { /* ignore */ }
     });
-    es.onerror = () => setIsLive(false);
-    es.onopen  = () => setIsLive(true);
     return () => es.close();
   }, [applySnapshot, user.id]);
 
   /* ── User Progress State ─────────────────────────────────────────────────── */
   const activeProjects = userProjects.filter(p => p.status === 'active').slice(0, 3);
   
+  const hasRoadmap = journeyData?.hasRoleAnalysis;
+  const isNewUser = rtStats.activeCount === 0 && rtStats.completedCount === 0 && rtStats.roadmapTopics === 0;
+
   const getPrimaryAction = () => {
     if (isRoleSummaryLoading) {
       return { title: 'Analysis processing...', desc: 'We are generating your career blueprint.', label: "Generating...", action: () => {}, style: "bg-emerald-200 text-emerald-700 cursor-not-allowed" };
     }
     if (activeProjects.length > 0) {
-      return { title: 'Continue your project', desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate('/projects', { state: { activeTab: 'active' } }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+      return { title: `Continue: ${activeProjects[0].title}`, desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate('/projects', { state: { activeTab: 'active' } }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
     }
-    if (rtStats.roadmapTopics > 0 || journeyData?.hasRoleAnalysis) {
+    if (rtStats.roadmapTopics > 0 || hasRoadmap) {
       return { title: 'Review your roadmap', desc: 'See what to learn next.', label: "View My Roadmap", action: () => navigate('/roadmap', { state: location.state }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
     }
     if (roleSummaryData) {
@@ -212,8 +212,15 @@ export default function Dashboard() {
     } catch { return null; }
   })();
 
-  const strengths = resumeSkills?.strengths?.slice(0, 3) || [];
-  const skillGaps = resumeSkills?.missingSkills?.slice(0, 3) || (roleSummaryData?.skills ? roleSummaryData.skills.slice(0, 3).map((s:any) => ({ name: s.name, reason: s.reason })) : []);
+  const normalizeSkillName = (rawText: string) => {
+    if (!rawText) return '';
+    const match = rawText.match(/^([^:-]+)[:\-]/);
+    return match ? match[1].trim() : rawText.trim();
+  };
+
+  const strengths = resumeSkills?.strengths?.slice(0, 3).map(normalizeSkillName) || [];
+  const skillGaps = resumeSkills?.missingSkills?.slice(0, 3).map((s: string) => ({ name: normalizeSkillName(s), reason: '' })) || 
+                    (roleSummaryData?.skills ? roleSummaryData.skills.slice(0, 3).map((s:any) => ({ name: normalizeSkillName(s.name), reason: s.reason })) : []);
 
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh] bg-white font-sans text-slate-900">
@@ -225,28 +232,52 @@ export default function Dashboard() {
         <div className="px-6 md:px-10 pt-10 pb-6">
           <div className="flex items-center gap-2 mb-1">
              <h1 className="text-3xl font-bold tracking-tight">Your career overview</h1>
-             <span className={`hidden md:flex ml-3 items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${isLive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>
-                {isLive ? <><Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE</> : <><Wifi className="w-2.5 h-2.5" /> CONNECTING</>}
-             </span>
           </div>
           <p className="text-slate-500 text-base">
-            Welcome back, {displayName}. Active target: <span className="font-semibold text-slate-700">{selectedRole}</span>
+            Welcome back, {displayName}. Career goal: <span className="font-semibold text-slate-700 capitalize">{selectedRole?.replace(/-/g, ' ')}</span>
           </p>
         </div>
 
         <div className="px-6 md:px-10 pb-12 flex flex-col gap-6 max-w-6xl">
           
           {/* Your next step */}
-          <section className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-             <div>
-                <h2 className="text-sm font-bold text-emerald-800 tracking-wide uppercase mb-1">Your next step</h2>
-                <h3 className="text-xl font-bold text-slate-900 mb-1">{nextStep.title}</h3>
-                <p className="text-emerald-700/80">{nextStep.desc}</p>
-             </div>
-             <button onClick={nextStep.action} className={`px-6 py-3 rounded-xl font-semibold shadow-sm transition-all whitespace-nowrap ${nextStep.style}`}>
-                {nextStep.label}
-             </button>
-          </section>
+          {isNewUser ? (
+             <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
+                 <h2 className="text-sm font-bold text-slate-800 tracking-wide uppercase mb-4">Getting Started</h2>
+                 <div className="flex flex-col gap-3">
+                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                         <div>
+                             <h3 className="font-bold text-slate-900">1. {hasRoadmap ? 'Review your roadmap' : 'Complete onboarding'}</h3>
+                             <p className="text-sm text-slate-500">{hasRoadmap ? 'Discover what skills you need to reach your career goal.' : 'Generate your personalized career analysis.'}</p>
+                         </div>
+                         <button onClick={() => navigate(hasRoadmap ? '/roadmap' : '/onboarding')} className="mt-3 md:mt-0 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-semibold rounded-lg text-sm transition-colors">{hasRoadmap ? 'View roadmap' : 'Start onboarding'}</button>
+                     </div>
+                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm opacity-60">
+                         <div>
+                             <h3 className="font-bold text-slate-900">2. Begin your first topic</h3>
+                             <p className="text-sm text-slate-500">Start learning from your recommended path.</p>
+                         </div>
+                     </div>
+                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-sm opacity-60">
+                         <div>
+                             <h3 className="font-bold text-slate-900">3. Start a project</h3>
+                             <p className="text-sm text-slate-500">Apply your learning with a hands-on project.</p>
+                         </div>
+                     </div>
+                 </div>
+             </section>
+          ) : (
+             <section className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div>
+                   <h2 className="text-sm font-bold text-emerald-800 tracking-wide uppercase mb-1">Your next step</h2>
+                   <h3 className="text-xl font-bold text-slate-900 mb-1">{nextStep.title}</h3>
+                   <p className="text-emerald-700/80">{nextStep.desc}</p>
+                </div>
+                <button onClick={nextStep.action} className={`px-6 py-3 rounded-xl font-semibold shadow-sm transition-all whitespace-nowrap ${nextStep.style}`}>
+                   {nextStep.label}
+                </button>
+             </section>
+          )}
 
           {/* Career Progress */}
           <section>
@@ -301,11 +332,15 @@ export default function Dashboard() {
                  ))}
                </div>
              ) : (
-               <div className="bg-slate-50 border border-slate-200 border-dashed rounded-2xl p-8 text-center flex flex-col items-center justify-center">
-                  <FolderKanban className="w-8 h-8 text-slate-400 mb-3" />
-                  <h3 className="font-bold text-slate-900 mb-1">No active projects</h3>
-                  <p className="text-sm text-slate-500 mb-4">You don't have any projects in progress right now.</p>
-                  <button onClick={() => navigate('/projects')} className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50">Explore projects</button>
+               <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+                  <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 shrink-0"><FolderKanban className="w-6 h-6"/></div>
+                      <div>
+                          <h3 className="font-bold text-slate-900">Start your first project.</h3>
+                          <p className="text-sm text-slate-500">Put your learning into practice with a project.</p>
+                      </div>
+                  </div>
+                  <button onClick={() => navigate('/projects')} className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 shrink-0">Explore projects</button>
                </div>
              )}
           </section>
@@ -344,7 +379,7 @@ export default function Dashboard() {
                              {skillGaps.map((g: any, i: number) => (
                                <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
                                  <ArrowRight className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                                 <span className="line-clamp-1"><span className="font-semibold">{g.name}:</span> {g.reason}</span>
+                                 <span className="line-clamp-2"><span className="font-semibold">{g.name}</span>{g.reason ? `: ${g.reason}` : ''}</span>
                                </li>
                              ))}
                            </ul>
@@ -360,23 +395,33 @@ export default function Dashboard() {
 
              {/* Practice & Portfolio */}
              <section className="flex flex-col gap-4">
-                <div onClick={() => navigate('/interview-guide')} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start gap-4 cursor-pointer hover:border-emerald-300 transition-colors group">
-                   <div className="w-10 h-10 rounded-full bg-indigo-50 flex flex-shrink-0 items-center justify-center text-indigo-600">
-                     <Radio className="w-5 h-5" />
-                   </div>
-                   <div>
-                      <h3 className="font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">Interview Practice</h3>
-                      <p className="text-sm text-slate-500">Practice live technical interviews against an AI hiring manager tailored to your target role.</p>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start justify-between gap-4">
+                   <div className="flex items-start gap-4">
+                       <div className="w-10 h-10 rounded-full bg-indigo-50 flex flex-shrink-0 items-center justify-center text-indigo-600">
+                         <Radio className="w-5 h-5" />
+                       </div>
+                       <div>
+                          <h3 className="font-bold text-slate-900 mb-1">Interview Practice</h3>
+                          <p className="text-sm text-slate-500 mb-4">Practice live technical interviews against an AI hiring manager tailored to your target role.</p>
+                          <button onClick={() => navigate('/interview-guide')} className="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
+                             Practice interview <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                       </div>
                    </div>
                 </div>
                 
-                <div onClick={() => navigate('/portfolio')} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start gap-4 cursor-pointer hover:border-emerald-300 transition-colors group">
-                   <div className="w-10 h-10 rounded-full bg-fuchsia-50 flex flex-shrink-0 items-center justify-center text-fuchsia-600">
-                     <Briefcase className="w-5 h-5" />
-                   </div>
-                   <div>
-                      <h3 className="font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">Public Portfolio</h3>
-                      <p className="text-sm text-slate-500">Showcase your completed projects, skills, and roadmap progress to recruiters.</p>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-start justify-between gap-4">
+                   <div className="flex items-start gap-4">
+                       <div className="w-10 h-10 rounded-full bg-fuchsia-50 flex flex-shrink-0 items-center justify-center text-fuchsia-600">
+                         <Briefcase className="w-5 h-5" />
+                       </div>
+                       <div>
+                          <h3 className="font-bold text-slate-900 mb-1">Public Portfolio</h3>
+                          <p className="text-sm text-slate-500 mb-4">Showcase your completed projects, skills, and roadmap progress to recruiters.</p>
+                          <button onClick={() => navigate('/portfolio')} className="text-sm font-bold text-fuchsia-600 hover:text-fuchsia-700 flex items-center gap-1 group">
+                             Open portfolio <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                       </div>
                    </div>
                 </div>
              </section>

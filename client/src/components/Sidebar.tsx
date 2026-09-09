@@ -109,6 +109,10 @@ export default function Sidebar({ activePage }: SidebarProps) {
         @media (max-width: 767px) {
           body { padding-top: 4rem !important; }
         }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}} />
 
       {/* ── Mobile Header Bar ── */}
@@ -165,13 +169,13 @@ export default function Sidebar({ activePage }: SidebarProps) {
         </div>
 
         {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto sidebar-scroll px-3 py-4 space-y-6">
           <div>
-            <h3 className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Primary</h3>
+            <h3 className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Workspace</h3>
             {renderNavLinks(primaryNav)}
           </div>
           <div>
-            <h3 className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Secondary</h3>
+            <h3 className="px-3 text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Growth & tools</h3>
             {renderNavLinks(secondaryNav)}
           </div>
         </div>
