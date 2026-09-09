@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Menu, Target, Map, FolderKanban, BookOpen, Bot, LayoutGrid, Settings,
-  Briefcase, Radio, LogOut, Code, User, ChevronUp, ShieldCheck, Trophy, X, Compass, Activity
+  Briefcase, Radio, LogOut, Code, User, ChevronUp, Trophy, X, Compass
 } from 'lucide-react';
 import { getUser, clearSession } from '../utils/auth';
 
@@ -102,15 +102,14 @@ export default function Sidebar({ activePage }: SidebarProps) {
 
   return (
     <>
-      {/* CSS adjustments for the body when sidebar is present */}
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media (min-width: 768px) {
           body { padding-left: 240px !important; }
         }
         @media (max-width: 767px) {
           body { padding-top: 4rem !important; }
         }
-      `}</style>
+      `}} />
 
       {/* ── Mobile Header Bar ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 z-40 flex items-center justify-between px-4">

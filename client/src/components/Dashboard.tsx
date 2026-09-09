@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Sidebar from './Sidebar';
 import { getToken, getUser } from '../utils/auth';
 import {
-  Target, CheckCircle, ArrowRight, Sparkles, Map,
-  Briefcase, FolderKanban, Radio, Wifi, Code, BookOpen
+  Target, CheckCircle, ArrowRight, Sparkles,
+  Briefcase, FolderKanban, Radio, Wifi, BookOpen
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -214,8 +214,6 @@ export default function Dashboard() {
 
   const strengths = resumeSkills?.strengths?.slice(0, 3) || [];
   const skillGaps = resumeSkills?.missingSkills?.slice(0, 3) || (roleSummaryData?.skills ? roleSummaryData.skills.slice(0, 3).map((s:any) => ({ name: s.name, reason: s.reason })) : []);
-  const recommendedStart = resumeSkills?.summary || roleSummaryData?.description || "Based on your profile, start by focusing on core foundational projects in this area.";
-  const isNewUser = rtStats.activeCount === 0 && rtStats.completedCount === 0 && rtStats.roadmapTopics === 0;
 
   return (
     <div className="flex flex-col md:flex-row min-h-[100dvh] bg-white font-sans text-slate-900">
