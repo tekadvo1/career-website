@@ -1,22 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Mail, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AlertCircle, ArrowRight, CheckCircle, Loader2 } from 'lucide-react';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
-
-const fadeUp: any = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-};
-const stagger: any = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-
-function SectionBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-teal-200 bg-teal-50 text-teal-700 text-[11px] font-semibold uppercase tracking-widest mb-4">
-      <Sparkles className="w-3 h-3" />{children}
-    </span>
-  );
-}
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -46,231 +32,218 @@ export default function ContactPage() {
         setForm({ name: '', email: '', subject: '', message: '' });
       } else {
         setStatus('error');
-        setErrorMsg(data.error || 'Something went wrong. Please try again.');
+        setErrorMsg(data.error || 'We couldn’t send your message. Please try again or email us directly.');
       }
     } catch {
       setStatus('error');
-      setErrorMsg('Network error. Please check your connection and try again.');
+      setErrorMsg('We couldn’t send your message. Please try again or email us directly.');
     }
   };
 
   const inputClass = `w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400
-    focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-400/20 transition-all duration-200`;
+    focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20 transition-all duration-200`;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden antialiased" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen bg-white text-slate-900 antialiased" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LandingHeader />
+      
+      <main id="main-content" tabIndex={-1}>
+        {/* 1. Compact introduction */}
+        <section className="pt-24 pb-16 px-4 sm:px-6 bg-gradient-to-b from-slate-50 to-white text-center">
+          <div className="max-w-3xl mx-auto">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />CONTACT FINDSTREAK
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-6">
+              How can we help?
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              Have a question, something isn’t working, or an idea to share? Send us a message.
+            </p>
+          </div>
+        </section>
 
-      {/* Hero */}
-      <section
-        className="pt-32 pb-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden bg-gradient-to-b from-slate-50 to-white"
-        style={{}}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(20,184,166,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.04) 1px, transparent 1px)',
-            backgroundSize: '44px 44px',
-          }}
-        />
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-2xl mx-auto relative">
-          <motion.div variants={fadeUp}><SectionBadge>Contact Us</SectionBadge></motion.div>
-          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl font-black tracking-tight mb-4 text-slate-900">
-            Get in{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Touch</span>
-          </motion.h1>
-          <motion.p variants={fadeUp} className="text-slate-500 text-lg">
-            Have a question, suggestion, or need help? Send us a message and we will get back to you within 24 hours.
-          </motion.p>
-        </motion.div>
-      </section>
+        {/* 2. Main contact area */}
+        <section className="py-12 px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+            
+            {/* Form - Orders first on mobile, second on desktop */}
+            <div className="order-1 lg:order-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Send us a message.</h2>
 
-      {/* Main Content */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-[1fr_380px] gap-10 items-start">
-
-          {/* Form */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={stagger}
-            className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm"
-          >
-            <motion.h2 variants={fadeUp} className="text-xl font-bold text-slate-900 mb-6">Send a Message</motion.h2>
-
-            {status === 'success' ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center text-center py-12"
-              >
-                <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-5">
-                  <CheckCircle className="w-8 h-8 text-teal-400" />
+              {status === 'success' ? (
+                <div className="flex flex-col items-center text-center py-10">
+                  <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent</h3>
+                  <p className="text-slate-600 text-sm max-w-xs leading-relaxed mb-6">
+                    Your message has been sent. Thank you for getting in touch.
+                  </p>
+                  <button
+                    onClick={() => setStatus('idle')}
+                    className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                  >
+                    Send another message
+                  </button>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Message Sent</h3>
-                <p className="text-slate-400 text-sm max-w-xs">
-                  Thanks for reaching out. We will reply to your email within 24 hours.
-                </p>
-                <button
-                  onClick={() => setStatus('idle')}
-                  className="mt-6 text-sm text-teal-600 hover:text-teal-700 transition-colors"
-                >
-                  Send another message
-                </button>
-              </motion.div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <motion.div variants={fadeUp} className="grid sm:grid-cols-2 gap-5">
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid sm:grid-cols-2 gap-5">
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Name <span className="text-slate-400 font-normal" aria-hidden="true">*</span>
+                      </label>
+                      <input
+                        id="name"
+                        type="text"
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        required
+                        className={inputClass}
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Email address <span className="text-slate-400 font-normal" aria-hidden="true">*</span>
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        required
+                        className={inputClass}
+                        autoComplete="email"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                      Your Name <span className="text-red-500">*</span>
+                    <label htmlFor="subject" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Topic
                     </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={form.name}
+                    <select
+                      id="subject"
+                      name="subject"
+                      value={form.subject}
                       onChange={handleChange}
-                      placeholder="Alex Johnson"
+                      className={inputClass + ' cursor-pointer appearance-none bg-[url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3e%3cpolyline points=\'6 9 12 15 18 9\'%3e%3c/polyline%3e%3c/svg%3e")] bg-[length:1em_1em] bg-[right_1rem_center] bg-no-repeat'}
+                    >
+                      <option value="">Select a topic...</option>
+                      <option value="General Question">General question</option>
+                      <option value="Technical Support">Technical support</option>
+                      <option value="Product Feedback">Product feedback</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="message" className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Message <span className="text-slate-400 font-normal" aria-hidden="true">*</span>
+                    </label>
+                    <p id="message-hint" className="text-xs text-slate-500 mb-2">
+                      For technical issues, describe what happened and what you expected. Please don’t include passwords or sensitive account details.
+                    </p>
+                    <textarea
+                      id="message"
+                      name="message"
+                      value={form.message}
+                      onChange={handleChange}
                       required
-                      className={inputClass}
+                      rows={5}
+                      aria-describedby="message-hint"
+                      className={inputClass + ' resize-none'}
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                      Email Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder="alex@example.com"
-                      required
-                      className={inputClass}
-                    />
-                  </div>
-                </motion.div>
 
-                <motion.div variants={fadeUp}>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Subject</label>
-                  <select
-                    name="subject"
-                    value={form.subject}
-                    onChange={handleChange}
-                    className={inputClass + ' cursor-pointer'}
-                  >
-                    <option value="">Select a topic...</option>
-                    <option value="General Question">General Question</option>
-                    <option value="Technical Support">Technical Support</option>
-                    <option value="Billing & Pricing">Billing & Pricing</option>
-                    <option value="Feature Request">Feature Request</option>
-                    <option value="Bug Report">Bug Report</option>
-                    <option value="Partnership">Partnership</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </motion.div>
-
-                <motion.div variants={fadeUp}>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Message <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="message"
-                    value={form.message}
-                    onChange={handleChange}
-                    placeholder="Describe your question or issue in detail..."
-                    required
-                    rows={6}
-                    className={inputClass + ' resize-none'}
-                  />
-                </motion.div>
-
-                {status === 'error' && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-start gap-3 p-4 rounded-xl bg-red-500/5 border border-red-500/20"
-                  >
-                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-300">{errorMsg}</p>
-                  </motion.div>
-                )}
-
-                <motion.button
-                  variants={fadeUp}
-                  type="submit"
-                  disabled={status === 'loading'}
-                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-md hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-                >
-                  {status === 'loading' ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      Send Message
-                    </>
+                  {status === 'error' && (
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-100" role="alert">
+                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-800">{errorMsg}</p>
+                    </div>
                   )}
-                </motion.button>
-              </form>
-            )}
-          </motion.div>
 
-          {/* Contact Info */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={stagger}
-            className="space-y-4"
-          >
-            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-4">
-                <Mail className="w-5 h-5 text-teal-400" />
-              </div>
-              <h3 className="font-bold text-white text-sm mb-1.5">Email Support</h3>
-              <p className="text-sm text-gray-500 mb-2">For any general queries or support requests.</p>
-              <a
-                href="mailto:supportfindstreak@tekadvo.com"
-                className="text-sm text-teal-400 hover:text-teal-300 transition-colors font-medium break-all"
-              >
-                supportfindstreak@tekadvo.com
-              </a>
-            </motion.div>
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={status === 'loading'}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-live="polite"
+                    >
+                      {status === 'loading' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send message'
+                      )}
+                    </button>
+                    <p className="text-center text-xs text-slate-500 mt-4">
+                      By submitting this form, you agree to our <Link to="/privacy" className="underline hover:text-slate-700">Privacy Policy</Link>.
+                    </p>
+                  </div>
+                </form>
+              )}
+            </div>
 
-            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-4">
-                <Clock className="w-5 h-5 text-teal-400" />
-              </div>
-              <h3 className="font-bold text-white text-sm mb-1.5">Response Time</h3>
-              <p className="text-sm text-gray-500">
-                We aim to respond to all messages within <span className="text-white font-medium">24 hours</span> on business days.
-              </p>
-            </motion.div>
-
-            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center mb-4">
-                <MapPin className="w-5 h-5 text-teal-600" />
-              </div>
-              <h3 className="font-bold text-slate-900 text-sm mb-1.5">Platform</h3>
-              <p className="text-sm text-slate-400">
-                Accessible globally at{' '}
-                <a href="https://findstreak.com" className="text-teal-600 hover:text-teal-700 transition-colors font-medium">
-                  findstreak.com
+            {/* Left Column - Helpful Context - Orders second on mobile, first on desktop */}
+            <div className="order-2 lg:order-1 lg:pt-4">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Let’s get your message to the right place.</h2>
+              <ul className="space-y-6 text-slate-600 mb-10">
+                <li>
+                  <strong className="block text-slate-900 font-semibold mb-1">General questions</strong>
+                  Understanding FindStreak and its features.
+                </li>
+                <li>
+                  <strong className="block text-slate-900 font-semibold mb-1">Technical support</strong>
+                  Trouble accessing or using the platform.
+                </li>
+                <li>
+                  <strong className="block text-slate-900 font-semibold mb-1">Feedback</strong>
+                  Ideas for improving the experience.
+                </li>
+              </ul>
+              
+              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                <h3 className="font-semibold text-slate-900 mb-1">Email us directly</h3>
+                <p className="text-sm text-slate-600 mb-3">You can also reach our support team at:</p>
+                <a
+                  href="mailto:supportfindstreak@tekadvo.com"
+                  className="inline-flex items-center text-emerald-600 font-medium hover:text-emerald-700 transition-colors"
+                >
+                  supportfindstreak@tekadvo.com <ArrowRight className="ml-1 w-4 h-4" />
                 </a>
-              </p>
-            </motion.div>
+              </div>
+            </div>
 
-            {/* Note */}
-            <motion.div variants={fadeUp} className="p-5 rounded-xl border border-emerald-100 bg-emerald-50">
-              <p className="text-xs text-slate-500 leading-relaxed">
-                <span className="text-emerald-700 font-semibold">Pro tip:</span> If you already have an account, you can also reach support directly from within the app using the AI Assistant page.
-              </p>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+
+        {/* 4. Helpful links */}
+        <section className="py-16 px-4 sm:px-6 bg-slate-50 border-t border-slate-200">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-xl font-bold text-slate-900 mb-8">Looking for a quick answer?</h2>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <Link to="/how-it-works" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                How FindStreak works
+              </Link>
+              <span className="hidden sm:block text-slate-300">•</span>
+              <Link to="/#career-paths" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                Explore career paths
+              </Link>
+              <span className="hidden sm:block text-slate-300">•</span>
+              <Link to="/forgot-password" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                Reset your password
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
 
       <LandingFooter />
     </div>

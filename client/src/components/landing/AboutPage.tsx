@@ -1,224 +1,166 @@
-import { motion } from 'framer-motion';
-import { Sparkles, Zap, Target, BrainCircuit, Code2, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Target, BrainCircuit, Code2, Zap, Sparkles } from 'lucide-react';
 import LandingHeader from './LandingHeader';
 import LandingFooter from './LandingFooter';
 
-const fadeUp: any = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
-};
-const stagger: any = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-
-function SectionBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-teal-500/20 bg-teal-500/[0.08] text-teal-400 text-[11px] font-semibold uppercase tracking-widest mb-4">
-      <Sparkles className="w-3 h-3" />{children}
-    </span>
-  );
-}
-
-const values = [
-  {
-    icon: Target,
-    title: 'Outcome-Focused',
-    desc: "Everything on FindStreak is built around one outcome: getting you hired in a tech role. Features that don't serve that goal don't exist on the platform.",
-  },
-  {
-    icon: BrainCircuit,
-    title: 'AI That Understands Context',
-    desc: "Our AI assistant knows your role, your current project, and your skill level. It doesn't give generic advice — it gives guidance that is relevant to exactly what you are working on.",
-  },
-  {
-    icon: Code2,
-    title: 'Real Work Over Theory',
-    desc: 'We believe developers learn by building. Every task on FindStreak replicates real industry work. We do not believe passive learning alone prepares you for a job.',
-  },
-  {
-    icon: Zap,
-    title: 'Consistency Wins',
-    desc: 'Career growth is not about bursts of effort. It is about daily consistency. The streak system exists because we know that small daily progress beats occasional marathon sessions every time.',
-  },
-];
-
 export default function AboutPage() {
-  const navigate = useNavigate();
-
   return (
-    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden antialiased" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen bg-white text-slate-900 antialiased" style={{ fontFamily: 'Inter, sans-serif' }}>
       <LandingHeader />
+      <main id="main-content" tabIndex={-1}>
+        {/* 1. Compact introduction */}
+        <section className="pt-24 pb-16 px-4 sm:px-6 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white text-center">
+          <div className="max-w-3xl mx-auto">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />ABOUT FINDSTREAK
+            </p>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
+              Make your next career step clearer.
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              FindStreak brings learning plans, practical projects, interview practice, and portfolios into one place—helping you turn a career goal into steady action.
+            </p>
+          </div>
+        </section>
 
-      {/* Hero */}
-      <section
-        className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden bg-gradient-to-b from-slate-50 to-white"
-        style={{}}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(rgba(20,184,166,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(20,184,166,0.04) 1px, transparent 1px)',
-            backgroundSize: '44px 44px',
-          }}
-        />
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-3xl mx-auto relative">
-          <motion.div variants={fadeUp}><SectionBadge>About FindStreak</SectionBadge></motion.div>
-          <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl font-black tracking-tight mb-5 text-slate-900">
-            We Believe Developers Learn by{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-500">Doing Real Work</span>
-          </motion.h1>
-          <motion.p variants={fadeUp} className="text-slate-500 text-lg leading-relaxed">
-            FindStreak was built because too many talented developers are stuck watching tutorials without ever building
-            the real-world experience that employers actually hire for.
-          </motion.p>
-        </motion.div>
-      </section>
-
-      {/* Problem Statement */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={stagger}
-            className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-10"
-          >
-            <motion.div variants={fadeUp}><SectionBadge>Our Mission</SectionBadge></motion.div>
-            <motion.h2 variants={fadeUp} className="text-2xl sm:text-3xl font-black mb-5">
-              Close the Gap Between Learning and Hiring
-            </motion.h2>
-            <motion.div variants={fadeUp} className="space-y-4 text-gray-400 text-[15px] leading-relaxed">
+        {/* 2. Why FindStreak exists */}
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 mb-8">
+              Learning takes effort. Finding direction shouldn’t take all of it.
+            </h2>
+            <div className="space-y-6 text-slate-600 text-lg leading-relaxed">
               <p>
-                The tech job market has a paradox: companies say they cannot find skilled developers,
-                yet thousands of developers who have spent months or years learning cannot get hired.
-                The gap is not knowledge — it is the ability to apply that knowledge to real problems.
+                Learners often navigate disconnected tutorials, project ideas, and interview resources. 
               </p>
               <p>
-                Traditional online courses and tutorials teach concepts in isolation. They don't teach you how to
-                build a complete feature, debug production issues, or communicate through code reviews — the skills
-                that actually get evaluated in interviews and on the job.
+                Knowing what to work on next—and how it connects to a career goal—can be difficult.
               </p>
               <p>
-                FindStreak is our answer to that problem. We built a platform where every hour of learning produces
-                something real — a project, a skill demonstrated in actual code, a portfolio entry that employers
-                can verify.
+                FindStreak exists to connect these activities into a clearer, manageable journey.
               </p>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
 
-      {/* Values */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-white/[0.04]">
-        <div className="max-w-5xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={stagger}
-            className="text-center mb-12"
-          >
-            <motion.div variants={fadeUp}><SectionBadge>Our Principles</SectionBadge></motion.div>
-            <motion.h2 variants={fadeUp} className="text-3xl font-black tracking-tight">
-              What We Stand For
-            </motion.h2>
-          </motion.div>
+        {/* 3. Our mission */}
+        <section className="py-20 px-4 sm:px-6 bg-slate-50 border-y border-slate-200">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-8 sm:p-12 text-center shadow-sm">
+              <h2 className="text-2xl sm:text-3xl font-bold text-emerald-900 mb-6 leading-snug">
+                Help people turn career goals into practical skills and work they can show.
+              </h2>
+              <p className="text-emerald-800/80 text-lg max-w-2xl mx-auto leading-relaxed">
+                We aim to make the next step easier to understand, progress easier to follow, and learning easier to put into practice.
+              </p>
+            </div>
+          </div>
+        </section>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={stagger}
-            className="grid sm:grid-cols-2 gap-5"
-          >
-            {values.map((v, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-teal-500/20 hover:bg-teal-500/[0.02] transition-all duration-300"
-              >
-                <div className="w-11 h-11 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center mb-5">
-                  <v.icon className="w-5 h-5 text-teal-400" />
-                </div>
-                <h3 className="font-bold text-white text-[15px] mb-3">{v.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{v.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+        {/* 4. Principles behind the product */}
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Principles behind the product</h2>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+                <Target className="h-6 w-6 text-emerald-600 mb-5" />
+                <h3 className="font-bold text-slate-900 mb-3 text-lg">Clear direction</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Help learners understand what to focus on and why it matters.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+                <Code2 className="h-6 w-6 text-emerald-600 mb-5" />
+                <h3 className="font-bold text-slate-900 mb-3 text-lg">Learning through practice</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Connect skills to projects and useful work.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+                <Zap className="h-6 w-6 text-emerald-600 mb-5" />
+                <h3 className="font-bold text-slate-900 mb-3 text-lg">Progress at a realistic pace</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Encourage consistent effort without making rewards more important than learning.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+                <BrainCircuit className="h-6 w-6 text-emerald-600 mb-5" />
+                <h3 className="font-bold text-slate-900 mb-3 text-lg">Work you can explain</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Help learners present their projects, decisions, and skills clearly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      {/* Built For Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-60px' }}
-            variants={stagger}
-            className="text-center mb-12"
-          >
-            <motion.div variants={fadeUp}><SectionBadge>Who It's For</SectionBadge></motion.div>
-            <motion.h2 variants={fadeUp} className="text-3xl font-black tracking-tight mb-4">
-              Built for Developers at Every Stage
-            </motion.h2>
-          </motion.div>
+        {/* 5. Who we’re building for */}
+        <section className="py-20 px-4 sm:px-6 bg-slate-50 border-y border-slate-200">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Who we're building for</h2>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-6">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-slate-900 mb-2">Starting in tech</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  People looking for an understandable starting point.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-slate-900 mb-2">Changing careers</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  People connecting existing experience with a new direction.
+                </p>
+              </div>
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                <h3 className="font-bold text-slate-900 mb-2">Building on existing skills</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  People ready to move from learning concepts to applying them.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={stagger}
-            className="grid sm:grid-cols-3 gap-5"
-          >
-            {[
-              {
-                label: 'Beginners',
-                desc: 'You are learning your first tech stack and want a clear path to your first job without wasting time on irrelevant courses.',
-              },
-              {
-                label: 'Career Switchers',
-                desc: 'You are coming from a different industry and need to build real evidence of your tech skills quickly and efficiently.',
-              },
-              {
-                label: 'Self-Taught Devs',
-                desc: 'You have learned a lot but struggle to fill gaps, prove your skills to employers, or pass technical interviews.',
-              },
-            ].map((g, i) => (
-              <motion.div
-                key={i}
-                variants={fadeUp}
-                className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] text-center"
-              >
-                <h3 className="font-bold text-teal-400 text-sm uppercase tracking-widest mb-3">{g.label}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{g.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+        {/* 6. How we think about AI */}
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles className="h-6 w-6 text-emerald-600" />
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Guidance that supports your thinking.</h2>
+            </div>
+            <ul className="space-y-4 text-slate-600 text-lg leading-relaxed list-disc pl-5">
+              <li>AI can help organize learning and provide suggestions or practice feedback.</li>
+              <li>Learners still need to build, investigate, and make decisions.</li>
+              <li>AI-generated guidance can be imperfect and should be checked against reliable resources.</li>
+            </ul>
+          </div>
+        </section>
 
-      {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-white/[0.04]">
-        <div className="max-w-2xl mx-auto text-center">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-            <motion.h2 variants={fadeUp} className="text-3xl font-black tracking-tight mb-4">
-              Start Building Your Career Today
-            </motion.h2>
-            <motion.p variants={fadeUp} className="text-gray-400 mb-8">
-              Create a free account. Set your target role. Get your personalized roadmap in minutes.
-            </motion.p>
-            <motion.button
-              variants={fadeUp}
-              onClick={() => navigate('/signup')}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 shadow-xl shadow-teal-500/25 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              Get Started Free <ArrowRight className="w-4 h-4" />
-            </motion.button>
-          </motion.div>
-        </div>
-      </section>
-
+        {/* 7. A direct invitation */}
+        <section className="py-24 px-4 sm:px-6 bg-slate-900 text-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-900 opacity-50"></div>
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-6 leading-tight">
+              Have an idea that could make FindStreak better?
+            </h2>
+            <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto leading-relaxed">
+              We’d like to hear what would make your learning journey clearer or more useful.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/contact" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 px-6 py-4 text-sm font-semibold text-white shadow-lg hover:from-emerald-400 hover:to-teal-400 transition-colors">
+                Contact us <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link to="/#career-paths" className="inline-flex items-center justify-center rounded-xl border border-slate-600 bg-slate-800/50 px-6 py-4 text-sm font-semibold text-slate-200 hover:bg-slate-800 transition-colors">
+                Explore career paths
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
       <LandingFooter />
     </div>
   );

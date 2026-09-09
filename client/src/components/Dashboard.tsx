@@ -8,7 +8,7 @@ import {
   Search, Flame, ChevronRight,
   Target, Clock, CheckCircle,
   Layers, RotateCcw, Wifi, Sparkles, Radio, MoreVertical, Save, Trash2,
-  Rocket, Map, Globe, ArrowRight, Activity
+  Rocket, Map, ArrowRight, Activity
 } from 'lucide-react';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -105,6 +105,8 @@ export default function Dashboard() {
   // Full snapshot forwarded to LiveActivityFeed
   const [liveSnapshot, setLiveSnapshot] = useState<DashSnapshot | null>(null);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+  const [roleSummaryData, setRoleSummaryData] = useState<any>(null);
+  const [isRoleSummaryLoading, setIsRoleSummaryLoading] = useState(false);
 
   const handleSaveProject = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
@@ -338,6 +340,109 @@ export default function Dashboard() {
     finally   { setIsTrendLoading(false); }
   };
 
+  /* ── Fetch Role Analysis Summary (Background) ───────────────────────────── */
+  useEffect(() => {
+    const fetchRoleAnalysis = async () => {
+      // 1. Check location state
+      const stateAnalysis = location.state?.analysis;
+      if (stateAnalysis) {
+        setRoleSummaryData(stateAnalysis);
+        // Ensure resumeSkills from location state is preserved even if we don't fetch
+        if (location.state?.resumeSkills) {
+            const savedStr = sessionStorage.getItem('lastRoleAnalysis');
+            try {
+                const parsed = savedStr ? JSON.parse(savedStr) : {};
+                sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                    ...parsed,
+                    resumeSkills: location.state.resumeSkills
+                }));
+            } catch {}
+        }
+        return;
+      }
+      
+      // 2. Check local storage
+      const savedStr = sessionStorage.getItem('lastRoleAnalysis');
+      if (savedStr) {
+        try {
+          const parsed = JSON.parse(savedStr);
+          if (parsed.role === selectedRole && parsed.analysis) {
+            setRoleSummaryData(parsed.analysis);
+            // If location.state has resumeSkills (e.g., from onboarding), we should update the cache
+            if (location.state?.resumeSkills && !parsed.resumeSkills) {
+               sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                  ...parsed,
+                  resumeSkills: location.state.resumeSkills
+               }));
+            }
+            return;
+          }
+        } catch {}
+      }
+      
+      // 3. Otherwise, fetch it.
+      setIsRoleSummaryLoading(true);
+      
+      const doFetch = async () => {
+        try {
+          const user = getUser() ?? {};
+          const response = await apiFetch('/api/role/analyze', {
+            method: 'POST',
+            body: JSON.stringify({ 
+              role: selectedRole, 
+              userId: user.id || null,
+              experienceLevel: location.state?.experienceLevel || 'Beginner', 
+              country: location.state?.country || 'USA',
+              learningPath: location.state?.learningPath
+            }) 
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.status === 'processing') {
+              // It's generating in the background. Keep loading true, and poll after 5 seconds.
+              setTimeout(doFetch, 5000);
+              return;
+            }
+            
+            if (data.success && data.data) {
+              setRoleSummaryData(data.data);
+              
+              // Re-fetch what we have in storage just in case another tab updated it, but override with new analysis
+              const currentSavedStr = sessionStorage.getItem('lastRoleAnalysis');
+              let existingCache: any = {};
+              try { existingCache = currentSavedStr ? JSON.parse(currentSavedStr) : {}; } catch {}
+              
+              sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                ...existingCache,
+                role: selectedRole,
+                analysis: data.data,
+                resumeSkills: location.state?.resumeSkills || existingCache.resumeSkills || null,
+                hasResume: location.state?.hasResume || false,
+                resumeFileName: location.state?.resumeFileName || null,
+                timestamp: new Date().getTime()
+              }));
+              
+              setIsRoleSummaryLoading(false);
+            } else {
+              setIsRoleSummaryLoading(false);
+            }
+          } else {
+            setIsRoleSummaryLoading(false);
+          }
+        } catch (err) {
+          console.error("Error generating role summary", err);
+          setIsRoleSummaryLoading(false);
+        }
+      };
+      
+      doFetch();
+    };
+    
+    fetchRoleAnalysis();
+  }, [selectedRole, location.state]);
+
   /* ── Filtering ───────────────────────────────────────────────────────────── */
   const sourceList = activeTab === 'recommended' || activeTab === 'trending' ? recommendedProjects : userProjects;
   const filteredProjects = sourceList.filter(p => {
@@ -370,6 +475,43 @@ export default function Dashboard() {
   };
 
 
+
+  /* ── User Progress State ─────────────────────────────────────────────────── */
+  const isNewUser = (activeCount === 0 && completedCount === 0) && (!journeyData || !journeyData.hasActiveProject);
+
+  const primaryAction = () => {
+    if (activeCount > 0) {
+      return { label: "Continue Active Project", action: () => setActiveTab('active'), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+    }
+    if (journeyData?.hasRoleAnalysis) {
+      return { label: "View My Roadmap", action: () => navigate('/role-analysis', { state: location.state }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+    }
+    if (roleSummaryData) {
+      return { label: "Pick a Project", action: () => setActiveTab('recommended'), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+    }
+    if (isRoleSummaryLoading) {
+      return { label: "Processing Analysis...", action: () => {}, disabled: true, style: "bg-slate-300 text-slate-500 cursor-not-allowed" };
+    }
+    return { label: "Retry Analysis", action: () => navigate('/onboarding'), style: "bg-rose-600 hover:bg-rose-700 text-white" };
+  };
+
+  const cta = primaryAction();
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(isNewUser);
+
+  useEffect(() => {
+    if (isNewUser) setIsSummaryExpanded(true);
+  }, [isNewUser]);
+
+  const resumeSkills = location.state?.resumeSkills || (() => {
+    try {
+      const saved = sessionStorage.getItem('lastRoleAnalysis');
+      return saved ? JSON.parse(saved).resumeSkills : null;
+    } catch { return null; }
+  })();
+
+  const strengths = resumeSkills?.strengths?.slice(0, 3) || [];
+  const skillGaps = resumeSkills?.missingSkills?.slice(0, 3) || (roleSummaryData?.skills ? roleSummaryData.skills.slice(0, 3).map((s:any) => ({ name: s.name, reason: s.reason })) : []);
+  const recommendedStart = resumeSkills?.summary || roleSummaryData?.description || "Based on your profile, start by focusing on core foundational projects in this area.";
 
   /* ─────────────────────────────────────────────────────────────────────────── */
   return (
@@ -510,70 +652,123 @@ export default function Dashboard() {
       {/* ── MAIN ── */}
       <div className="flex flex-col min-h-[calc(100vh-145px)]">
 
-        {/* ── Journey Banner — DB-driven via SSE snapshot, no localStorage ── */}
-        {!isLoading && journeyData && !journeyData.hasActiveProject && (() => {
-          const steps = [
-            { icon: <Map className="w-4 h-4" />,     n: 1, label: 'Pick Your Role',   sub: 'Role Analysis',        done: journeyData.hasRoleAnalysis,      route: '/role-analysis' },
-            { icon: <Sparkles className="w-4 h-4" />, n: 2, label: 'Design with AI',  sub: 'Project Advisor',      done: journeyData.hasProjectStructure,  route: '/tools'         },
-            { icon: <Rocket className="w-4 h-4" />,  n: 3, label: 'Build It',          sub: 'Pick a project below', done: journeyData.hasCompletedProject,  route: '/dashboard'     },
-            { icon: <Globe className="w-4 h-4" />,   n: 4, label: 'Show the World',    sub: 'Portfolio & Profile',  done: journeyData.isPublicProfile,       route: '/portfolio'     },
-          ];
-          const next = steps.find(s => !s.done);
-          return (
-            <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 md:p-6 relative overflow-hidden shadow-lg border border-white/5">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[11px] font-bold rounded-lg border border-emerald-500/30 uppercase tracking-wider">
-                      <Rocket className="w-3 h-3" /> Your Journey
-                    </span>
-                    {next && (
-                      <span className="text-slate-400 text-[11px]">· Next: <span className="text-emerald-400 font-bold">{next.label}</span></span>
-                    )}
+        {/* ── UNIFIED DASHBOARD TOP SECTION ── */}
+        <div className="max-w-[1500px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-2 flex flex-col gap-4">
+          
+          {/* Summary Card */}
+          {(roleSummaryData || isRoleSummaryLoading) && (
+            <div className={`bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${isNewUser ? 'order-1' : 'order-2'}`}>
+              <div 
+                className={`p-4 md:p-5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors ${isSummaryExpanded ? 'border-b border-slate-100' : ''}`}
+                onClick={() => setIsSummaryExpanded(!isSummaryExpanded)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                    <Target className="w-5 h-5" />
                   </div>
-                  <h2 className="text-white font-extrabold text-xl md:text-2xl mb-1">Ready to build something real?</h2>
-                  <p className="text-slate-400 text-sm mb-5">Complete each step — or pick a project card below to jump straight to building.</p>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
-                    {steps.map((s) => (
-                      <button key={s.n} onClick={() => navigate(s.route)}
-                        className={`flex flex-col items-start gap-1 p-3 rounded-xl border transition-all text-left hover:scale-[1.02] ${
-                          s.done           ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
-                          : next?.n === s.n ? 'bg-white/10 border-emerald-500/40 hover:bg-white/15'
-                                           : 'bg-white/5 border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center mb-1 ${
-                          s.done ? 'bg-emerald-500 text-white' : next?.n === s.n ? 'bg-emerald-500/30 text-emerald-400' : 'bg-white/10 text-slate-400'
-                        }`}>{s.done ? <CheckCircle className="w-4 h-4" /> : s.icon}</div>
-                        <span className={`text-[11px] font-black uppercase tracking-wider ${
-                          s.done ? 'text-emerald-400' : next?.n === s.n ? 'text-emerald-500' : 'text-slate-500'
-                        }`}>Step {s.n}</span>
-                        <span className="text-white font-bold text-xs leading-tight">{s.label}</span>
-                        <span className="text-slate-500 text-[10px]">{s.sub}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button onClick={() => navigate('/tools')}
-                      className="flex items-center justify-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-all text-sm shadow-md">
-                      <Sparkles className="w-4 h-4" /> Design My Project with AI <ArrowRight className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => navigate('/role-analysis')}
-                      className="flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all text-sm border border-white/10">
-                      <Map className="w-4 h-4" /> {journeyData.hasRoleAnalysis ? 'Re-run Role Analysis' : 'Start Role Analysis'}
-                    </button>
-                    <button onClick={() => navigate('/getting-started')}
-                      className="flex items-center justify-center gap-2 px-5 py-3 bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white font-semibold rounded-xl transition-all text-sm border border-white/5">
-                      How it works →
-                    </button>
+                  <div>
+                    <h2 className="font-bold text-slate-900 leading-tight flex items-center gap-2">
+                      Your Career Starting Point
+                      {isRoleSummaryLoading && <div className="w-3 h-3 border-2 border-slate-300 border-t-emerald-500 rounded-full animate-spin" />}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium">{roleSummaryData?.title || selectedRole}</p>
                   </div>
                 </div>
+                <button className="text-slate-400 hover:text-slate-600 p-2">
+                  <ChevronRight className={`w-5 h-5 transition-transform duration-300 ${isSummaryExpanded ? 'rotate-90' : ''}`} />
+                </button>
               </div>
+
+              {isSummaryExpanded && (
+                <div className="p-4 md:p-5 bg-slate-50/50">
+                  {isRoleSummaryLoading ? (
+                    <div className="animate-pulse space-y-4">
+                      <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                      <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                      <div className="h-20 bg-slate-200 rounded w-full"></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {/* Strengths */}
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-emerald-500"/> Existing Strengths</h3>
+                        {strengths.length > 0 ? (
+                           <ul className="space-y-2">
+                             {strengths.map((s: string, i: number) => (
+                               <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                                 <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                                 <span>{s}</span>
+                               </li>
+                             ))}
+                           </ul>
+                        ) : (
+                          <p className="text-sm text-slate-500 italic">No specific strengths recorded.</p>
+                        )}
+                      </div>
+
+                      {/* Skill Gaps */}
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Target className="w-3.5 h-3.5 text-amber-500"/> Priority Skill Gaps</h3>
+                        {skillGaps.length > 0 ? (
+                           <ul className="space-y-2">
+                             {skillGaps.map((g: any, i: number) => (
+                               <li key={i} className="text-sm text-slate-700 flex items-start gap-2">
+                                 <ArrowRight className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                                 <span className="line-clamp-2"><span className="font-semibold">{g.name}:</span> {g.reason || 'Needed for role'}</span>
+                               </li>
+                             ))}
+                           </ul>
+                        ) : (
+                          <p className="text-sm text-slate-500 italic">Ready for the role!</p>
+                        )}
+                      </div>
+
+                      {/* Recommended Start */}
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5"><Map className="w-3.5 h-3.5 text-blue-500"/> Recommended Starting Point</h3>
+                        <p className="text-sm text-slate-700 leading-relaxed mb-4 line-clamp-4">
+                          {recommendedStart}
+                        </p>
+                        <button 
+                          onClick={() => navigate('/role-analysis', { state: location.state })}
+                          className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 group"
+                        >
+                          View Full Analysis <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          );
-        })()}
+          )}
+
+          {/* Action / Next Step Card */}
+          <div className={`bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-5 relative overflow-hidden shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4 border border-white/10 ${isNewUser ? 'order-2' : 'order-1'}`}>
+             <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+             <div className="relative z-10 flex-1">
+               <span className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-lg border border-emerald-500/30 uppercase tracking-wider w-max mb-3">
+                  <Rocket className="w-3 h-3" /> Your Next Step
+               </span>
+               <h2 className="text-white font-extrabold text-lg md:text-xl mb-1">
+                 {activeCount > 0 ? "You have an active project." : journeyData?.hasRoleAnalysis ? "Ready to start building?" : "Let's plan your roadmap."}
+               </h2>
+               <p className="text-slate-400 text-sm">
+                 {activeCount > 0 ? "Continue where you left off and keep your streak alive." : "Follow your roadmap or pick a recommended project to get started."}
+               </p>
+             </div>
+             <div className="relative z-10 shrink-0 w-full md:w-auto">
+               <button 
+                  onClick={cta.action}
+                  disabled={cta.disabled}
+                  className={`w-full md:w-auto px-6 py-3 rounded-lg font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-all ${cta.style}`}
+               >
+                 {cta.label} <ArrowRight className="w-4 h-4" />
+               </button>
+             </div>
+          </div>
+          
+        </div>
 
         {/* Today's Mission Banner */}
         {userProjects.length > 0 && userProjects[0].status === 'active' && (() => {

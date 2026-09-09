@@ -155,7 +155,7 @@ export default function Onboarding() {
     sessionStorage.setItem('user', JSON.stringify(updatedUser));
     apiFetch('/api/auth/complete-onboarding', { method: 'POST' }).catch(() => {});
 
-    navigate('/role-analysis', {
+    navigate('/dashboard', {
       state: {
         role: analysisData?.suggestedRole || role || 'General Career Path',
         experienceLevel,
@@ -164,7 +164,8 @@ export default function Onboarding() {
         resumeFileName: file?.name,
         analysis: null,
         learningPath: selectedPath,
-        resumeSkills: analysisData
+        resumeSkills: analysisData,
+        fromOnboarding: true
       }
     });
   };

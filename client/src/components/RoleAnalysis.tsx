@@ -166,8 +166,7 @@ export default function RoleAnalysis() {
 
         // Try to recover from local storage
         const saved = sessionStorage.getItem('lastRoleAnalysis');
-        // bypass storage if user explicitly chose a "learningPath"
-        if (saved && !location.state?.learningPath) {
+        if (saved) {
           const parsed = JSON.parse(saved);
           const hasWorkflow = parsed.analysis && parsed.analysis.workflow && parsed.analysis.workflow.length > 0;
           if (parsed.role === role && (new Date().getTime() - parsed.timestamp < 3600000) && hasWorkflow) {

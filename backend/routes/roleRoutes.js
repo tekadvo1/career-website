@@ -15,51 +15,62 @@ router.post('/analyze', async (req, res) => {
     const normalizedRole = `${role.trim().toLowerCase()} (${experienceLevel.toLowerCase()} - ${country.toLowerCase()}${learningPath ? ' - ' + learningPath : ''})`;
     let cachedData = null;
     let isUserCache = false;
+    let analysisId = null;
     
     // 1. Check for existing analysis (USER CACHE FIRST, THEN GLOBAL)
     if (!forceRefresh) {
       if (userId) {
         // Try user cache first
         const userCacheResult = await pool.query(
-          "SELECT analysis_data FROM role_analyses WHERE LOWER(role_title) = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
+          "SELECT id, analysis_data, lifecycle_status, error_message FROM role_analyses WHERE LOWER(role_title) = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
           [normalizedRole, userId]
         );
         if (userCacheResult.rows.length > 0) {
-          cachedData = userCacheResult.rows[0].analysis_data;
-          isUserCache = true;
-          console.log(`Using USER cached analysis for: ${normalizedRole} (User ${userId})`);
+          const row = userCacheResult.rows[0];
+          
+          if (row.lifecycle_status === 'processing') {
+            return res.json({ success: true, status: 'processing', message: 'Analysis is generating in the background.' });
+          }
+          if (row.lifecycle_status === 'failed') {
+            console.log(`Previous generation failed for ${normalizedRole}, retrying...`);
+            analysisId = row.id;
+          } else if (row.lifecycle_status === 'ready' || !row.lifecycle_status) {
+            cachedData = row.analysis_data;
+            isUserCache = true;
+            console.log(`Using USER cached analysis for: ${normalizedRole} (User ${userId})`);
+          }
         }
       }
 
       // Fallback to global cache
-      if (!cachedData) {
+      if (!cachedData && !analysisId) {
         const globalCacheResult = await pool.query(
-          "SELECT analysis_data, user_id FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
+          "SELECT analysis_data, user_id, lifecycle_status FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
           [normalizedRole]
         );
         if (globalCacheResult.rows.length > 0) {
-          cachedData = globalCacheResult.rows[0].analysis_data;
-          console.log(`Using GLOBAL cached analysis for: ${normalizedRole}`);
-          
-          // If we are falling back to a global cache created by SOMEONE ELSE,
-          // we should clone it to the current user so they have their own copy they can customize later.
-          if (userId && globalCacheResult.rows[0].user_id !== userId) {
-             try {
-                 await pool.query(
-                   "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
-                   [userId, normalizedRole, cachedData]
-                 );
-                 console.log(`Cloned GLOBAL cache to USER cache for User ${userId}`);
-             } catch (cloneErr) {
-                 console.error("Failed to clone cache to user:", cloneErr);
-             }
+          const grow = globalCacheResult.rows[0];
+          if (grow.lifecycle_status === 'ready' || !grow.lifecycle_status) {
+            cachedData = grow.analysis_data;
+            console.log(`Using GLOBAL cached analysis for: ${normalizedRole}`);
+            
+            if (userId && grow.user_id !== userId) {
+               try {
+                   await pool.query(
+                     "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready')",
+                     [userId, normalizedRole, cachedData]
+                   );
+                   console.log(`Cloned GLOBAL cache to USER cache for User ${userId}`);
+               } catch (cloneErr) {
+                   console.error("Failed to clone cache to user:", cloneErr);
+               }
+            }
           }
         }
       }
     }
 
     if (cachedData) {
-      
       let isModernStructure = false;
       if (cachedData.roadmap && Array.isArray(cachedData.roadmap) && cachedData.roadmap.length > 0) {
           const firstPhase = cachedData.roadmap[0];
@@ -80,245 +91,295 @@ router.post('/analyze', async (req, res) => {
       console.log(`Cache found but using old structure, regenerating for: ${normalizedRole}`);
     }
 
-    // 2. If no user cache, call OpenAI
+    // 2. Insert or update processing state
+    if (userId) {
+       if (analysisId) {
+          await pool.query("UPDATE role_analyses SET lifecycle_status = 'processing' WHERE id = $1", [analysisId]);
+       } else {
+          const insertResult = await pool.query(
+            "INSERT INTO role_analyses (user_id, role_title, lifecycle_status) VALUES ($1, $2, 'processing') RETURNING id",
+            [userId, normalizedRole]
+          );
+          analysisId = insertResult.rows[0].id;
+       }
+    }
+
     const fetch = (await import('node-fetch')).default;
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
       console.error('OpenAI API key is missing');
+      if (analysisId) {
+         await pool.query("UPDATE role_analyses SET lifecycle_status = 'failed', error_message = 'API key missing' WHERE id = $1", [analysisId]);
+      }
       return res.status(500).json({ error: 'Server configuration error: API key missing' });
     }
 
-    console.log(`Generating AI analysis for: ${role} [${experienceLevel}, ${country}]`);
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert career coach. Provide a structured, stable, and comprehensive career guide tailored to the specific experience level and country requested.`
-          },
-          {
-            role: 'user',
-            content: `Create a definitive, EXHAUSTIVE, and DEEPLY EDUCATIONAL career guide for the role: "${role}" at the "${experienceLevel}" level in "${country}".
-            
-            ${learningPath === 'master' ? 'CRITICAL: The user has chosen the "Develop & Master Current Skills" path. Focus heavily on advanced techniques, best practices, real-world deep problem solving, and becoming an expert in their current technical stack. The workflow, day in life, and skills should reflect a senior/expert deepening their craft.' : ''}
-            ${learningPath === 'expand' ? 'CRITICAL: The user has chosen the "Add New Skills & Expand" path. Focus on identifying missing, highly-demanded complementary skills that expand their versatility. The workflow, day in life, and skills should reflect transitioning to a broader role or adopting new trending tools.' : ''}
-
-            Your goal is to make the user FULLY UNDERSTAND what is required and WHY, but you must be CONCISE and FAST. Do not generate an exhaustive list. Only provide the TOP 8 most critical skills, tools, and workflow steps. Keep descriptions brief and highly impactful.
-            
-            Provide the response strictly in JSON format with this structure:
-            {
-              "title": "${role}",
-              "description": "Comprehensive, multi-paragraph description of exactly what this professional does day-to-day, their responsibilities, and their impact on the business.",
-              "jobGrowth": "Current market growth rate and future outlook in ${country}",
-              "salaryRange": "Overview salary range in ${country}",
-              
-              "salary_insights": {
-                 "entry_level": "e.g. $60k - $80k",
-                 "senior_level": "e.g. $120k - $160k",
-                 "salary_growth_potential": "High/Medium/Low",
-                 "negotiation_tips": "Specific advice on how to negotiate deeper compensation for this role."
-              },
-
-              "day_in_the_life": [
-                 { "time": "9:00 AM", "activity": "Standup Meeting", "description": "Discuss blockers with the team." },
-                 { "time": "11:00 AM", "activity": "Deep Work", "description": "Coding core features." }
-              ],
-
-              "career_paths": [
-                 { "role": "Next Step Role 1", "timeline": "2-4 years", "description": "Explanation of this transition." },
-                 { "role": "Next Step Role 2", "timeline": "5+ years", "description": "Explanation of this transition." }
-              ],
-
-              "interview_prep": [
-                 { "question": "Common Interview Question 1", "answer_tip": "Advice on how to answer this question effectively." },
-                 { "question": "Common Interview Question 2", "answer_tip": "Advice on how to answer this question effectively." },
-                 { "question": "Common Interview Question 3", "answer_tip": "Advice on how to answer this question effectively." }
-              ],
-
-              "soft_skills": [
-                 { "name": "Communication", "description": "Why efficient communication is vital." },
-                 { "name": "Leadership", "description": "Leading small teams or initiatives." }
-              ],
-
-              "skills": [
-                { 
-                  "name": "Skill Name", 
-                  "level": "Beginner/Intermediate/Advanced", 
-                  "priority": "High/Medium/Low", 
-                  "timeToLearn": "Estimated time (e.g. 2 weeks)",
-                  "reason": "CRITICAL: Explain WHY this skill is needed for this specific role. (e.g. 'Needed to build scalable APIs').",
-                  "practical_application": "A specific example of how this skill is used on the job."
-                }
-              ],
-              
-              "tools": [
-                 { 
-                   "name": "Tool Name", 
-                   "category": "Category", 
-                   "difficulty": "Easy/Medium/Hard",
-                   "description": "What is this tool?",
-                   "usage_context": "CRITICAL: Explain exactly WHEN and HOW this tool is used. (e.g. 'Used daily for tracking bug reports in Agile teams')."
-                 }
-              ],
-              
-              "languages": [
-                {
-                   "name": "Language Name",
-                   "description": "Brief description",
-                   "usage": "CRITICAL: Explain why this language is dominant in this field. (e.g. 'Python is the industry standard for Data Science due to its rich library ecosystem')." 
-                }
-              ],
-              
-              "frameworks": [
-                 {
-                   "name": "Framework Name",
-                   "description": "Brief description",
-                   "usage": "CRITICAL: Explain why this framework is chosen over others. (e.g. 'React is preferred for its component-based architecture and huge community support')."
-                 }
-              ],
-              
-              "resources": [
-                { 
-                  "name": "Resource Title", 
-                  "provider": "Provider Name", 
-                  "type": "free/paid", 
-                  "duration": "Duration", 
-                  "category": "Course/Tutorial/Book", 
-                  "url": "Valid URL",
-                  "description": "Why is this specific resource recommended? what will they learn?"
-                }
-              ],
-
-              "workflow": [
-                  {
-                    "stage": "Stage Name (e.g. Planning / Database Design)",
-                    "description": "What happens in this stage?",
-                    "tools_used": ["Tool A", "Tool B"],
-                    "activities": ["Activity 1", "Activity 2"]
-                  }
-              ],
-
-              "roadmap": [
-                {
-                  "phase": "Phase Name (e.g., Foundations)",
-                  "duration": "e.g., 4 weeks",
-                  "difficulty": "Beginner/Intermediate/Advanced",
-                  "description": "Goal of this phase",
-                  "topics": [
-                     {
-                       "name": "Topic Name",
-                       "emoji": "Relevant single emoji like 💻 or 🧠",
-                       "description": "Comprehensive explanation of this concept.",
-                       "practical_application": "A specific mini-project or exercise.",
-                       "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
-                       "topic_resources": [
-                          { "name": "Best Paid Course", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
-                          { "name": "Best Free Tutorial", "url": "https://youtube.com/...", "type": "Video", "is_free": true }
-                       ]
-                     }
-                  ],
-                  "skills_covered": ["Skill A", "Skill B"],
-                  "step_by_step_guide": [
-                      "Step 1: textual instruction...", 
-                      "Step 2: textual instruction..."
-                  ],
-                  "projects": [
-                    { "name": "Project Name", "description": "What to build", "difficulty": "Easy/Medium/Hard" }
-                  ],
-                  "category": "Beginner/Intermediate/Advanced"
-                }
-              ]
-            }
-            
-            CRITICAL INSTRUCTIONS FOR "UNLIMITED" DEPTH:
-            1. **Exhaustive Lists**: Do not forcefully limit lists. If 12 skills are essential, list 12.
-            2. **"Why" is Key**: For every Skill, Tool, Language, and Framework, provide the "reason" or "usage" field.
-            3. **Contextualize**: Do not just say "Java". Say "Java (Used for enterprise backend systems)".
-            4. **Conditional**: If the role does not require programming languages, return an empty array [] for "languages".
-            5. **Day in the Life**: BE REALISTIC. 
-            6. **Salary Insights**: Provide separate entry/senior ranges.
-            7. **Workflow & Lifecycle (CRITICAL)**: This must be HIGHLY TECHNICAL and SPECIFIC. 
-               - If the role is "Full Stack Developer", the workflow MUST cover: Database Design (SQL/NoSQL) -> Backend API Development (Node/Python) -> Frontend Connection (React/Vue) -> Testing -> Deployment (CI/CD, AWS/Vercel).
-               - Mention SPECIFIC tools in the 'tools_used' array for each stage (e.g. 'MySQL', 'Express.js', 'Postman', 'GitHub Actions').
-               - Explain HOW components connect in the 'description'. Do not be generic.
-            8. **Roadmap Phases**: The roadmap array MUST contain at least 3 distinct phases (e.g., Beginner, Intermediate, Advanced), each rigorously detailed with 3-5 core topics and practical applications. Do NOT generate just one phase. Under each topic, make SURE to include a 'subtopics' array of 3-5 detailed concepts strings, and a relevant 'emoji' for the topic context.
-            
-            Return ONLY valid JSON.
-            `
-          }
-        ],
-        temperature: 0.5,
-        max_tokens: 15000
-      })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error('OpenAI API Error:', errorData);
-        throw new Error('Failed to fetch from OpenAI');
-    }
-
-    const data = await response.json();
-    const analysisText = data.choices[0].message.content;
-
-    // Parse JSON
-    let analysisData;
-    try {
-      const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/) || analysisText.match(/```\n([\s\S]*?)\n```/);
-      const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
-      analysisData = JSON.parse(jsonText);
-    } catch (e) {
-      console.error('Failed to parse AI response:', e);
-      // If exact parsing fails, try to find the first '{' and last '}'
-      const startIndex = analysisText.indexOf('{');
-      const endIndex = analysisText.lastIndexOf('}');
-      if (startIndex !== -1 && endIndex !== -1) {
-         try {
-            analysisData = JSON.parse(analysisText.substring(startIndex, endIndex + 1));
-         } catch (e2) {
-            throw new Error('Invalid JSON response from AI');
-         }
-      } else {
-         throw new Error('Invalid JSON response from AI');
-      }
-    }
-
-    // 3. Store in Database (Persistence)
-    // If we have a userId, store it linked to them.
-    // If not, we could store it globally (user_id = null) if we wanted a global cache, 
-    // but the requirement is specific to "once user login... not change".
-    
-    if (userId) {
-      try {
-         await pool.query(
-          "INSERT INTO role_analyses (user_id, role_title, analysis_data) VALUES ($1, $2, $3)",
-          [userId, normalizedRole, analysisData]
-        );
-        // Mark onboarding complete
-        await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
-        console.log(`Saved analysis to database for user ${userId}, role: ${normalizedRole}`);
-      } catch (dbError) {
-        console.error('Database save failed:', dbError.message);
-      }
-    }
-
+    // Immediately return processing state to the client so it doesn't block
     res.json({
       success: true,
-      data: analysisData,
-      source: 'ai'
+      status: 'processing',
+      message: 'Analysis generation started in background'
     });
+
+    // Run async background generation
+    (async () => {
+       try {
+           console.log(`Generating AI analysis for: ${role} [${experienceLevel}, ${country}]`);
+           
+           const response = await fetch('https://api.openai.com/v1/chat/completions', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${apiKey}`
+             },
+             body: JSON.stringify({
+               model: 'gpt-4o',
+               messages: [
+                 {
+                   role: 'system',
+                   content: `You are an expert career coach. Provide a structured, stable, and comprehensive career guide tailored to the specific experience level and country requested.`
+                 },
+                 {
+                   role: 'user',
+                   content: `Create a definitive, EXHAUSTIVE, and DEEPLY EDUCATIONAL career guide for the role: "${role}" at the "${experienceLevel}" level in "${country}".
+                   
+                   ${learningPath === 'master' ? 'CRITICAL: The user has chosen the "Develop & Master Current Skills" path. Focus heavily on advanced techniques, best practices, real-world deep problem solving, and becoming an expert in their current technical stack. The workflow, day in life, and skills should reflect a senior/expert deepening their craft.' : ''}
+                   ${learningPath === 'expand' ? 'CRITICAL: The user has chosen the "Add New Skills & Expand" path. Focus on identifying missing, highly-demanded complementary skills that expand their versatility. The workflow, day in life, and skills should reflect transitioning to a broader role or adopting new trending tools.' : ''}
+
+                   Your goal is to make the user FULLY UNDERSTAND what is required and WHY, but you must be CONCISE and FAST. Do not generate an exhaustive list. Only provide the TOP 8 most critical skills, tools, and workflow steps. Keep descriptions brief and highly impactful.
+                   
+                   Provide the response strictly in JSON format with this structure:
+                   {
+                     "title": "${role}",
+                     "description": "Comprehensive, multi-paragraph description of exactly what this professional does day-to-day, their responsibilities, and their impact on the business.",
+                     "jobGrowth": "Current market growth rate and future outlook in ${country}",
+                     "salaryRange": "Overview salary range in ${country}",
+                     
+                     "salary_insights": {
+                        "entry_level": "e.g. $60k - $80k",
+                        "senior_level": "e.g. $120k - $160k",
+                        "salary_growth_potential": "High/Medium/Low",
+                        "negotiation_tips": "Specific advice on how to negotiate deeper compensation for this role."
+                     },
+
+                     "day_in_the_life": [
+                        { "time": "9:00 AM", "activity": "Standup Meeting", "description": "Discuss blockers with the team." },
+                        { "time": "11:00 AM", "activity": "Deep Work", "description": "Coding core features." }
+                     ],
+
+                     "career_paths": [
+                        { "role": "Next Step Role 1", "timeline": "2-4 years", "description": "Explanation of this transition." },
+                        { "role": "Next Step Role 2", "timeline": "5+ years", "description": "Explanation of this transition." }
+                     ],
+
+                     "interview_prep": [
+                        { "question": "Common Interview Question 1", "answer_tip": "Advice on how to answer this question effectively." },
+                        { "question": "Common Interview Question 2", "answer_tip": "Advice on how to answer this question effectively." },
+                        { "question": "Common Interview Question 3", "answer_tip": "Advice on how to answer this question effectively." }
+                     ],
+
+                     "soft_skills": [
+                        { "name": "Communication", "description": "Why efficient communication is vital." },
+                        { "name": "Leadership", "description": "Leading small teams or initiatives." }
+                     ],
+
+                     "skills": [
+                       { 
+                         "name": "Skill Name", 
+                         "level": "Beginner/Intermediate/Advanced", 
+                         "priority": "High/Medium/Low", 
+                         "timeToLearn": "Estimated time (e.g. 2 weeks)",
+                         "reason": "CRITICAL: Explain WHY this skill is needed for this specific role. (e.g. 'Needed to build scalable APIs').",
+                         "practical_application": "A specific example of how this skill is used on the job."
+                       }
+                     ],
+                     
+                     "tools": [
+                        { 
+                          "name": "Tool Name", 
+                          "category": "Category", 
+                          "difficulty": "Easy/Medium/Hard",
+                          "description": "What is this tool?",
+                          "usage_context": "CRITICAL: Explain exactly WHEN and HOW this tool is used. (e.g. 'Used daily for tracking bug reports in Agile teams')."
+                        }
+                     ],
+                     
+                     "languages": [
+                       {
+                          "name": "Language Name",
+                          "description": "Brief description",
+                          "usage": "CRITICAL: Explain why this language is dominant in this field. (e.g. 'Python is the industry standard for Data Science due to its rich library ecosystem')." 
+                       }
+                     ],
+                     
+                     "frameworks": [
+                        {
+                          "name": "Framework Name",
+                          "description": "Brief description",
+                          "usage": "CRITICAL: Explain why this framework is chosen over others. (e.g. 'React is preferred for its component-based architecture and huge community support')."
+                        }
+                     ],
+                     
+                     "resources": [
+                       { 
+                         "name": "Resource Title", 
+                         "provider": "Provider Name", 
+                         "type": "free/paid", 
+                         "duration": "Duration", 
+                         "category": "Course/Tutorial/Book", 
+                         "url": "Valid URL",
+                         "description": "Why is this specific resource recommended? what will they learn?"
+                       }
+                     ],
+
+                     "workflow": [
+                         {
+                           "stage": "Stage Name (e.g. Planning / Database Design)",
+                           "description": "What happens in this stage?",
+                           "tools_used": ["Tool A", "Tool B"],
+                           "activities": ["Activity 1", "Activity 2"]
+                         }
+                     ],
+
+                     "roadmap": [
+                       {
+                         "phase": "Phase Name (e.g., Foundations)",
+                         "duration": "e.g., 4 weeks",
+                         "difficulty": "Beginner/Intermediate/Advanced",
+                         "description": "Goal of this phase",
+                         "topics": [
+                            {
+                              "name": "Topic Name",
+                              "emoji": "Relevant single emoji like 💻 or 🧠",
+                              "description": "Comprehensive explanation of this concept.",
+                              "practical_application": "A specific mini-project or exercise.",
+                              "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
+                              "topic_resources": [
+                                 { "name": "Best Paid Course", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
+                                 { "name": "Best Free Tutorial", "url": "https://youtube.com/...", "type": "Video", "is_free": true }
+                              ]
+                            }
+                         ],
+                         "skills_covered": ["Skill A", "Skill B"],
+                         "step_by_step_guide": [
+                             "Step 1: textual instruction...", 
+                             "Step 2: textual instruction..."
+                         ],
+                         "projects": [
+                           { "name": "Project Name", "description": "What to build", "difficulty": "Easy/Medium/Hard" }
+                         ],
+                         "category": "Beginner/Intermediate/Advanced"
+                       }
+                     ]
+                   }
+                   
+                   CRITICAL INSTRUCTIONS FOR "UNLIMITED" DEPTH:
+                   1. **Exhaustive Lists**: Do not forcefully limit lists. If 12 skills are essential, list 12.
+                   2. **"Why" is Key**: For every Skill, Tool, Language, and Framework, provide the "reason" or "usage" field.
+                   3. **Contextualize**: Do not just say "Java". Say "Java (Used for enterprise backend systems)".
+                   4. **Conditional**: If the role does not require programming languages, return an empty array [] for "languages".
+                   5. **Day in the Life**: BE REALISTIC. 
+                   6. **Salary Insights**: Provide separate entry/senior ranges.
+                   7. **Workflow & Lifecycle (CRITICAL)**: This must be HIGHLY TECHNICAL and SPECIFIC. 
+                      - If the role is "Full Stack Developer", the workflow MUST cover: Database Design (SQL/NoSQL) -> Backend API Development (Node/Python) -> Frontend Connection (React/Vue) -> Testing -> Deployment (CI/CD, AWS/Vercel).
+                      - Mention SPECIFIC tools in the 'tools_used' array for each stage (e.g. 'MySQL', 'Express.js', 'Postman', 'GitHub Actions').
+                      - Explain HOW components connect in the 'description'. Do not be generic.
+                   8. **Roadmap Phases**: The roadmap array MUST contain at least 3 distinct phases (e.g., Beginner, Intermediate, Advanced), each rigorously detailed with 3-5 core topics and practical applications. Do NOT generate just one phase. Under each topic, make SURE to include a 'subtopics' array of 3-5 detailed concepts strings, and a relevant 'emoji' for the topic context.
+                   
+                   Return ONLY valid JSON.
+                   `
+                 }
+               ],
+               temperature: 0.5,
+               max_tokens: 15000
+             })
+           });
+
+           if (!response.ok) {
+               const errorData = await response.json();
+               console.error('OpenAI API Error:', errorData);
+               throw new Error('Failed to fetch from OpenAI');
+           }
+
+           const data = await response.json();
+           const analysisText = data.choices[0].message.content;
+
+           // Parse JSON
+           let analysisData;
+           try {
+             const jsonMatch = analysisText.match(/```json\n([\s\S]*?)\n```/);
+             const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
+             analysisData = JSON.parse(jsonText);
+           } catch (e) {
+             console.error('Failed to parse AI response:', e);
+             const startIndex = analysisText.indexOf('{');
+             const endIndex = analysisText.lastIndexOf('}');
+             if (startIndex !== -1 && endIndex !== -1) {
+                try {
+                   analysisData = JSON.parse(analysisText.substring(startIndex, endIndex + 1));
+                } catch (e2) {
+                   throw new Error('Invalid JSON response from AI');
+                }
+             } else {
+                throw new Error('Invalid JSON response from AI');
+             }
+           }
+
+           // 3. Store in Database (Persistence)
+           if (userId) {
+              if (analysisId) {
+                 await pool.query(
+                    "UPDATE role_analyses SET analysis_data = $1, lifecycle_status = 'ready' WHERE id = $2",
+                    [analysisData, analysisId]
+                 );
+              } else {
+                 await pool.query(
+                  "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready')",
+                  [userId, normalizedRole, analysisData]
+                 );
+              }
+              // Mark onboarding complete
+              await pool.query("UPDATE users SET onboarding_completed = TRUE WHERE id = $1", [userId]);
+              console.log(`Saved analysis to database for user ${userId}, role: ${normalizedRole}`);
+              
+              // Broadcast change live via SSE
+              try {
+                  const fetchReq = (await import('node-fetch')).default;
+                  fetchReq(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, event: 'snapshot' })
+                  }).catch(() => {});
+              } catch (_) {}
+           }
+
+       } catch (error) {
+           console.error('Background Role analysis error:', error);
+           if (analysisId) {
+               await pool.query(
+                 "UPDATE role_analyses SET lifecycle_status = 'failed', error_message = $1 WHERE id = $2",
+                 [error.message || 'Unknown error', analysisId]
+               );
+               
+               // Broadcast failure
+               try {
+                  const fetchReq = (await import('node-fetch')).default;
+                  fetchReq(`http://localhost:${process.env.PORT || 5000}/api/realtime/notify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, event: 'snapshot' })
+                  }).catch(() => {});
+               } catch (_) {}
+           }
+       }
+    })();
 
   } catch (error) {
     console.error('Role analysis error:', error);
-    res.status(500).json({ error: 'Failed to analyze role' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to analyze role' });
+    }
   }
 });
 

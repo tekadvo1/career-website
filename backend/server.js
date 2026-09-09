@@ -143,6 +143,11 @@ const updateSchema = async () => {
       BEGIN
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'role_analyses') THEN
           ALTER TABLE role_analyses ALTER COLUMN user_id DROP NOT NULL;
+          
+          IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'role_analyses' AND column_name = 'lifecycle_status') THEN
+            ALTER TABLE role_analyses ADD COLUMN lifecycle_status VARCHAR(50) DEFAULT 'ready';
+            ALTER TABLE role_analyses ADD COLUMN error_message TEXT;
+          END IF;
         END IF;
 
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'current_streak') THEN
