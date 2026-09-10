@@ -21,8 +21,18 @@ export interface Project {
   recruiterAppeal?: string[];
   progress_data?: any;
   project_data?: any;
+  schedule_data?: ScheduleSettings;
   role?: string;
   projectId?: string;
+  type?: string;
+}
+
+export interface ScheduleSettings {
+  mode: 'self-paced' | 'scheduled';
+  dailyHours: number;
+  selectedDays: string[];
+  startDate: string;
+  timezone: string;
 }
 
 /**

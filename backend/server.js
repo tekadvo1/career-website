@@ -274,6 +274,69 @@ const updateSchema = async () => {
           ALTER TABLE cached_recommendations DROP CONSTRAINT IF EXISTS cached_recommendations_role_type_key;
           ALTER TABLE cached_recommendations ADD CONSTRAINT unique_user_role_type UNIQUE NULLS NOT DISTINCT (user_id, role, type);
         END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'cached_recommendations' AND column_name = 'generation_state') THEN
+          ALTER TABLE cached_recommendations ADD COLUMN generation_state VARCHAR(50) DEFAULT 'completed';
+          ALTER TABLE cached_recommendations ADD COLUMN generated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+
+    // Create real_world_projects table for predefined practical scenarios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS real_world_projects (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        difficulty VARCHAR(50) DEFAULT 'Intermediate',
+        skills_practiced JSONB DEFAULT '[]',
+        prerequisites JSONB DEFAULT '[]',
+        deliverables JSONB DEFAULT '[]',
+        project_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // Seed real-world projects if empty
+    const realWorldCount = await client.query('SELECT COUNT(*) FROM real_world_projects');
+    if (parseInt(realWorldCount.rows[0].count) === 0) {
+      await client.query(`
+        INSERT INTO real_world_projects (title, role, description, difficulty, skills_practiced, prerequisites, deliverables, project_data)
+        VALUES 
+        (
+          'Inventory Management API', 
+          'Software Engineer', 
+          'Build a robust RESTful API for a retail warehouse to track stock levels, handle purchase orders, and generate inventory reports.',
+          'Intermediate',
+          '["Node.js", "Express", "PostgreSQL", "API Design", "Authentication"]'::jsonb,
+          '["Basic understanding of REST APIs", "Familiarity with SQL"]'::jsonb,
+          '["Source code repository", "Postman collection", "Database schema diagram"]'::jsonb,
+          '{"type": "real_world", "tags": ["Backend", "Database", "API"]}'::jsonb
+        ),
+        (
+          'Customer Appointment Booking System', 
+          'Software Engineer', 
+          'Develop a full-stack scheduling application where users can view availability, book time slots, and receive email confirmations.',
+          'Advanced',
+          '["React", "Node.js", "Date/Time Handling", "Email Integration", "React Router"]'::jsonb,
+          '["Intermediate React", "Basic Backend knowledge"]'::jsonb,
+          '["Deployed Application URL", "GitHub Repo", "API Documentation"]'::jsonb,
+          '{"type": "real_world", "tags": ["Full-Stack", "Frontend", "Scheduling"]}'::jsonb
+        )
+      `);
+      console.log('Seeded real_world_projects table');
+    }
+
+    // Add schedule and provenance tracking to user_projects
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_projects' AND column_name = 'schedule_data') THEN
+          ALTER TABLE user_projects ADD COLUMN schedule_data JSONB DEFAULT '{}';
+          ALTER TABLE user_projects ADD COLUMN template_version VARCHAR(50);
+          ALTER TABLE user_projects ADD COLUMN source_provenance VARCHAR(100);
+        END IF;
       END $$;
     `);
 

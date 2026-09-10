@@ -106,6 +106,11 @@ export default function ProjectWorkspace() {
   const [role] = useState<string>(stateRole || user?.role || '');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
+  // Try to grab settings from state or from project.schedule_data
+  const [scheduleData, setScheduleData] = useState<any>(
+     location.state?.settings?.schedule || stateProject?.schedule_data || null
+  );
+  
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -208,6 +213,28 @@ export default function ProjectWorkspace() {
     } catch (e) {
         console.error("Failed to save progress", e);
     }
+  };
+  const handleReschedule = async () => {
+      try {
+          const res = await apiFetch('/api/role/adaptive-schedule', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  currentCompletionDate: new Date().toISOString(), // Mock current
+                  lastActiveDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // Mock 3 days ago
+                  weeklyHours: 10,
+                  tasksRemaining: 10
+              })
+          });
+          const data = await res.json();
+          if (data.success && data.adjustmentMessage) {
+              alert(data.adjustmentMessage);
+          } else {
+              alert("Your schedule is on track!");
+          }
+      } catch (e) {
+          console.error("Reschedule failed", e);
+      }
   };
 
   // INITIALIZATION: REAL-TIME DB SYNC
@@ -316,6 +343,9 @@ export default function ProjectWorkspace() {
                         if (prog.xp) {
                           setTotalXP(prog.xp);
                           setLevel(calculateLevel(prog.xp));
+                        }
+                        if (found.schedule_data) {
+                           setScheduleData(typeof found.schedule_data === 'string' ? JSON.parse(found.schedule_data) : found.schedule_data);
                         }
                     }
                 }
@@ -592,11 +622,27 @@ export default function ProjectWorkspace() {
               <span className="hidden sm:inline">← Back to Dashboard</span>
             </button>
             <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
-            <div className="min-w-0 truncate flex items-center gap-3">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
-              <h1 className="text-[16px] font-extrabold text-slate-900 truncate tracking-tight">
-                {project?.title || "Real-time Chat Application"}
-              </h1>
+            <div className="min-w-0 flex flex-col">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></span>
+                <h1 className="text-[16px] font-extrabold text-slate-900 truncate tracking-tight">
+                  {project?.title || "Real-time Chat Application"}
+                </h1>
+              </div>
+              {scheduleData && (
+                <div className="flex items-center gap-2 mt-1 ml-5 text-xs text-slate-500 font-medium">
+                   <Clock className="w-3.5 h-3.5" />
+                   {scheduleData.mode === 'self-paced' 
+                      ? 'Self-paced' 
+                      : `Scheduled: ${scheduleData.dailyHours || '?'}hrs/day, ${scheduleData.selectedDays?.join(', ')}`}
+                   <button 
+                     onClick={handleReschedule} 
+                     className="ml-2 text-emerald-600 hover:underline flex items-center gap-1"
+                   >
+                     <Zap className="w-3 h-3" /> Adaptive Adjust
+                   </button>
+                </div>
+              )}
             </div>
           </div>
           

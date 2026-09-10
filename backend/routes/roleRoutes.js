@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const realtimeRoutes = require('./realtimeRoutes');
+const { v4: uuidv4 } = require('uuid');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
@@ -385,7 +386,7 @@ router.post('/analyze', async (req, res) => {
 
 // POST /api/role/projects - Generate detailed projects for a role
 router.post('/projects', async (req, res) => {
-  const { role, resumeData, type } = req.body; // type can be 'trending'
+  const { role, resumeData, type, forceRefresh, userId } = req.body; // type can be 'trending'
   const projectType = type || 'standard';
 
   if (!role) {
@@ -393,25 +394,62 @@ router.post('/projects', async (req, res) => {
   }
 
   try {
+    // Fetch Real World Projects (always included if type is standard)
+    let realWorldProjects = [];
+    if (projectType === 'standard') {
+      const rwResult = await pool.query("SELECT project_data FROM real_world_projects WHERE role = $1 OR role = 'Software Engineer'", [role]);
+      realWorldProjects = rwResult.rows.map(r => ({...r.project_data, id: `rw-${Math.random().toString(36).substring(2, 9)}`}));
+    }
+
     // 1. Check Cache
-    const cacheResult = await pool.query(
-        "SELECT projects_data FROM cached_recommendations WHERE role = $1 AND type = $2",
-        [role, projectType]
-    );
+    const cacheQuery = userId 
+      ? "SELECT projects_data, generation_state, generated_at FROM cached_recommendations WHERE role = $1 AND type = $2 AND user_id = $3"
+      : "SELECT projects_data, generation_state, generated_at FROM cached_recommendations WHERE role = $1 AND type = $2 AND user_id IS NULL";
+    const cacheParams = userId ? [role, projectType, userId] : [role, projectType];
+    const cacheResult = await pool.query(cacheQuery, cacheParams);
+
+    let existingProjects = [];
 
     if (cacheResult.rows.length > 0) {
-        console.log(`Using cached projects for ${role} (${projectType})`);
-        return res.json({
-            success: true,
-            data: cacheResult.rows[0].projects_data,
-            source: 'cache'
-        });
+        const row = cacheResult.rows[0];
+        existingProjects = row.projects_data || [];
+
+        // Protection against duplicate concurrent generations
+        if (row.generation_state === 'generating' && forceRefresh) {
+            const generatedAt = new Date(row.generated_at);
+            const now = new Date();
+            // If it's been less than 2 minutes, block
+            if ((now - generatedAt) < 2 * 60 * 1000) {
+               return res.json({ success: true, status: 'processing', message: 'Projects are currently being generated.', data: existingProjects.concat(realWorldProjects) });
+            }
+        }
+
+        if (!forceRefresh && existingProjects.length > 0) {
+            console.log(`Using cached projects for ${role} (${projectType})`);
+            return res.json({
+                success: true,
+                data: existingProjects.concat(realWorldProjects),
+                source: 'cache'
+            });
+        }
+        
+        // Mark as generating if we are going to fetch
+        if (forceRefresh) {
+            const updateQuery = userId 
+                ? "UPDATE cached_recommendations SET generation_state = 'generating', generated_at = CURRENT_TIMESTAMP WHERE role = $1 AND type = $2 AND user_id = $3"
+                : "UPDATE cached_recommendations SET generation_state = 'generating', generated_at = CURRENT_TIMESTAMP WHERE role = $1 AND type = $2 AND user_id IS NULL";
+            await pool.query(updateQuery, cacheParams);
+        }
+    } else {
+        // Create initial row marked as generating
+        const insertQuery = "INSERT INTO cached_recommendations (role, type, user_id, projects_data, generation_state) VALUES ($1, $2, $3, '[]'::jsonb, 'generating')";
+        await pool.query(insertQuery, [role, projectType, userId || null]);
     }
 
     const fetch = (await import('node-fetch')).default;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    console.log(`Generating Projects for: ${role} [Type: ${projectType}]`);
+    console.log(`Generating Projects for: ${role} [Type: ${projectType}, User: ${userId || 'global'}]`);
     
     const resumeContext = resumeData 
        ? `The user has the following background coming from their resume: ${resumeData.substring(0, 500)}...`
@@ -554,24 +592,30 @@ router.post('/projects', async (req, res) => {
     }
 
     if (!projectData || !projectData.projects) {
+        // Reset generation state on failure
+        const failQuery = userId 
+            ? "UPDATE cached_recommendations SET generation_state = 'failed' WHERE role = $1 AND type = $2 AND user_id = $3"
+            : "UPDATE cached_recommendations SET generation_state = 'failed' WHERE role = $1 AND type = $2 AND user_id IS NULL";
+        await pool.query(failQuery, userId ? [role, projectType, userId] : [role, projectType]);
         throw new Error("Failed to generate project structure");
     }
 
-    // Cache Results
+    // Append new projects to existing ones
+    const combinedProjects = [...existingProjects, ...projectData.projects];
+
+    // Cache Results and clear generating state
     try {
-        await pool.query(
-            `INSERT INTO cached_recommendations (role, type, projects_data)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (role, type) DO UPDATE SET projects_data = $3`,
-            [role, projectType, JSON.stringify(projectData.projects)]
-        );
+        const updateQuery = userId 
+            ? "UPDATE cached_recommendations SET projects_data = $1, generation_state = 'completed', generated_at = CURRENT_TIMESTAMP WHERE role = $2 AND type = $3 AND user_id = $4"
+            : "UPDATE cached_recommendations SET projects_data = $1, generation_state = 'completed', generated_at = CURRENT_TIMESTAMP WHERE role = $2 AND type = $3 AND user_id IS NULL";
+        await pool.query(updateQuery, [JSON.stringify(combinedProjects), role, projectType, userId || null]);
     } catch (cacheError) {
         console.error("Failed to cache projects", cacheError);
     }
 
     res.json({
       success: true,
-      data: projectData.projects
+      data: combinedProjects.concat(realWorldProjects)
     });
 
   } catch (error) {
@@ -978,6 +1022,20 @@ router.post('/project-details', async (req, res) => {
             throw new Error("Failed to generate curriculum structure");
         }
 
+        // Assign stable UUIDs to modules and tasks
+        curriculumData.curriculum.forEach(module => {
+            if (!module.id || String(module.id).startsWith('module-')) {
+                module.id = uuidv4();
+            }
+            if (module.tasks && Array.isArray(module.tasks)) {
+                module.tasks.forEach(task => {
+                    if (!task.id || String(task.id).startsWith('task-')) {
+                        task.id = uuidv4();
+                    }
+                });
+            }
+        });
+
         // Cache Results
         try {
             await pool.query(
@@ -1050,7 +1108,7 @@ router.post('/adaptive-schedule', async (req, res) => {
 // POST /api/role/start-project - Saves a project to user_projects
 router.post('/start-project', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { project, role, curriculum, status = 'active' } = req.body;
+    const { project, role, curriculum, status = 'active', schedule_data = {}, source_provenance = 'generated', template_version = '1.0' } = req.body;
 
     if (!userId || !project) {
         return res.status(400).json({ error: 'User ID and Project are required' });
@@ -1070,8 +1128,8 @@ router.post('/start-project', async (req, res) => {
             // If the project was merely "saved" but now they are starting it ("active"), update it!
             if (existingStatus === 'saved' && status === 'active') {
                 await pool.query(
-                    "UPDATE user_projects SET status = 'active', project_data = $1 WHERE id = $2",
-                    [JSON.stringify({ ...project, curriculum }), existingId]
+                    "UPDATE user_projects SET status = 'active', project_data = $1, schedule_data = $3, source_provenance = $4, template_version = $5 WHERE id = $2",
+                    [JSON.stringify({ ...project, curriculum }), existingId, JSON.stringify(schedule_data), source_provenance, template_version]
                 );
                 return res.json({ success: true, projectId: existingId, message: 'Saved project activated' });
             }
@@ -1080,8 +1138,8 @@ router.post('/start-project', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data, schedule_data, source_provenance, template_version)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              RETURNING id`,
             [
                 userId, 
@@ -1090,7 +1148,10 @@ router.post('/start-project', async (req, res) => {
                 role,
                 status,
                 JSON.stringify({ ...project, curriculum }), // Store full project + curriculum
-                JSON.stringify({ completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 })
+                JSON.stringify({ completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 }),
+                JSON.stringify(schedule_data),
+                source_provenance,
+                template_version
             ]
         );
 

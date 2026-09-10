@@ -10,6 +10,7 @@ import {
   FolderKanban,
   Plus,
   AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import ProjectOnboardingWizard from "./ProjectOnboardingWizard";
@@ -41,6 +42,8 @@ export default function ProjectsCatalog() {
   const [suggestions, setSuggestions] = useState<Project[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [exploreCategory, setExploreCategory] = useState<"for-you" | "real-world">("for-you");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -103,6 +106,40 @@ export default function ProjectsCatalog() {
     void load();
     return () => controller.abort();
   }, [role, retry, loadOwned]);
+
+  const handleFindNewIdeas = async () => {
+    setGenerating(true);
+    setError("");
+    try {
+      const res = await apiFetch("/api/role/projects", {
+        method: "POST",
+        body: JSON.stringify({ role, forceRefresh: true }),
+      });
+      const data = object(await res.json());
+      if (!res.ok || !data.success) {
+        if (data.status === 'processing') {
+           setNotice(data.message || "Projects are currently being generated.");
+           // Still reload to get existing ones just in case
+           const currentRes = await apiFetch("/api/role/projects", {
+              method: "POST",
+              body: JSON.stringify({ role }),
+           });
+           const currentData = object(await currentRes.json());
+           if (currentRes.ok && currentData.success) {
+               setSuggestions(parseProjects(currentData.data));
+           }
+           return;
+        }
+        throw new Error("Could not generate new project ideas.");
+      }
+      setSuggestions(parseProjects(data.data));
+      setNotice("New project ideas added!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate new ideas.");
+    } finally {
+      setGenerating(false);
+    }
+  };
   useEffect(() => {
     const controller = new AbortController();
     const stream = new EventSource(
@@ -182,7 +219,7 @@ export default function ProjectsCatalog() {
   };
   const list = (
     tab === "explore"
-      ? suggestions
+      ? suggestions.filter(p => exploreCategory === 'real-world' ? p.type === 'real_world' : p.type !== 'real_world')
       : projects.filter((project) => project.status === tab)
   ).filter(
     (project) =>
@@ -264,6 +301,45 @@ export default function ProjectsCatalog() {
               </select>
             </label>
           </div>
+
+          {tab === "explore" && (
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex gap-2 p-1 bg-slate-200/50 rounded-lg self-start">
+                <button
+                  onClick={() => setExploreCategory("for-you")}
+                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                    exploreCategory === "for-you"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  For you
+                </button>
+                <button
+                  onClick={() => setExploreCategory("real-world")}
+                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${
+                    exploreCategory === "real-world"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-500 hover:text-slate-900"
+                  }`}
+                >
+                  Real-world
+                </button>
+              </div>
+              
+              {exploreCategory === "for-you" && (
+                <button
+                  onClick={handleFindNewIdeas}
+                  disabled={generating}
+                  className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+                >
+                  <RefreshCw className={`h-4 w-4 ${generating ? 'animate-spin' : ''}`} />
+                  {generating ? "Generating..." : "Find new ideas"}
+                </button>
+              )}
+            </div>
+          )}
+
           {error && (
             <div
               role="alert"
