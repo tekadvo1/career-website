@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
 const realtimeRoutes = require('./realtimeRoutes');
+const { OpenAI } = require('openai');
 const { v4: uuidv4 } = require('uuid');
 
 // POST /api/role/analyze - Generate detailed role analysis using AI
@@ -1188,7 +1189,7 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status, lastUpdated, chatData, setupData } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1233,6 +1234,12 @@ router.post('/update-project-progress', async (req, res) => {
             paramIndex++;
         }
 
+        if (blueprintData) {
+            params.push(JSON.stringify(blueprintData));
+            query += `, blueprint_data = $${paramIndex}`;
+            paramIndex++;
+        }
+
         query += ` WHERE id = $2 AND user_id = $3`;
 
         const result = await pool.query(query, params);
@@ -1247,6 +1254,86 @@ router.post('/update-project-progress', async (req, res) => {
     } catch (err) {
         console.error('Error updating project progress:', err);
         res.status(500).json({ error: 'Failed to update progress' });
+    }
+});
+
+// POST /api/role/project/:id/generate-blueprint - Generates and saves a blueprint
+router.post('/project/:id/generate-blueprint', async (req, res) => {
+    const userId = req.user ? req.user.id : req.body.userId;
+    const projectId = req.params.id;
+
+    if (!userId || !projectId) {
+        return res.status(400).json({ error: 'Missing user or project ID' });
+    }
+
+    try {
+        const pQuery = await pool.query("SELECT project_data, blueprint_data FROM user_projects WHERE id = $1 AND user_id = $2", [projectId, userId]);
+        if (pQuery.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+        
+        const existingBlueprint = pQuery.rows[0].blueprint_data;
+        if (existingBlueprint && existingBlueprint.files && existingBlueprint.files.length > 0) {
+             return res.json({ success: true, blueprint: existingBlueprint, message: 'Returned existing blueprint' });
+        }
+
+        const projectData = pQuery.rows[0].project_data;
+        if (!projectData) return res.status(400).json({ error: 'Project data missing' });
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const stackStr = (projectData.tags?.join(', ') + ', ' + (projectData.tools?.join(', ') || '') + ', ' + (projectData.languages?.join(', ') || '')).trim();
+
+        const systemPrompt = `You are an expert Senior Software Architect. Generate a COMPLETE, detailed, professional project structure blueprint for the following project.
+Project Name: ${projectData.title}
+Description: ${projectData.description}
+Tech Stack: ${stackStr}
+
+You MUST return a valid JSON object with this exact schema:
+{
+  "projectOverview": {
+    "purpose": "What this project does in plain language",
+    "intendedUsers": "Who will use this",
+    "deliverables": ["Deliverable 1", "Deliverable 2"],
+    "scopeBoundaries": ["What is NOT included"]
+  },
+  "architecture": {
+    "type": "E.g., Full-stack, Frontend-only, Backend service",
+    "components": [
+      { "name": "Frontend", "description": "User interface", "tech": "React, etc." },
+      { "name": "Backend API", "description": "Handles logic", "tech": "Node, etc." },
+      { "name": "Database", "description": "Data storage", "tech": "Postgres, etc." }
+    ]
+  },
+  "files": [
+    {
+      "path": "src/App.tsx",
+      "purpose": "Main application component",
+      "belongsInIt": "Global layout, routing",
+      "relatedTasks": "Setup project"
+    }
+  ]
+}
+
+Include 8-15 files spanning the core structure of the app.`;
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'system', content: systemPrompt }],
+            max_tokens: 3000,
+            temperature: 0.7,
+            response_format: { type: 'json_object' }
+        });
+
+        const parsed = JSON.parse(completion.choices[0].message.content);
+
+        await pool.query(
+            "UPDATE user_projects SET blueprint_data = $1 WHERE id = $2",
+            [JSON.stringify(parsed), projectId]
+        );
+
+        res.json({ success: true, blueprint: parsed });
+    } catch (err) {
+        console.error('Blueprint Generation Error:', err);
+        res.status(500).json({ error: 'Failed to generate blueprint' });
     }
 });
 

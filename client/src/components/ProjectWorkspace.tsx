@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { TaskGuideView } from "./TaskGuideView";
 import { SetupView } from "./projects/SetupView";
+import BlueprintView from "./projects/BlueprintView";
 import { useAlert } from '../contexts/AlertContext';
 
 interface Step {
@@ -48,9 +49,9 @@ export default function ProjectWorkspace() {
   const [role] = useState<string>(stateRole || user?.role || '');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
-  const queryView = searchParams.get('view') as 'setup' | 'build';
-  const [workspaceView, setWorkspaceView] = useState<'setup' | 'build'>(
-    queryView || (project?.setup_data?.checkedItems?.length > 0 ? 'build' : 'setup')
+  const queryView = searchParams.get('view') as 'setup' | 'blueprint' | 'build';
+  const [workspaceView, setWorkspaceView] = useState<'setup' | 'blueprint' | 'build'>(
+    queryView || (project?.setup_data?.checkedItems?.length > 0 ? (project?.blueprint_data?.files ? 'build' : 'blueprint') : 'setup')
   );
   
   // Sync URL when view changes
@@ -156,7 +157,7 @@ export default function ProjectWorkspace() {
             })
         });
         if (proceedToBuild) {
-            setWorkspaceView('build');
+            setWorkspaceView('blueprint');
         } else {
             showAlert("Setup saved.", "success");
         }
@@ -363,10 +364,11 @@ export default function ProjectWorkspace() {
              </div>
           </div>
 
-          {/* View toggle (Setup vs Build) */}
+          {/* View toggle (Setup vs Blueprint vs Build) */}
           <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
             <button onClick={() => setWorkspaceView("setup")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'setup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Settings className="w-3.5 h-3.5"/> Setup</button>
-            <button onClick={() => setWorkspaceView("build")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'build' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><BookOpen className="w-3.5 h-3.5"/> Build</button>
+            <button onClick={() => setWorkspaceView("blueprint")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'blueprint' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><BookOpen className="w-3.5 h-3.5"/> Blueprint</button>
+            <button onClick={() => setWorkspaceView("build")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'build' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Circle className="w-3.5 h-3.5"/> Build</button>
           </div>
           
           {/* Mobile pane toggles */}
@@ -429,8 +431,8 @@ export default function ProjectWorkspace() {
            </div>
         </div>
 
-        {/* CENTER PANE: TASK GUIDE OR SETUP */}
-        <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-1 flex-col h-full overflow-hidden bg-white relative`}>
+        {/* CENTER PANE: MAIN VIEW (Setup, Blueprint, or Task) */}
+        <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-col flex-1 bg-white min-w-0 h-full overflow-hidden relative`}>
            {workspaceView === 'setup' ? (
               <SetupView 
                 project={project} 
@@ -441,6 +443,15 @@ export default function ProjectWorkspace() {
                   setActivePane('ai');
                   setWorkspaceView('setup');
                 }}
+              />
+           ) : workspaceView === 'blueprint' ? (
+              <BlueprintView 
+                project={project} 
+                curriculum={steps}
+                onContinue={() => setWorkspaceView('build')} 
+                onBack={() => setWorkspaceView('setup')}
+                onUpdateProject={(p: any) => setProject(p)}
+                onAskAI={(msg: string) => { setInputMessage(msg); setActivePane('ai'); }}
               />
            ) : selectedTaskId ? (
               <TaskGuideView 

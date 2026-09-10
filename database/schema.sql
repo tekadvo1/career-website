@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS user_projects (
   schedule_data JSONB DEFAULT '{}',
   chat_data JSONB DEFAULT '{}',
   setup_data JSONB DEFAULT '{}',
+  blueprint_data JSONB DEFAULT '{}',
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
