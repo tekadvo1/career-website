@@ -182,9 +182,7 @@ export default function ProjectsCatalog() {
   };
   const list = (
     tab === "explore"
-      ? suggestions.filter(
-          (item) => !projects.some((project) => project.title === item.title),
-        )
+      ? suggestions
       : projects.filter((project) => project.status === tab)
   ).filter(
     (project) =>
@@ -336,8 +334,8 @@ export default function ProjectsCatalog() {
             <div
               className={
                 tab === "active"
-                  ? "space-y-4"
-                  : "grid gap-5 sm:grid-cols-2 xl:grid-cols-3"
+                  ? "flex flex-col gap-4"
+                  : "grid gap-5 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
               }
             >
               {list.map((project) => {
@@ -346,9 +344,9 @@ export default function ProjectsCatalog() {
                 return (
                   <article
                     key={project.id}
-                    className={`rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-emerald-200 ${active ? "grid items-center gap-6 lg:grid-cols-[1fr_220px]" : "flex flex-col"}`}
+                    className={`rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-emerald-200 ${active ? "grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_260px]" : "flex flex-col"}`}
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="mb-4 flex items-center justify-between">
                         <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
                           {project.difficulty}

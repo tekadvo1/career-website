@@ -58,10 +58,13 @@ export const parseProjects = (val: any, fromDb: boolean = false): Project[] => {
     });
   }
   
-  return arr.map(p => ({
-    ...p,
-    tags: Array.isArray(p.tags) ? p.tags : []
-  }));
+  return arr.map(p => {
+    const { status, progress_data, project_data, ...rest } = p;
+    return {
+      ...rest,
+      tags: Array.isArray(rest.tags) ? rest.tags : []
+    };
+  });
 };
 
 function safeParse(val: string, fallback: any) {
