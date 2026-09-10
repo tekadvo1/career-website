@@ -1157,8 +1157,8 @@ router.post('/start-project', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data, schedule_data, source_provenance, template_version)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO user_projects (user_id, title, description, role, status, project_data, progress_data, schedule_data, setup_data, source_provenance, template_version)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              RETURNING id`,
             [
                 userId, 
@@ -1169,6 +1169,7 @@ router.post('/start-project', async (req, res) => {
                 JSON.stringify({ ...project, curriculum }), // Store full project + curriculum
                 JSON.stringify({ completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 }),
                 JSON.stringify(schedule_data),
+                '{}', // Default setup_data
                 source_provenance,
                 template_version
             ]
@@ -1187,7 +1188,7 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status, lastUpdated, chatData } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData, setupData } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1223,6 +1224,12 @@ router.post('/update-project-progress', async (req, res) => {
         if (chatData) {
             params.push(JSON.stringify(chatData));
             query += `, chat_data = $${paramIndex}`;
+            paramIndex++;
+        }
+
+        if (setupData) {
+            params.push(JSON.stringify(setupData));
+            query += `, setup_data = $${paramIndex}`;
             paramIndex++;
         }
 

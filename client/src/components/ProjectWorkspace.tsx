@@ -3,9 +3,10 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Circle, Sparkles, Send, 
-  BookOpen, ChevronDown, ChevronUp, Loader2, Zap
+  BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings
 } from "lucide-react";
 import { TaskGuideView } from "./TaskGuideView";
+import { SetupView } from "./projects/SetupView";
 import { useAlert } from '../contexts/AlertContext';
 
 interface Step {
@@ -47,6 +48,18 @@ export default function ProjectWorkspace() {
   const [role] = useState<string>(stateRole || user?.role || '');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
+  const queryView = searchParams.get('view') as 'setup' | 'build';
+  const [workspaceView, setWorkspaceView] = useState<'setup' | 'build'>(
+    queryView || (project?.setup_data?.checkedItems?.length > 0 ? 'build' : 'setup')
+  );
+  
+  // Sync URL when view changes
+  useEffect(() => {
+    if (projectId && (searchParams.get('view') !== workspaceView || searchParams.get('projectId') !== projectId)) {
+      navigate(`?projectId=${projectId}&view=${workspaceView}`, { replace: true, state: location.state });
+    }
+  }, [workspaceView, projectId, navigate, location.state, searchParams]);
+
   const [, setScheduleData] = useState<any>(location.state?.settings?.schedule || stateProject?.schedule_data || null);
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -120,6 +133,36 @@ export default function ProjectWorkspace() {
     } catch (e) {
         console.error("Failed to save progress", e);
         showAlert("Failed to save progress.", "error");
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const persistSetup = async (setupData: any, proceedToBuild: boolean) => {
+    if (!projectId || !user.id) return;
+    setIsSaving(true);
+    setProject((prev: any) => ({ ...prev, setup_data: setupData }));
+    
+    try {
+        await apiFetch('/api/role/update-project-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: user.id,
+                projectId: projectId,
+                progress: { completedTasks: steps.flatMap(s => s.tasks.filter(t => t.completed).map(t => t.id)), xp: totalXP },
+                setupData,
+                lastUpdated: new Date().toISOString()
+            })
+        });
+        if (proceedToBuild) {
+            setWorkspaceView('build');
+        } else {
+            showAlert("Setup saved.", "success");
+        }
+    } catch (e) {
+        console.error("Failed to save setup data", e);
+        showAlert("Failed to save setup.", "error");
     } finally {
         setIsSaving(false);
     }
@@ -319,6 +362,12 @@ export default function ProjectWorkspace() {
                <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progressPercentage}%` }} />
              </div>
           </div>
+
+          {/* View toggle (Setup vs Build) */}
+          <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
+            <button onClick={() => setWorkspaceView("setup")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'setup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Settings className="w-3.5 h-3.5"/> Setup</button>
+            <button onClick={() => setWorkspaceView("build")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'build' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><BookOpen className="w-3.5 h-3.5"/> Build</button>
+          </div>
           
           {/* Mobile pane toggles */}
           <div className="flex lg:hidden bg-slate-100 p-1 rounded-lg border border-slate-200">
@@ -380,9 +429,20 @@ export default function ProjectWorkspace() {
            </div>
         </div>
 
-        {/* CENTER PANE: TASK GUIDE */}
+        {/* CENTER PANE: TASK GUIDE OR SETUP */}
         <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-1 flex-col h-full overflow-hidden bg-white relative`}>
-           {selectedTaskId ? (
+           {workspaceView === 'setup' ? (
+              <SetupView 
+                project={project} 
+                initialSetupData={project?.setup_data}
+                onSaveSetup={persistSetup}
+                onHelpMeFixIt={(req, os) => {
+                  setInputMessage(`I need help installing ${req.name} on ${os}. ${req.troubleshooting.join(' ')}`);
+                  setActivePane('ai');
+                  setWorkspaceView('setup');
+                }}
+              />
+           ) : selectedTaskId ? (
               <TaskGuideView 
                 task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
                 projectTitle={project?.title}

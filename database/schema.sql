@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS user_projects (
   progress_data JSONB DEFAULT '{}', -- Stores { completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 }
   schedule_data JSONB DEFAULT '{}',
   chat_data JSONB DEFAULT '{}',
+  setup_data JSONB DEFAULT '{}',
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

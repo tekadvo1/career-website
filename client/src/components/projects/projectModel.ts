@@ -22,6 +22,7 @@ export interface Project {
   progress_data?: any;
   project_data?: any;
   schedule_data?: ScheduleSettings;
+  setup_data?: any;
   role?: string;
   projectId?: string;
   type?: string;
@@ -64,7 +65,8 @@ export const parseProjects = (val: any, fromDb: boolean = false): Project[] => {
       const tags = typeof p.tags === 'string' ? safeParse(p.tags, []) : (p.tags || []);
       const progress_data = typeof p.progress_data === 'string' ? safeParse(p.progress_data, {}) : (p.progress_data || {});
       const project_data = typeof p.project_data === 'string' ? safeParse(p.project_data, {}) : (p.project_data || {});
-      return { ...p, tags, progress_data, project_data };
+      const setup_data = typeof p.setup_data === 'string' ? safeParse(p.setup_data, {}) : (p.setup_data || {});
+      return { ...p, tags, progress_data, project_data, setup_data };
     });
   }
   
