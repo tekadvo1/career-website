@@ -143,25 +143,23 @@ router.post('/guide', checkAICredits, async (req, res) => {
              Current Task: ${taskText}
              Role Target: ${role || 'Software Engineer'}
 
-             Your goal is to be a "Pair Programmer":
-             1. Explain the current task concepts clearly.
-             2. Provide a step-by-step guide to complete this specific task.
-             3. Include clean, commented, production-ready code snippets where helpful.
-             4. Provide Tips and Troubleshooting advice.
+             Your goal is to be a "Pair Programmer" and provide a structured learning experience:
+             1. UNDERSTAND: Explain the concepts behind this task and why we are doing it.
+             2. BUILD: Provide step-by-step instructions and code snippets to implement the feature. Do not hand over the entire file at once; teach them how to build it.
+             3. TRY IT: How can the user run or test this locally?
+             4. EXPECTED RESULT: What should it look like or output when it works?
+             5. CHECK YOUR WORK: How can the user verify their implementation is correct?
+             6. RESOURCES: Provide a few helpful tips, documentation links, or troubleshooting advice.
              
-             You MUST return your response as a valid JSON object with the following schema:
+             You MUST return your response as a valid JSON object with the following exact schema (use markdown inside the string values for formatting):
              {
                "title": "Clear title for the task",
-               "overview": "Brief overview of what will be done and why",
-               "steps": [
-                 {
-                   "title": "Step title",
-                   "description": "Detailed explanation of this step",
-                   "code": "Optional code block or command for this step (or null)"
-                 }
-               ],
-               "tips": ["Pro tip 1", "Pro tip 2"],
-               "troubleshooting": ["Common issue 1 and solution", "Common issue 2"]
+               "understand": "Markdown text explaining the concepts",
+               "build": "Markdown text with step-by-step build instructions and code snippets",
+               "try_it": "Markdown text explaining how to run/test",
+               "expected_result": "Markdown text describing the success criteria",
+               "check_your_work": "Markdown text on how to verify",
+               "resources": ["Tip or link 1", "Tip or link 2"]
              }`;
 
         const requestOptions = {

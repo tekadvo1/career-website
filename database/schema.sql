@@ -136,6 +136,8 @@ CREATE TABLE IF NOT EXISTS user_projects (
   status VARCHAR(50) DEFAULT 'active', -- active, completed, paused
   project_data JSONB NOT NULL, -- Stores the full project details and curriculum
   progress_data JSONB DEFAULT '{}', -- Stores { completedTasks: [], xp: 0, currentModule: 0, currentTask: 0 }
+  schedule_data JSONB DEFAULT '{}',
+  chat_data JSONB DEFAULT '{}',
   last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

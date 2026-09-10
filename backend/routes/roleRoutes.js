@@ -1062,10 +1062,20 @@ router.post('/project-details', async (req, res) => {
 // POST /api/role/adaptive-schedule - Recalculate timeline based on missed days
 router.post('/adaptive-schedule', async (req, res) => {
     try {
-        const { currentCompletionDate, lastActiveDate, weeklyHours, tasksRemaining } = req.body;
+        const userId = req.user ? req.user.id : req.body.userId;
+        const { projectId, currentCompletionDate, lastActiveDate, weeklyHours, tasksRemaining } = req.body;
         
-        // Simple Simulation Logic for "Adaptive AI"
-        // In reality, this would check DB for missed daily goals
+        if (!userId || !projectId) {
+            return res.status(400).json({ error: 'User ID and Project ID are required' });
+        }
+
+        const projectResult = await pool.query("SELECT schedule_data FROM user_projects WHERE id = $1 AND user_id = $2", [projectId, userId]);
+        if (projectResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+
+        const currentSchedule = projectResult.rows[0].schedule_data || {};
+        
         const today = new Date();
         const lastActive = lastActiveDate ? new Date(lastActiveDate) : new Date();
         
@@ -1082,12 +1092,19 @@ router.post('/adaptive-schedule', async (req, res) => {
             daysDelayed = daysInactive;
             
             // Push completion date
-            const currentEnd = new Date(currentCompletionDate);
-            currentEnd.setDate(currentEnd.getDate() + daysDelayed);
-            newCompletionDate = currentEnd.toISOString();
+            if (currentCompletionDate) {
+                const currentEnd = new Date(currentCompletionDate);
+                currentEnd.setDate(currentEnd.getDate() + daysDelayed);
+                newCompletionDate = currentEnd.toISOString();
+            }
 
             adjustmentMessage = `Visualizing schedule... You missed ${daysInactive} days. We've adjusted your timeline by +${daysDelayed} days to keep you on track without burnout.`;
         }
+        
+        currentSchedule.estimatedCompletionDate = newCompletionDate;
+        currentSchedule.lastAdjustmentDate = new Date().toISOString();
+
+        await pool.query("UPDATE user_projects SET schedule_data = $1 WHERE id = $2 AND user_id = $3", [JSON.stringify(currentSchedule), projectId, userId]);
 
         res.json({
             success: true,
@@ -1095,8 +1112,10 @@ router.post('/adaptive-schedule', async (req, res) => {
             adjustmentMessage,
             daysDelayed,
             newCompletionDate,
-            daysInactive
+            daysInactive,
+            scheduleData: currentSchedule
         });
+
 
     } catch (error) {
         console.error('Adaptive Schedule Error:', error);
@@ -1168,24 +1187,52 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
     try {
+        // Concurrency check if lastUpdated is provided
+        if (lastUpdated) {
+            const checkQuery = await pool.query("SELECT last_updated FROM user_projects WHERE id = $1 AND user_id = $2", [projectId, userId]);
+            if (checkQuery.rows.length > 0) {
+                const currentLastUpdated = new Date(checkQuery.rows[0].last_updated).getTime();
+                const clientLastUpdated = new Date(lastUpdated).getTime();
+                // Allow a small drift window (e.g., 2000ms)
+                if (currentLastUpdated > clientLastUpdated + 2000) {
+                    return res.status(409).json({ 
+                        error: 'Conflict: The project was updated by another session.',
+                        currentLastUpdated: checkQuery.rows[0].last_updated
+                    });
+                }
+            }
+        }
+
         let query = `UPDATE user_projects SET progress_data = $1, last_updated = NOW()`;
         const params = [JSON.stringify(progress), projectId, userId];
+        let paramIndex = 4;
 
         if (status) {
             params.push(status);
-            query += `, status = $4`;
+            query += `, status = $${paramIndex}`;
+            paramIndex++;
+        }
+
+        if (chatData) {
+            params.push(JSON.stringify(chatData));
+            query += `, chat_data = $${paramIndex}`;
+            paramIndex++;
         }
 
         query += ` WHERE id = $2 AND user_id = $3`;
 
-        await pool.query(query, params);
+        const result = await pool.query(query, params);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Project not found or unauthorized' });
+        }
+
         res.json({ success: true });
 
         // ── Real-time broadcast ──────────────────────────────────────────────
