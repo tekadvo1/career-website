@@ -592,4 +592,74 @@ router.post('/tech-stack', checkAICredits, upload.single('resume'), async (req, 
     }
 });
 
+// POST /api/ai/troubleshoot - AI troubleshooting for failed checks
+router.post('/troubleshoot', checkAICredits, async (req, res) => {
+    try {
+        const { checkTitle, checkSteps, expectedBehavior, userError, userCommand, userCode, projectTitle, stack } = req.body;
+
+        if (!checkTitle || !userError) {
+            return res.status(400).json({ error: 'Check title and error output are required' });
+        }
+
+        // Bound input sizes
+        const safeError = (userError || '').slice(0, 3000);
+        const safeCommand = (userCommand || '').slice(0, 500);
+        const safeCode = (userCode || '').slice(0, 2000);
+
+        const systemPrompt = `You are a senior engineer helping debug a failing feature check in a portfolio project.
+
+Project: ${projectTitle || 'Unknown'}
+Stack: ${stack || 'Unknown'}
+
+Failed Check: ${checkTitle}
+Steps Performed: ${Array.isArray(checkSteps) ? checkSteps.join(' → ') : 'Not provided'}
+Expected Behavior: ${expectedBehavior || 'Not specified'}
+
+User's Command: ${safeCommand || 'Not provided'}
+User's Error/Output:
+${safeError}
+
+${safeCode ? `User's Code:\n${safeCode}` : ''}
+
+Respond with a JSON object:
+{
+  "likelyCause": "What probably went wrong (qualify with 'likely' or 'possibly' if uncertain)",
+  "diagnosticStep": "One useful step to narrow down the issue",
+  "proposedFix": "A concrete fix to try",
+  "rerunInstruction": "How to rerun the check after applying the fix"
+}
+
+Rules:
+- Be specific and actionable.
+- If the error is ambiguous, say so.
+- Do NOT suggest the check is now passing. The user must verify.
+- Do NOT ask for passwords or secrets.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: "Help me fix this." }
+            ],
+            max_tokens: 1000,
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+        });
+
+        const reply = completion.choices[0].message.content;
+        const match = reply.match(/\{[\s\S]*\}/);
+        const parsed = match ? JSON.parse(match[0]) : null;
+
+        if (parsed) {
+            res.json({ success: true, diagnosis: parsed });
+        } else {
+            res.status(500).json({ error: 'Failed to parse AI troubleshooting response' });
+        }
+    } catch (error) {
+        console.error('AI Troubleshoot Error:', error);
+        res.status(500).json({ error: 'Failed to generate troubleshooting advice' });
+    }
+});
+
 module.exports = router;
+

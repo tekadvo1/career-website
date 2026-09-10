@@ -1189,7 +1189,7 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData, runtestData } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1237,6 +1237,12 @@ router.post('/update-project-progress', async (req, res) => {
         if (blueprintData) {
             params.push(JSON.stringify(blueprintData));
             query += `, blueprint_data = $${paramIndex}`;
+            paramIndex++;
+        }
+
+        if (runtestData) {
+            params.push(JSON.stringify(runtestData));
+            query += `, runtest_data = $${paramIndex}`;
             paramIndex++;
         }
 
@@ -1536,6 +1542,214 @@ router.post('/custom-roadmap-phase', async (req, res) => {
     } catch (error) {
         console.error('Custom mapping phase error:', error);
         res.status(500).json({ error: 'Failed to generate custom phase' });
+    }
+});
+
+// POST /api/role/project/:id/generate-runtest - Generates startup instructions and feature checks
+router.post('/project/:id/generate-runtest', async (req, res) => {
+    const userId = req.user ? req.user.id : req.body.userId;
+    const projectId = req.params.id;
+
+    if (!userId || !projectId) {
+        return res.status(400).json({ error: 'Missing user or project ID' });
+    }
+
+    try {
+        const pQuery = await pool.query(
+            "SELECT project_data, setup_data, blueprint_data, runtest_data FROM user_projects WHERE id = $1 AND user_id = $2",
+            [projectId, userId]
+        );
+        if (pQuery.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+
+        const existing = pQuery.rows[0].runtest_data;
+        if (existing && existing.checks && existing.checks.length > 0) {
+            return res.json({ success: true, runtestData: existing, message: 'Returned existing run & test data' });
+        }
+
+        const projectData = pQuery.rows[0].project_data;
+        const setupData = pQuery.rows[0].setup_data;
+        const blueprintData = pQuery.rows[0].blueprint_data;
+
+        if (!projectData) return res.status(400).json({ error: 'Project data missing' });
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const curriculum = projectData.curriculum || [];
+        const tags = projectData.tags || [];
+        const tools = projectData.tools || [];
+        const languages = projectData.languages || [];
+        const title = projectData.title || 'Project';
+        const os = setupData?.os || 'not specified';
+
+        const prompt = `You are a senior full-stack engineer generating a Run & Test plan for a portfolio project.
+
+Project: ${title}
+Tags: ${tags.join(', ')}
+Tools: ${tools.join(', ')}
+Languages: ${languages.join(', ')}
+OS: ${os}
+Blueprint files: ${blueprintData?.files ? blueprintData.files.slice(0, 20).map(f => f.path).join(', ') : 'not available'}
+
+Curriculum modules:
+${curriculum.map((m, i) => `Module ${i+1}: ${m.title}\nTasks: ${(m.tasks || []).map(t => t.title || t.text || t).join(', ')}`).join('\n\n')}
+
+Generate a JSON object with these exact keys:
+
+{
+  "startup": [
+    {
+      "id": "start-<component>",
+      "component": "Database|Backend|Frontend|CLI|etc",
+      "prerequisites": "What must be done first",
+      "workingDirectory": "Relative path, e.g. ./backend",
+      "command": "The command to run",
+      "description": "What this command does",
+      "envVars": ["ENV_VAR_NAME=<placeholder_description>"],
+      "expectedOutput": "What the user should see when it works",
+      "howToStop": "How to stop the process"
+    }
+  ],
+  "checks": [
+    {
+      "id": "check-<unique>",
+      "category": "Main Flow|Validation|Persistence|Auth|Empty States|Responsive",
+      "title": "What this checks",
+      "prerequisites": "What must be running or done first",
+      "steps": ["Step 1", "Step 2"],
+      "exampleInput": "Safe test data to use",
+      "expectedBehavior": "What should happen",
+      "relatedTaskId": "task ID from curriculum if applicable or null"
+    }
+  ],
+  "testRunner": {
+    "available": true/false,
+    "command": "npm test or pytest etc",
+    "directory": "./",
+    "description": "What the test suite covers",
+    "interpretOutput": "How to read the output"
+  }
+}
+
+Rules:
+- Only include startup components relevant to this project type.
+- Order startup correctly (database first, then backend, then frontend).
+- Use the user's OS for commands where relevant.
+- Do NOT invent ports, scripts, or entry points that aren't implied by the stack.
+- If something is uncertain, mark it as "expected configuration — verify in your project".
+- Generate 5-12 meaningful feature checks derived from the curriculum.
+- Use stable, unique IDs for each check.
+- Use safe test/dev data in examples, never production credentials.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: prompt },
+                { role: "user", content: "Generate the run & test plan now." }
+            ],
+            max_tokens: 3000,
+            temperature: 0.5,
+            response_format: { type: "json_object" }
+        });
+
+        const reply = completion.choices[0].message.content;
+        const match = reply.match(/\{[\s\S]*\}/);
+        const parsed = match ? JSON.parse(match[0]) : null;
+
+        if (!parsed || !parsed.checks) {
+            return res.status(500).json({ error: 'Failed to parse AI response' });
+        }
+
+        // Add default status to each check
+        const runtestData = {
+            ...parsed,
+            checks: parsed.checks.map(c => ({
+                ...c,
+                status: 'not_checked',
+                provenance: 'user',
+                notes: '',
+                lastCheckedAt: null,
+                history: []
+            })),
+            generatedAt: new Date().toISOString(),
+            version: 1
+        };
+
+        await pool.query(
+            "UPDATE user_projects SET runtest_data = $1, last_updated = NOW() WHERE id = $2 AND user_id = $3",
+            [JSON.stringify(runtestData), projectId, userId]
+        );
+
+        res.json({ success: true, runtestData });
+    } catch (err) {
+        console.error('Error generating run & test data:', err);
+        res.status(500).json({ error: 'Failed to generate run & test data' });
+    }
+});
+
+// POST /api/role/project/:id/update-check-result - Updates a single check result
+router.post('/project/:id/update-check-result', async (req, res) => {
+    const userId = req.user ? req.user.id : req.body.userId;
+    const projectId = req.params.id;
+    const { checkId, status, notes } = req.body;
+
+    if (!userId || !projectId || !checkId) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const validStatuses = ['not_checked', 'passed', 'failed', 'blocked'];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    if (notes && notes.length > 5000) {
+        return res.status(400).json({ error: 'Notes must be under 5000 characters' });
+    }
+
+    try {
+        const pQuery = await pool.query(
+            "SELECT runtest_data FROM user_projects WHERE id = $1 AND user_id = $2",
+            [projectId, userId]
+        );
+        if (pQuery.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+
+        const runtestData = pQuery.rows[0].runtest_data || {};
+        const checks = runtestData.checks || [];
+
+        const checkIndex = checks.findIndex(c => c.id === checkId);
+        if (checkIndex === -1) return res.status(404).json({ error: 'Check not found' });
+
+        const check = checks[checkIndex];
+        const previousStatus = check.status;
+
+        // Add to history
+        const historyEntry = {
+            from: previousStatus,
+            to: status,
+            notes: notes || '',
+            timestamp: new Date().toISOString(),
+            provenance: 'user'
+        };
+
+        checks[checkIndex] = {
+            ...check,
+            status,
+            notes: notes || check.notes,
+            provenance: 'user',
+            lastCheckedAt: new Date().toISOString(),
+            history: [...(check.history || []).slice(-9), historyEntry]
+        };
+
+        runtestData.checks = checks;
+
+        await pool.query(
+            "UPDATE user_projects SET runtest_data = $1, last_updated = NOW() WHERE id = $2 AND user_id = $3",
+            [JSON.stringify(runtestData), projectId, userId]
+        );
+
+        res.json({ success: true, check: checks[checkIndex] });
+    } catch (err) {
+        console.error('Error updating check result:', err);
+        res.status(500).json({ error: 'Failed to update check result' });
     }
 });
 

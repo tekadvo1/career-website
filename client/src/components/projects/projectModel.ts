@@ -10,6 +10,67 @@ export interface TaskGuide {
   resources: string[];
 }
 
+export type CheckStatus = 'not_checked' | 'passed' | 'failed' | 'blocked';
+
+export interface StartupInstruction {
+  id: string;
+  component: string;
+  prerequisites: string;
+  workingDirectory: string;
+  command: string;
+  description: string;
+  envVars: string[];
+  expectedOutput: string;
+  howToStop: string;
+}
+
+export interface CheckHistoryEntry {
+  from: CheckStatus;
+  to: CheckStatus;
+  notes: string;
+  timestamp: string;
+  provenance: 'user' | 'platform';
+}
+
+export interface FeatureCheck {
+  id: string;
+  category: string;
+  title: string;
+  prerequisites: string;
+  steps: string[];
+  exampleInput: string;
+  expectedBehavior: string;
+  relatedTaskId: string | null;
+  status: CheckStatus;
+  provenance: 'user' | 'platform';
+  notes: string;
+  lastCheckedAt: string | null;
+  history: CheckHistoryEntry[];
+}
+
+export interface TestRunnerConfig {
+  available: boolean;
+  command: string;
+  directory: string;
+  description: string;
+  interpretOutput: string;
+}
+
+export interface TroubleshootDiagnosis {
+  likelyCause: string;
+  diagnosticStep: string;
+  proposedFix: string;
+  rerunInstruction: string;
+}
+
+export interface RunTestData {
+  startup: StartupInstruction[];
+  checks: FeatureCheck[];
+  testRunner: TestRunnerConfig;
+  generatedAt: string;
+  version: number;
+}
+
 export interface Project {
   id: string;
   title: string;
@@ -36,6 +97,7 @@ export interface Project {
   schedule_data?: ScheduleSettings;
   setup_data?: any;
   blueprint_data?: any;
+  runtest_data?: RunTestData;
   role?: string;
   projectId?: string;
   type?: string;
@@ -80,7 +142,8 @@ export const parseProjects = (val: any, fromDb: boolean = false): Project[] => {
       const project_data = typeof p.project_data === 'string' ? safeParse(p.project_data, {}) : (p.project_data || {});
       const setup_data = typeof p.setup_data === 'string' ? safeParse(p.setup_data, {}) : (p.setup_data || {});
       const blueprint_data = typeof p.blueprint_data === 'string' ? safeParse(p.blueprint_data, {}) : (p.blueprint_data || {});
-      return { ...p, tags, progress_data, project_data, setup_data, blueprint_data };
+      const runtest_data = typeof p.runtest_data === 'string' ? safeParse(p.runtest_data, {}) : (p.runtest_data || {});
+      return { ...p, tags, progress_data, project_data, setup_data, blueprint_data, runtest_data };
     });
   }
   
