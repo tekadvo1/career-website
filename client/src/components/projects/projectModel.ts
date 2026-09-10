@@ -1,3 +1,15 @@
+export interface TaskGuide {
+  title: string;
+  understand: string;
+  before_you_begin: string;
+  implement_step: string;
+  implement_quick: string;
+  try_it: string;
+  expected_result: string;
+  check_your_work: string;
+  resources: string[];
+}
+
 export interface Project {
   id: string;
   title: string;

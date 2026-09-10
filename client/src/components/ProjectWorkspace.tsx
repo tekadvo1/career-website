@@ -9,6 +9,7 @@ import { TaskGuideView } from "./TaskGuideView";
 import { SetupView } from "./projects/SetupView";
 import BlueprintView from "./projects/BlueprintView";
 import { useAlert } from '../contexts/AlertContext';
+import { Maximize2, Minimize2 } from "lucide-react";
 
 interface Step {
   id: string;
@@ -85,6 +86,45 @@ export default function ProjectWorkspace() {
   // "outline" | "task" | "ai"
   const [activePane, setActivePane] = useState<"outline" | "task" | "ai">("task");
 
+  const [guidanceMode, setGuidanceMode] = useState<'step'|'quick'>('step');
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(() => parseInt(localStorage.getItem('pw_leftWidth') || '320', 10));
+  const [rightWidth, setRightWidth] = useState(() => parseInt(localStorage.getItem('pw_rightWidth') || '400', 10));
+  
+  const isDraggingLeft = useRef(false);
+  const isDraggingRight = useRef(false);
+  
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingLeft.current) {
+        let newWidth = e.clientX;
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > 600) newWidth = 600;
+        setLeftWidth(newWidth);
+        localStorage.setItem('pw_leftWidth', newWidth.toString());
+      }
+      if (isDraggingRight.current) {
+        let newWidth = window.innerWidth - e.clientX;
+        if (newWidth < 300) newWidth = 300;
+        if (newWidth > 800) newWidth = 800;
+        setRightWidth(newWidth);
+        localStorage.setItem('pw_rightWidth', newWidth.toString());
+      }
+    };
+    const handleMouseUp = () => {
+      isDraggingLeft.current = false;
+      isDraggingRight.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   const awardXP = (amount: number, reason: string) => {
     setTotalXP(prev => prev + amount);
     showAlert(`+${amount} XP: ${reason}`, 'success');
@@ -126,7 +166,7 @@ export default function ProjectWorkspace() {
                 userId: user.id,
                 projectId: projectId,
                 status: isFullyCompleted ? 'completed' : 'active',
-                progress: { completedTasks: newCompletedList, xp: currentXp },
+                progress: { completedTasks: newCompletedList, xp: currentXp, guidanceMode },
                 chatData: currentMessages,
                 lastUpdated: new Date().toISOString()
             })
@@ -222,6 +262,7 @@ export default function ProjectWorkspace() {
                  }));
              }
              if (prog.xp) setTotalXP(prog.xp);
+             if (prog.guidanceMode) setGuidanceMode(prog.guidanceMode);
              
              // Restore Chat
              const chat = currentProject.chat_data 
@@ -384,55 +425,75 @@ export default function ProjectWorkspace() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT PANE: OUTLINE */}
-        <div className={`${activePane === 'outline' ? 'flex' : 'hidden'} lg:flex flex-col w-full lg:w-80 border-r border-slate-200 bg-[#fafafa] shrink-0 h-full overflow-y-auto`}>
-           <div className="p-4 border-b border-slate-200 sticky top-0 bg-[#fafafa]/90 backdrop-blur z-10 shrink-0">
-              <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-emerald-600" /> Project Outline
-              </h2>
-           </div>
-           <div className="p-4 space-y-4">
-             {steps.map((step, sIdx) => (
-               <div key={step.id} className="space-y-1">
-                 <button onClick={() => setSteps(prev => prev.map(s => s.id === step.id ? {...s, expanded: !s.expanded} : s))}
-                   className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors text-left"
-                 >
-                   <div className="flex items-center gap-2">
-                     <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${step.completed ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                       {step.completed ? <CheckCircle2 className="w-3 h-3" /> : (sIdx + 1)}
-                     </span>
-                     <span className={`text-[13px] font-bold ${step.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{step.title}</span>
-                   </div>
-                   {step.expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                 </button>
-                 {step.expanded && (
-                   <div className="pl-7 space-y-1 mt-1 border-l-2 border-slate-100 ml-2.5">
-                     {step.tasks.map((task) => (
-                       <button key={task.id} 
-                         onClick={() => toggleTaskExpanded(task.id)}
-                         className={`w-full text-left flex items-start gap-2.5 p-2 rounded-lg transition-all ${selectedTaskId === task.id ? 'bg-white border border-emerald-200 shadow-sm' : 'hover:bg-slate-100 border border-transparent'}`}
-                       >
-                         <div onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }} className="mt-0.5 text-slate-300 hover:text-emerald-500 cursor-pointer shrink-0 transition-colors">
-                           {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Circle className="w-4 h-4" />}
-                         </div>
-                         <div className="min-w-0">
-                           <span className={`block text-[13px] leading-snug ${task.completed ? 'text-slate-400 line-through' : selectedTaskId === task.id ? 'font-bold text-emerald-800' : 'text-slate-700 font-medium'}`}>
-                             {task.text}
-                           </span>
-                           {selectedTaskId === task.id && !task.completed && (
-                             <span className="inline-block mt-1 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded tracking-wide uppercase">Active Task</span>
-                           )}
-                         </div>
-                       </button>
-                     ))}
-                   </div>
-                 )}
-               </div>
-             ))}
-           </div>
-        </div>
+        {!isFocusMode && (
+          <div 
+            style={{ width: leftWidth }}
+            className={`${activePane === 'outline' ? 'flex w-full' : 'hidden'} lg:flex flex-col border-r border-slate-200 bg-[#fafafa] shrink-0 h-full overflow-y-auto relative`}
+          >
+             <div className="p-4 border-b border-slate-200 sticky top-0 bg-[#fafafa]/90 backdrop-blur z-10 shrink-0">
+                <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-emerald-600" /> Project Outline
+                </h2>
+             </div>
+             <div className="p-4 space-y-4">
+               {steps.map((step, sIdx) => (
+                 <div key={step.id} className="space-y-1">
+                   <button onClick={() => setSteps(prev => prev.map(s => s.id === step.id ? {...s, expanded: !s.expanded} : s))}
+                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors text-left"
+                   >
+                     <div className="flex items-center gap-2">
+                       <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${step.completed ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                         {step.completed ? <CheckCircle2 className="w-3 h-3" /> : (sIdx + 1)}
+                       </span>
+                       <span className={`text-[13px] font-bold ${step.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{step.title}</span>
+                     </div>
+                     {step.expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                   </button>
+                   {step.expanded && (
+                     <div className="pl-7 space-y-1 mt-1 border-l-2 border-slate-100 ml-2.5">
+                       {step.tasks.map((task) => (
+                         <button key={task.id} 
+                           onClick={() => toggleTaskExpanded(task.id)}
+                           className={`w-full text-left flex items-start gap-2.5 p-2 rounded-lg transition-all ${selectedTaskId === task.id ? 'bg-white border border-emerald-200 shadow-sm' : 'hover:bg-slate-100 border border-transparent'}`}
+                         >
+                           <div onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }} className="mt-0.5 text-slate-300 hover:text-emerald-500 cursor-pointer shrink-0 transition-colors">
+                             {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Circle className="w-4 h-4" />}
+                           </div>
+                           <div className="min-w-0">
+                             <span className={`block text-[13px] leading-snug ${task.completed ? 'text-slate-400 line-through' : selectedTaskId === task.id ? 'font-bold text-emerald-800' : 'text-slate-700 font-medium'}`}>
+                               {task.text}
+                             </span>
+                             {selectedTaskId === task.id && !task.completed && (
+                               <span className="inline-block mt-1 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded tracking-wide uppercase">Active Task</span>
+                             )}
+                           </div>
+                         </button>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+               ))}
+             </div>
+             
+             {/* Left Drag Handle */}
+             <div 
+               onMouseDown={() => { isDraggingLeft.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
+               className="hidden lg:block absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
+             />
+          </div>
+        )}
 
         {/* CENTER PANE: MAIN VIEW (Setup, Blueprint, or Task) */}
         <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-col flex-1 bg-white min-w-0 h-full overflow-hidden relative`}>
+           {/* Focus Mode Toggle */}
+           <button 
+             onClick={() => setIsFocusMode(!isFocusMode)}
+             className="hidden lg:flex absolute top-4 right-4 z-20 bg-white border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-200 p-2 rounded-md shadow-sm transition-colors"
+             title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+           >
+             {isFocusMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+           </button>
+
            {workspaceView === 'setup' ? (
               <SetupView 
                 project={project} 
@@ -455,22 +516,33 @@ export default function ProjectWorkspace() {
               />
            ) : selectedTaskId ? (
               <TaskGuideView 
+                project={project}
                 task={steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)}
-                projectTitle={project?.title}
+                guidanceMode={guidanceMode}
+                onGuidanceModeChange={setGuidanceMode}
+                onAskAI={(msg: string) => { setInputMessage(msg); setActivePane('ai'); }}
                 onBack={() => setActivePane("outline")}
-                onMarkComplete={() => {
+                onMarkComplete={(isCompleted: boolean = true) => {
                    const step = steps.find(s => s.tasks.some(t => t.id === selectedTaskId));
-                   if (step) handleTaskToggle(step.id, selectedTaskId);
-                   // Auto-select next task
-                   let found = false;
-                   for(let i=0; i<steps.length; i++) {
-                     for(let j=0; j<steps[i].tasks.length; j++) {
-                       if (!steps[i].tasks[j].completed && steps[i].tasks[j].id !== selectedTaskId) {
-                         setSelectedTaskId(steps[i].tasks[j].id);
-                         found = true; break;
-                       }
+                   if (step) {
+                     // Check if it's already in the desired state to avoid double toggling
+                     const task = step.tasks.find(t => t.id === selectedTaskId);
+                     if (task?.completed !== isCompleted) {
+                       handleTaskToggle(step.id, selectedTaskId);
                      }
-                     if(found) break;
+                   }
+                   if (isCompleted) {
+                     // Auto-select next task
+                     let found = false;
+                     for(let i=0; i<steps.length; i++) {
+                       for(let j=0; j<steps[i].tasks.length; j++) {
+                         if (!steps[i].tasks[j].completed && steps[i].tasks[j].id !== selectedTaskId) {
+                           setSelectedTaskId(steps[i].tasks[j].id);
+                           found = true; break;
+                         }
+                       }
+                       if(found) break;
+                     }
                    }
                 }}
               />
@@ -484,16 +556,26 @@ export default function ProjectWorkspace() {
         </div>
 
         {/* RIGHT PANE: AI ASSISTANT */}
-        <div className={`${activePane === 'ai' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[350px] xl:w-[400px] border-l border-slate-200 bg-[#fafafa] flex-col h-full shrink-0`}>
-           <div className="p-4 border-b border-slate-200 bg-white shrink-0 flex items-center gap-3">
-             <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
-               <Sparkles className="w-4 h-4 text-teal-600" />
+        {!isFocusMode && (
+          <div 
+            style={{ width: rightWidth }}
+            className={`${activePane === 'ai' ? 'flex w-full' : 'hidden'} lg:flex relative border-l border-slate-200 bg-[#fafafa] flex-col h-full shrink-0`}
+          >
+             {/* Right Drag Handle */}
+             <div 
+               onMouseDown={() => { isDraggingRight.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
+               className="hidden lg:block absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
+             />
+             
+             <div className="p-4 border-b border-slate-200 bg-white shrink-0 flex items-center gap-3">
+               <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+                 <Sparkles className="w-4 h-4 text-teal-600" />
+               </div>
+               <div>
+                 <h3 className="text-[14px] font-bold text-slate-800 leading-tight">AI Co-Pilot</h3>
+                 <p className="text-[11px] text-teal-600 font-medium">Online • Task Context Active</p>
+               </div>
              </div>
-             <div>
-               <h3 className="text-[14px] font-bold text-slate-800 leading-tight">AI Co-Pilot</h3>
-               <p className="text-[11px] text-teal-600 font-medium">Online • Task Context Active</p>
-             </div>
-           </div>
            
            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
              {messages.map((message) => (
@@ -530,14 +612,13 @@ export default function ProjectWorkspace() {
                   placeholder="Ask for help, code, or explanation..."
                   className="flex-1 bg-transparent border-none focus:outline-none text-[13px] text-slate-800 placeholder:text-slate-400 px-2 py-1.5"
                 />
-                <button onClick={handleSendMessage} disabled={!inputMessage.trim() || isTyping}
-                  className="w-8 h-8 bg-teal-600 hover:bg-teal-700 text-white rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 shrink-0 shadow-sm">
-                  <Send className="w-3.5 h-3.5 ml-0.5" />
-                </button>
-             </div>
+                 <button onClick={handleSendMessage} disabled={!inputMessage.trim() || isTyping} className="p-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white rounded-lg transition-colors shadow-sm">
+                   <Send className="w-4 h-4" />
+                 </button>
+              </div>
            </div>
-        </div>
-
+          </div>
+        )}
       </div>
     </div>
   );

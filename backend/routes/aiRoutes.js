@@ -116,25 +116,27 @@ router.post('/guide', checkAICredits, async (req, res) => {
     try {
         const { message, context, role } = req.body;
 
-        if (!message || !context?.projectTitle || !context?.currentTask) {
+        if (!message || !context?.projectTitle || !context?.currentTask || !context?.projectId || !context?.taskId) {
             return res.status(400).json({ error: 'Missing required fields for guide generation' });
         }
 
         const projectTitle = context.projectTitle;
         const taskText = context.currentTask;
+        const projectId = context.projectId;
+        const taskId = context.taskId;
 
-        // 1. Check if guide exists in DB
+        // 1. Check if guide exists in DB for this specific project and task
         const dbRes = await pool.query(
-            'SELECT guide_data FROM task_guides WHERE project_title = $1 AND task_text = $2',
-            [projectTitle, taskText]
+            'SELECT guide_data FROM task_guides WHERE project_id = $1 AND task_id = $2',
+            [projectId, taskId]
         );
 
         if (dbRes.rows.length > 0) {
-            console.log(`[Cache Hit] Serving guide for task: "${taskText}"`);
+            console.log(`[Cache Hit] Serving guide for project ${projectId}, task: "${taskId}"`);
             return res.json({ reply: JSON.stringify(dbRes.rows[0].guide_data) });
         }
 
-        console.log(`[Cache Miss] Generating new guide for task: "${taskText}"`);
+        console.log(`[Cache Miss] Generating new guide for project ${projectId}, task: "${taskId}"`);
 
         // 2. Generate brand new guide
         const systemPrompt = `You are an expert Senior Software Engineer and Mentor helping a user build a portfolio project.
@@ -143,24 +145,25 @@ router.post('/guide', checkAICredits, async (req, res) => {
              Current Task: ${taskText}
              Role Target: ${role || 'Software Engineer'}
 
-             Your goal is to be a "Pair Programmer" and provide a structured learning experience:
-             1. UNDERSTAND: Explain the concepts behind this task and why we are doing it.
-             2. BUILD: Provide step-by-step instructions and code snippets to implement the feature. Do not hand over the entire file at once; teach them how to build it.
-             3. TRY IT: How can the user run or test this locally?
-             4. EXPECTED RESULT: What should it look like or output when it works?
-             5. CHECK YOUR WORK: How can the user verify their implementation is correct?
-             6. RESOURCES: Provide a few helpful tips, documentation links, or troubleshooting advice.
+             Your goal is to be a "Pair Programmer" and provide a structured learning experience for this specific task.
              
              You MUST return your response as a valid JSON object with the following exact schema (use markdown inside the string values for formatting):
              {
                "title": "Clear title for the task",
-               "understand": "Markdown text explaining the concepts",
-               "build": "Markdown text with step-by-step build instructions and code snippets",
-               "try_it": "Markdown text explaining how to run/test",
-               "expected_result": "Markdown text describing the success criteria",
-               "check_your_work": "Markdown text on how to verify",
+               "understand": "Markdown text explaining the concepts behind this task and its role in the project.",
+               "before_you_begin": "Markdown text listing prerequisites, required setup, or outputs from previous tasks.",
+               "implement_step": "Markdown text with detailed step-by-step instructions. Explain terms, show file paths, expected output, and provide full context.",
+               "implement_quick": "Markdown text with a quick checklist of requirements, affected files, constraints, and minimal hints.",
+               "try_it": "Markdown text explaining a relevant command, request, or manual action to run/test this.",
+               "expected_result": "Markdown text describing what successful behavior should look like.",
+               "check_your_work": "Markdown text with concrete acceptance criteria to verify the implementation.",
                "resources": ["Tip or link 1", "Tip or link 2"]
-             }`;
+             }
+             
+             For code snippets:
+             - Label the language (e.g. \`\`\`javascript).
+             - Explain where the snippet belongs (e.g., file path).
+             - Distinguish complete files from partial examples.`;
 
         const requestOptions = {
             model: "gpt-4o",
@@ -184,8 +187,8 @@ router.post('/guide', checkAICredits, async (req, res) => {
             // 3. Save generated JSON into DB for next time
             try {
                 await pool.query(
-                    'INSERT INTO task_guides (project_title, task_text, guide_data) VALUES ($1, $2, $3) ON CONFLICT (project_title, task_text) DO NOTHING',
-                    [projectTitle, taskText, JSON.stringify(parsed)]
+                    'INSERT INTO task_guides (project_title, task_text, guide_data, project_id, task_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (project_id, task_id) DO UPDATE SET guide_data = EXCLUDED.guide_data, project_title = EXCLUDED.project_title, task_text = EXCLUDED.task_text',
+                    [projectTitle, taskText, JSON.stringify(parsed), projectId, taskId]
                 );
             } catch(dbErr) {
                 console.error("Failed to cache guide to DB:", dbErr);
