@@ -305,7 +305,7 @@ export default function Missions() {
 
   // Navigate to workspace for a specific project
   const handleOpenWorkspace = (project: any) => {
-    navigate('/project-workspace', {
+    navigate(`/project-workspace?projectId=${project.id || project.projectId}`, {
       state: {
         project: project,
         role: role

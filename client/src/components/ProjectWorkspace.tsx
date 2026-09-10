@@ -1,6 +1,6 @@
 import { apiFetch } from '../utils/apiFetch';
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Bell, ChevronRight,
   Circle, CheckCircle, Sparkles, Send, FileText,
@@ -93,12 +93,19 @@ export default function ProjectWorkspace() {
   const { showAlert } = useAlert();
   const navigate = useNavigate();
   const location = useLocation();
-  const { project, role, preLoadedCurriculum } = (location.state as any) || {};
+  const [searchParams] = useSearchParams();
+  const queryProjectId = searchParams.get('projectId');
+  
+  const { project: stateProject, role: stateRole, preLoadedCurriculum: stateCurriculum } = (location.state as any) || {};
 
   const userString = sessionStorage.getItem('user');
   const user = userString ? JSON.parse(userString) : {};
 
-  const [projectId, setProjectId] = useState<string | null>(project?.projectId || project?.id || null);
+  const [projectId, setProjectId] = useState<string | null>(queryProjectId || stateProject?.projectId || stateProject?.id || null);
+  const [project, setProject] = useState<any>(stateProject || null);
+  const [role] = useState<string>(stateRole || user?.role || '');
+  const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
+  
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedStep, setSelectedStep] = useState<Step | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -205,13 +212,41 @@ export default function ProjectWorkspace() {
 
   // INITIALIZATION: REAL-TIME DB SYNC
   useEffect(() => {
-    if (!project) {
+    if (!project && !projectId) {
         navigate('/dashboard');
         return;
     }
 
     const initProject = async () => {
         let loadedSteps: Step[] = [];
+        let currentProject = project;
+
+        // If we have a projectId but no project object, fetch it
+        if (!currentProject && projectId) {
+            try {
+                const res = await apiFetch(`/api/role/my-projects`);
+                const data = await res.json();
+                if (data.success && data.projects) {
+                    const found = data.projects.find((p: any) => String(p.id) === String(projectId));
+                    if (found) {
+                        currentProject = found;
+                        setProject(found);
+                    } else {
+                        navigate('/dashboard');
+                        return;
+                    }
+                } else {
+                    navigate('/dashboard');
+                    return;
+                }
+            } catch (e) {
+                console.error("Failed to fetch project from API", e);
+                navigate('/dashboard');
+                return;
+            }
+        }
+
+        if (!currentProject) return;
 
         // 1. New Project (PreLoaded Curriculum Present, usually directly from setup modal)
         if (preLoadedCurriculum) {
@@ -219,12 +254,12 @@ export default function ProjectWorkspace() {
             // projectId has already been created and passed by ProjectSetupModal
         } 
         // 2. Existing Project Resuming
-        else if (project.project_data || project.progress_data) {
-             const prog = project.progress_data 
-               ? (typeof project.progress_data === 'string' ? JSON.parse(project.progress_data) : project.progress_data)
+        else if (currentProject.project_data || currentProject.progress_data) {
+             const prog = currentProject.progress_data 
+               ? (typeof currentProject.progress_data === 'string' ? JSON.parse(currentProject.progress_data) : currentProject.progress_data)
                : {};
-             const projData = project.project_data
-               ? (typeof project.project_data === 'string' ? JSON.parse(project.project_data) : project.project_data)
+             const projData = currentProject.project_data
+               ? (typeof currentProject.project_data === 'string' ? JSON.parse(currentProject.project_data) : currentProject.project_data)
                : {};
              
              loadedSteps = mapCurriculumToSteps(projData.curriculum || []);
@@ -249,12 +284,12 @@ export default function ProjectWorkspace() {
                setTotalXP(prog.xp);
                setLevel(calculateLevel(prog.xp));
              }
-        } else if (project.id) {
+        } else if (currentProject.id) {
             try {
-                const res = await fetch(`/api/role/my-projects?userId=${user.id || 1}&role=${role || ''}`);
+                const res = await apiFetch(`/api/role/my-projects`);
                 const data = await res.json();
                 if (data.success && data.projects) {
-                    const found = data.projects.find((p: any) => p.id === project.id || p.id === parseInt(project.id));
+                    const found = data.projects.find((p: any) => p.id === currentProject.id || p.id === parseInt(currentProject.id));
                     if (found) {
                         const projData = typeof found.project_data === 'string' ? JSON.parse(found.project_data) : found.project_data;
                         const prog = found.progress_data 

@@ -214,7 +214,7 @@ export function Step4({
         // Clear advisor state so user starts fresh next time
         sessionStorage.removeItem('advisor_state');
         // Navigate to project workspace with the new project
-        navigate('/project-workspace', {
+        navigate(`/project-workspace?projectId=${data.projectId || 'new'}`, {
           state: {
             project: { ...projectPayload, id: String(data.projectId || 'new'), status: 'active' },
             role,

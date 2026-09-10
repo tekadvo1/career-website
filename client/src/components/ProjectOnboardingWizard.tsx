@@ -88,12 +88,15 @@ export default function ProjectOnboardingWizard({ project, role, onClose }: Proj
           body: JSON.stringify({ userId: user.id, project, role, curriculum }),
         });
         const data = await res.json();
-        if (data.success && data.projectId) dbProjectId = data.projectId;
+        if (data.success && data.projectId) {
+           dbProjectId = data.projectId;
+        }
       } catch (e) { console.error('Failed to start project', e); }
     }
     
-    navigate('/project-workspace', {
+    navigate(`/project-workspace?projectId=${dbProjectId}`, {
       state: {
+        // Fallback state in case the workspace doesn't fetch correctly right away
         project: { ...project, id: dbProjectId, projectId: dbProjectId },
         role,
         settings: { timeCommitment: `${weeklyHours} hours/week`, schedule: { dailyHours, selectedDays, startDate }, os },

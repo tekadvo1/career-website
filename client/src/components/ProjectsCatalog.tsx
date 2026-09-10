@@ -738,7 +738,7 @@ export default function ProjectsCatalog() {
                   <div className="flex flex-col items-start md:items-end gap-3 w-full md:w-auto mt-2 md:mt-0">
                     <button onClick={() => {
                         if (['active', 'completed'].includes(proj.status || '')) {
-                           navigate('/project-workspace', { state: { project: proj, role: selectedRole } });
+                           navigate(`/project-workspace?projectId=${proj.id}`, { state: { project: proj, role: selectedRole } });
                         } else {
                            setSelectedProject(proj);
                         }
@@ -761,12 +761,12 @@ export default function ProjectsCatalog() {
         <div className="bg-white border-b border-slate-200 overflow-x-auto no-scrollbar">
           <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 flex gap-4 md:gap-6 border-b border-slate-200 min-w-max md:min-w-0">
             {[
-              { id: 'recommended', label: 'For You',   count: null },
+              { id: 'recommended', label: 'Explore',   count: null },
               { id: 'trending',    label: 'Trending',  count: null },
-              { id: 'active',      label: 'Active',    count: activeCount },
-              { id: 'completed',   label: 'Completed', count: completedCount },
+              { id: 'active',      label: 'In Progress',    count: activeCount },
               { id: 'saved',       label: 'Saved',     count: userProjects.filter(p => p.status === 'saved').length },
-              { id: 'undo',        label: 'Undo',      count: userProjects.filter(p => p.status === 'undo').length },
+              { id: 'completed',   label: 'Completed', count: completedCount },
+              { id: 'undo',        label: 'Archived',      count: userProjects.filter(p => p.status === 'undo').length },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id as any)}
                 className={`py-2 md:py-2.5 text-xs md:text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${activeTab === tab.id ? 'border-emerald-600 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
@@ -814,7 +814,7 @@ export default function ProjectsCatalog() {
                </p>
 
                {/* Hint skeleton grid */}
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 w-full opacity-40 pointer-events-none">
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 w-full opacity-40 pointer-events-none">
                  {[1, 2, 3, 4].map(i => (
                    <div key={i} className="bg-white rounded-xl overflow-hidden border border-slate-200 animate-pulse hidden md:block">
                      <div className="h-1.5 bg-gradient-to-r from-slate-200 to-slate-200" />
@@ -852,7 +852,7 @@ export default function ProjectsCatalog() {
                   {isLive && <span className="ml-1 inline-flex items-center gap-0.5 text-emerald-600 text-xs font-semibold"><Radio className="w-3 h-3 animate-pulse" /> Real-time</span>}
                 </p>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 md:gap-6 items-stretch">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6 items-stretch">
                 {filteredProjects.map(project => {
                   const ds = diffStyle(project.difficulty);
                   const isUserProj = ['active', 'completed'].includes(project.status || '');

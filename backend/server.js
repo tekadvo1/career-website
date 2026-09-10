@@ -251,6 +251,32 @@ const updateSchema = async () => {
       );
     `);
 
+    // Schema updates for user_projects constraints and cached_recommendations scoping
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'unique_user_project_title'
+        ) THEN
+          -- First deduplicate by keeping the most recently updated project per title/user
+          DELETE FROM user_projects a USING (
+            SELECT MAX(last_updated) as max_updated, user_id, title
+            FROM user_projects 
+            GROUP BY user_id, title HAVING COUNT(*) > 1
+          ) b
+          WHERE a.user_id = b.user_id AND a.title = b.title AND a.last_updated < b.max_updated;
+
+          ALTER TABLE user_projects ADD CONSTRAINT unique_user_project_title UNIQUE (user_id, title);
+        END IF;
+
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'cached_recommendations' AND column_name = 'user_id') THEN
+          ALTER TABLE cached_recommendations ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+          ALTER TABLE cached_recommendations DROP CONSTRAINT IF EXISTS cached_recommendations_role_type_key;
+          ALTER TABLE cached_recommendations ADD CONSTRAINT unique_user_role_type UNIQUE NULLS NOT DISTINCT (user_id, role, type);
+        END IF;
+      END $$;
+    `);
+
     // Create project_structures_custom for user-specific custom descriptions
     await client.query(`
       CREATE TABLE IF NOT EXISTS project_structures_custom (

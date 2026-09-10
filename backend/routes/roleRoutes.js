@@ -1049,7 +1049,8 @@ router.post('/adaptive-schedule', async (req, res) => {
 
 // POST /api/role/start-project - Saves a project to user_projects
 router.post('/start-project', async (req, res) => {
-    const { userId, project, role, curriculum, status = 'active' } = req.body;
+    const userId = req.user ? req.user.id : req.body.userId;
+    const { project, role, curriculum, status = 'active' } = req.body;
 
     if (!userId || !project) {
         return res.status(400).json({ error: 'User ID and Project are required' });
@@ -1105,7 +1106,8 @@ router.post('/start-project', async (req, res) => {
 
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
-    const { userId, projectId, progress, status } = req.body;
+    const userId = req.user ? req.user.id : req.body.userId;
+    const { projectId, progress, status } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1135,7 +1137,8 @@ router.post('/update-project-progress', async (req, res) => {
 
 // GET /api/role/my-projects - Get active projects for a user
 router.get('/my-projects', async (req, res) => {
-    const { userId, role } = req.query;
+    const userId = req.user ? req.user.id : req.query.userId;
+    const { role } = req.query;
 
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required' });
@@ -1163,7 +1166,7 @@ router.get('/my-projects', async (req, res) => {
 // DELETE /api/role/project/:id - Delete a project
 router.delete('/project/:id', async (req, res) => {
     const { id } = req.params;
-    const userId = req.body.userId || req.query.userId;
+    const userId = req.user ? req.user.id : (req.body.userId || req.query.userId);
 
     if (!id || !userId) {
         return res.status(400).json({ error: 'Project ID and User ID are required' });
@@ -1187,7 +1190,8 @@ router.delete('/project/:id', async (req, res) => {
 // PUT /api/role/project/:id - Edit a project
 router.put('/project/:id', async (req, res) => {
     const { id } = req.params;
-    const { userId, title, description, status } = req.body;
+    const userId = req.user ? req.user.id : req.body.userId;
+    const { title, description, status } = req.body;
 
     if (!id || !userId) {
         return res.status(400).json({ error: 'Project ID and User ID are required' });

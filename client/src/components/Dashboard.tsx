@@ -319,7 +319,7 @@ export default function Dashboard() {
              {activeProjects.length > 0 ? (
                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  {activeProjects.map((p) => (
-                    <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => navigate('/project-workspace', { state: { project: p }})}>
+                    <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => navigate(`/project-workspace?projectId=${p.id}`, { state: { project: p }})}>
                        <h3 className="font-bold text-slate-900 mb-2 line-clamp-1">{p.title}</h3>
                        <div className="flex-1" />
                        <div className="w-full bg-slate-100 rounded-full h-2 mb-3">

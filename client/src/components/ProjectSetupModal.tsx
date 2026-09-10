@@ -125,7 +125,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
       }
     }
     
-    navigate('/project-workspace', {
+    navigate(`/project-workspace?projectId=${dbProjectId}`, {
       state: {
         project: { ...project, id: dbProjectId, projectId: dbProjectId },
         role,
