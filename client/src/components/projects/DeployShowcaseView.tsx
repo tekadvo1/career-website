@@ -1,26 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
-    Rocket, CheckCircle2, Circle, Globe, ExternalLink, Link2, 
-    FileText, Sparkles, Loader2, ArrowRight, Github
+    Rocket, CheckCircle2, Circle, Globe, ExternalLink, 
+    FileText, Sparkles, Loader2, Github
 } from 'lucide-react';
 import { apiFetch } from '../../utils/apiFetch';
-import { Project, DeployData, CaseStudyDraft, CheckStatus } from './projectModel';
+import type { Project, DeployData, CaseStudyDraft, CheckStatus } from './projectModel';
 import { useAlert } from '../../contexts/AlertContext';
 import { useNavigate } from 'react-router-dom';
 
 interface DeployShowcaseViewProps {
     project: Project;
     onUpdateProject: (p: Project) => void;
-    onBack: () => void;
 }
 
-export default function DeployShowcaseView({ project, onUpdateProject, onBack }: DeployShowcaseViewProps) {
+export default function DeployShowcaseView({ project, onUpdateProject }: DeployShowcaseViewProps) {
     const { showAlert } = useAlert();
     const navigate = useNavigate();
     const userString = sessionStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : {};
 
-    const [isSaving, setIsSaving] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Default structure if undefined
@@ -44,13 +42,7 @@ export default function DeployShowcaseView({ project, onUpdateProject, onBack }:
         { id: 'git', label: 'Code is committed and pushed to main branch' }
     ];
 
-    const postChecks = [
-        { id: 'live', label: 'Live URL opens successfully' },
-        { id: 'repo', label: 'Repository is public (if applicable)' }
-    ];
-
     const saveDeployData = async (newData: Partial<DeployData>) => {
-        setIsSaving(true);
         const updatedDeployData = {
             ...deployData,
             preparedChecks,
@@ -78,8 +70,6 @@ export default function DeployShowcaseView({ project, onUpdateProject, onBack }:
             });
         } catch (e) {
             showAlert("Failed to save deployment data.", "error");
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -88,13 +78,6 @@ export default function DeployShowcaseView({ project, onUpdateProject, onBack }:
         newChecks[id] = newChecks[id] === 'passed' ? 'not_checked' : 'passed';
         setPreparedChecks(newChecks);
         saveDeployData({ preparedChecks: newChecks });
-    };
-
-    const togglePostCheck = (id: string) => {
-        const newChecks = { ...postDeployChecks };
-        newChecks[id] = newChecks[id] === 'passed' ? 'not_checked' : 'passed';
-        setPostDeployChecks(newChecks);
-        saveDeployData({ postDeployChecks: newChecks });
     };
 
     const generateCaseStudy = async () => {
