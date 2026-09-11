@@ -528,7 +528,6 @@ export default function ProjectWorkspace() {
               <DeployShowcaseView
                 project={project}
                 onUpdateProject={(p: any) => setProject(p)}
-                onBack={() => setWorkspaceView('runtest')}
               />
            ) : selectedTaskId ? (
               <TaskGuideView 
