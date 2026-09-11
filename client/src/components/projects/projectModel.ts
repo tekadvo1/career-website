@@ -12,6 +12,25 @@ export interface TaskGuide {
 
 export type CheckStatus = 'not_checked' | 'passed' | 'failed' | 'blocked';
 
+export interface CaseStudyDraft {
+  title: string;
+  problem: string;
+  built: string;
+  technologies: string;
+  contribution: string;
+  challenge: string;
+  learned: string;
+  nextSteps: string;
+}
+
+export interface DeployData {
+  preparedChecks: Record<string, CheckStatus>;
+  repoUrl?: string;
+  liveUrl?: string;
+  caseStudyDraft?: CaseStudyDraft;
+  postDeployChecks: Record<string, CheckStatus>;
+}
+
 export interface StartupInstruction {
   id: string;
   component: string;
@@ -98,6 +117,7 @@ export interface Project {
   setup_data?: any;
   blueprint_data?: any;
   runtest_data?: RunTestData;
+  deploy_data?: DeployData;
   role?: string;
   projectId?: string;
   type?: string;
@@ -143,7 +163,8 @@ export const parseProjects = (val: any, fromDb: boolean = false): Project[] => {
       const setup_data = typeof p.setup_data === 'string' ? safeParse(p.setup_data, {}) : (p.setup_data || {});
       const blueprint_data = typeof p.blueprint_data === 'string' ? safeParse(p.blueprint_data, {}) : (p.blueprint_data || {});
       const runtest_data = typeof p.runtest_data === 'string' ? safeParse(p.runtest_data, {}) : (p.runtest_data || {});
-      return { ...p, tags, progress_data, project_data, setup_data, blueprint_data, runtest_data };
+      const deploy_data = typeof p.deploy_data === 'string' ? safeParse(p.deploy_data, {}) : (p.deploy_data || {});
+      return { ...p, tags, progress_data, project_data, setup_data, blueprint_data, runtest_data, deploy_data };
     });
   }
   

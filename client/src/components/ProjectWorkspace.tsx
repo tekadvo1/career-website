@@ -10,7 +10,8 @@ import { SetupView } from "./projects/SetupView";
 import BlueprintView from "./projects/BlueprintView";
 import RunTestView from "./projects/RunTestView";
 import { useAlert } from '../contexts/AlertContext';
-import { Maximize2, Minimize2, Play } from "lucide-react";
+import { Maximize2, Minimize2, Play, Rocket } from "lucide-react";
+import DeployShowcaseView from "./projects/DeployShowcaseView";
 
 interface Step {
   id: string;
@@ -51,8 +52,8 @@ export default function ProjectWorkspace() {
   const [role] = useState<string>(stateRole || user?.role || '');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
-  const queryView = searchParams.get('view') as 'setup' | 'blueprint' | 'build' | 'runtest';
-  const [workspaceView, setWorkspaceView] = useState<'setup' | 'blueprint' | 'build' | 'runtest'>(
+  const queryView = searchParams.get('view') as 'setup' | 'blueprint' | 'build' | 'runtest' | 'deploy';
+  const [workspaceView, setWorkspaceView] = useState<'setup' | 'blueprint' | 'build' | 'runtest' | 'deploy'>(
     queryView || (project?.setup_data?.checkedItems?.length > 0 ? (project?.blueprint_data?.files ? 'build' : 'blueprint') : 'setup')
   );
   
@@ -406,12 +407,12 @@ export default function ProjectWorkspace() {
              </div>
           </div>
 
-          {/* View toggle (Setup vs Blueprint vs Build vs Run & Test) */}
           <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
             <button onClick={() => setWorkspaceView("setup")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'setup' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Settings className="w-3.5 h-3.5"/> Setup</button>
             <button onClick={() => setWorkspaceView("blueprint")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'blueprint' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><BookOpen className="w-3.5 h-3.5"/> Blueprint</button>
             <button onClick={() => setWorkspaceView("build")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'build' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Circle className="w-3.5 h-3.5"/> Build</button>
             <button onClick={() => setWorkspaceView("runtest")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'runtest' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Play className="w-3.5 h-3.5"/> Test</button>
+            <button onClick={() => setWorkspaceView("deploy")} className={`px-3 py-1.5 text-xs font-bold rounded-md flex items-center gap-1.5 transition-colors ${workspaceView === 'deploy' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}><Rocket className="w-3.5 h-3.5"/> Deploy</button>
           </div>
           
           {/* Mobile pane toggles */}
@@ -522,6 +523,12 @@ export default function ProjectWorkspace() {
                 onUpdateProject={(p: any) => setProject(p)}
                 onAskAI={(msg: string) => { setInputMessage(msg); setActivePane('ai'); }}
                 onBack={() => setWorkspaceView('build')}
+              />
+           ) : workspaceView === 'deploy' ? (
+              <DeployShowcaseView
+                project={project}
+                onUpdateProject={(p: any) => setProject(p)}
+                onBack={() => setWorkspaceView('runtest')}
               />
            ) : selectedTaskId ? (
               <TaskGuideView 

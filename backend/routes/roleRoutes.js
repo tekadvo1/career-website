@@ -1189,7 +1189,7 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData, runtestData } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData, runtestData, deployData } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1243,6 +1243,12 @@ router.post('/update-project-progress', async (req, res) => {
         if (runtestData) {
             params.push(JSON.stringify(runtestData));
             query += `, runtest_data = $${paramIndex}`;
+            paramIndex++;
+        }
+
+        if (deployData) {
+            params.push(JSON.stringify(deployData));
+            query += `, deploy_data = $${paramIndex}`;
             paramIndex++;
         }
 
@@ -1750,6 +1756,98 @@ router.post('/project/:id/update-check-result', async (req, res) => {
     } catch (err) {
         console.error('Error updating check result:', err);
         res.status(500).json({ error: 'Failed to update check result' });
+    }
+});
+
+// POST /api/role/project/:id/generate-case-study - Generates an AI case study draft
+router.post('/project/:id/generate-case-study', async (req, res) => {
+    const userId = req.user ? req.user.id : req.body.userId;
+    const projectId = req.params.id;
+
+    if (!userId || !projectId) {
+        return res.status(400).json({ error: 'Missing user or project ID' });
+    }
+
+    try {
+        const pQuery = await pool.query(
+            "SELECT project_data, setup_data, blueprint_data, runtest_data, deploy_data FROM user_projects WHERE id = $1 AND user_id = $2",
+            [projectId, userId]
+        );
+        if (pQuery.rows.length === 0) return res.status(404).json({ error: 'Project not found' });
+
+        const { project_data, setup_data, blueprint_data, runtest_data, deploy_data } = pQuery.rows[0];
+        
+        const existingDraft = deploy_data?.caseStudyDraft;
+        if (existingDraft) {
+             return res.json({ success: true, caseStudyDraft: existingDraft, message: 'Returned existing case study draft' });
+        }
+
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const title = project_data?.title || 'Project';
+        const tags = project_data?.tags?.join(', ') || '';
+        const tools = project_data?.tools?.join(', ') || '';
+        const languages = project_data?.languages?.join(', ') || '';
+        const curriculum = project_data?.curriculum || [];
+        const description = project_data?.description || '';
+        const architecture = blueprint_data?.architecture?.type || '';
+
+        const prompt = `You are an expert technical writer and senior engineer. Generate a factual, compelling case study for a portfolio project.
+        
+Project Title: ${title}
+Description: ${description}
+Tags: ${tags}
+Tools: ${tools}
+Languages: ${languages}
+Architecture: ${architecture}
+Curriculum Tasks Completed: ${curriculum.map((m: any) => (m.tasks || []).map((t: any) => t.title || t.text || t).join(', ')).join('; ')}
+
+Generate a JSON object with these exact keys representing a case study draft:
+{
+  "title": "A catchy title for the case study",
+  "problem": "What problem does this project solve? Keep it professional.",
+  "built": "What was built and the main features.",
+  "technologies": "The core technologies used.",
+  "contribution": "What the user specifically contributed or built.",
+  "challenge": "One significant technical challenge and how it was resolved.",
+  "learned": "What was learned during the project.",
+  "nextSteps": "What could be added in the future."
+}
+
+Rules:
+- Make it sound professional, suitable for a recruiter or hiring manager to read.
+- Do NOT hallucinate metrics (e.g. 'increased speed by 50%'). Keep it factual to the stack.
+- Return ONLY the JSON object.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: prompt },
+                { role: "user", content: "Generate the case study draft now." }
+            ],
+            max_tokens: 1500,
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        });
+
+        const reply = completion.choices[0].message.content;
+        const match = reply.match(/\{[\s\S]*\}/);
+        const parsed = match ? JSON.parse(match[0]) : null;
+
+        if (!parsed || !parsed.title) {
+            return res.status(500).json({ error: 'Failed to parse AI response' });
+        }
+
+        const newDeployData = { ...(deploy_data || {}), caseStudyDraft: parsed };
+
+        await pool.query(
+            "UPDATE user_projects SET deploy_data = $1, last_updated = NOW() WHERE id = $2 AND user_id = $3",
+            [JSON.stringify(newDeployData), projectId, userId]
+        );
+
+        res.json({ success: true, caseStudyDraft: parsed });
+    } catch (err) {
+        console.error('Error generating case study:', err);
+        res.status(500).json({ error: 'Failed to generate case study' });
     }
 });
 
