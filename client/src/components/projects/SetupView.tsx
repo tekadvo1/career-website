@@ -47,7 +47,7 @@ export function SetupView({ project, initialSetupData, onSaveSetup, onHelpMeFixI
         <h1 className="text-3xl font-black mb-3">Get ready to build</h1>
         <p className="text-slate-300 text-lg max-w-2xl">
           Set up the tools this project needs, then check that they work. 
-          We've customized this checklist for <strong>{project.title}</strong>.
+          We've customized this checklist for <strong>{project?.title}</strong>.
         </p>
       </div>
 

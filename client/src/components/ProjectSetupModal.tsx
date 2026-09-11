@@ -68,7 +68,7 @@ export default function ProjectSetupModal({ isOpen, onClose, project, role }: Pr
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectTitle: project.title,
+          projectTitle: project?.title,
           role: role,
           difficultly: project.difficulty,
           techStack: project.tools,

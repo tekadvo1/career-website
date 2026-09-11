@@ -74,7 +74,7 @@ export default function ProjectOnboardingWizard({ project, role, onClose }: Proj
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectTitle: project.title,
+          projectTitle: project?.title,
           role: role,
           difficultly: project.difficulty,
           techStack: project.tools,
@@ -179,7 +179,7 @@ export default function ProjectOnboardingWizard({ project, role, onClose }: Proj
             <div className="animate-in slide-in-from-right-4 duration-300 max-w-2xl mx-auto flex flex-col h-full justify-between">
               <div>
                   <div className="text-center mb-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">{project.title}</h1>
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">{project?.title}</h1>
                     <p className="text-slate-500 text-[16px] leading-relaxed font-medium">{project.description}</p>
                   </div>
 

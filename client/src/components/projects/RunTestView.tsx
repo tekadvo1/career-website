@@ -113,7 +113,7 @@ export default function RunTestView({ project, onUpdateProject, onAskAI, onBack 
           userError: troubleshootForm.error,
           userCommand: troubleshootForm.command,
           userCode: troubleshootForm.code,
-          projectTitle: project.title,
+          projectTitle: project?.title,
           stack: [...(project.tools || []), ...(project.languages || [])].join(', ')
         })
       });
@@ -188,7 +188,7 @@ export default function RunTestView({ project, onUpdateProject, onAskAI, onBack 
           </div>
           <div>
             <p className="text-emerald-400 text-[11px] font-bold uppercase tracking-widest">Run & Test</p>
-            <h1 className="text-2xl font-black leading-tight">{project.title}</h1>
+            <h1 className="text-2xl font-black leading-tight">{project?.title}</h1>
           </div>
         </div>
         <p className="text-slate-300 text-sm max-w-2xl">Start your project locally, check features against acceptance criteria, run tests, and record your results.</p>
