@@ -3,8 +3,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Circle, Sparkles, Send, 
-  BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings
+  BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings, Copy, Check
 } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 import { TaskGuideView } from "./TaskGuideView";
 import { SetupView } from "./projects/SetupView";
 import BlueprintView from "./projects/BlueprintView";
@@ -49,6 +50,7 @@ export default function ProjectWorkspace() {
 
   const [projectId] = useState<string | null>(queryProjectId || stateProject?.projectId || stateProject?.id || null);
   const [project, setProject] = useState<any>(stateProject || null);
+  const [serverLastUpdated, setServerLastUpdated] = useState<string | null>(stateProject?.last_updated || null);
   const [role] = useState<string>(stateRole || user?.role || '');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
@@ -95,6 +97,8 @@ export default function ProjectWorkspace() {
   
   const isDraggingLeft = useRef(false);
   const isDraggingRight = useRef(false);
+  
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -149,8 +153,8 @@ export default function ProjectWorkspace() {
       }));
   };
 
-  const persistProgress = async (newSteps: Step[], currentXp: number, currentMessages: Message[] = messages) => {
-    if (!projectId || !user.id) return;
+  const persistProgress = async (newSteps: Step[], currentXp: number, currentMessages: Message[] = messages): Promise<boolean> => {
+    if (!projectId || !user.id) return false;
     setIsSaving(true);
     
     const newCompletedList: string[] = [];
@@ -161,7 +165,7 @@ export default function ProjectWorkspace() {
     const isFullyCompleted = newSteps.length > 0 && newSteps.every(s => s.completed);
 
     try {
-        await apiFetch('/api/role/update-project-progress', {
+        const response = await apiFetch('/api/role/update-project-progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -170,12 +174,24 @@ export default function ProjectWorkspace() {
                 status: isFullyCompleted ? 'completed' : 'active',
                 progress: { completedTasks: newCompletedList, xp: currentXp, guidanceMode },
                 chatData: currentMessages,
-                lastUpdated: new Date().toISOString()
+                lastUpdated: serverLastUpdated || new Date().toISOString()
             })
         });
-    } catch (e) {
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.error || 'Failed to save progress');
+        }
+
+        const data = await response.json();
+        if (data.lastUpdated) {
+            setServerLastUpdated(data.lastUpdated);
+        }
+        return true;
+    } catch (e: any) {
         console.error("Failed to save progress", e);
-        showAlert("Failed to save progress.", "error");
+        showAlert(e.message || "Failed to save progress.", "error");
+        return false;
     } finally {
         setIsSaving(false);
     }
@@ -326,24 +342,60 @@ export default function ProjectWorkspace() {
                     projectTitle: project?.title || 'Personal Project',
                     currentTask: selectedTaskId ? steps.flatMap(s => s.tasks).find(t => t.id === selectedTaskId)?.text : 'General'
                 },
-                role: role || 'Software Engineer'
+                role: role || 'Software Engineer',
+                stream: true,
+                conversationHistory: newMessages.map(m => ({ role: m.role, content: m.content }))
             })
         });
         
-        const data = await res.json();
-        const aiResponse: Message = {
-            id: (Date.now() + 1).toString(), role: "assistant", content: data.reply || "I encountered an error.", timestamp: new Date().toISOString(),
-        };
-        const finalMessages = [...newMessages, aiResponse];
-        setMessages(finalMessages);
-        persistProgress(steps, totalXP, finalMessages);
+        if (!res.body) throw new Error("No body");
+        
+        const aiMessageId = (Date.now() + 1).toString();
+        let aiContent = "";
+        
+        // Add empty message first
+        setMessages(prev => [...prev, {
+            id: aiMessageId, role: "assistant", content: "", timestamp: new Date().toISOString()
+        }]);
+        
+        setIsTyping(false);
+        
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const data = JSON.parse(line.slice(5));
+                        if (data.content) {
+                            aiContent += data.content;
+                            setMessages(prev => prev.map(m => m.id === aiMessageId ? { ...m, content: aiContent } : m));
+                        }
+                    } catch (e) {
+                        // ignore parse errors for partial chunks
+                    }
+                }
+            }
+        }
+        
+        // Final save
+        persistProgress(steps, totalXP, [...newMessages, {
+            id: aiMessageId, role: "assistant", content: aiContent, timestamp: new Date().toISOString()
+        }]);
     } catch (err) {
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(), role: "assistant", content: "Network error.", timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, aiResponse]);
+        setIsTyping(false);
     }
-    setIsTyping(false);
   };
 
   useEffect(() => {
@@ -379,6 +431,30 @@ export default function ProjectWorkspace() {
     
     setSteps(updatedSteps);
     persistProgress(updatedSteps, updatedXp);
+  };
+
+  const handleMarkComplete = async (taskId: string, completed: boolean): Promise<boolean> => {
+    let updatedXp = totalXP;
+    const updatedSteps = steps.map(s => {
+      const uTasks = s.tasks.map(t => {
+        if (t.id === taskId) {
+          if (completed && !t.completed) updatedXp += 50;
+          if (!completed && t.completed) updatedXp -= 50;
+          return { ...t, completed };
+        }
+        return t;
+      });
+      return { ...s, tasks: uTasks, completed: uTasks.every(t => t.completed) };
+    });
+
+    const success = await persistProgress(updatedSteps, updatedXp);
+    
+    if (success) {
+      setTotalXP(updatedXp);
+      setSteps(updatedSteps);
+    }
+    
+    return success;
   };
 
   const completedSteps = steps.filter((s) => s.completed).length;
@@ -537,13 +613,14 @@ export default function ProjectWorkspace() {
                 onGuidanceModeChange={setGuidanceMode}
                 onAskAI={(msg: string) => { setInputMessage(msg); setActivePane('ai'); }}
                 onBack={() => setActivePane("outline")}
-                onMarkComplete={(isCompleted: boolean = true) => {
+                onMarkComplete={async (isCompleted: boolean = true) => {
                    const step = steps.find(s => s.tasks.some(t => t.id === selectedTaskId));
                    if (step) {
                      // Check if it's already in the desired state to avoid double toggling
                      const task = step.tasks.find(t => t.id === selectedTaskId);
                      if (task?.completed !== isCompleted) {
-                       handleTaskToggle(step.id, selectedTaskId);
+                       const success = await handleMarkComplete(selectedTaskId, isCompleted);
+                       if (!success) return;
                      }
                    }
                    if (isCompleted) {
@@ -606,7 +683,47 @@ export default function ProjectWorkspace() {
                           ? "bg-white text-slate-700 border border-slate-200 rounded-tl-sm shadow-sm"
                           : "bg-teal-600 text-white rounded-tr-sm shadow-sm"
                       }`}>
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none prose-emerald prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-headings:font-bold prose-a:text-emerald-600">
+                          <ReactMarkdown
+                            components={{
+                              code({node, inline, className, children, ...props}: any) {
+                                const match = /language-(\w+)/.exec(className || '');
+                                const codeString = String(children).replace(/\n$/, '');
+                                
+                                if (!inline && match) {
+                                  return (
+                                    <div className="relative group mt-3 mb-4 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                                      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/50 border-b border-slate-700">
+                                        <span className="text-[10px] font-mono font-medium text-slate-400 uppercase tracking-wider">{match[1]}</span>
+                                        <button 
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(codeString);
+                                            setCopiedCode(codeString);
+                                            setTimeout(() => setCopiedCode(null), 2000);
+                                          }}
+                                          className="p-1 hover:bg-slate-700 rounded transition-colors"
+                                          title="Copy code"
+                                        >
+                                          {copiedCode === codeString ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-300" />}
+                                        </button>
+                                      </div>
+                                      <div className="p-3 overflow-x-auto text-[13px] leading-relaxed font-mono text-slate-50">
+                                        <code>{children}</code>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return <code className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[12px] font-mono border border-emerald-100" {...props}>{children}</code>;
+                              }
+                            }}
+                          >
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                      )}
                     </div>
                   </div>
                 </div>

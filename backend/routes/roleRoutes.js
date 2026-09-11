@@ -1254,12 +1254,12 @@ router.post('/update-project-progress', async (req, res) => {
 
         query += ` WHERE id = $2 AND user_id = $3`;
 
-        const result = await pool.query(query, params);
+        const result = await pool.query(query + ' RETURNING last_updated', params);
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Project not found or unauthorized' });
         }
 
-        res.json({ success: true });
+        res.json({ success: true, lastUpdated: result.rows[0].last_updated });
 
         // ── Real-time broadcast ──────────────────────────────────────────────
         try { realtimeRoutes.broadcast(String(userId), 'project_update', { projectId, action: 'progress_updated' }); } catch (_) {}

@@ -20,6 +20,7 @@ export function TaskGuideView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [isSavingComplete, setIsSavingComplete] = useState(false);
 
   const fetchGuide = async () => {
     setLoading(true);
@@ -92,6 +93,16 @@ export function TaskGuideView({
     );
   }
 
+  const handleMarkComplete = async (completed: boolean) => {
+    setIsSavingComplete(true);
+    try {
+      await onMarkComplete(completed);
+    } finally {
+      setIsSavingComplete(false);
+    }
+  };
+
+  if (!task) return null;
   if (!guide) return null;
 
   const handleCopy = (code: string) => {
@@ -242,16 +253,21 @@ export function TaskGuideView({
         {/* Action Area */}
         <div className="mt-12 pt-8 border-t border-slate-200 flex flex-col gap-4">
           {!task?.completed ? (
-            <button 
-              onClick={() => onMarkComplete(true)}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm text-[15px]"
-            >
-              <CheckCircle2 className="w-5 h-5" /> Mark as Complete & Next Task
-            </button>
+            <div className="pt-2">
+              <button 
+                onClick={() => handleMarkComplete(true)}
+                disabled={isSavingComplete}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm text-[15px]"
+              >
+                {isSavingComplete ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                {isSavingComplete ? 'Saving...' : 'Mark as Complete & Next Task'}
+              </button>
+            </div>
           ) : (
             <div className="flex gap-4">
               <button 
-                onClick={() => onMarkComplete(true)}
+                onClick={() => handleMarkComplete(true)}
+                disabled={isSavingComplete}
                 className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm text-[15px]"
               >
                 Continue to Next Task

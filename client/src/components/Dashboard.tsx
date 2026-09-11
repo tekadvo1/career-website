@@ -192,7 +192,7 @@ export default function Dashboard() {
       return { title: 'Analysis processing...', desc: 'We are generating your career blueprint.', label: "Generating...", action: () => {}, style: "bg-emerald-200 text-emerald-700 cursor-not-allowed" };
     }
     if (activeProjects.length > 0) {
-      return { title: `Continue: ${activeProjects[0].title}`, desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate('/projects', { state: { activeTab: 'active' } }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+      return { title: `Continue: ${activeProjects[0].title}`, desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate(`/project-workspace?projectId=${encodeURIComponent(activeProjects[0].id)}`), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
     }
     if (rtStats.roadmapTopics > 0 || hasRoadmap) {
       return { title: 'Review your roadmap', desc: 'See what to learn next.', label: "View My Roadmap", action: () => navigate('/roadmap', { state: location.state }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
