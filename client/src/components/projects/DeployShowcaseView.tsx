@@ -32,7 +32,7 @@ export default function DeployShowcaseView({ project, onUpdateProject }: DeployS
     const [preparedChecks, setPreparedChecks] = useState<Record<string, CheckStatus>>(deployData.preparedChecks || {});
     const [repoUrl, setRepoUrl] = useState(deployData.repoUrl || '');
     const [liveUrl, setLiveUrl] = useState(deployData.liveUrl || '');
-    const [postDeployChecks, setPostDeployChecks] = useState<Record<string, CheckStatus>>(deployData.postDeployChecks || {});
+
     const [caseStudy, setCaseStudy] = useState<CaseStudyDraft | null>(deployData.caseStudyDraft || null);
 
     const checklistItems = [
@@ -48,7 +48,7 @@ export default function DeployShowcaseView({ project, onUpdateProject }: DeployS
             preparedChecks,
             repoUrl,
             liveUrl,
-            postDeployChecks,
+            postDeployChecks: deployData.postDeployChecks || {},
             caseStudyDraft: caseStudy || undefined,
             ...newData
         };
