@@ -1799,7 +1799,7 @@ Tags: ${tags}
 Tools: ${tools}
 Languages: ${languages}
 Architecture: ${architecture}
-Curriculum Tasks Completed: ${curriculum.map((m: any) => (m.tasks || []).map((t: any) => t.title || t.text || t).join(', ')).join('; ')}
+Curriculum Tasks Completed: ${curriculum.map((m) => (m.tasks || []).map((t) => t.title || t.text || t).join(', ')).join('; ')}
 
 Generate a JSON object with these exact keys representing a case study draft:
 {
