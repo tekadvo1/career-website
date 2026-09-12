@@ -259,14 +259,6 @@ router.post('/chat-history', async (req, res) => {
                 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role, project_id = EXCLUDED.project_id
              `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, role, projectId || null]);
         }
-        
-        // Delete sessions for THIS ROLE that are no longer in the client list
-        if (chatHistory.length > 0) {
-            const currentIds = chatHistory.map(c => c.id);
-            await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND role = $2 AND id != ALL($3)', [userId, role, currentIds]);
-        } else {
-            await client.query('DELETE FROM chat_sessions WHERE user_id = $1 AND role = $2', [userId, role]);
-        }
 
         await client.query('COMMIT');
         client.release();
@@ -274,6 +266,48 @@ router.post('/chat-history', async (req, res) => {
     } catch (err) {
         console.error('Chat history sync error:', err);
         res.status(500).json({ error: 'Failed to synchronize chats' });
+    }
+});
+
+// PUT /api/ai/chat-history/:id - Rename a chat session
+router.put('/chat-history/:id', async (req, res) => {
+    const { id } = req.params;
+    const { title, userId } = req.body;
+    
+    if (!title || !userId) {
+        return res.status(400).json({ error: 'title and userId are required' });
+    }
+    
+    try {
+        const result = await pool.query('UPDATE chat_sessions SET title = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING *', [title, id, userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Chat session not found or unauthorized' });
+        }
+        res.json({ success: true, message: 'Chat renamed successfully' });
+    } catch (err) {
+        console.error('Chat rename error:', err);
+        res.status(500).json({ error: 'Failed to rename chat' });
+    }
+});
+
+// DELETE /api/ai/chat-history/:id - Delete a chat session
+router.delete('/chat-history/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.query; // pass userId to ensure authorization
+    
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
+    }
+    
+    try {
+        const result = await pool.query('DELETE FROM chat_sessions WHERE id = $1 AND user_id = $2 RETURNING *', [id, userId]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Chat session not found or unauthorized' });
+        }
+        res.json({ success: true, message: 'Chat deleted successfully' });
+    } catch (err) {
+        console.error('Chat delete error:', err);
+        res.status(500).json({ error: 'Failed to delete chat' });
     }
 });
 
