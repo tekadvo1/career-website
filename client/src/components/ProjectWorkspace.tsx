@@ -82,6 +82,9 @@ export default function ProjectWorkspace() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [editSessionTitle, setEditSessionTitle] = useState("");
 
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [chatLoadingState, setChatLoadingState] = useState<'idle' | 'loading' | 'error' | 'success'>('idle');
+
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -157,7 +160,7 @@ export default function ProjectWorkspace() {
   };
 
   const persistProgress = async (newSteps: Step[], currentXp: number, currentMessages: Message[] = messages): Promise<boolean> => {
-    if (!projectId || !user.id) return false;
+    if (!projectId || !user.id || isInitializing) return false;
     setIsSaving(true);
     
     const newCompletedList: string[] = [];
@@ -240,7 +243,8 @@ export default function ProjectWorkspace() {
         let loadedSteps: Step[] = [];
         let currentProject = project;
 
-        if (!currentProject && projectId) {
+        // ALWAYS fetch latest project data from the backend to prevent stale location.state from wiping progress
+        if (projectId) {
             try {
                 const res = await apiFetch(`/api/role/my-projects`);
                 const data = await res.json();
@@ -249,16 +253,21 @@ export default function ProjectWorkspace() {
                     if (found) {
                         currentProject = found;
                         setProject(found);
-                    } else {
+                    } else if (!currentProject) {
                         navigate('/dashboard'); return;
                     }
                 }
             } catch (e) {
-                navigate('/dashboard'); return;
+                console.error("Failed to fetch project", e);
+                if (!currentProject) {
+                    navigate('/dashboard'); return;
+                }
             }
         }
 
-        if (!currentProject) return;
+        if (!currentProject) {
+            navigate('/dashboard'); return;
+        }
 
         if (preLoadedCurriculum) {
             loadedSteps = mapCurriculumToSteps(preLoadedCurriculum);
@@ -290,23 +299,6 @@ export default function ProjectWorkspace() {
              }
         }
 
-        // Fetch ChatGPT style chat history
-        try {
-            const histRes = await apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}&projectId=${currentProject.id}`);
-            const histData = await histRes.json();
-            if (histData.success && histData.history && histData.history.length > 0) {
-                setChatHistory(histData.history);
-                setMessages(histData.history[0].messages);
-                setActiveSessionId(histData.history[0].id);
-            } else {
-                // If no history exists, start a default session
-                startNewChat();
-            }
-        } catch(e) {
-            console.error("Failed to load chat history", e);
-            startNewChat();
-        }
-
         if (loadedSteps.length > 0) {
             setSteps(loadedSteps);
             // Auto-select first incomplete task
@@ -322,10 +314,45 @@ export default function ProjectWorkspace() {
             }
             if (firstIncomplete) setSelectedTaskId(firstIncomplete);
         }
+        
+        setIsInitializing(false);
     };
 
-    initProject();
-  }, [project, role, navigate, preLoadedCurriculum, user.id]);
+    if (user.id && projectId) {
+        initProject();
+    }
+  }, [projectId, role, navigate, preLoadedCurriculum, user.id]);
+
+  // Separate useEffect to handle chat history loading to ensure it waits for auth
+  useEffect(() => {
+    if (!user.id || !projectId || !role || isInitializing) return;
+
+    const fetchChat = async () => {
+        setChatLoadingState('loading');
+        try {
+            const histRes = await apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}&projectId=${projectId}`);
+            if (!histRes.ok) throw new Error("Failed to fetch history");
+            const histData = await histRes.json();
+            
+            if (histData.success && histData.history && histData.history.length > 0) {
+                setChatHistory(histData.history);
+                setMessages(histData.history[0].messages);
+                setActiveSessionId(histData.history[0].id);
+                setChatLoadingState('success');
+            } else {
+                setChatLoadingState('success');
+                // Only start a new chat if we actually got a successful empty response
+                startNewChat();
+            }
+        } catch(e) {
+            console.error("Failed to load chat history", e);
+            setChatLoadingState('error');
+            // Do NOT call startNewChat here to avoid replacing stored history with an empty list
+        }
+    };
+
+    fetchChat();
+  }, [user.id, projectId, role, isInitializing]);
 
   const startNewChat = () => {
       const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -869,7 +896,29 @@ export default function ProjectWorkspace() {
                     </div>
                  ) : (
                     <>
-                      {messages.map((message) => (
+                      {chatLoadingState === 'loading' && (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                          <Loader2 className="w-8 h-8 animate-spin text-teal-600 mb-2" />
+                          <p className="text-sm">Loading conversations...</p>
+                        </div>
+                      )}
+                      
+                      {chatLoadingState === 'error' && (
+                        <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                          <Zap className="w-8 h-8 text-rose-500 mb-2 opacity-50" />
+                          <p className="text-sm mb-4">Failed to load chat history.</p>
+                          <div className="flex gap-2">
+                             <button onClick={() => setChatLoadingState('idle')} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors text-sm">
+                               Retry
+                             </button>
+                             <button onClick={() => { setChatLoadingState('success'); startNewChat(); }} className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg transition-colors text-sm">
+                               Force New Chat
+                             </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {chatLoadingState === 'success' && messages.map((message) => (
                         <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                           {message.role === "assistant" && (
                             <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm">
@@ -927,8 +976,8 @@ export default function ProjectWorkspace() {
                           </div>
                         </div>
                       ))}
-                      {isTyping && (
-                        <div className="flex gap-3 animate-in fade-in duration-300">
+                      {isTyping && chatLoadingState === 'success' && (
+                        <div className="flex gap-3 justify-start">
                           <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm"><Sparkles className="w-3 h-3 text-teal-600" /></div>
                           <div className="bg-white rounded-2xl rounded-tl-sm p-3 border border-slate-200 shadow-sm flex items-center h-9"><Loader2 className="w-4 h-4 text-slate-400 animate-spin" /></div>
                         </div>
