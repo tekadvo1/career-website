@@ -4,7 +4,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Circle, Sparkles, Send, 
   BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings, Copy, Check,
-  PanelLeftClose, PanelLeftOpen, MessageSquare, Plus, Clock, FileText, Minimize
+  PanelLeftClose, PanelLeftOpen, Plus, Clock, Minimize
 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { TaskGuideView } from "./TaskGuideView";
@@ -722,6 +722,7 @@ export default function ProjectWorkspace() {
               </div>
            )}
         </div>
+        )}
 
         {/* RIGHT PANE: AI ASSISTANT */}
         {!isFocusMode && (
