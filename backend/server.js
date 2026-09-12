@@ -331,7 +331,7 @@ const updateSchema = async () => {
       console.log('Seeded real_world_projects table');
     }
 
-    // Add schedule and provenance tracking to user_projects
+    // Add schedule, provenance tracking, and portfolio_draft to user_projects
     await client.query(`
       DO $$
       BEGIN
@@ -339,6 +339,9 @@ const updateSchema = async () => {
           ALTER TABLE user_projects ADD COLUMN schedule_data JSONB DEFAULT '{}';
           ALTER TABLE user_projects ADD COLUMN template_version VARCHAR(50);
           ALTER TABLE user_projects ADD COLUMN source_provenance VARCHAR(100);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_projects' AND column_name = 'portfolio_draft') THEN
+          ALTER TABLE user_projects ADD COLUMN portfolio_draft JSONB DEFAULT '{}';
         END IF;
       END $$;
     `);

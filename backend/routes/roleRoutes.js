@@ -1189,7 +1189,7 @@ router.post('/start-project', async (req, res) => {
 // POST /api/role/update-project-progress - Updates progress_data
 router.post('/update-project-progress', async (req, res) => {
     const userId = req.user ? req.user.id : req.body.userId;
-    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData, runtestData, deployData } = req.body;
+    const { projectId, progress, status, lastUpdated, chatData, setupData, blueprintData, runtestData, deployData, portfolioDraft } = req.body;
 
     if (!userId || !projectId || !progress) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -1249,6 +1249,12 @@ router.post('/update-project-progress', async (req, res) => {
         if (deployData) {
             params.push(JSON.stringify(deployData));
             query += `, deploy_data = $${paramIndex}`;
+            paramIndex++;
+        }
+
+        if (portfolioDraft !== undefined) {
+            params.push(JSON.stringify(portfolioDraft));
+            query += `, portfolio_draft = $${paramIndex}`;
             paramIndex++;
         }
 
@@ -1848,6 +1854,23 @@ Rules:
     } catch (err) {
         console.error('Error generating case study:', err);
         res.status(500).json({ error: 'Failed to generate case study' });
+    }
+});
+
+// GET /api/role/portfolio-drafts - Fetch all user portfolio drafts
+router.get('/portfolio-drafts', protect, async (req, res) => {
+    try {
+        const query = `
+            SELECT id as project_id, title, role, description, portfolio_draft 
+            FROM user_projects 
+            WHERE user_id = $1 AND portfolio_draft IS NOT NULL AND portfolio_draft::text != '{}'::text
+            ORDER BY last_updated DESC
+        `;
+        const result = await pool.query(query, [req.user.id]);
+        res.json({ success: true, drafts: result.rows });
+    } catch (err) {
+        console.error('Error fetching portfolio drafts:', err);
+        res.status(500).json({ error: 'Failed to fetch portfolio drafts' });
     }
 });
 

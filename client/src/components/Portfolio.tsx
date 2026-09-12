@@ -132,9 +132,6 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
     const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
 
-    // We still load initial config from local storage as a fallback
-    // Realtime updates will handle the actual stats
-    
     // Load active skills from local storage role analysis
     let activeSkills = ["JavaScript", "React", "Node.js", "TypeScript", "TailwindCSS"];
     if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
@@ -145,7 +142,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
     setSkillsList(activeSkills.slice(0, 8).map((s: string, idx: number) => ({ name: s, level: Math.max(60, 95 - (idx * 5)) })));
 
-    // Load saved portfolio config
+    // Load saved portfolio config (legacy fallback for theme, about)
     const savedPortfolio = sessionStorage.getItem('user_portfolio_details');
     if (savedPortfolio) {
       const parsed = JSON.parse(savedPortfolio);
@@ -153,20 +150,45 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       setPortfolioData(parsed);
       setEditForm(parsed);
     } else {
-      // Map initial basic experiences from their generated project data if no saved portfolio
-      const mappedExps = [{
-        title: "Developer Project",
-        role: "Developer",
-        description: "Implemented and delivered key features.",
-        date: "Recently"
-      }];
-      setPortfolioData(prev => ({...prev, experiences: mappedExps}));
-      setEditForm(prev => ({...prev, experiences: mappedExps}));
+      setPortfolioData(prev => ({...prev, experiences: []}));
+      setEditForm(prev => ({...prev, experiences: []}));
     }
   };
 
+  const fetchPortfolioDrafts = async () => {
+      try {
+          const { apiFetch } = await import('../utils/apiFetch');
+          const res = await apiFetch('/api/role/portfolio-drafts');
+          const data = await res.json();
+          if (data.success && data.drafts) {
+              const mappedExps = data.drafts.map((d: any) => {
+                  const p = typeof d.portfolio_draft === 'string' ? JSON.parse(d.portfolio_draft) : d.portfolio_draft;
+                  return {
+                      projectId: d.project_id,
+                      title: p.title || d.title,
+                      role: p.role || d.role || "Developer",
+                      date: p.date || "Recently",
+                      description: `${p.problem || ''} ${p.built || ''} ${p.technologies ? 'Technologies: ' + p.technologies : ''}`.trim() || d.description,
+                      isProject: true,
+                      liveUrl: p.liveUrl || undefined,
+                      repoUrl: p.repoUrl || undefined
+                  };
+              });
+              setPortfolioData(prev => ({ ...prev, experiences: mappedExps }));
+              setEditForm(prev => ({ ...prev, experiences: mappedExps }));
+          }
+      } catch (e) {
+          console.error("Failed to fetch portfolio drafts", e);
+      }
+  };
+
   useEffect(() => {
-    Promise.resolve().then(() => loadRealtimeStats());
+    Promise.resolve().then(() => {
+        loadRealtimeStats();
+        if (!isPublic) {
+            fetchPortfolioDrafts();
+        }
+    });
     
     // SETUP REAL-TIME STREAM
     const userStr = sessionStorage.getItem('user');

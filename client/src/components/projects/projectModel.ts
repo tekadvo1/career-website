@@ -17,10 +17,10 @@ export interface CaseStudyDraft {
   problem: string;
   built: string;
   technologies: string;
-  contribution: string;
+  contribution?: string;
   challenge: string;
-  learned: string;
-  nextSteps: string;
+  learned?: string;
+  nextSteps?: string;
 }
 
 export interface DeployData {
@@ -118,6 +118,7 @@ export interface Project {
   blueprint_data?: any;
   runtest_data?: RunTestData;
   deploy_data?: DeployData;
+  portfolio_draft?: any;
   role?: string;
   projectId?: string;
   type?: string;
