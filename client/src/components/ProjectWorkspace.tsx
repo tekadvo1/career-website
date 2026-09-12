@@ -52,7 +52,7 @@ export default function ProjectWorkspace() {
   const [projectId] = useState<string | null>(queryProjectId || stateProject?.projectId || stateProject?.id || null);
   const [project, setProject] = useState<any>(stateProject || null);
   const [serverLastUpdated, setServerLastUpdated] = useState<string | null>(stateProject?.last_updated || null);
-  const [role] = useState<string>(stateRole || user?.role || '');
+  const [role] = useState<string>(stateRole || user?.role || 'General');
   const [preLoadedCurriculum] = useState<any[] | null>(stateCurriculum || null);
   
   const queryView = searchParams.get('view') as 'setup' | 'blueprint' | 'build' | 'runtest' | 'deploy';

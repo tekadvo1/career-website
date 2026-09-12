@@ -205,13 +205,14 @@ router.post('/guide', checkAICredits, async (req, res) => {
 // GET /api/ai/chat-history - Sync user's previous chats from mobile/desktop
 router.get('/chat-history', async (req, res) => {
     const { userId, role, projectId } = req.query;
-    if (!userId || !role) {
-        return res.status(400).json({ error: 'userId and role are required' });
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
     }
+    const safeRole = role || 'General';
 
     try {
         let queryStr = "SELECT id, title, messages, updated_at FROM chat_sessions WHERE user_id = $1 AND role = $2";
-        let params = [userId, role];
+        let params = [userId, safeRole];
 
         if (projectId) {
             queryStr += " AND project_id = $3";
@@ -241,9 +242,10 @@ router.get('/chat-history', async (req, res) => {
 // POST /api/ai/chat-history - Push changes from frontend client to persistent DB
 router.post('/chat-history', async (req, res) => {
     const { userId, role, chatHistory, projectId } = req.body;
-    if (!userId || !role || !Array.isArray(chatHistory)) {
-        return res.status(400).json({ error: 'userId, role, and chatHistory array are required' });
+    if (!userId || !Array.isArray(chatHistory)) {
+        return res.status(400).json({ error: 'userId and chatHistory array are required' });
     }
+    const safeRole = role || 'General';
 
     try {
         const client = await pool.connect();
@@ -257,7 +259,7 @@ router.post('/chat-history', async (req, res) => {
                 INSERT INTO chat_sessions (id, user_id, title, messages, updated_at, role, project_id) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7) 
                 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role, project_id = EXCLUDED.project_id
-             `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, role, projectId || null]);
+             `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, safeRole, projectId || null]);
         }
 
         await client.query('COMMIT');
