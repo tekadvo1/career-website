@@ -221,12 +221,15 @@ const updateSchema = async () => {
       );
     `);
     
-    // Auto-migrate role column into chat_sessions
+    // Auto-migrate role and project_id columns into chat_sessions
     await client.query(`
       DO $$
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'role') THEN
           ALTER TABLE chat_sessions ADD COLUMN role VARCHAR(255) DEFAULT 'Software Engineer';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'project_id') THEN
+          ALTER TABLE chat_sessions ADD COLUMN project_id INTEGER REFERENCES user_projects(id) ON DELETE CASCADE;
         END IF;
       END $$;
     `);

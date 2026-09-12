@@ -3,7 +3,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle2, Circle, Sparkles, Send, 
-  BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings, Copy, Check
+  BookOpen, ChevronDown, ChevronUp, Loader2, Zap, Settings, Copy, Check,
+  PanelLeftClose, PanelLeftOpen, MessageSquare, Plus, Clock, FileText, Minimize
 } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import { TaskGuideView } from "./TaskGuideView";
@@ -74,14 +75,11 @@ export default function ProjectWorkspace() {
   const [totalXP, setTotalXP] = useState(0);
 
   // Chat state
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "👋 Welcome! I'm your AI Project Guide. Ask me any questions about the current task, concepts, or code errors.",
-      timestamp: new Date().toISOString(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +90,9 @@ export default function ProjectWorkspace() {
 
   const [guidanceMode, setGuidanceMode] = useState<'step'|'quick'>('step');
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [isOutlineCollapsed, setIsOutlineCollapsed] = useState(false);
+  const [copilotState, setCopilotState] = useState<'normal'|'minimized'|'maximized'>('normal');
+
   const [leftWidth, setLeftWidth] = useState(() => parseInt(localStorage.getItem('pw_leftWidth') || '320', 10));
   const [rightWidth, setRightWidth] = useState(() => parseInt(localStorage.getItem('pw_rightWidth') || '400', 10));
   
@@ -282,17 +283,26 @@ export default function ProjectWorkspace() {
              if (prog.xp) setTotalXP(prog.xp);
              if (prog.guidanceMode) setGuidanceMode(prog.guidanceMode);
              
-             // Restore Chat
-             const chat = currentProject.chat_data 
-               ? (typeof currentProject.chat_data === 'string' ? JSON.parse(currentProject.chat_data) : currentProject.chat_data)
-               : null;
-             if (chat && Array.isArray(chat) && chat.length > 0) {
-                 setMessages(chat);
-             }
-             
              if (currentProject.schedule_data) {
                  setScheduleData(typeof currentProject.schedule_data === 'string' ? JSON.parse(currentProject.schedule_data) : currentProject.schedule_data);
              }
+        }
+
+        // Fetch ChatGPT style chat history
+        try {
+            const histRes = await apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}&projectId=${currentProject.id}`);
+            const histData = await histRes.json();
+            if (histData.success && histData.history && histData.history.length > 0) {
+                setChatHistory(histData.history);
+                setMessages(histData.history[0].messages);
+                setActiveSessionId(histData.history[0].id);
+            } else {
+                // If no history exists, start a default session
+                startNewChat();
+            }
+        } catch(e) {
+            console.error("Failed to load chat history", e);
+            startNewChat();
         }
 
         if (loadedSteps.length > 0) {
@@ -313,30 +323,75 @@ export default function ProjectWorkspace() {
     };
 
     initProject();
-  }, [project, role, navigate, preLoadedCurriculum]);
+  }, [project, role, navigate, preLoadedCurriculum, user.id]);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const startNewChat = () => {
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const welcomeMsg: Message = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "👋 Welcome! I'm your AI Project Guide. Ask me any questions about the current task, concepts, or code errors.",
+          timestamp: new Date().toISOString(),
+      };
+      setMessages([welcomeMsg]);
+      setActiveSessionId(newSessionId);
+      setIsHistoryVisible(false);
+  };
+
+  const syncChatHistoryToDB = async (sessionId: string, newMessages: Message[], titleStr?: string) => {
+      if (!user.id || !projectId) return;
+      
+      const sessionTitle = titleStr || (newMessages.length > 1 ? newMessages[1].content.substring(0, 40) + '...' : "New Conversation");
+      
+      const newSession = {
+          id: sessionId,
+          title: sessionTitle,
+          messages: newMessages,
+          updatedAt: new Date().toISOString()
+      };
+      
+      const updatedHistory = [...chatHistory.filter(s => s.id !== sessionId), newSession].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      setChatHistory(updatedHistory);
+      
+      try {
+          await apiFetch('/api/ai/chat-history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: user.id, role, projectId, chatHistory: [newSession] }) // just upsert this session
+          });
+      } catch (err) {
+          console.error("Failed to sync chat history", err);
+      }
+  };
+
+  const handleSendMessage = async (customMessage?: string) => {
+    const msgToSend = customMessage || inputMessage;
+    if (!msgToSend.trim()) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(), role: "user", content: inputMessage, timestamp: new Date().toISOString(),
+      id: Date.now().toString(), role: "user", content: msgToSend, timestamp: new Date().toISOString(),
     };
 
-    const currentMsg = inputMessage;
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
-    setInputMessage("");
+    if (!customMessage) setInputMessage("");
     setIsTyping(true);
 
-    // Save user message immediately
-    persistProgress(steps, totalXP, newMessages);
+    // Save progress without rewriting chatData to project progress
+    persistProgress(steps, totalXP);
+    
+    const sessionIdToUse = activeSessionId || `session_${Date.now()}`;
+    if (!activeSessionId) setActiveSessionId(sessionIdToUse);
+
+    // Initial sync
+    syncChatHistoryToDB(sessionIdToUse, newMessages);
 
     try {
         const res = await apiFetch('/api/ai/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                message: currentMsg,
+                message: msgToSend,
                 context: {
                     type: 'project',
                     projectTitle: project?.title || 'Personal Project',
@@ -386,21 +441,25 @@ export default function ProjectWorkspace() {
         }
         
         // Final save
-        persistProgress(steps, totalXP, [...newMessages, {
+        syncChatHistoryToDB(sessionIdToUse, [...newMessages, {
             id: aiMessageId, role: "assistant", content: aiContent, timestamp: new Date().toISOString()
         }]);
     } catch (err) {
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(), role: "assistant", content: "Network error.", timestamp: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, aiResponse]);
+        const updatedWithErr = [...newMessages, aiResponse];
+        setMessages(updatedWithErr);
+        syncChatHistoryToDB(sessionIdToUse, updatedWithErr);
         setIsTyping(false);
     }
   };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!isHistoryVisible) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isHistoryVisible]);
 
   const toggleTaskExpanded = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -504,66 +563,83 @@ export default function ProjectWorkspace() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* LEFT PANE: OUTLINE */}
-        {!isFocusMode && (
+        {!isFocusMode && copilotState !== 'maximized' && (
           <div 
-            style={{ width: leftWidth }}
-            className={`${activePane === 'outline' ? 'flex w-full' : 'hidden'} lg:flex flex-col border-r border-slate-200 bg-[#fafafa] shrink-0 h-full overflow-y-auto relative`}
+            style={{ width: isOutlineCollapsed ? 48 : leftWidth }}
+            className={`${activePane === 'outline' ? 'flex w-full' : 'hidden'} lg:flex flex-col border-r border-slate-200 bg-[#fafafa] shrink-0 h-full overflow-hidden relative transition-all duration-300 ease-in-out`}
           >
-             <div className="p-4 border-b border-slate-200 sticky top-0 bg-[#fafafa]/90 backdrop-blur z-10 shrink-0">
-                <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-emerald-600" /> Project Outline
-                </h2>
-             </div>
-             <div className="p-4 space-y-4">
-               {steps.map((step, sIdx) => (
-                 <div key={step.id} className="space-y-1">
-                   <button onClick={() => setSteps(prev => prev.map(s => s.id === step.id ? {...s, expanded: !s.expanded} : s))}
-                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors text-left"
-                   >
-                     <div className="flex items-center gap-2">
-                       <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${step.completed ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                         {step.completed ? <CheckCircle2 className="w-3 h-3" /> : (sIdx + 1)}
-                       </span>
-                       <span className={`text-[13px] font-bold ${step.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{step.title}</span>
-                     </div>
-                     {step.expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                   </button>
-                   {step.expanded && (
-                     <div className="pl-7 space-y-1 mt-1 border-l-2 border-slate-100 ml-2.5">
-                       {step.tasks.map((task) => (
-                         <button key={task.id} 
-                           onClick={() => toggleTaskExpanded(task.id)}
-                           className={`w-full text-left flex items-start gap-2.5 p-2 rounded-lg transition-all ${selectedTaskId === task.id ? 'bg-white border border-emerald-200 shadow-sm' : 'hover:bg-slate-100 border border-transparent'}`}
-                         >
-                           <div onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }} className="mt-0.5 text-slate-300 hover:text-emerald-500 cursor-pointer shrink-0 transition-colors">
-                             {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Circle className="w-4 h-4" />}
-                           </div>
-                           <div className="min-w-0">
-                             <span className={`block text-[13px] leading-snug ${task.completed ? 'text-slate-400 line-through' : selectedTaskId === task.id ? 'font-bold text-emerald-800' : 'text-slate-700 font-medium'}`}>
-                               {task.text}
-                             </span>
-                             {selectedTaskId === task.id && !task.completed && (
-                               <span className="inline-block mt-1 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded tracking-wide uppercase">Active Task</span>
-                             )}
-                           </div>
-                         </button>
-                       ))}
-                     </div>
-                   )}
+             {isOutlineCollapsed ? (
+               <div className="flex flex-col items-center py-4 h-full gap-4">
+                 <button onClick={() => setIsOutlineCollapsed(false)} className="p-2 hover:bg-slate-200 rounded-md text-slate-500 transition-colors" title="Expand Outline">
+                   <PanelLeftOpen className="w-5 h-5" />
+                 </button>
+                 <div className="writing-vertical-rl rotate-180 text-xs font-bold text-slate-400 tracking-widest uppercase mt-4">
+                   Project Outline
                  </div>
-               ))}
-             </div>
-             
-             {/* Left Drag Handle */}
-             <div 
-               onMouseDown={() => { isDraggingLeft.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
-               className="hidden lg:block absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
-             />
+               </div>
+             ) : (
+               <>
+                 <div className="p-4 border-b border-slate-200 sticky top-0 bg-[#fafafa]/90 backdrop-blur z-10 shrink-0 flex items-center justify-between">
+                    <h2 className="text-[13px] font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-emerald-600" /> Project Outline
+                    </h2>
+                    <button onClick={() => setIsOutlineCollapsed(true)} className="p-1 hover:bg-slate-200 rounded text-slate-500 transition-colors" title="Collapse Outline">
+                      <PanelLeftClose className="w-4 h-4" />
+                    </button>
+                 </div>
+                 <div className="p-4 space-y-4 overflow-y-auto">
+                   {steps.map((step, sIdx) => (
+                     <div key={step.id} className="space-y-1">
+                       <button onClick={() => setSteps(prev => prev.map(s => s.id === step.id ? {...s, expanded: !s.expanded} : s))}
+                         className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 transition-colors text-left"
+                       >
+                         <div className="flex items-center gap-2">
+                           <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold ${step.completed ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                             {step.completed ? <CheckCircle2 className="w-3 h-3" /> : (sIdx + 1)}
+                           </span>
+                           <span className={`text-[13px] font-bold ${step.completed ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{step.title}</span>
+                         </div>
+                         {step.expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                       </button>
+                       {step.expanded && (
+                         <div className="pl-7 space-y-1 mt-1 border-l-2 border-slate-100 ml-2.5">
+                           {step.tasks.map((task) => (
+                             <button key={task.id} 
+                               onClick={() => toggleTaskExpanded(task.id)}
+                               className={`w-full text-left flex items-start gap-2.5 p-2 rounded-lg transition-all ${selectedTaskId === task.id ? 'bg-white border border-emerald-200 shadow-sm' : 'hover:bg-slate-100 border border-transparent'}`}
+                             >
+                               <div onClick={(e) => { e.stopPropagation(); handleTaskToggle(step.id, task.id); }} className="mt-0.5 text-slate-300 hover:text-emerald-500 cursor-pointer shrink-0 transition-colors">
+                                 {task.completed ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Circle className="w-4 h-4" />}
+                               </div>
+                               <div className="min-w-0">
+                                 <span className={`block text-[13px] leading-snug ${task.completed ? 'text-slate-400 line-through' : selectedTaskId === task.id ? 'font-bold text-emerald-800' : 'text-slate-700 font-medium'}`}>
+                                   {task.text}
+                                 </span>
+                                 {selectedTaskId === task.id && !task.completed && (
+                                   <span className="inline-block mt-1 text-[10px] font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded tracking-wide uppercase">Active Task</span>
+                                 )}
+                               </div>
+                             </button>
+                           ))}
+                         </div>
+                       )}
+                     </div>
+                   ))}
+                 </div>
+                 
+                 {/* Left Drag Handle */}
+                 <div 
+                   onMouseDown={() => { isDraggingLeft.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
+                   className="hidden lg:block absolute right-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
+                 />
+               </>
+             )}
           </div>
         )}
 
         {/* CENTER PANE: MAIN VIEW (Setup, Blueprint, or Task) */}
-        <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-col flex-1 bg-white min-w-0 h-full overflow-hidden relative`}>
+        {copilotState !== 'maximized' && (
+          <div className={`${activePane === 'task' ? 'flex' : 'hidden'} lg:flex flex-col flex-1 bg-white min-w-0 h-full overflow-hidden relative`}>
            {/* Focus Mode Toggle */}
            <button 
              onClick={() => setIsFocusMode(!isFocusMode)}
@@ -650,105 +726,166 @@ export default function ProjectWorkspace() {
         {/* RIGHT PANE: AI ASSISTANT */}
         {!isFocusMode && (
           <div 
-            style={{ width: rightWidth }}
-            className={`${activePane === 'ai' ? 'flex w-full' : 'hidden'} lg:flex relative border-l border-slate-200 bg-[#fafafa] flex-col h-full shrink-0`}
+            style={{ width: copilotState === 'minimized' ? 48 : (copilotState === 'maximized' ? '100%' : rightWidth) }}
+            className={`${activePane === 'ai' ? 'flex w-full' : 'hidden'} lg:flex relative border-l border-slate-200 bg-[#fafafa] flex-col h-full shrink-0 transition-all duration-300 ease-in-out`}
           >
-             {/* Right Drag Handle */}
-             <div 
-               onMouseDown={() => { isDraggingRight.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
-               className="hidden lg:block absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
-             />
-             
-             <div className="p-4 border-b border-slate-200 bg-white shrink-0 flex items-center gap-3">
-               <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
-                 <Sparkles className="w-4 h-4 text-teal-600" />
-               </div>
-               <div>
-                 <h3 className="text-[14px] font-bold text-slate-800 leading-tight">AI Co-Pilot</h3>
-                 <p className="text-[11px] text-teal-600 font-medium">Online • Task Context Active</p>
-               </div>
-             </div>
-           
-           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
-             {messages.map((message) => (
-                <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {message.role === "assistant" && (
-                    <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm">
-                      <Sparkles className="w-3 h-3 text-teal-600" />
-                    </div>
-                  )}
-                  <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
-                    <div className={`rounded-2xl p-3.5 text-[13px] leading-relaxed ${
-                        message.role === "assistant"
-                          ? "bg-white text-slate-700 border border-slate-200 rounded-tl-sm shadow-sm"
-                          : "bg-teal-600 text-white rounded-tr-sm shadow-sm"
-                      }`}>
-                      {message.role === "assistant" ? (
-                        <div className="prose prose-sm max-w-none prose-emerald prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-headings:font-bold prose-a:text-emerald-600">
-                          <ReactMarkdown
-                            components={{
-                              code({node, inline, className, children, ...props}: any) {
-                                const match = /language-(\w+)/.exec(className || '');
-                                const codeString = String(children).replace(/\n$/, '');
-                                
-                                if (!inline && match) {
-                                  return (
-                                    <div className="relative group mt-3 mb-4 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
-                                      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/50 border-b border-slate-700">
-                                        <span className="text-[10px] font-mono font-medium text-slate-400 uppercase tracking-wider">{match[1]}</span>
-                                        <button 
-                                          onClick={() => {
-                                            navigator.clipboard.writeText(codeString);
-                                            setCopiedCode(codeString);
-                                            setTimeout(() => setCopiedCode(null), 2000);
-                                          }}
-                                          className="p-1 hover:bg-slate-700 rounded transition-colors"
-                                          title="Copy code"
-                                        >
-                                          {copiedCode === codeString ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-300" />}
-                                        </button>
-                                      </div>
-                                      <div className="p-3 overflow-x-auto text-[13px] leading-relaxed font-mono text-slate-50">
-                                        <code>{children}</code>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                                return <code className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[12px] font-mono border border-emerald-100" {...props}>{children}</code>;
-                              }
-                            }}
-                          >
-                            {message.content}
-                          </ReactMarkdown>
-                        </div>
-                      ) : (
-                        <p className="whitespace-pre-wrap">{message.content}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {isTyping && (
-                <div className="flex gap-3 animate-in fade-in duration-300">
-                  <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm"><Sparkles className="w-3 h-3 text-teal-600" /></div>
-                  <div className="bg-white rounded-2xl rounded-tl-sm p-3 border border-slate-200 shadow-sm flex items-center h-9"><Loader2 className="w-4 h-4 text-slate-400 animate-spin" /></div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-           </div>
-
-           <div className="p-3 bg-white border-t border-slate-200 shrink-0">
-             <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1.5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all shadow-inner">
-                <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => { if(e.key === 'Enter') handleSendMessage() }}
-                  placeholder="Ask for help, code, or explanation..."
-                  className="flex-1 bg-transparent border-none focus:outline-none text-[13px] text-slate-800 placeholder:text-slate-400 px-2 py-1.5"
-                />
-                 <button onClick={handleSendMessage} disabled={!inputMessage.trim() || isTyping} className="p-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white rounded-lg transition-colors shadow-sm">
-                   <Send className="w-4 h-4" />
+             {copilotState === 'minimized' ? (
+               <div className="flex flex-col items-center py-4 h-full gap-4 bg-white border-l border-slate-200">
+                 <button onClick={() => setCopilotState('normal')} className="p-2 hover:bg-slate-200 rounded-md text-slate-500 transition-colors" title="Expand AI Copilot">
+                   <PanelLeftClose className="w-5 h-5 rotate-180" />
                  </button>
-              </div>
-           </div>
+                 <div className="writing-vertical-rl rotate-180 text-xs font-bold text-slate-400 tracking-widest uppercase mt-4 flex items-center gap-2">
+                   <Sparkles className="w-3.5 h-3.5 rotate-90" /> AI Co-Pilot
+                 </div>
+               </div>
+             ) : (
+               <>
+                 {/* Right Drag Handle (only when normal) */}
+                 {copilotState === 'normal' && (
+                   <div 
+                     onMouseDown={() => { isDraggingRight.current = true; document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; }}
+                     className="hidden lg:block absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize hover:bg-emerald-400/50 transition-colors z-20"
+                   />
+                 )}
+                 
+                 <div className="p-3 border-b border-slate-200 bg-white shrink-0 flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+                       <Sparkles className="w-4 h-4 text-teal-600" />
+                     </div>
+                     <div>
+                       <h3 className="text-[14px] font-bold text-slate-800 leading-tight">AI Co-Pilot</h3>
+                       <p className="text-[11px] text-teal-600 font-medium">Online • Task Context Active</p>
+                     </div>
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <button onClick={() => startNewChat()} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 transition-colors" title="New Chat">
+                       <Plus className="w-4 h-4" />
+                     </button>
+                     <button onClick={() => setIsHistoryVisible(!isHistoryVisible)} className={`p-1.5 rounded transition-colors ${isHistoryVisible ? 'bg-slate-200 text-slate-700' : 'hover:bg-slate-100 text-slate-500'}`} title="Chat History">
+                       <Clock className="w-4 h-4" />
+                     </button>
+                     <button onClick={() => setCopilotState(copilotState === 'maximized' ? 'normal' : 'maximized')} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 transition-colors hidden lg:block" title={copilotState === 'maximized' ? "Restore" : "Maximize"}>
+                       {copilotState === 'maximized' ? <Minimize className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                     </button>
+                     <button onClick={() => setCopilotState('minimized')} className="p-1.5 hover:bg-slate-100 rounded text-slate-500 transition-colors hidden lg:block" title="Minimize">
+                       <PanelLeftOpen className="w-4 h-4 rotate-180" />
+                     </button>
+                   </div>
+                 </div>
+               
+               <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin relative">
+                 {isHistoryVisible ? (
+                    <div className="space-y-2 animate-in fade-in">
+                       <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Previous Conversations</h3>
+                       {chatHistory.length > 0 ? chatHistory.map(session => (
+                          <div key={session.id} 
+                               onClick={() => {
+                                  setActiveSessionId(session.id);
+                                  setMessages(session.messages);
+                                  setIsHistoryVisible(false);
+                               }}
+                               className={`p-3 rounded-xl border cursor-pointer transition-colors ${activeSessionId === session.id ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-200 hover:border-teal-300'}`}>
+                             <h4 className={`text-sm font-bold truncate ${activeSessionId === session.id ? 'text-teal-800' : 'text-slate-800'}`}>{session.title || 'Conversation'}</h4>
+                             <p className="text-[11px] text-slate-400 mt-1">{new Date(session.updatedAt).toLocaleString()}</p>
+                          </div>
+                       )) : (
+                          <p className="text-sm text-slate-500 italic">No chat history available.</p>
+                       )}
+                    </div>
+                 ) : (
+                    <>
+                      {messages.map((message) => (
+                        <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                          {message.role === "assistant" && (
+                            <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm">
+                              <Sparkles className="w-3 h-3 text-teal-600" />
+                            </div>
+                          )}
+                          <div className={`flex flex-col max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
+                            <div className={`rounded-2xl p-3.5 text-[13px] leading-relaxed ${
+                                message.role === "assistant"
+                                  ? "bg-white text-slate-700 border border-slate-200 rounded-tl-sm shadow-sm"
+                                  : "bg-teal-600 text-white rounded-tr-sm shadow-sm"
+                              }`}>
+                              {message.role === "assistant" ? (
+                                <div className="prose prose-sm max-w-none prose-emerald prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-headings:font-bold prose-a:text-emerald-600">
+                                  <ReactMarkdown
+                                    components={{
+                                      code({node, inline, className, children, ...props}: any) {
+                                        const match = /language-(\w+)/.exec(className || '');
+                                        const codeString = String(children).replace(/\n$/, '');
+                                        
+                                        if (!inline && match) {
+                                          return (
+                                            <div className="relative group mt-3 mb-4 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                                              <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800/50 border-b border-slate-700">
+                                                <span className="text-[10px] font-mono font-medium text-slate-400 uppercase tracking-wider">{match[1]}</span>
+                                                <button 
+                                                  onClick={() => {
+                                                    navigator.clipboard.writeText(codeString);
+                                                    setCopiedCode(codeString);
+                                                    setTimeout(() => setCopiedCode(null), 2000);
+                                                  }}
+                                                  className="p-1 hover:bg-slate-700 rounded transition-colors"
+                                                  title="Copy code"
+                                                >
+                                                  {copiedCode === codeString ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-300" />}
+                                                </button>
+                                              </div>
+                                              <div className="p-3 overflow-x-auto text-[13px] leading-relaxed font-mono text-slate-50">
+                                                <code>{children}</code>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return <code className="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded text-[12px] font-mono border border-emerald-100" {...props}>{children}</code>;
+                                      }
+                                    }}
+                                  >
+                                    {message.content}
+                                  </ReactMarkdown>
+                                </div>
+                              ) : (
+                                <p className="whitespace-pre-wrap">{message.content}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {isTyping && (
+                        <div className="flex gap-3 animate-in fade-in duration-300">
+                          <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 mt-1 shadow-sm"><Sparkles className="w-3 h-3 text-teal-600" /></div>
+                          <div className="bg-white rounded-2xl rounded-tl-sm p-3 border border-slate-200 shadow-sm flex items-center h-9"><Loader2 className="w-4 h-4 text-slate-400 animate-spin" /></div>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </>
+                 )}
+               </div>
+    
+               <div className="p-3 bg-white border-t border-slate-200 shrink-0">
+                 {!isHistoryVisible && messages.length === 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-3 scrollbar-none snap-x">
+                        <button onClick={() => handleSendMessage("Explain this task.")} className="snap-start shrink-0 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 transition-colors">Explain this task.</button>
+                        <button onClick={() => handleSendMessage("Where should I start?")} className="snap-start shrink-0 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 transition-colors">Where should I start?</button>
+                        <button onClick={() => handleSendMessage("Help me debug an error.")} className="snap-start shrink-0 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 transition-colors">Help me debug an error.</button>
+                    </div>
+                 )}
+                 <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 p-1.5 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 transition-all shadow-inner">
+                    <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={(e) => { if(e.key === 'Enter') handleSendMessage() }}
+                      placeholder="Ask for help, code, or explanation..."
+                      disabled={isHistoryVisible}
+                      className="flex-1 bg-transparent border-none focus:outline-none text-[13px] text-slate-800 placeholder:text-slate-400 px-2 py-1.5 disabled:opacity-50"
+                    />
+                     <button onClick={() => handleSendMessage()} disabled={!inputMessage.trim() || isTyping || isHistoryVisible} className="p-2 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white rounded-lg transition-colors shadow-sm">
+                       <Send className="w-4 h-4" />
+                     </button>
+                  </div>
+               </div>
+               </>
+             )}
           </div>
         )}
       </div>
