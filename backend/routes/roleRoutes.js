@@ -1920,10 +1920,17 @@ router.get('/portfolio-drafts', protect, async (req, res) => {
 });
 // POST /api/role/guide - Generate or retrieve an AI guide for a roadmap topic
 router.post('/guide', async (req, res) => {
-    const { role, topicName, topicId, subtopics } = req.body;
+    let { role, topicName, topicId, subtopics } = req.body;
     
-    if (!role || !topicName || !topicId) {
-        return res.status(400).json({ error: 'role, topicName, and topicId are required' });
+    if (!role || !topicName) {
+        return res.status(400).json({ error: 'role and topicName are required' });
+    }
+
+    if (!topicId) {
+        // Fallback: Generate a topic_id hash if missing
+        const crypto = require('crypto');
+        const hash = crypto.createHash('sha256').update(topicName).digest('hex').substring(0, 12);
+        topicId = `topic_${hash}`;
     }
 
     try {

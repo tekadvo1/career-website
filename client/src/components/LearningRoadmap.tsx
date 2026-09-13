@@ -230,7 +230,7 @@ export default function LearningRoadmap() {
           const userStr = sessionStorage.getItem('user');
           if (userStr) {
               const user = JSON.parse(userStr);
-              fetch(`/api/role/progress?role=${encodeURIComponent(role)}&userId=${user.id}`)
+              apiFetch(`/api/role/progress?role=${encodeURIComponent(role)}&userId=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && Array.isArray(data.completedTopics)) {
