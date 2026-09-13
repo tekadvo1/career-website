@@ -53,18 +53,21 @@ export default function RoadmapGuideView() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  const { role, topicName: initialTopicName, topicId: initialTopicId, subtopics: initialSubtopics, roadmap } = location.state || { 
+  const { role, topicName: initialTopicName, topicId: initialTopicId, subtopics: initialSubtopics, roadmap, parentTopicName: initialParentTopicName } = location.state || { 
       role: "Software Engineer", 
       topicName: "Unknown Topic",
       topicId: "unknown-id",
       subtopics: [],
-      roadmap: []
+      roadmap: [],
+      parentTopicName: undefined
   };
 
   const [currentTopic, setCurrentTopic] = useState({
       name: initialTopicName,
       id: initialTopicId,
-      subtopics: initialSubtopics
+      subtopics: initialSubtopics,
+      parentName: initialParentTopicName,
+      isSubtopic: !!initialParentTopicName
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -90,17 +93,31 @@ export default function RoadmapGuideView() {
               const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
               const id = typeof skillObj === 'string' ? undefined : skillObj.id;
               const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
-              flattenedTopics.push({ id, name, subtopics, phaseName: phase.title || phase.phase });
+              
+              flattenedTopics.push({ id, name, subtopics, phaseName: phase.title || phase.phase, isSubtopic: false, parentName: null });
+              
+              if (subtopics && subtopics.length > 0) {
+                  subtopics.forEach((sub: any) => {
+                      const subName = typeof sub === 'string' ? sub : sub.name;
+                      flattenedTopics.push({ id, name: subName, parentName: name, phaseName: phase.title || phase.phase, isSubtopic: true });
+                  });
+              }
           });
       });
   }
 
-  const currentIndex = flattenedTopics.findIndex(t => (t.id && t.id === currentTopic.id) || t.name === currentTopic.name);
+  const currentIndex = flattenedTopics.findIndex(t => 
+      ((t.id && t.id === currentTopic.id) || t.name === currentTopic.name) && 
+      (t.isSubtopic === currentTopic.isSubtopic)
+  );
+  
   const previousTopic = currentIndex > 0 ? flattenedTopics[currentIndex - 1] : null;
   const nextTopic = currentIndex < flattenedTopics.length - 1 ? flattenedTopics[currentIndex + 1] : null;
   const currentPhaseName = currentIndex >= 0 ? flattenedTopics[currentIndex].phaseName : "Learning Path";
   
-  const isCurrentTopicComplete = (currentTopic.id && completedTopics.has(currentTopic.id)) || completedTopics.has(currentTopic.name);
+  // Subtopics inherit completion status from their parent topic.
+  const completionCheckName = currentTopic.isSubtopic ? currentTopic.parentName : currentTopic.name;
+  const isCurrentTopicComplete = (currentTopic.id && completedTopics.has(currentTopic.id)) || completedTopics.has(completionCheckName);
 
   // Auto-scroll to top when topic changes
   useEffect(() => {
@@ -139,7 +156,8 @@ export default function RoadmapGuideView() {
             role: role,
             topicName: currentTopic.name,
             topicId: currentTopic.id,
-            subtopics: currentTopic.subtopics
+            subtopics: currentTopic.subtopics,
+            parentTopicName: currentTopic.parentName
         };
 
         if (preview) payload.previewRegenerate = true;
@@ -184,14 +202,20 @@ export default function RoadmapGuideView() {
 
   const handleTopicNav = (topic: any) => {
       if (topic) {
-          setCurrentTopic({ name: topic.name, id: topic.id, subtopics: topic.subtopics || [] });
+          setCurrentTopic({ 
+              name: topic.name, 
+              id: topic.id, 
+              subtopics: topic.subtopics || [],
+              parentName: topic.parentName,
+              isSubtopic: topic.isSubtopic
+          });
       }
   };
 
   const markCompleteAndContinue = async () => {
       if (isSaving) return;
-      if (isCurrentTopicComplete) {
-          // Already complete, just navigate next
+      if (isCurrentTopicComplete || currentTopic.isSubtopic) {
+          // Already complete OR it's a subtopic (subtopics don't have their own completion checkbox), just navigate next
           if (nextTopic) handleTopicNav(nextTopic);
           else navigate('/roadmap', { state: { role, roadmap } });
           return;
@@ -399,13 +423,13 @@ export default function RoadmapGuideView() {
                             <Button 
                                 onClick={markCompleteAndContinue} 
                                 disabled={isSaving || saveStatus === 'saved'}
-                                className={`w-full sm:w-auto shadow-md gap-2 ${isCurrentTopicComplete ? 'bg-slate-900 hover:bg-slate-800' : ''}`}
+                                className={`w-full sm:w-auto shadow-md gap-2 ${(isCurrentTopicComplete || currentTopic.isSubtopic) ? 'bg-slate-900 hover:bg-slate-800' : ''}`}
                             >
                                 {isSaving ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
                                 ) : saveStatus === 'saved' ? (
                                     <><Check className="w-4 h-4" /> Saved!</>
-                                ) : isCurrentTopicComplete ? (
+                                ) : (isCurrentTopicComplete || currentTopic.isSubtopic) ? (
                                     <>Continue to Next <ChevronRight className="w-4 h-4" /></>
                                 ) : (
                                     <><CheckCircle className="w-4 h-4" /> Mark Complete & Continue</>

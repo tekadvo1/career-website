@@ -105,43 +105,194 @@ const LearningProgressSummary = ({ completedCount, totalCount }: any) => {
     );
 };
 
-const LearningTopicRow = ({ topic, isDone, isNext, onClickLesson, onToggleComplete, isToggling }: any) => {
+const LearningTopicRow = ({ topic, isDone, isNext, onClickLesson, onToggleComplete, isToggling, role, onUpdateRoadmapSubtopics }: any) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [isProposing, setIsProposing] = useState(false);
+    const [proposals, setProposals] = useState<any[]>([]);
+    const [selectedProposals, setSelectedProposals] = useState<Set<string>>(new Set());
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const subtopics = topic.subtopics || [];
+    const hasSubtopics = subtopics.length > 0;
+
+    const handlePropose = async (e: any) => {
+        e.stopPropagation();
+        if (!role) return;
+        setIsProposing(true);
+        setError(null);
+        try {
+            const res = await apiFetch('/api/role/propose-subtopics', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    role, 
+                    topicName: topic.name, 
+                    existingSubtopics: subtopics.map((s: any) => typeof s === 'string' ? s : s.name) 
+                })
+            });
+            const data = await res.json();
+            if (data.success && data.proposals) {
+                setProposals(data.proposals);
+                setSelectedProposals(new Set(data.proposals.map((p: any) => p.name)));
+            } else {
+                throw new Error(data.error || 'Failed to generate proposals');
+            }
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsProposing(false);
+        }
+    };
+
+    const handleSaveProposals = async () => {
+        if (!onUpdateRoadmapSubtopics) return;
+        setIsSaving(true);
+        setError(null);
+        try {
+            const accepted = proposals.filter(p => selectedProposals.has(p.name));
+            // Append accepted proposals to existing subtopics
+            const updatedSubtopics = [...subtopics, ...accepted];
+            await onUpdateRoadmapSubtopics(topic.name, updatedSubtopics);
+            setProposals([]);
+            setSelectedProposals(new Set());
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const toggleProposal = (name: string) => {
+        const next = new Set(selectedProposals);
+        if (next.has(name)) next.delete(name);
+        else next.add(name);
+        setSelectedProposals(next);
+    };
+
     return (
-        <div className={`flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0 ${isNext ? 'bg-emerald-50/30 hover:bg-emerald-50/50' : ''}`}>
-            <div className="mt-0.5 flex-shrink-0">
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onToggleComplete(); }}
-                    disabled={isToggling}
-                    className="focus:outline-none focus-visible:ring-2 rounded-full ring-offset-2 ring-emerald-500 disabled:opacity-50"
-                    aria-label={isDone ? "Mark as incomplete" : "Mark as complete"}
-                >
-                    {isToggling ? (
-                        <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                    ) : isDone ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    ) : (
-                        <Circle className="w-6 h-6 text-slate-300 hover:text-emerald-400 transition-colors" />
+        <div className={`flex flex-col border-b border-slate-100 last:border-b-0 ${isNext ? 'bg-emerald-50/30' : ''}`}>
+            <div className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors">
+                <div className="mt-0.5 flex-shrink-0">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onToggleComplete(); }}
+                        disabled={isToggling}
+                        className="focus:outline-none focus-visible:ring-2 rounded-full ring-offset-2 ring-emerald-500 disabled:opacity-50"
+                        aria-label={isDone ? "Mark as incomplete" : "Mark as complete"}
+                    >
+                        {isToggling ? (
+                            <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                        ) : isDone ? (
+                            <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        ) : (
+                            <Circle className="w-6 h-6 text-slate-300 hover:text-emerald-400 transition-colors" />
+                        )}
+                    </button>
+                </div>
+                <div className="flex-1 cursor-pointer group" onClick={onClickLesson} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onClickLesson()}>
+                    <h4 className="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-2">
+                        {topic.name}
+                        {isNext && <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full tracking-wider hidden sm:inline-block">Next lesson</span>}
+                    </h4>
+                    {topic.description && <p className="text-sm text-slate-600 mt-1 line-clamp-2 pr-4">{topic.description}</p>}
+                    
+                    <div className="mt-3 flex items-center gap-3">
+                        {hasSubtopics ? (
+                            <button 
+                                onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+                                className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-md transition-colors"
+                            >
+                                {isExpanded ? <><ChevronUp className="w-3 h-3"/> Hide subtopics</> : <><ChevronDown className="w-3 h-3"/> View all {subtopics.length} subtopics</>}
+                            </button>
+                        ) : (
+                            <span className="text-xs font-semibold text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-md">
+                                No detailed syllabus saved yet
+                            </span>
+                        )}
+                    </div>
+                    {isNext && <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full tracking-wider sm:hidden mt-2 inline-block">Next lesson</span>}
+                </div>
+                <div className="hidden sm:block mt-1 flex-shrink-0">
+                    <Button variant="ghost" className="text-emerald-700 hover:text-emerald-800 font-semibold" onClick={(e: any) => { e.stopPropagation(); onClickLesson(); }}>
+                        Open lesson
+                    </Button>
+                </div>
+            </div>
+
+            {/* Expandable Syllabus Area */}
+            {isExpanded && (
+                <div className="bg-slate-50/50 border-t border-slate-100 p-4 pl-14">
+                    {hasSubtopics && (
+                        <div className="space-y-2 mb-4">
+                            {subtopics.map((sub: any, idx: number) => {
+                                const subName = typeof sub === 'string' ? sub : sub.name;
+                                const subDesc = typeof sub === 'string' ? null : sub.description;
+                                return (
+                                    <div key={idx} className="flex items-center justify-between bg-white border border-slate-200 rounded-lg p-3 hover:border-slate-300 transition-colors shadow-sm">
+                                        <div className="flex-1 pr-4">
+                                            <p className="font-semibold text-slate-800 text-sm">{subName}</p>
+                                            {subDesc && <p className="text-xs text-slate-500 mt-0.5">{subDesc}</p>}
+                                        </div>
+                                        <Button variant="outline" className="h-7 text-xs font-semibold px-3 whitespace-nowrap" onClick={(e: any) => { e.stopPropagation(); onClickLesson(subName); }}>
+                                            Open lesson
+                                        </Button>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     )}
-                </button>
-            </div>
-            <div className="flex-1 cursor-pointer group" onClick={onClickLesson} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && onClickLesson()}>
-                <h4 className="text-base font-bold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-2">
-                    {topic.name}
-                    {isNext && <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full tracking-wider hidden sm:inline-block">Next lesson</span>}
-                </h4>
-                {topic.description && <p className="text-sm text-slate-600 mt-1 line-clamp-2 pr-4">{topic.description}</p>}
-                {isNext && <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full tracking-wider sm:hidden mt-2 inline-block">Next lesson</span>}
-            </div>
-            <div className="hidden sm:block mt-1 flex-shrink-0">
-                <Button variant="ghost" className="text-emerald-700 hover:text-emerald-800 font-semibold" onClick={(e: any) => { e.stopPropagation(); onClickLesson(); }}>
-                    Open lesson
-                </Button>
-            </div>
+
+                    {/* Propose Additions Section */}
+                    {proposals.length === 0 ? (
+                        <Button variant="outline" onClick={handlePropose} disabled={isProposing} className="w-full sm:w-auto h-8 text-xs font-semibold">
+                            {isProposing ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Plus className="w-3 h-3 mr-1" />}
+                            {hasSubtopics ? "Review topic coverage" : "Suggest a detailed syllabus"}
+                        </Button>
+                    ) : (
+                        <div className="mt-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+                            <h5 className="font-bold text-slate-900 text-sm mb-2">Proposed Additions</h5>
+                            <p className="text-xs text-slate-500 mb-4">Select the subtopics you want to add to your syllabus.</p>
+                            <div className="space-y-3 mb-4">
+                                {proposals.map((p, i) => (
+                                    <label key={i} className="flex items-start gap-3 p-3 border border-slate-100 rounded-md hover:bg-slate-50 cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                                            checked={selectedProposals.has(p.name)}
+                                            onChange={() => toggleProposal(p.name)}
+                                        />
+                                        <div>
+                                            <p className="font-semibold text-slate-800 text-sm">{p.name}</p>
+                                            <p className="text-xs text-slate-600 mt-1">{p.description}</p>
+                                            <p className="text-xs text-emerald-700 mt-1 bg-emerald-50 inline-block px-2 py-0.5 rounded">Relevance: {p.relevance}</p>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Button onClick={handleSaveProposals} disabled={isSaving || selectedProposals.size === 0} className="h-8 text-xs font-semibold px-4">
+                                    {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+                                    Accept Selected Additions
+                                </Button>
+                                <Button variant="ghost" onClick={() => setProposals([])} className="h-8 text-xs font-semibold px-4 text-slate-500">
+                                    Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {error && (
+                        <p className="text-xs text-red-600 font-medium mt-3 bg-red-50 p-2 rounded border border-red-100">
+                            Error: {error}
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
 
-const LearningPhaseSection = ({ phaseIndex, phase, isExpanded, onToggle, completedCount, totalCount, onToggleTopic, onOpenLesson, onOpenProject, togglingTopics }: any) => {
+const LearningPhaseSection = ({ phaseIndex, phase, isExpanded, onToggle, completedCount, totalCount, onToggleTopic, onOpenLesson, onOpenProject, togglingTopics, role, onUpdateRoadmapSubtopics }: any) => {
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-4 overflow-hidden">
             <button 
@@ -177,8 +328,10 @@ const LearningPhaseSection = ({ phaseIndex, phase, isExpanded, onToggle, complet
                                 isDone={isDone}
                                 isNext={skillObj._isNext}
                                 isToggling={togglingTopics.has(id || name)}
-                                onClickLesson={() => onOpenLesson(name, typeof skillObj === 'string' ? null : skillObj.subtopics, id)}
+                                onClickLesson={(subtopicName?: string) => onOpenLesson(name, typeof skillObj === 'string' ? null : skillObj.subtopics, id, subtopicName)}
                                 onToggleComplete={() => onToggleTopic.toggle(name, id)}
+                                role={role}
+                                onUpdateRoadmapSubtopics={onUpdateRoadmapSubtopics}
                             />
                         );
                     })}
@@ -294,6 +447,45 @@ export default function LearningRoadmap() {
 
         loadData();
     }, [location.state, role]);
+    const handleUpdateRoadmapSubtopics = async (topicName: string, newSubtopics: string[]) => {
+        try {
+            // Optimistically update local state
+            const updatedRoadmap = [...roadmap];
+            for (const phase of updatedRoadmap) {
+                const topicsList = phase.topics || phase.skills || [];
+                const topicObj = topicsList.find((t: any) => (typeof t === 'string' ? t : t.name) === topicName);
+                if (topicObj && typeof topicObj !== 'string') {
+                    topicObj.subtopics = newSubtopics;
+                    break;
+                }
+            }
+            setRoadmap(updatedRoadmap);
+
+            // Update backend
+            const userStr = sessionStorage.getItem('user');
+            if (userStr) {
+                const response = await apiFetch('/api/role/update-roadmap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, updatedRoadmap })
+                });
+                if (!response.ok) throw new Error("Failed to save updated roadmap to server");
+                
+                // Update session storage
+                const saved = sessionStorage.getItem('lastRoleAnalysis');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    parsed.analysis.roadmap = updatedRoadmap;
+                    sessionStorage.setItem('lastRoleAnalysis', JSON.stringify(parsed));
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update roadmap subtopics", error);
+            alert("Failed to save syllabus additions. Please try again.");
+            // We could roll back local state here, but for simplicity we rely on refresh if it completely fails.
+        }
+    };
+
 
     const toggleTopicCompletion = async (topicName: string, topicId?: string) => {
         const identifier = topicId || topicName;
@@ -471,6 +663,8 @@ export default function LearningRoadmap() {
                                 onToggleTopic={{ has: (n: string, i?: string) => completedTopics.has(i || n), toggle: toggleTopicCompletion }}
                                 onOpenLesson={handleOpenAIGuide}
                                 onOpenProject={() => navigate('/dashboard')}
+                                role={role}
+                                onUpdateRoadmapSubtopics={handleUpdateRoadmapSubtopics}
                             />
                         ))}
                     </div>

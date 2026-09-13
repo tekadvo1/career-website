@@ -286,7 +286,7 @@ router.post('/analyze', async (req, res) => {
                               "emoji": "Relevant single emoji like 💻 or 🧠",
                               "description": "Comprehensive explanation of this concept.",
                               "practical_application": "A specific mini-project or exercise.",
-                              "subtopics": ["Sub-concept 1", "Sub-concept 2", "Sub-concept 3"],
+                              "subtopics": ["Concept 1", "Concept 2", "...", "(Generate a comprehensive, exhaustive list of all necessary sub-concepts)"],
                               "topic_resources": [
                                  { "name": "Best Paid Course", "url": "https://udemy.com/...", "type": "Course", "is_free": false },
                                  { "name": "Best Free Tutorial", "url": "https://youtube.com/...", "type": "Video", "is_free": true }
@@ -1920,7 +1920,7 @@ router.get('/portfolio-drafts', protect, async (req, res) => {
 });
 // POST /api/role/guide - Generate or retrieve an AI guide for a roadmap topic
 router.post('/guide', async (req, res) => {
-    let { role, topicName, topicId, subtopics, previewRegenerate, saveRegenerated, guideContent } = req.body;
+    let { role, topicName, topicId, subtopics, previewRegenerate, saveRegenerated, guideContent, parentTopicName } = req.body;
     
     if (!role || !topicName) {
         return res.status(400).json({ error: 'role and topicName are required' });
@@ -1959,6 +1959,9 @@ router.post('/guide', async (req, res) => {
 
         // 2. Generate Guide using OpenAI
         let promptText = `Assume the role of an expert friendly tutor. Create a comprehensive, beginner-friendly study guide for the topic: "${topicName}" tailored for the role of ${role}. `;
+        if (parentTopicName) {
+            promptText += `This topic is a subtopic of "${parentTopicName}". Focus specifically on the "${topicName}" aspect. `;
+        }
         if (subtopics && subtopics.length > 0) {
             promptText += `Make sure to explicitly cover these subtopics: ${subtopics.join(", ")}. `;
         }
@@ -2003,6 +2006,103 @@ Use markdown, emojis, and keep it highly readable and engaging.`;
     } catch (err) {
         console.error('Error in /api/role/guide:', err);
         res.status(500).json({ error: 'Failed to generate guide' });
+    }
+});
+// POST /api/role/propose-subtopics - Generate proposed subtopics for a specific topic
+router.post('/propose-subtopics', async (req, res) => {
+    const { role, topicName, existingSubtopics = [] } = req.body;
+    
+    if (!role || !topicName) {
+        return res.status(400).json({ error: 'role and topicName are required' });
+    }
+
+    try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        let promptText = `Assume the role of an expert technical curriculum designer. The user is studying "${topicName}" for the role of "${role}".
+They currently have the following subtopics in their syllabus: ${existingSubtopics.length > 0 ? existingSubtopics.join(", ") : "None"}.
+
+Your task is to propose additional, missing subtopics that are essential for mastering "${topicName}".
+Do NOT include subtopics that are already in the syllabus or too advanced/out-of-scope for the role.
+
+Return the response strictly as a JSON array of objects with this structure:
+[
+  {
+    "name": "Subtopic Name",
+    "description": "Brief description of the subtopic",
+    "relevance": "Why this is critical for the role."
+  }
+]`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: "You are an expert curriculum designer. Return only valid JSON." },
+                { role: "user", content: promptText }
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+            response_format: { type: "json_object" }
+        });
+
+        const rawResponse = completion.choices[0].message.content;
+        let proposals = [];
+        try {
+            // ChatGPT sometimes wraps the array in an object when response_format=json_object is used
+            const parsed = JSON.parse(rawResponse);
+            if (Array.isArray(parsed)) proposals = parsed;
+            else if (parsed.subtopics) proposals = parsed.subtopics;
+            else if (parsed.proposals) proposals = parsed.proposals;
+            else proposals = Object.values(parsed)[0];
+        } catch (e) {
+            console.error("Failed to parse proposals", e);
+        }
+
+        res.json({ success: true, proposals });
+    } catch (err) {
+        console.error('Error in /api/role/propose-subtopics:', err);
+        res.status(500).json({ error: 'Failed to generate proposals' });
+    }
+});
+
+// POST /api/role/update-roadmap - Save an updated roadmap to the user's cache
+router.post('/update-roadmap', protect, async (req, res) => {
+    const { role, updatedRoadmap } = req.body;
+    const userId = req.user.id;
+
+    if (!role || !updatedRoadmap) {
+        return res.status(400).json({ error: 'role and updatedRoadmap are required' });
+    }
+
+    try {
+        const normalizedRole = role.trim().toLowerCase();
+        
+        // 1. Fetch the user's latest analysis for this role
+        const cacheResult = await pool.query(
+            "SELECT id, analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) LIKE $2 || '%' ORDER BY created_at DESC LIMIT 1",
+            [userId, normalizedRole]
+        );
+
+        if (cacheResult.rows.length === 0) {
+            return res.status(404).json({ error: 'No existing roadmap found for this user and role.' });
+        }
+
+        const row = cacheResult.rows[0];
+        const analysisData = row.analysis_data;
+        
+        // 2. Update the roadmap portion
+        analysisData.roadmap = updatedRoadmap;
+
+        // 3. Save back
+        await pool.query(
+            "UPDATE role_analyses SET analysis_data = $1 WHERE id = $2",
+            [analysisData, row.id]
+        );
+
+        res.json({ success: true, message: 'Roadmap updated successfully' });
+    } catch (err) {
+        console.error('Error in /api/role/update-roadmap:', err);
+        res.status(500).json({ error: 'Failed to update roadmap' });
     }
 });
 
