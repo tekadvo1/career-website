@@ -1940,7 +1940,7 @@ router.post('/guide', async (req, res) => {
         if (saveRegenerated && guideContent) {
             await pool.query(
                 "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO UPDATE SET guide_data = EXCLUDED.guide_data",
-                [role, topicId, topicName, guideContent]
+                [role, topicId, topicName, JSON.stringify(guideContent)]
             );
             return res.json({ success: true, guideContent, source: 'saved_regeneration' });
         }
@@ -1994,7 +1994,7 @@ Use markdown, emojis, and keep it highly readable and engaging.`;
         if (!previewRegenerate) {
             await pool.query(
                 "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO NOTHING",
-                [role, topicId, topicName, generatedContent]
+                [role, topicId, topicName, JSON.stringify(generatedContent)]
             );
         }
 
