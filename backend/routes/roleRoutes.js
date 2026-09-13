@@ -4,7 +4,7 @@ const pool = require('../config/db');
 const realtimeRoutes = require('./realtimeRoutes');
 const { OpenAI } = require('openai');
 const { v4: uuidv4 } = require('uuid');
-
+const { protect } = require('../middleware/authMiddleware');
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
   const { role, userId, experienceLevel = 'Beginner', country = 'USA', learningPath, forceRefresh = false } = req.body;
