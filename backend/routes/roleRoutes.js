@@ -1934,6 +1934,8 @@ router.post('/guide', async (req, res) => {
     }
 
     try {
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
         // Handle explicit save of a regenerated guide
         if (saveRegenerated && guideContent) {
             await pool.query(
