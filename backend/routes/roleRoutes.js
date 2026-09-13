@@ -1920,7 +1920,7 @@ router.get('/portfolio-drafts', protect, async (req, res) => {
 });
 // POST /api/role/guide - Generate or retrieve an AI guide for a roadmap topic
 router.post('/guide', async (req, res) => {
-    let { role, topicName, topicId, subtopics } = req.body;
+    let { role, topicName, topicId, subtopics, previewRegenerate, saveRegenerated, guideContent } = req.body;
     
     if (!role || !topicName) {
         return res.status(400).json({ error: 'role and topicName are required' });
@@ -1934,30 +1934,45 @@ router.post('/guide', async (req, res) => {
     }
 
     try {
-        // 1. Check if guide exists in DB
-        const cacheResult = await pool.query(
-            "SELECT guide_data FROM roadmap_guides WHERE role = $1 AND topic_id = $2 LIMIT 1",
-            [role, topicId]
-        );
+        // Handle explicit save of a regenerated guide
+        if (saveRegenerated && guideContent) {
+            await pool.query(
+                "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO UPDATE SET guide_data = EXCLUDED.guide_data",
+                [role, topicId, topicName, guideContent]
+            );
+            return res.json({ success: true, guideContent, source: 'saved_regeneration' });
+        }
 
-        if (cacheResult.rows.length > 0) {
-            return res.json({ success: true, guideContent: cacheResult.rows[0].guide_data, source: 'cache' });
+        // 1. Check if guide exists in DB (skip if previewing regeneration)
+        if (!previewRegenerate) {
+            const cacheResult = await pool.query(
+                "SELECT guide_data FROM roadmap_guides WHERE role = $1 AND topic_id = $2 LIMIT 1",
+                [role, topicId]
+            );
+
+            if (cacheResult.rows.length > 0) {
+                return res.json({ success: true, guideContent: cacheResult.rows[0].guide_data, source: 'cache' });
+            }
         }
 
         // 2. Generate Guide using OpenAI
-        let promptText = `Assume the role of an expert friendly tutor. Create a comprehensive study guide for the topic: "${topicName}" tailored for the role of ${role}. `;
+        let promptText = `Assume the role of an expert friendly tutor. Create a comprehensive, beginner-friendly study guide for the topic: "${topicName}" tailored for the role of ${role}. `;
         if (subtopics && subtopics.length > 0) {
             promptText += `Make sure to explicitly cover these subtopics: ${subtopics.join(", ")}. `;
         }
         
         promptText += `
-CRITICAL: You MUST strictly structure your response into the following six parts. Use markdown headers (e.g. "## 1. Understand") for each section.
-1. Understand: Explain the fundamental concepts clearly.
-2. Before You Begin: What prerequisites or mental models should the user know?
-3. See an Example: Provide a clear, real-world example or code snippet.
-4. Try It: A practical exercise for the user to try themselves.
-5. Check Your Understanding: 1-2 quick questions to self-assess.
-6. Continue: A brief wrap-up and what comes next.
+CRITICAL: You MUST strictly structure your response into the following five parts using these exact markdown headers. Use plain language, practical examples, and manageable sections. Do not generate a massive wall of text.
+## A. What you will learn
+Show a short introduction and a few concrete learning outcomes.
+## B. Understand the concept
+Explain the concept and its relevance to the learning goal. Define unfamiliar terms near their first use.
+## C. See an example
+Provide a relevant worked example with a clear explanation. If providing code, label the language, explain where it belongs, and label placeholders.
+## D. Try it yourself
+Provide a manageable exercise: what to do, where to do it, and expected behavior.
+## E. Check your understanding
+Provide 1-2 concrete self-check questions or criteria, with expandable/hidden answers if possible.
 
 Use markdown, emojis, and keep it highly readable and engaging.`;
 
@@ -1971,15 +1986,17 @@ Use markdown, emojis, and keep it highly readable and engaging.`;
             temperature: 0.7,
         });
 
-        const guideContent = completion.choices[0].message.content;
+        const generatedContent = completion.choices[0].message.content;
 
-        // 3. Save to DB
-        await pool.query(
-            "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO NOTHING",
-            [role, topicId, topicName, guideContent]
-        );
+        // 3. Save to DB (only if not previewing)
+        if (!previewRegenerate) {
+            await pool.query(
+                "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO NOTHING",
+                [role, topicId, topicName, generatedContent]
+            );
+        }
 
-        res.json({ success: true, guideContent, source: 'generated' });
+        res.json({ success: true, guideContent: generatedContent, source: previewRegenerate ? 'preview' : 'generated' });
 
     } catch (err) {
         console.error('Error in /api/role/guide:', err);
