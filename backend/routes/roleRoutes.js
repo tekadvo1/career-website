@@ -5,6 +5,28 @@ const realtimeRoutes = require('./realtimeRoutes');
 const { OpenAI } = require('openai');
 const { v4: uuidv4 } = require('uuid');
 const { protect } = require('../middleware/authMiddleware');
+const crypto = require('crypto');
+
+// Utility to ensure all topics have stable IDs based on their phase and name
+function assignTopicIds(analysisData) {
+  let modified = false;
+  if (analysisData && analysisData.roadmap && Array.isArray(analysisData.roadmap)) {
+    analysisData.roadmap.forEach((phase, phaseIndex) => {
+      if (phase.topics && Array.isArray(phase.topics)) {
+        phase.topics.forEach((topic) => {
+          if (!topic.id && topic.name) {
+             const hash = crypto.createHash('sha256')
+               .update(`${analysisData.title || 'role'}-${phase.phase || phaseIndex}-${topic.name}`)
+               .digest('hex').substring(0, 10);
+             topic.id = `topic-${hash}`;
+             modified = true;
+          }
+        });
+      }
+    });
+  }
+  return modified;
+}
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', async (req, res) => {
   const { role, userId, experienceLevel = 'Beginner', country = 'USA', learningPath, forceRefresh = false } = req.body;
@@ -84,6 +106,14 @@ router.post('/analyze', async (req, res) => {
       }
 
       if (isModernStructure) {
+        const wasModified = assignTopicIds(cachedData);
+        if (wasModified && analysisId) {
+            // Update the cache with newly assigned IDs
+            pool.query("UPDATE role_analyses SET analysis_data = $1 WHERE id = $2", [cachedData, analysisId]).catch(console.error);
+        } else if (wasModified && !analysisId) {
+            // If we don't have analysisId but we fetched from global cache, it's fine, we return it with IDs in-memory
+        }
+
         return res.json({
           success: true,
           data: cachedData,
@@ -327,6 +357,9 @@ router.post('/analyze', async (req, res) => {
                 throw new Error('Invalid JSON response from AI');
              }
            }
+
+           // Ensure topics have stable IDs
+           assignTopicIds(analysisData);
 
            // 3. Store in Database (Persistence)
            if (userId) {
@@ -855,11 +888,11 @@ router.get('/progress', async (req, res) => {
 
     try {
         const result = await pool.query(
-            "SELECT topic_name FROM roadmap_progress WHERE user_id = $1 AND role = $2",
+            "SELECT topic_name, topic_id FROM roadmap_progress WHERE user_id = $1 AND role = $2",
             [userId, role]
         );
         
-        const completedTopics = result.rows.map(row => row.topic_name);
+        const completedTopics = result.rows.map(row => row.topic_id || row.topic_name);
         res.json({ success: true, completedTopics });
     } catch (err) {
         console.error('Error fetching progress:', err);
@@ -869,9 +902,9 @@ router.get('/progress', async (req, res) => {
 
 // POST /api/role/progress - Toggle topic completion
 router.post('/progress', async (req, res) => {
-    const { role, userId, topicName, isCompleted } = req.body;
+    const { role, userId, topicName, topicId, isCompleted } = req.body;
 
-    if (!userId || !role || !topicName) {
+    if (!userId || !role || (!topicName && !topicId)) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -879,15 +912,27 @@ router.post('/progress', async (req, res) => {
         if (isCompleted) {
             // Add to progress
             await pool.query(
-                "INSERT INTO roadmap_progress (user_id, role, topic_name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-                [userId, role, topicName]
+                "INSERT INTO roadmap_progress (user_id, role, topic_name, topic_id) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, role, topic_name) DO UPDATE SET topic_id = $4",
+                [userId, role, topicName || (topicId || 'unknown'), topicId || null]
             );
         } else {
             // Remove from progress
-            await pool.query(
-                "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_name = $3",
-                [userId, role, topicName]
-            );
+            if (topicId && topicName) {
+                await pool.query(
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND (topic_id = $3 OR topic_name = $4)",
+                    [userId, role, topicId, topicName]
+                );
+            } else if (topicId) {
+                await pool.query(
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_id = $3",
+                    [userId, role, topicId]
+                );
+            } else {
+                await pool.query(
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_name = $3",
+                    [userId, role, topicName]
+                );
+            }
         }
         
         // Broadcast change live
@@ -1871,6 +1916,67 @@ router.get('/portfolio-drafts', protect, async (req, res) => {
     } catch (err) {
         console.error('Error fetching portfolio drafts:', err);
         res.status(500).json({ error: 'Failed to fetch portfolio drafts' });
+    }
+});
+// POST /api/role/guide - Generate or retrieve an AI guide for a roadmap topic
+router.post('/guide', async (req, res) => {
+    const { role, topicName, topicId, subtopics } = req.body;
+    
+    if (!role || !topicName || !topicId) {
+        return res.status(400).json({ error: 'role, topicName, and topicId are required' });
+    }
+
+    try {
+        // 1. Check if guide exists in DB
+        const cacheResult = await pool.query(
+            "SELECT guide_data FROM roadmap_guides WHERE role = $1 AND topic_id = $2 LIMIT 1",
+            [role, topicId]
+        );
+
+        if (cacheResult.rows.length > 0) {
+            return res.json({ success: true, guideContent: cacheResult.rows[0].guide_data, source: 'cache' });
+        }
+
+        // 2. Generate Guide using OpenAI
+        let promptText = `Assume the role of an expert friendly tutor. Create a comprehensive study guide for the topic: "${topicName}" tailored for the role of ${role}. `;
+        if (subtopics && subtopics.length > 0) {
+            promptText += `Make sure to explicitly cover these subtopics: ${subtopics.join(", ")}. `;
+        }
+        
+        promptText += `
+CRITICAL: You MUST strictly structure your response into the following six parts. Use markdown headers (e.g. "## 1. Understand") for each section.
+1. Understand: Explain the fundamental concepts clearly.
+2. Before You Begin: What prerequisites or mental models should the user know?
+3. See an Example: Provide a clear, real-world example or code snippet.
+4. Try It: A practical exercise for the user to try themselves.
+5. Check Your Understanding: 1-2 quick questions to self-assess.
+6. Continue: A brief wrap-up and what comes next.
+
+Use markdown, emojis, and keep it highly readable and engaging.`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: "You are an expert tutor creating structured roadmap guides." },
+                { role: "user", content: promptText }
+            ],
+            max_tokens: 3000,
+            temperature: 0.7,
+        });
+
+        const guideContent = completion.choices[0].message.content;
+
+        // 3. Save to DB
+        await pool.query(
+            "INSERT INTO roadmap_guides (role, topic_id, topic_name, guide_data) VALUES ($1, $2, $3, $4) ON CONFLICT (role, topic_id) DO NOTHING",
+            [role, topicId, topicName, guideContent]
+        );
+
+        res.json({ success: true, guideContent, source: 'generated' });
+
+    } catch (err) {
+        console.error('Error in /api/role/guide:', err);
+        res.status(500).json({ error: 'Failed to generate guide' });
     }
 });
 

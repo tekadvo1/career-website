@@ -17,10 +17,23 @@ interface AIChatAssistantProps {
 }
 
 export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbedded = false, initialQuery }: AIChatAssistantProps & { isEmbedded?: boolean }) {
-    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+        if (context && context.topicName) {
+            const saved = localStorage.getItem(`ai_chat_${context.topicName}`);
+            if (saved) return JSON.parse(saved);
+        }
+        return [];
+    });
     const [chatInput, setChatInput] = useState('');
     const [isChatLoading, setIsChatLoading] = useState(false);
-    const [hasSentInitial, setHasSentInitial] = useState(false);
+    const [hasSentInitial, setHasSentInitial] = useState(chatMessages.length > 0);
+
+    // Save to localStorage whenever messages change
+    useEffect(() => {
+        if (context && context.topicName && chatMessages.length > 0) {
+            localStorage.setItem(`ai_chat_${context.topicName}`, JSON.stringify(chatMessages));
+        }
+    }, [chatMessages, context]);
 
     // Initial greeting or query handling
     useEffect(() => {
@@ -52,7 +65,8 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbe
                 body: JSON.stringify({
                     message: userMsg.content,
                     context: context,
-                    role: role
+                    role: role,
+                    conversationHistory: chatMessages
                 })
             });
 

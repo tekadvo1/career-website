@@ -17,6 +17,7 @@ router.post('/chat', checkAICredits, async (req, res) => {
         const { message, context, role, conversationHistory } = req.body;
 
         const isProjectContext = context?.type === 'project';
+        const isRoadmapContext = context?.type === 'roadmap';
 
         let systemPrompt = '';
 
@@ -32,6 +33,21 @@ Your approach:
 - When the user shares code or an error, debug it precisely and explain what went wrong.
 - Provide clean, production-ready code examples when asked.
 - Be direct and technical. Reference earlier parts of the conversation naturally.`;
+        } else if (isRoadmapContext) {
+            systemPrompt = `You are FindStreak AI — an expert tutor guiding a user through their learning roadmap.
+
+Role: ${role || 'Software Engineer'}
+Current Topic: ${context.topicName}
+
+You must base your explanations and tutoring heavily on the following Lesson Guide that the user is currently reading.
+LESSON GUIDE CONTENT:
+${context.guideContent || 'No specific guide available. Provide general guidance.'}
+
+Your approach:
+- Act as a supportive, highly knowledgeable tutor.
+- Don't just give away the answers; help the user think through problems.
+- Refer back to the lesson guide when clarifying concepts.
+- Use markdown, emojis, and be conversational but concise.`;
         } else {
             systemPrompt = `You are FindStreak AI — an expert career mentor and technical assistant specialising in ${role || 'Software Engineering'}.
 

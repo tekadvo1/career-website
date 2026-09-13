@@ -197,6 +197,19 @@ const updateSchema = async () => {
       );
     `);
 
+    // Create roadmap_guides table for caching AI lessons
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS roadmap_guides (
+        id SERIAL PRIMARY KEY,
+        role VARCHAR(255) NOT NULL,
+        topic_id VARCHAR(255) NOT NULL,
+        topic_name VARCHAR(255) NOT NULL,
+        guide_data JSONB NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(role, topic_id)
+      );
+    `);
+
     // Create chat_sessions table to sync AI learning assistant chats across mobile and laptop
     await client.query(`
       CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -240,6 +253,16 @@ const updateSchema = async () => {
       BEGIN
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_public') THEN
           ALTER TABLE users ADD COLUMN is_public BOOLEAN DEFAULT FALSE;
+        END IF;
+      END $$;
+    `);
+
+    // Add topic_id to roadmap_progress
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'roadmap_progress' AND column_name = 'topic_id') THEN
+          ALTER TABLE roadmap_progress ADD COLUMN topic_id VARCHAR(255);
         END IF;
       END $$;
     `);

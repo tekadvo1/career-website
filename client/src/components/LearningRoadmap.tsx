@@ -41,6 +41,7 @@ interface TopicResource {
 }
 
 interface DetailedTopic {
+    id?: string;
     name: string;
     emoji?: string;
     description: string;
@@ -346,11 +347,15 @@ export default function LearningRoadmap() {
     };
   }, [location.state, role, navigate]);
 
-  const toggleTopicCompletion = async (topicName: string) => {
-      const isCompleted = !completedTopics.has(topicName);
+  const toggleTopicCompletion = async (topicName: string, topicId?: string) => {
+      const identifier = topicId || topicName;
+      const isCompleted = !completedTopics.has(identifier) && !completedTopics.has(topicName);
+
+      // Optimistic update
       setCompletedTopics(prev => {
           const newSet = new Set(prev);
           if (isCompleted) {
+             if (topicId) newSet.add(topicId);
              newSet.add(topicName);
              // Gamification: Trigger confetti!
              confetti({
@@ -360,6 +365,7 @@ export default function LearningRoadmap() {
                colors: ['#10b981', '#14b8a6', '#f59e0b', '#3b82f6'] // Emerald, Teal, Amber, Blue
              });
           } else {
+             if (topicId) newSet.delete(topicId);
              newSet.delete(topicName);
           }
           return newSet;
@@ -369,15 +375,32 @@ export default function LearningRoadmap() {
           const userStr = sessionStorage.getItem('user');
           if (userStr) {
              const user = JSON.parse(userStr);
-             apiFetch('/api/role/progress', {
+             const response = await apiFetch('/api/role/progress', {
                  method: 'POST',
                  headers: { 'Content-Type': 'application/json' },
                  body: JSON.stringify({
-                     userId: user.id, role: role, topicName: topicName, isCompleted: isCompleted
+                     userId: user.id, role: role, topicName: topicName, topicId: topicId, isCompleted: isCompleted
                  })
-             }).catch(err => console.error("Sync failed", err));
+             });
+             if (!response.ok) {
+                throw new Error("Failed to save progress on server");
+             }
           }
-      } catch (error) {}
+      } catch (error) {
+          console.error("Sync failed, rolling back", error);
+          // Rollback on failure
+          setCompletedTopics(prev => {
+              const newSet = new Set(prev);
+              if (!isCompleted) {
+                 if (topicId) newSet.add(topicId);
+                 newSet.add(topicName);
+              } else {
+                 if (topicId) newSet.delete(topicId);
+                 newSet.delete(topicName);
+              }
+              return newSet;
+          });
+      }
   };
 
   // Calculators
@@ -394,8 +417,9 @@ export default function LearningRoadmap() {
       const topicsList = phase.topics || phase.skills || [];
       if (!topicsList || topicsList.length === 0) return false;
       return topicsList.every(t => {
+          const id = typeof t === 'string' ? null : (t as any).id;
           const name = typeof t === 'string' ? t : t.name;
-          return completedTopics.has(name);
+          return (id && completedTopics.has(id)) || completedTopics.has(name);
       });
   };
 
@@ -435,16 +459,44 @@ export default function LearningRoadmap() {
     navigate("/roadmap-tree", { state: { role, roadmap } });
   };
 
-  const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string, subtopics: string[] | null) => {
+  const handleOpenAIGuideForTopic = (e: React.MouseEvent, topicName: string, subtopics: string[] | null, topicId?: string) => {
     e.stopPropagation();
     navigate("/roadmap-guide", { 
         state: { 
             role, 
             topicName,
+            topicId,
             subtopics: subtopics || [],
             roadmap 
         } 
     });
+  };
+
+  const handleContinueLearning = () => {
+    // Find the first incomplete topic
+    for (const phase of roadmap) {
+       const topicsList = phase.topics || phase.skills || [];
+       for (const skillObj of topicsList) {
+           const id = typeof skillObj === 'string' ? null : (skillObj as any).id;
+           const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+           const isDone = (id && completedTopics.has(id)) || completedTopics.has(name);
+           if (!isDone) {
+               const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
+               navigate("/roadmap-guide", {
+                   state: {
+                       role,
+                       topicName: name,
+                       topicId: id,
+                       subtopics: subtopics || [],
+                       roadmap
+                   }
+               });
+               return;
+           }
+       }
+    }
+    // If all done, open first topic or do nothing
+    alert("You've completed the entire roadmap!");
   };
 
   const handleGenerateCustomPhase = async () => {
@@ -543,6 +595,9 @@ export default function LearningRoadmap() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+              <Button onClick={handleContinueLearning} className="w-full sm:w-auto flex items-center justify-center gap-1.5 h-10 sm:h-9 px-4 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow shadow-indigo-200">
+                <Target className="w-4 h-4 sm:w-3.5 sm:h-3.5" /> Continue Learning
+              </Button>
               <Button 
                 onClick={() => {
                    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -654,10 +709,11 @@ export default function LearningRoadmap() {
                   <div className="flex flex-col gap-6 relative z-10 w-full mt-4">
                       {(phase.topics || phase.skills || []).map((skillObj, topicIdx) => {
                          const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+                         const id = typeof skillObj === 'string' ? undefined : skillObj.id;
                          const emoji = typeof skillObj === 'string' ? '💻' : (skillObj.emoji || '💻');
                          const desc = typeof skillObj === 'string' ? '' : skillObj.description;
                          const subtopics = typeof skillObj === 'string' ? null : skillObj.subtopics;
-                         const isDone = completedTopics.has(name);
+                         const isDone = (id && completedTopics.has(id)) || completedTopics.has(name);
 
                          const alignLeft = topicIdx % 2 === 0;
 
@@ -685,7 +741,7 @@ export default function LearningRoadmap() {
                                  >
                                     <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     
-                                    <div className="flex items-start justify-between gap-3" onClick={() => toggleTopicCompletion(name)}>
+                                    <div className="flex items-start justify-between gap-3" onClick={() => toggleTopicCompletion(name, id)}>
                                         <div className="flex items-center gap-3">
                                             {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" /> : <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 group-hover:text-emerald-400" />}
                                             <div>
@@ -699,7 +755,7 @@ export default function LearningRoadmap() {
                                     
                                     <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2 items-center justify-between">
                                         <button
-                                           onClick={(e) => handleOpenAIGuideForTopic(e, name, subtopics)}
+                                           onClick={(e) => handleOpenAIGuideForTopic(e, name, subtopics, id)}
                                            className="px-3.5 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold shadow-sm hover:shadow hover:bg-slate-800 transition-all flex items-center gap-1.5 ml-2 md:ml-0"
                                         >
                                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Study Guide
