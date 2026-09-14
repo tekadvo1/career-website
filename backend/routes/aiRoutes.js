@@ -540,10 +540,42 @@ router.get('/interview-guides', async (req, res) => {
         } else {
             // Fetch recent sessions history
             const result = await pool.query(
-                "SELECT id, role, updated_at FROM interview_guides WHERE user_id = $1 ORDER BY updated_at DESC",
+                "SELECT id, role, updated_at, guide_data, answers_data FROM interview_guides WHERE user_id = $1 ORDER BY updated_at DESC",
                 [userId]
             );
-            res.json({ success: true, sessions: result.rows });
+            
+            const sessions = result.rows.map(row => {
+                const guide = typeof row.guide_data === 'string' ? JSON.parse(row.guide_data) : (row.guide_data || {});
+                const answers = typeof row.answers_data === 'string' ? JSON.parse(row.answers_data) : (row.answers_data || {});
+                
+                const totalQuestions = guide?.guide?.length || 0;
+                let answeredCount = 0;
+                let draftCount = 0;
+                
+                Object.values(answers).forEach((ans) => {
+                    if (ans.submitted) answeredCount++;
+                    else if (ans.draft) draftCount++;
+                });
+            
+                let status = 'In progress';
+                if (totalQuestions > 0 && answeredCount === totalQuestions) {
+                    status = 'Finished';
+                } else if (draftCount === 0 && answeredCount === 0) {
+                    status = 'Not started';
+                }
+                
+                return {
+                    id: row.id,
+                    role: row.role,
+                    updated_at: row.updated_at,
+                    totalQuestions,
+                    answeredCount,
+                    status,
+                    type: 'Text-Based Practice'
+                };
+            });
+            
+            res.json({ success: true, sessions });
         }
     } catch (err) {
         console.error('Error fetching interview guide:', err);

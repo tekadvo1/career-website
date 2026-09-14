@@ -40,6 +40,10 @@ interface SessionHistory {
   id: number;
   role: string;
   updated_at: string;
+  totalQuestions: number;
+  answeredCount: number;
+  status: 'In progress' | 'Finished' | 'Not started';
+  type: string;
 }
 
 interface DetailedFeedback {
@@ -49,10 +53,16 @@ interface DetailedFeedback {
     example?: string;
 }
 
+interface AnswerAttempt {
+    submitted: string;
+    feedback: DetailedFeedback | string | null;
+}
+
 interface AnswerRecord {
     draft: string;
     submitted: string;
     feedback: DetailedFeedback | string | null;
+    previousAttempts?: AnswerAttempt[];
 }
 
 export default function InterviewGuide() {
@@ -61,7 +71,7 @@ export default function InterviewGuide() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     // View state
-    const [view, setView] = useState<'overview' | 'setup' | 'session' | 'summary'>('overview');
+    const [view, setView] = useState<'overview' | 'setup' | 'session' | 'summary' | 'review'>('overview');
     const [intent, setIntent] = useState<'text' | 'voice'>('text');
     
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -80,6 +90,9 @@ export default function InterviewGuide() {
     const [recentSessions, setRecentSessions] = useState<SessionHistory[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(true);
     const [historyError, setHistoryError] = useState(false);
+    const [historyRoleFilter, setHistoryRoleFilter] = useState("All");
+    const [historyStatusFilter, setHistoryStatusFilter] = useState("All");
+    const [reviewIdx, setReviewIdx] = useState(0);
 
     // Practice Session State
     const [currentIdx, setCurrentIdx] = useState(0);
@@ -162,6 +175,14 @@ export default function InterviewGuide() {
         }
     };
 
+    const handleReviewHistory = async (targetRole: string) => {
+        const success = await fetchSavedGuide(targetRole);
+        if (success) {
+            setReviewIdx(0);
+            setView('review');
+        }
+    };
+
     useEffect(() => {
         let initialRole = "Software Engineer";
         const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
@@ -225,6 +246,28 @@ export default function InterviewGuide() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleRetryQuestion = async () => {
+        if (!guideData) return;
+        const updatedAnswers = { ...answersData };
+        const ans = updatedAnswers[reviewIdx];
+        if (ans && (ans.submitted || ans.draft)) {
+            const prev = ans.previousAttempts || [];
+            prev.push({
+                submitted: ans.submitted || ans.draft,
+                feedback: ans.feedback
+            });
+            ans.previousAttempts = prev;
+            ans.submitted = "";
+            ans.draft = "";
+            ans.feedback = null;
+        }
+        setAnswersData(updatedAnswers);
+        await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+        setCurrentIdx(reviewIdx);
+        setCurrentDraft("");
+        setView('session');
     };
 
     const handleSaveDraft = async () => {
@@ -449,8 +492,36 @@ export default function InterviewGuide() {
                                 </div>
                             </div>
 
-                            <div>
-                                <h2 className="text-lg font-bold text-slate-800 mb-4">Recent Sessions</h2>
+                            <div className="mt-8">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                                    <h2 className="text-lg font-bold text-slate-800">Recent Sessions</h2>
+                                    
+                                    {!loadingHistory && !historyError && recentSessions.length > 0 && (
+                                        <div className="flex gap-2">
+                                            <select 
+                                                value={historyRoleFilter}
+                                                onChange={(e) => setHistoryRoleFilter(e.target.value)}
+                                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                                            >
+                                                <option value="All">All Roles</option>
+                                                {Array.from(new Set(recentSessions.map(s => s.role))).map(r => (
+                                                    <option key={r} value={r}>{r}</option>
+                                                ))}
+                                            </select>
+                                            <select 
+                                                value={historyStatusFilter}
+                                                onChange={(e) => setHistoryStatusFilter(e.target.value)}
+                                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
+                                            >
+                                                <option value="All">All Statuses</option>
+                                                <option value="In progress">In progress</option>
+                                                <option value="Finished">Finished</option>
+                                                <option value="Not started">Not started</option>
+                                            </select>
+                                        </div>
+                                    )}
+                                </div>
+
                                 {loadingHistory ? (
                                     <div className="flex items-center justify-center p-8">
                                         <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
@@ -468,13 +539,25 @@ export default function InterviewGuide() {
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        {recentSessions.map(session => (
+                                        {recentSessions.filter(s => 
+                                            (historyRoleFilter === 'All' || s.role === historyRoleFilter) &&
+                                            (historyStatusFilter === 'All' || s.status === historyStatusFilter)
+                                        ).map(session => (
                                             <div key={session.id} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-emerald-200 transition-colors">
                                                 <div>
-                                                    <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                                        Text-Based Practice
-                                                    </h3>
-                                                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                                            {session.type || 'Text-Based Practice'}
+                                                        </h3>
+                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase ${
+                                                            session.status === 'Finished' ? 'bg-blue-50 text-blue-700' :
+                                                            session.status === 'In progress' ? 'bg-amber-50 text-amber-700' :
+                                                            'bg-slate-100 text-slate-600'
+                                                        }`}>
+                                                            {session.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
                                                         <span className="flex items-center gap-1 font-medium">
                                                             <Briefcase className="w-3.5 h-3.5 text-slate-400" /> {session.role}
                                                         </span>
@@ -482,16 +565,39 @@ export default function InterviewGuide() {
                                                             <Clock className="w-3.5 h-3.5 text-slate-400" /> 
                                                             {new Date(session.updated_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </span>
+                                                        <span className="flex items-center gap-1 border-l border-slate-200 pl-3">
+                                                            <FileText className="w-3.5 h-3.5 text-slate-400" />
+                                                            {session.answeredCount} of {session.totalQuestions} answered
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleResumeHistory(session.role)}
-                                                    className="shrink-0 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                                                >
-                                                    <Play className="w-3.5 h-3.5" /> Resume Practice
-                                                </button>
+                                                
+                                                {session.status === 'Finished' ? (
+                                                    <button 
+                                                        onClick={() => handleReviewHistory(session.role)}
+                                                        className="shrink-0 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                    >
+                                                        Review Session
+                                                    </button>
+                                                ) : (
+                                                    <button 
+                                                        onClick={() => handleResumeHistory(session.role)}
+                                                        className="shrink-0 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                    >
+                                                        <Play className="w-3.5 h-3.5" /> Resume Practice
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
+                                        
+                                        {recentSessions.filter(s => 
+                                            (historyRoleFilter === 'All' || s.role === historyRoleFilter) &&
+                                            (historyStatusFilter === 'All' || s.status === historyStatusFilter)
+                                        ).length === 0 && (
+                                            <div className="text-sm text-slate-500 italic p-4 text-center">
+                                                No sessions match your filters.
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -797,6 +903,137 @@ export default function InterviewGuide() {
                                 >
                                     Finish Practice
                                 </button>
+                            </div>
+                        </div>
+                    )}
+
+
+                    {/* VIEW: REVIEW */}
+                    {view === 'review' && guideData && (
+                        <div className="fade-in flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-1/3">
+                                <button 
+                                    onClick={() => setView('overview')}
+                                    className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 mb-6 transition-colors"
+                                >
+                                    <ArrowLeft className="w-4 h-4" /> Back to Overview
+                                </button>
+                                <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm h-[600px] overflow-y-auto">
+                                    <h3 className="font-bold text-slate-800 mb-4 px-2">Session Questions</h3>
+                                    <div className="space-y-2">
+                                        {guideData.guide.map((q, idx) => {
+                                            const ans = answersData[idx];
+                                            const isAnswered = !!ans?.submitted;
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setReviewIdx(idx)}
+                                                    className={`w-full text-left p-3 rounded-lg text-sm transition-all border ${reviewIdx === idx ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-transparent border-transparent hover:bg-slate-50 text-slate-700'}`}
+                                                >
+                                                    <div className="font-bold mb-1 flex items-center justify-between">
+                                                        <span>Question {idx + 1}</span>
+                                                        {isAnswered && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                                                    </div>
+                                                    <p className="line-clamp-2 text-xs opacity-80">{q.question}</p>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="w-full md:w-2/3">
+                                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+                                    <div className="p-5 sm:p-8 flex-1">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold uppercase tracking-widest">
+                                                Question {reviewIdx + 1}
+                                            </span>
+                                        </div>
+                                        <h2 className="text-xl font-bold text-slate-800 mb-6">{guideData.guide[reviewIdx].question}</h2>
+                                        
+                                        <div className="mb-6">
+                                            <h3 className="text-sm font-bold text-slate-500 mb-2">Your Answer</h3>
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-800 whitespace-pre-wrap text-sm">
+                                                {answersData[reviewIdx]?.submitted ? answersData[reviewIdx].submitted : 
+                                                 answersData[reviewIdx]?.draft ? <span className="text-amber-600 italic">Unsubmitted Draft: {answersData[reviewIdx].draft}</span> : 
+                                                 <span className="text-slate-400 italic">No answer provided yet.</span>}
+                                            </div>
+                                        </div>
+
+                                        {answersData[reviewIdx]?.feedback && (
+                                            <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4">
+                                                <h3 className="font-bold text-emerald-800 flex items-center gap-2 text-xs uppercase tracking-widest mb-4">
+                                                    <Bot className="w-4 h-4" /> AI Practice Guidance
+                                                </h3>
+                                                {typeof answersData[reviewIdx].feedback === 'string' ? (
+                                                    <p className="text-sm text-emerald-900 leading-relaxed font-medium bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                                        {answersData[reviewIdx].feedback}
+                                                    </p>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        {(answersData[reviewIdx].feedback as DetailedFeedback).worked && (
+                                                            <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                                                <h4 className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-1">Strengths</h4>
+                                                                <p className="text-sm text-emerald-900 font-medium">{(answersData[reviewIdx].feedback as DetailedFeedback).worked}</p>
+                                                            </div>
+                                                        )}
+                                                        {(answersData[reviewIdx].feedback as DetailedFeedback).improvement && (
+                                                            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                                                <h4 className="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">Areas to Improve</h4>
+                                                                <p className="text-sm text-amber-900 font-medium">{(answersData[reviewIdx].feedback as DetailedFeedback).improvement}</p>
+                                                            </div>
+                                                        )}
+                                                        {(answersData[reviewIdx].feedback as DetailedFeedback).suggestion && (
+                                                            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 sm:col-span-2">
+                                                                <h4 className="text-xs font-black text-blue-700 uppercase tracking-widest mb-1">Suggested Next Step</h4>
+                                                                <p className="text-sm text-blue-900 font-medium">{(answersData[reviewIdx].feedback as DetailedFeedback).suggestion}</p>
+                                                            </div>
+                                                        )}
+                                                        {(answersData[reviewIdx].feedback as DetailedFeedback).example && (
+                                                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:col-span-2">
+                                                                <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" /> Example Improved Answer</h4>
+                                                                <p className="text-sm text-slate-700 font-medium italic">"{(answersData[reviewIdx].feedback as DetailedFeedback).example}"</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {answersData[reviewIdx]?.previousAttempts && answersData[reviewIdx].previousAttempts!.length > 0 && (
+                                            <div className="mt-8 pt-4 border-t border-slate-200">
+                                                <h3 className="text-sm font-bold text-slate-500 mb-4">Previous Attempts</h3>
+                                                <div className="space-y-4">
+                                                    {answersData[reviewIdx].previousAttempts!.map((attempt, i) => (
+                                                        <div key={i} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Attempt {i + 1}</div>
+                                                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{attempt.submitted}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap gap-3">
+                                        <button 
+                                            onClick={handleRetryQuestion}
+                                            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 rounded-lg font-bold text-sm transition-colors"
+                                        >
+                                            Retry this question
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                setCurrentIdx(reviewIdx);
+                                                setCurrentDraft(answersData[reviewIdx]?.draft || "");
+                                                setView('session');
+                                            }}
+                                            className="px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg font-bold text-sm transition-colors flex items-center gap-2"
+                                        >
+                                            <Play className="w-4 h-4" /> Resume unfinished session
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
