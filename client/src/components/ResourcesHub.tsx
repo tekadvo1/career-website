@@ -1,23 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { apiFetch } from '../utils/apiFetch';
-import Sidebar from './Sidebar';
+import { apiFetch } from "../utils/apiFetch";
+import Sidebar from "./Sidebar";
 import {
   Search,
   Video,
   FileText,
   Globe,
   ExternalLink,
-  Clock,
-  Star,
   ArrowLeft,
   GraduationCap,
   Code,
   Sparkles,
-  Wrench,
-  Lightbulb,
-  Target,
-  BookOpen
+  BookOpen,
+  Bookmark
 } from "lucide-react";
 
 interface Resource {
@@ -34,10 +30,6 @@ interface Resource {
   rating: number;
   topics: string[];
   language: string;
-  skills_covered?: string[];
-  tools_used?: string[];
-  practical_use?: string;
-  project_ideas?: string[];
 }
 
 export default function ResourcesHub() {
@@ -51,64 +43,115 @@ export default function ResourcesHub() {
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [aiResources, setAiResources] = useState<Resource[]>([]);
   const [showAiResults, setShowAiResults] = useState(false);
+  
   const [resources, setResources] = useState<Resource[]>([]);
+  const [savedResourceIds, setSavedResourceIds] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<"all" | "saved">("all");
+  
   const [isLoading, setIsLoading] = useState(true);
-  const [enhancingId, setEnhancingId] = useState<string | null>(null);
 
-  // Get user's role from location state or workspace
+  const topicContext = location.state?.topicContext;
+  const [contextFilter, setContextFilter] = useState<{ topicName: string; subtopicName: string | null } | null>(
+      topicContext ? { topicName: topicContext.topicName, subtopicName: topicContext.subtopicName } : null
+  );
+
   const rawRole = location.state?.role || (() => {
     try {
-      const saved = sessionStorage.getItem('lastRoleAnalysis');
-      return saved ? JSON.parse(saved).role : 'Software Engineer';
-    } catch { return 'Software Engineer'; }
+      const saved = sessionStorage.getItem("lastRoleAnalysis");
+      return saved ? JSON.parse(saved).role : "Software Engineer";
+    } catch { return "Software Engineer"; }
   })();
-  const userRole = rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+  const userRole = rawRole.replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim() || "Software Engineer";
 
-  // Map roles to relevant skills/technologies
-  const roleToSkills: Record<string, string[]> = {
-    "Software Engineer": ["JavaScript", "React", "Node.js", "Python", "TypeScript", "Web Development", "Algorithms"],
-    "Frontend Developer": ["JavaScript", "React", "CSS", "Web Development", "TypeScript"],
-    "Backend Developer": ["Node.js", "Python", "MongoDB", "REST API"],
-    "Full Stack Developer": ["JavaScript", "React", "Node.js", "Web Development"],
-    "Data Scientist": ["Python", "Data Science", "Machine Learning"],
-    "software developer": ["JavaScript", "React", "Node.js", "Python", "TypeScript", "Web Development"],
-  };
-
-  // Get relevant skills for the user's role (case-insensitive match)
-  const roleKey = Object.keys(roleToSkills).find(k => k.toLowerCase() === userRole.toLowerCase());
-  const relevantSkills = roleKey ? roleToSkills[roleKey] : [userRole];
-
-  // Fetch resources on mount
   useEffect(() => {
-    const fetchResources = async () => {
+    const fetchAll = async () => {
       try {
-        const response = await apiFetch('/api/resources');
-        const data = await response.json();
-        if (data.success) {
-          // Map backend 'resource_type' to frontend 'type'
-          const mappedResources = data.resources.map((r: Resource & { resource_type?: string }) => ({
-            ...r,
-            type: r.resource_type || r.type
-          }));
-          setResources(mappedResources);
+        const [resAll, resSaved] = await Promise.all([
+           apiFetch("/api/resources"),
+           apiFetch("/api/resources/saved").catch(() => null)
+        ]);
+        
+        let merged = [];
+        if (resAll.ok) {
+           const dataAll = await resAll.json();
+           if (dataAll.success) merged = dataAll.resources;
         }
+        
+        if (resSaved && resSaved.ok) {
+           const dataSaved = await resSaved.json();
+           if (dataSaved.success) {
+              const savedIds = new Set<string>(dataSaved.resources.map((r: any) => String(r.id)));
+              setSavedResourceIds(savedIds);
+              
+              const existingIds = new Set(merged.map((r: any) => String(r.id)));
+              for (const r of dataSaved.resources) {
+                  if (!existingIds.has(String(r.id))) {
+                      merged.push(r);
+                  }
+              }
+           }
+        }
+        
+        const mappedResources = merged.map((r: Resource & { resource_type?: string, id: number|string }) => ({
+          ...r,
+          id: String(r.id),
+          type: r.resource_type || r.type
+        }));
+        
+        setResources(mappedResources);
       } catch (error) {
         console.error("Failed to fetch resources", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchResources();
+    fetchAll();
   }, []);
 
+  const handleToggleSave = async (resourceId: string, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const isSaved = savedResourceIds.has(resourceId);
+      
+      setSavedResourceIds(prev => {
+          const newSet = new Set(prev);
+          if (isSaved) newSet.delete(resourceId);
+          else newSet.add(resourceId);
+          return newSet;
+      });
+      
+      try {
+          const res = await apiFetch(`/api/resources/${resourceId}/save`, { method: "POST" });
+          const data = await res.json();
+          if (res.ok && data.success) {
+              setSavedResourceIds(prev => {
+                  const newSet = new Set(prev);
+                  if (data.isSaved) newSet.add(resourceId);
+                  else newSet.delete(resourceId);
+                  return newSet;
+              });
+          } else {
+               throw new Error("Failed to save");
+          }
+      } catch (e) {
+          setSavedResourceIds(prev => {
+              const newSet = new Set(prev);
+              if (isSaved) newSet.add(resourceId);
+              else newSet.delete(resourceId);
+              return newSet;
+          });
+      }
+  };
+
   const handleAiSearch = async (override?: string | React.MouseEvent) => {
-    const q = typeof override === 'string' ? override : searchQuery;
+    const q = typeof override === "string" ? override : searchQuery;
     if (!q) return;
     setIsAiSearching(true);
     setShowAiResults(true);
     try {
-      const response = await apiFetch('/api/resources/search', {
-        method: 'POST',
+      const response = await apiFetch("/api/resources/search", {
+        method: "POST",
         body: JSON.stringify({ 
           query: q, 
           role: userRole,
@@ -121,8 +164,9 @@ export default function ResourcesHub() {
       });
       const data = await response.json();
       if (data.success) {
-         const mappedResources = data.resources.map((r: Resource & { resource_type?: string }) => ({
+         const mappedResources = data.resources.map((r: Resource & { resource_type?: string, id: number|string }) => ({
             ...r,
+            id: String(r.id),
             type: r.resource_type || r.type
           }));
         setAiResources(mappedResources);
@@ -134,74 +178,28 @@ export default function ResourcesHub() {
     }
   };
 
-  const handleEnhanceResource = async (id: string) => {
-    setEnhancingId(id);
-    try {
-      const response = await apiFetch(`/api/resources/${id}/enhance`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      if (data.success) {
-         // Update the resource in local lists
-         setResources(prev => prev.map(r => r.id === id ? { ...r, ...data.resource } : r));
-         setAiResources(prev => prev.map(r => r.id === id ? { ...r, ...data.resource } : r));
-      }
-    } catch (error) {
-      console.error("Failed to enhance resource", error);
-    } finally {
-      setEnhancingId(null);
-    }
-  };
+  let baseResources = activeTab === "saved" ? resources.filter(r => savedResourceIds.has(r.id)) : resources;
+  if (showAiResults) baseResources = aiResources;
 
-  // Filter resources based on user's role and skills
-  const getRelevanceScore = (resource: Resource): number => {
-    let score = 0;
-    
-    // Check if resource topics match relevant skills
-    if (resource.topics) {
-        resource.topics.forEach(topic => {
-          if (relevantSkills.some(skill => 
-            topic.toLowerCase().includes(skill.toLowerCase()) || 
-            skill.toLowerCase().includes(topic.toLowerCase())
-          )) {
-            score += 10;
-          }
-        });
+  const filteredResources = baseResources.filter((resource) => {
+    if (contextFilter) {
+       const hasTopic = resource.topics?.some(t => 
+          t.toLowerCase().includes(contextFilter.topicName.toLowerCase()) || 
+          (contextFilter.subtopicName && t.toLowerCase().includes(contextFilter.subtopicName.toLowerCase()))
+       );
+       const hasTitleMatch = resource.title.toLowerCase().includes(contextFilter.topicName.toLowerCase());
+       if (!hasTopic && !hasTitleMatch) return false;
     }
 
-    // Boost highly rated resources
-    score += (resource.rating || 0) * 2;
-
-    return score;
-  };
-
-  // Get personalized resources sorted by relevance
-  const personalizedResources = resources
-    .map(resource => ({
-      ...resource,
-      relevanceScore: getRelevanceScore(resource)
-    }))
-    .filter(resource => resource.relevanceScore > 0)
-    .sort((a, b) => b.relevanceScore - a.relevanceScore);
-
-  const filteredResources = (showAiResults ? aiResources : personalizedResources).filter((resource) => {
-    // If showing AI results, skip search match as AI already did it, but keep filters
     const matchesSearch = showAiResults ? true : (
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.topics.some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase()))
+      (resource.topics || []).some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     const matchesLevel = selectedLevel === "all" || resource.level === selectedLevel;
-    
-    // Check type OR platform for flexible filtering
-    const matchesType = selectedType === "all" || 
-                        resource.type === selectedType || 
-                        resource.platform?.toLowerCase().includes(selectedType.toLowerCase());
-
-    const matchesLanguage = selectedLanguage === "all" || 
-                            resource.language?.toLowerCase() === selectedLanguage.toLowerCase();
-                            
+    const matchesType = selectedType === "all" || resource.type === selectedType || resource.platform?.toLowerCase().includes(selectedType.toLowerCase());
+    const matchesLanguage = selectedLanguage === "all" || resource.language?.toLowerCase() === selectedLanguage.toLowerCase();
     const matchesFree = !showFreeOnly || resource.free;
 
     return matchesSearch && matchesLevel && matchesType && matchesLanguage && matchesFree;
@@ -209,90 +207,62 @@ export default function ResourcesHub() {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case "course":
-        return <GraduationCap className="w-5 h-5" />;
+      case "course": return <GraduationCap className="w-5 h-5" />;
       case "video":
-        return <Video className="w-5 h-5" />;
-      case "documentation":
-        return <FileText className="w-5 h-5" />;
-      case "interactive":
-        return <Code className="w-5 h-5" />;
-      case "youtube":
-        return <Video className="w-5 h-5" />;
-      default:
-        return <Globe className="w-5 h-5" />;
+      case "youtube": return <Video className="w-5 h-5" />;
+      case "documentation": return <FileText className="w-5 h-5" />;
+      case "interactive": return <Code className="w-5 h-5" />;
+      default: return <Globe className="w-5 h-5" />;
     }
   };
 
-  const getPlatformBadgeColor = (platform: string) => {
-    if (platform.includes("Udemy")) return "bg-purple-100 text-purple-700 border-purple-200";
-    if (platform.includes("Coursera")) return "bg-blue-100 text-blue-700 border-blue-200";
-    if (platform.includes("YouTube")) return "bg-red-100 text-red-700 border-red-200";
-    if (platform.includes("freeCodeCamp")) return "bg-green-100 text-green-700 border-green-200";
-    return "bg-slate-100 text-slate-700 border-slate-200";
-  };
-
-  // Count free and paid resources
-  const freeCount = filteredResources.filter(r => r.free).length;
-  const paidCount = filteredResources.filter(r => !r.free).length;
-
   return (
-    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 font-sans">
+    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-slate-50 font-sans">
       <div className="z-50 shrink-0"><Sidebar activePage="resources" /></div>
       <div className="flex-1 w-full p-4 py-6 md:p-8 overflow-y-auto min-h-0 relative">
       <div className="max-w-7xl mx-auto w-full">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
-              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+              <div className="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                <BookOpen className="w-6 h-6" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 mb-1">Learning Resources Hub</h1>
+                <h1 className="text-2xl font-bold text-slate-900 mb-1">Learning Resources</h1>
                 <p className="text-sm text-slate-600">
-                  Personalized learning materials for <span className="font-semibold text-indigo-600">{userRole}</span>
+                  Curated materials and references for your learning journey
                 </p>
               </div>
             </div>
+            {topicContext && (
+                <button 
+                  onClick={() => navigate(topicContext.returnTo || "/roadmap-guide", { state: location.state })}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors text-sm"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Return to Lesson
+                </button>
+            )}
           </div>
 
-          {/* Personalization Info Banner */}
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg p-3 mb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-indigo-900 font-bold text-[15px] mb-1">
-                  Resources tailored for you
-                </p>
-                <p className="text-sm text-indigo-700">
-                  Based on your role as <strong className="font-extrabold">{userRole}</strong>, we've curated {filteredResources.length} relevant resources including {freeCount} free and {paidCount} premium options
-                </p>
-                <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {relevantSkills.slice(0, 5).map((skill, index) => (
-                    <span key={index} className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[11px] font-bold uppercase tracking-wider">
-                      {skill}
-                    </span>
-                  ))}
-                  {relevantSkills.length > 5 && (
-                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-[11px] font-bold uppercase tracking-wider">
-                      +{relevantSkills.length - 5} more
-                    </span>
-                  )}
-                </div>
-              </div>
+          {contextFilter && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4 flex items-center justify-between gap-4">
+               <div>
+                  <span className="text-sm font-semibold text-emerald-900">
+                     Showing resources for topic: <span className="text-emerald-700">{contextFilter.topicName}</span>
+                     {contextFilter.subtopicName && ` (${contextFilter.subtopicName})`}
+                  </span>
+               </div>
+               <button 
+                 onClick={() => setContextFilter(null)}
+                 className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-md transition-colors"
+               >
+                 Clear Context
+               </button>
             </div>
-            <button 
-              onClick={() => handleAiSearch(userRole)}
-              disabled={isAiSearching}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-indigo-700 border border-indigo-700 focus:ring-4 focus:ring-indigo-100 transition-all flex items-center justify-center gap-2 whitespace-nowrap flex-shrink-0 disabled:opacity-50"
-            >
-              <Sparkles className={`w-4 h-4 ${isAiSearching ? 'animate-pulse' : ''}`} />
-              {isAiSearching ? 'Generating AI Resources...' : 'Force AI Refresh'}
-            </button>
-          </div>
-          {/* Search */}
-          <div className="flex gap-2 mb-3">
+          )}
+
+          <div className="flex gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -300,20 +270,16 @@ export default function ResourcesHub() {
                 placeholder="Search resources, topics, or technologies..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAiSearch()}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
+                onKeyDown={(e) => e.key === "Enter" && handleAiSearch()}
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm"
               />
             </div>
             <button
               onClick={handleAiSearch}
               disabled={isAiSearching || !searchQuery}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
             >
-              {isAiSearching ? (
-                 <Sparkles className="w-4 h-4 animate-spin" />
-              ) : (
-                 <Sparkles className="w-4 h-4" />
-              )}
+              {isAiSearching ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
               AI Search
             </button>
             {showAiResults && (
@@ -329,276 +295,144 @@ export default function ResourcesHub() {
             )}
           </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Type</label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
-              >
-                <option value="all">All Types</option>
-                <option value="course">Courses</option>
-                <option value="video">Videos</option>
-                <option value="documentation">Docs</option>
-                <option value="interactive">Interactive</option>
-                <option value="youtube">YouTube</option>
-                <option value="udemy">Udemy</option>
-                <option value="coursera">Coursera</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Level</label>
-              <select
-                value={selectedLevel}
-                onChange={(e) => setSelectedLevel(e.target.value)}
-                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
-              >
-                <option value="all">All Levels</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Language</label>
-              <select
-                value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="w-full px-2 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
-              >
-                <option value="all">All Languages</option>
-                <option value="English">English</option>
-                <option value="Hindi">Hindi</option>
-                <option value="Telugu">Telugu</option>
-                <option value="Tamil">Tamil</option>
-                <option value="Kannada">Kannada</option>
-                <option value="Malayalam">Malayalam</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
-                <option value="Chinese">Chinese</option>
-                <option value="Japanese">Japanese</option>
-              </select>
-            </div>
-
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg cursor-pointer hover:bg-slate-200 transition-colors w-full">
-                <input
-                  type="checkbox"
-                  checked={showFreeOnly}
-                  onChange={(e) => setShowFreeOnly(e.target.checked)}
-                  className="w-3.5 h-3.5 text-indigo-600"
-                />
-                <span className="text-xs font-medium text-slate-700">Free Only</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="flex gap-4 mt-4 pt-4 border-t border-slate-200">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-              <span className="text-xs text-slate-700">
-                <strong>{freeCount}</strong> Free
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
-              <span className="text-xs text-slate-700">
-                <strong>{paidCount}</strong> Premium
-              </span>
-            </div>
+          <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
+              <option value="all">All Types</option>
+              <option value="course">Courses</option>
+              <option value="video">Videos</option>
+              <option value="documentation">Docs</option>
+              <option value="interactive">Interactive</option>
+            </select>
+            <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
+              <option value="all">All Levels</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+            <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
+              <option value="all">All Languages</option>
+              <option value="English">English</option>
+              <option value="Spanish">Spanish</option>
+              <option value="Hindi">Hindi</option>
+              <option value="Chinese">Chinese</option>
+            </select>
+            <label className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50 transition-colors">
+              <input type="checkbox" checked={showFreeOnly} onChange={(e) => setShowFreeOnly(e.target.checked)} className="w-3.5 h-3.5 text-emerald-600 rounded" />
+              <span className="text-sm font-medium text-slate-700">Free Only</span>
+            </label>
           </div>
         </div>
 
-        {/* Resources Grid */}
+        <div className="flex items-center justify-between mb-4">
+           <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
+             <button 
+                onClick={() => setActiveTab("all")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors ${activeTab === "all" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"}`}
+             >
+                All Resources
+             </button>
+             <button 
+                onClick={() => setActiveTab("saved")}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-colors flex items-center gap-1.5 ${activeTab === "saved" ? "bg-emerald-50 text-emerald-700" : "text-slate-600 hover:bg-slate-50"}`}
+             >
+                <Bookmark className="w-4 h-4" /> Saved ({savedResourceIds.size})
+             </button>
+           </div>
+           <div className="text-sm font-medium text-slate-500">
+               {isLoading ? "Loading..." : `Showing ${filteredResources.length} resources`}
+           </div>
+        </div>
+
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center p-12">
-            <Sparkles className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
-            <h3 className="text-lg font-semibold text-slate-700">Curating resources for you...</h3>
-            <p className="text-slate-500 text-sm">Our AI is finding the best learning materials.</p>
+          <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm border border-slate-200">
+            <Sparkles className="w-10 h-10 text-emerald-500 animate-spin mx-auto" />
+            <h3 className="text-lg font-semibold text-slate-700 mt-4">Loading resources...</h3>
           </div>
-        ) : (
-        <>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredResources.map((resource) => (
-            <div key={resource.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 flex flex-col border border-slate-100 overflow-hidden group">
-              {/* Header with gradient */}
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 border-b border-slate-100">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-indigo-600 shadow-sm">
-                      {getTypeIcon(resource.type)}
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getPlatformBadgeColor(resource.platform)}`}>
-                      {resource.platform}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {resource.free ? (
-                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold">
-                        FREE
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg text-xs font-bold">
-                        PREMIUM
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 leading-tight line-clamp-2 group-hover:text-indigo-700 transition-colors">{resource.title}</h3>
-              </div>
-
-              <div className="p-4 flex flex-col flex-1 gap-3">
-                {/* Description */}
-                <p className="text-xs text-slate-600 line-clamp-2">{resource.description}</p>
-
-                {/* Meta Row: Duration, Level, Rating */}
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-slate-500">
-                      <Clock className="w-3 h-3" /> {resource.duration}
-                    </span>
-                    <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                      resource.level === "Beginner" ? "bg-green-100 text-green-700"
-                        : resource.level === "Intermediate" ? "bg-amber-100 text-amber-700"
-                        : "bg-red-100 text-red-700"
-                    }`}>{resource.level}</span>
-                  </div>
-                  <div className="flex items-center gap-1 font-semibold text-slate-700">
-                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> {resource.rating}
-                  </div>
-                </div>
-
-                {/* Skills Covered */}
-                {resource.skills_covered && resource.skills_covered.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <Target className="w-3 h-3 text-indigo-500" />
-                      <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">Skills You'll Learn</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {resource.skills_covered.slice(0, 4).map((skill, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded text-[10px] font-medium">
-                          {skill}
-                        </span>
-                      ))}
-                      {resource.skills_covered.length > 4 && (
-                        <span className="px-1.5 py-0.5 bg-slate-50 text-slate-500 rounded text-[10px] font-medium">+{resource.skills_covered.length - 4}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tools Used */}
-                {resource.tools_used && resource.tools_used.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <Wrench className="w-3 h-3 text-purple-500" />
-                      <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider">Tools & Technologies</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {resource.tools_used.slice(0, 4).map((tool, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-medium">
-                          {tool}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Practical Use */}
-                {resource.practical_use && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Lightbulb className="w-3 h-3 text-emerald-600" />
-                      <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Why It Helps</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-800 leading-relaxed line-clamp-2">{resource.practical_use}</p>
-                  </div>
-                )}
-
-                {/* Project Ideas */}
-                {resource.project_ideas && resource.project_ideas.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-1 mb-1.5">
-                      <BookOpen className="w-3 h-3 text-amber-500" />
-                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Build After Learning</span>
-                    </div>
-                    <div className="space-y-1">
-                      {resource.project_ideas.slice(0, 2).map((idea, i) => (
-                        <div key={i} className="flex items-start gap-1.5 text-[11px] text-slate-600">
-                          <span className="text-amber-500 mt-0.5">▸</span>
-                          <span className="line-clamp-1">{idea}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Topics */}
-                <div className="flex flex-wrap gap-1">
-                  {(resource.topics || []).slice(0, 3).map((topic, index) => (
-                    <span key={index} className="px-1.5 py-0.5 border border-slate-200 rounded text-[10px] text-slate-500">
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-2 mt-auto pt-2">
-                  {(!resource.skills_covered || resource.skills_covered.length === 0) && (
-                     <button
-                        onClick={() => handleEnhanceResource(resource.id)}
-                        disabled={enhancingId === resource.id}
-                        className="w-full px-4 py-2 border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                     >
-                        {enhancingId === resource.id ? (
-                           <><Sparkles className="w-3.5 h-3.5 animate-spin" /> Uncovering Info...</>
-                        ) : (
-                           <><Sparkles className="w-3.5 h-3.5" /> Explain more using AI</>
-                        )}
-                     </button>
-                  )}
-                  <a
-                    href={
-                      resource.platform?.toLowerCase().includes('youtube') || resource.type === 'youtube'
-                        ? `https://www.youtube.com/results?search_query=${encodeURIComponent(resource.title)}`
-                        : resource.platform?.toLowerCase().includes('udemy')
-                        ? `https://www.udemy.com/courses/search/?q=${encodeURIComponent(resource.title)}`
-                        : resource.url
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 transition-all shadow-sm"
-                  >
-                    {resource.free ? "Access Free Resource" : "View Course"}
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* No Results */}
-        {filteredResources.length === 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+        ) : filteredResources.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-slate-400" />
             </div>
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No resources found</h3>
-            <p className="text-slate-600">Try adjusting your filters or search query</p>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+               {contextFilter ? `No resources found for ${contextFilter.topicName}` : "No resources found"}
+            </h3>
+            <p className="text-slate-600 mb-6">Try adjusting your filters or clearing the topic context.</p>
+            {contextFilter && (
+               <button onClick={() => setContextFilter(null)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
+                  Browse All Resources
+               </button>
+            )}
           </div>
-        )}
-        </>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filteredResources.map((resource) => {
+              const isSaved = savedResourceIds.has(resource.id);
+              return (
+              <div key={resource.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col border border-slate-200 overflow-hidden group">
+                <div className="p-4 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{resource.platform || resource.type}</span>
+                    <h3 className="text-sm font-bold text-slate-900 leading-tight line-clamp-2 group-hover:text-emerald-700 transition-colors pr-4">{resource.title}</h3>
+                  </div>
+                  <button 
+                     onClick={(e) => handleToggleSave(resource.id, e)}
+                     className="p-1.5 hover:bg-slate-200 rounded-md transition-colors shrink-0"
+                     title={isSaved ? "Unsave resource" : "Save resource"}
+                  >
+                     <Bookmark className={`w-5 h-5 ${isSaved ? "fill-emerald-600 text-emerald-600" : "text-slate-400"}`} />
+                  </button>
+                </div>
+
+                <div className="p-4 flex flex-col flex-1 gap-4">
+                  <p className="text-sm text-slate-600 line-clamp-2">{resource.description}</p>
+
+                  <div className="flex flex-wrap gap-2 text-xs">
+                     {resource.free ? (
+                         <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded">Free</span>
+                     ) : (
+                         <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded border border-slate-200">Paid / Not confirmed</span>
+                     )}
+                     {resource.level && (
+                         <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-medium rounded border border-slate-200">{resource.level}</span>
+                     )}
+                     {resource.language && resource.language !== "English" && (
+                         <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-medium rounded border border-slate-200">{resource.language}</span>
+                     )}
+                  </div>
+
+                  {resource.topics && resource.topics.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-auto">
+                      {resource.topics.slice(0, 3).map((topic, index) => (
+                        <span key={index} className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded text-[11px] font-medium text-slate-500">
+                          {topic}
+                        </span>
+                      ))}
+                      {resource.topics.length > 3 && (
+                        <span className="px-2 py-0.5 text-[11px] font-medium text-slate-400">+{resource.topics.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="pt-2">
+                    <a
+                      href={resource.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+                    >
+                      {getTypeIcon(resource.type)}
+                      Open Resource
+                      <ExternalLink className="w-3.5 h-3.5 ml-auto text-slate-400" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )})}
+          </div>
         )}
       </div>
       </div>
     </div>
   );
 }
+

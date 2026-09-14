@@ -196,3 +196,11 @@ CREATE TABLE IF NOT EXISTS user_achievements (
 
 -- Index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
+
+-- User Saved Resources Table
+CREATE TABLE IF NOT EXISTS user_saved_resources (
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  resource_id INTEGER REFERENCES resources(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(user_id, resource_id)
+);

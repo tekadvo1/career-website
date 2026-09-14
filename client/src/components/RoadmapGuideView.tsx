@@ -286,6 +286,13 @@ export default function RoadmapGuideView() {
                  )}
              </div>
              <button 
+                onClick={() => navigate('/resources', { state: { role, topicContext: { topicName: currentTopic.isSubtopic ? currentTopic.parentName : currentTopic.name, subtopicName: currentTopic.isSubtopic ? currentTopic.name : null, returnTo: '/roadmap-guide' }, roadmap, ...location.state } })}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-colors border bg-white hover:bg-slate-50 border-slate-200 text-slate-700"
+             >
+                <BookOpen className="w-4 h-4" />
+                <span className="hidden sm:inline">Resources</span>
+             </button>
+             <button 
                 onClick={() => setAiLayout(aiLayout !== 'hidden' ? 'hidden' : 'normal')}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-colors border ${aiLayout !== 'hidden' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'}`}
              >

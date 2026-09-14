@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { protect: authenticateToken } = require('../middleware/authMiddleware');
 
 // Helper to seed initial data if empty
 const seedResourcesIfEmpty = async () => {
@@ -132,6 +133,23 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Fetch Resources Error:', error);
         res.status(500).json({ error: 'Failed to fetch resources' });
+    }
+});
+
+// GET /api/resources/saved - Get saved resources for the current user
+router.get('/saved', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT r.* 
+            FROM resources r
+            JOIN user_saved_resources usr ON r.id = usr.resource_id
+            WHERE usr.user_id = $1
+            ORDER BY usr.created_at DESC
+        `, [req.user.id]);
+        res.json({ success: true, resources: result.rows });
+    } catch (error) {
+        console.error('Fetch Saved Resources Error:', error);
+        res.status(500).json({ error: 'Failed to fetch saved resources' });
     }
 });
 
@@ -423,6 +441,48 @@ router.post('/:id/enhance', async (req, res) => {
   } catch(error) {
     console.error('Enhance Resource Error:', error);
     res.status(500).json({ error: 'Failed to enhance resource' });
+  }
+});
+
+// POST /api/resources/:id/save - Toggle save status of a resource
+router.post('/:id/save', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  
+  if (isNaN(parseInt(id))) {
+      return res.status(400).json({ error: 'Invalid resource ID' });
+  }
+
+  try {
+    // Check if the resource exists
+    const resourceResult = await pool.query('SELECT id FROM resources WHERE id = $1', [id]);
+    if (resourceResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    // Check if already saved
+    const savedResult = await pool.query(
+      'SELECT * FROM user_saved_resources WHERE user_id = $1 AND resource_id = $2',
+      [req.user.id, id]
+    );
+
+    if (savedResult.rows.length > 0) {
+      // Unsave
+      await pool.query(
+        'DELETE FROM user_saved_resources WHERE user_id = $1 AND resource_id = $2',
+        [req.user.id, id]
+      );
+      res.json({ success: true, isSaved: false });
+    } else {
+      // Save
+      await pool.query(
+        'INSERT INTO user_saved_resources (user_id, resource_id) VALUES ($1, $2)',
+        [req.user.id, id]
+      );
+      res.json({ success: true, isSaved: true });
+    }
+  } catch (error) {
+    console.error('Save Resource Error:', error);
+    res.status(500).json({ error: 'Failed to save/unsave resource' });
   }
 });
 
