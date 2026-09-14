@@ -101,7 +101,7 @@ export default function InterviewGuide() {
         const user = JSON.parse(userStrLocal);
         setHistoryError(false);
         try {
-            const res = await fetch(`/api/ai/interview-guides?userId=${user.id}`);
+            const res = await apiFetch(`/api/ai/interview-guides?userId=${user.id}`);
             const data = await res.json();
             if (data.success && data.sessions) {
                 setRecentSessions(data.sessions);
@@ -121,7 +121,7 @@ export default function InterviewGuide() {
         if (!userStrLocal) return false;
         const user = JSON.parse(userStrLocal);
         try {
-            const res = await fetch(`/api/ai/interview-guides?userId=${user.id}&role=${encodeURIComponent(targetRole)}`);
+            const res = await apiFetch(`/api/ai/interview-guides?userId=${user.id}&role=${encodeURIComponent(targetRole)}`);
             const data = await res.json();
             if (data.success && data.guideData) {
                 setGuideData(data.guideData);
