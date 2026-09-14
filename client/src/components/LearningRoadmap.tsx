@@ -419,22 +419,36 @@ export default function LearningRoadmap() {
                 setIsLoading(false);
             } else {
                 try {
-                    const userStr = sessionStorage.getItem('user');
-                    const user = userStr ? JSON.parse(userStr) : {};
-                    const response = await apiFetch('/api/role/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ role: targetRole, userId: user.id || null })
-                    });
+                    const response = await apiFetch(`/api/role/saved-roadmap?role=${encodeURIComponent(targetRole)}`);
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.data && data.data.roadmap) {
+                        if (data.success && data.data && data.data.roadmap) {
                             setRoadmap(data.data.roadmap);
                             sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
                                 role: targetRole,
                                 analysis: data.data,
                                 timestamp: new Date().getTime()
                             }));
+                        }
+                    } else {
+                        // Fallback to analyze if not found, though ideally it should already exist
+                        const userStr = sessionStorage.getItem('user');
+                        const user = userStr ? JSON.parse(userStr) : {};
+                        const analyzeResponse = await apiFetch('/api/role/analyze', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ role: targetRole, userId: user.id || null })
+                        });
+                        if (analyzeResponse.ok) {
+                            const data = await analyzeResponse.json();
+                            if (data.data && data.data.roadmap) {
+                                setRoadmap(data.data.roadmap);
+                                sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                                    role: targetRole,
+                                    analysis: data.data,
+                                    timestamp: new Date().getTime()
+                                }));
+                            }
                         }
                     }
                 } catch (err) {

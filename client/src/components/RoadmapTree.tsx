@@ -169,14 +169,10 @@ export default function RoadmapTree() {
           if (loadedRoadmap) {
             setRoadmap(loadedRoadmap);
           } else {
-             const response = await apiFetch('/api/role/analyze', {
-                 method: 'POST',
-                 headers: { 'Content-Type': 'application/json' },
-                 body: JSON.stringify({ role: selectedRole, userId: user?.id || null })
-             });
+             const response = await apiFetch(`/api/role/saved-roadmap?role=${encodeURIComponent(selectedRole)}`);
              if (response.ok) {
                  const data = await response.json();
-                 if (data.data && data.data.roadmap) {
+                 if (data.success && data.data && data.data.roadmap) {
                      setRoadmap(data.data.roadmap);
                      sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
                          role: selectedRole,
@@ -184,6 +180,8 @@ export default function RoadmapTree() {
                          timestamp: new Date().getTime()
                      }));
                  }
+             } else {
+                 console.error("Roadmap not found in database. Tree cannot generate new curriculum.");
              }
           }
         }
@@ -347,6 +345,7 @@ export default function RoadmapTree() {
               topicId: topicId, 
               subtopics: subtopics, 
               parentTopicName: subtopicName ? topicName : undefined,
+              returnTo: '/roadmap-tree',
               roadmap 
           } 
       });

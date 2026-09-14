@@ -2065,6 +2065,33 @@ Return the response strictly as a JSON array of objects with this structure:
     }
 });
 
+// GET /api/role/saved-roadmap - Fetch the latest saved roadmap for a user by role prefix
+router.get('/saved-roadmap', protect, async (req, res) => {
+    const { role } = req.query;
+    const userId = req.user.id;
+
+    if (!role) {
+        return res.status(400).json({ error: 'role is required' });
+    }
+
+    try {
+        const normalizedRole = role.trim().toLowerCase();
+        const cacheResult = await pool.query(
+            "SELECT analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) LIKE $2 || '%' ORDER BY created_at DESC LIMIT 1",
+            [userId, normalizedRole]
+        );
+
+        if (cacheResult.rows.length === 0) {
+            return res.status(404).json({ error: 'No existing roadmap found for this user and role.' });
+        }
+
+        res.json({ success: true, data: cacheResult.rows[0].analysis_data });
+    } catch (err) {
+        console.error('Error in /api/role/saved-roadmap:', err);
+        res.status(500).json({ error: 'Failed to fetch saved roadmap' });
+    }
+});
+
 // POST /api/role/update-roadmap - Save an updated roadmap to the user's cache
 router.post('/update-roadmap', protect, async (req, res) => {
     const { role, updatedRoadmap } = req.body;
