@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../utils/apiFetch';
 import { 
     Bot, X, Sparkles, Plus, History, Loader2, 
-    Zap, Copy, Check, SendHorizontal, Maximize2, Minimize2, ArrowRight
+    Zap, Copy, Check, SendHorizontal, Maximize2, Minimize2, ArrowRight,
+    Pencil, Trash2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
@@ -41,6 +42,9 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
     const [isHistoryVisible, setIsHistoryVisible] = useState(false);
     const [chatLoadingState, setChatLoadingState] = useState<'idle'|'loading'|'success'|'error'>('idle');
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+    const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+    const [editSessionTitle, setEditSessionTitle] = useState('');
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const user = React.useMemo(() => {
@@ -147,6 +151,46 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
             });
         } catch (err) {
             console.error("Failed to sync chat history", err);
+        }
+    };
+
+    const handleRenameSession = async (sessionId: string) => {
+        if (!editSessionTitle.trim() || !user) {
+            setEditingSessionId(null);
+            return;
+        }
+        
+        const updatedHistory = chatHistory.map(s => s.id === sessionId ? { ...s, title: editSessionTitle } : s);
+        setChatHistory(updatedHistory);
+        setEditingSessionId(null);
+        
+        try {
+            await apiFetch(`/api/ai/chat-history/${sessionId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id, title: editSessionTitle })
+            });
+        } catch (err) {
+            console.error("Failed to rename session", err);
+        }
+    };
+
+    const handleDeleteSession = async (sessionId: string) => {
+        if (!user) return;
+        
+        const updatedHistory = chatHistory.filter(s => s.id !== sessionId);
+        setChatHistory(updatedHistory);
+        
+        if (activeSessionId === sessionId) {
+            startNewChat();
+        }
+        
+        try {
+            await apiFetch(`/api/ai/chat-history/${sessionId}?userId=${user.id}`, {
+                method: 'DELETE'
+            });
+        } catch (err) {
+            console.error("Failed to delete session", err);
         }
     };
 
@@ -296,18 +340,56 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
                     </div>
                     <div className="p-2 space-y-1">
                         {chatHistory.length > 0 ? chatHistory.map(session => (
-                            <button 
+                            <div 
                                 key={session.id}
-                                onClick={() => {
-                                    setActiveSessionId(session.id);
-                                    setMessages(session.messages);
-                                    setIsHistoryVisible(false);
-                                }}
-                                className={`w-full text-left p-3 rounded-lg transition-colors text-sm ${activeSessionId === session.id ? 'bg-emerald-50 border border-emerald-100 text-emerald-800 font-medium' : 'hover:bg-slate-50 text-slate-600 border border-transparent'}`}
+                                className={`w-full text-left p-3 rounded-lg transition-colors text-sm group relative ${activeSessionId === session.id ? 'bg-emerald-50 border border-emerald-100 text-emerald-800 font-medium' : 'hover:bg-slate-50 text-slate-600 border border-transparent'}`}
                             >
-                                <div className="truncate mb-1 font-medium">{session.title}</div>
+                                {editingSessionId === session.id ? (
+                                    <input 
+                                        type="text" 
+                                        value={editSessionTitle}
+                                        onChange={(e) => setEditSessionTitle(e.target.value)}
+                                        onBlur={() => handleRenameSession(session.id)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleRenameSession(session.id);
+                                            if (e.key === 'Escape') setEditingSessionId(null);
+                                        }}
+                                        className="w-full text-sm p-1 border border-emerald-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500/20 bg-white"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <div 
+                                        className="truncate mb-1 pr-16 cursor-pointer font-medium"
+                                        onClick={() => {
+                                            setActiveSessionId(session.id);
+                                            setMessages(session.messages);
+                                            setIsHistoryVisible(false);
+                                        }}
+                                    >
+                                        {session.title}
+                                    </div>
+                                )}
                                 <div className="text-[10px] text-slate-400 font-normal">{new Date(session.updatedAt).toLocaleString()}</div>
-                            </button>
+                                
+                                {editingSessionId !== session.id && (
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setEditSessionTitle(session.title || ''); setEditingSessionId(session.id); }} 
+                                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded" 
+                                            title="Rename"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }} 
+                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded" 
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )) : (
                             <div className="p-4 text-center text-slate-500 text-sm">No previous conversations for this topic.</div>
                         )}
