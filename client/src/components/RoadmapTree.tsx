@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Target,
@@ -12,7 +12,12 @@ import {
   ZoomIn,
   ZoomOut,
   Plus,
-  RefreshCw
+  RefreshCw,
+  Search,
+  X,
+  PlayCircle,
+  ChevronRight,
+  Info
 } from "lucide-react";
 import { apiFetch } from '../utils/apiFetch';
 
@@ -54,15 +59,22 @@ interface RoadmapPhase {
 export default function RoadmapTree() {
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
   
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [zoom, setZoom] = useState(0.75);
 
+  const _rawRole: string = location.state?.role || searchParams.get('role') || "Software Engineer";
+  const selectedRole: string = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+
   // Get real-time AI roadmap data passed via location
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>(location.state?.roadmap || []);
-  const _rawRole: string = location.state?.role || "Software Engineer";
-  const selectedRole: string = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+  const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
+
+  const [searchQuery, setSearchQuery] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [selectedNode, setSelectedNode] = useState<any>(null);
 
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -77,14 +89,147 @@ export default function RoadmapTree() {
           return prev + 10; // fast loading chunks
         });
       }, 50); // fast 50ms intervals
-      
-      setTimeout(() => {
+    }
+
+    const loadData = async () => {
+      try {
+        const userStr = sessionStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        
+        // Progress
+        if (user) {
+          const res = await apiFetch(`/api/role/progress?role=${encodeURIComponent(selectedRole)}&userId=${user.id}`);
+          const data = await res.json();
+          if (data.success && Array.isArray(data.completedTopics)) {
+            setCompletedTopics(new Set(data.completedTopics));
+          }
+        }
+
+        // Roadmap
+        if (!roadmap || roadmap.length === 0) {
+          let loadedRoadmap = null;
+          const saved = sessionStorage.getItem('lastRoleAnalysis');
+          if (saved) {
+            try {
+              const parsed = JSON.parse(saved);
+              if (parsed.role === selectedRole && parsed.analysis?.roadmap) {
+                loadedRoadmap = parsed.analysis.roadmap;
+              }
+            } catch(e) {}
+          }
+
+          if (loadedRoadmap) {
+            setRoadmap(loadedRoadmap);
+          } else {
+             const response = await apiFetch('/api/role/analyze', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ role: selectedRole, userId: user?.id || null })
+             });
+             if (response.ok) {
+                 const data = await response.json();
+                 if (data.data && data.data.roadmap) {
+                     setRoadmap(data.data.roadmap);
+                     sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
+                         role: selectedRole,
+                         analysis: data.data,
+                         timestamp: new Date().getTime()
+                     }));
+                 }
+             }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch roadmap", err);
+      } finally {
+        clearInterval(interval!);
         setIsLoading(false);
         setLoadingProgress(100);
-      }, 600);
-    }
-    return () => clearInterval(interval);
-  }, [isLoading]);
+      }
+    };
+
+    loadData();
+
+    return () => {
+        if(interval) clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRole]);
+
+  // Search Logic
+  const allNodes = useMemo(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const nodes: any[] = [];
+      roadmap.forEach((phase, pIdx) => {
+          const pTitle = phase.title || phase.phase || `Phase ${pIdx + 1}`;
+          nodes.push({ id: `phase-${pIdx}`, phase: pTitle, name: pTitle, type: 'phase', refId: `phase-${pIdx}` });
+
+          const skillsList = phase.skills?.length ? phase.skills : (phase.topics || []);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          skillsList.forEach((skill: any, sIdx: number) => {
+              const name = typeof skill === 'string' ? skill : (skill.name || '');
+              const desc = typeof skill === 'string' ? '' : (skill.description || '');
+              const sId = typeof skill === 'string' ? undefined : skill.id;
+              const subtopics = typeof skill === 'string' ? [] : (skill.subtopics || []);
+              
+              const isCompleted = (sId && completedTopics.has(sId)) || completedTopics.has(name);
+              
+              const topicNodeId = `topic-${pIdx}-${sIdx}`;
+              nodes.push({ 
+                  id: topicNodeId, phase: pTitle, name, description: desc, 
+                  type: 'topic', subtopics, isCompleted, topicId: sId, refId: topicNodeId,
+                  originalData: skill
+              });
+
+              subtopics.forEach((sub: string, subIdx: number) => {
+                  const subNodeId = `subtopic-${pIdx}-${sIdx}-${subIdx}`;
+                  nodes.push({
+                      id: subNodeId, phase: pTitle, parentTopic: name, name: sub, type: 'subtopic', 
+                      isCompleted: false, refId: topicNodeId // subtopics scroll to their parent topic
+                  });
+              });
+          });
+      });
+      return nodes;
+  }, [roadmap, completedTopics]);
+
+  const searchResults = useMemo(() => {
+      if (!searchQuery.trim()) return [];
+      const query = searchQuery.toLowerCase();
+      return allNodes.filter(n => 
+          n.name.toLowerCase().includes(query) || 
+          (n.description && n.description.toLowerCase().includes(query))
+      );
+  }, [searchQuery, allNodes]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleSelectNode = (node: any) => {
+      setSelectedNode(node);
+      setSearchQuery("");
+      const el = document.getElementById(node.refId);
+      if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+  };
+
+  const handleOpenLesson = () => {
+      if (!selectedNode) return;
+      const topicName = selectedNode.type === 'subtopic' ? selectedNode.parentTopic : selectedNode.name;
+      const subtopicName = selectedNode.type === 'subtopic' ? selectedNode.name : undefined;
+      const topicId = selectedNode.type === 'topic' ? selectedNode.topicId : undefined;
+      const subtopics = selectedNode.type === 'topic' ? selectedNode.subtopics : null;
+
+      navigate("/roadmap-guide", { 
+          state: { 
+              role: selectedRole, 
+              topicName: subtopicName || topicName, 
+              topicId: topicId, 
+              subtopics: subtopics, 
+              parentTopicName: subtopicName ? topicName : undefined,
+              roadmap 
+          } 
+      });
+  };
 
   const handleConfirmRoadmap = () => {
     // Navigate back to the flowchart version of learning roadmap
@@ -188,6 +333,62 @@ export default function RoadmapTree() {
         <span className="font-semibold text-slate-700 pr-1 hidden sm:inline">Back</span>
       </button>
 
+      {/* Search Bar */}
+      <div className="fixed top-4 sm:top-8 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-16 sm:px-0">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-slate-400" />
+          </div>
+          <input
+            type="text"
+            className="w-full pl-10 pr-10 py-2.5 bg-white/90 backdrop-blur-md border border-slate-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-slate-700 placeholder-slate-400"
+            placeholder="Search this roadmap..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Search Results */}
+          {searchQuery && (
+            <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-[60vh] overflow-y-auto">
+              {searchResults.length === 0 ? (
+                <div className="p-4 text-center text-sm text-slate-500">No matching nodes found.</div>
+              ) : (
+                <div className="py-2">
+                  <div className="px-3 pb-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                    {searchResults.length} Match{searchResults.length !== 1 ? 'es' : ''}
+                  </div>
+                  {searchResults.map((res, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSelectNode(res)}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors border-l-2 border-transparent hover:border-emerald-500 focus:bg-slate-50 focus:outline-none"
+                    >
+                      <div className="flex items-center gap-2">
+                        {res.type === 'phase' && <Target className="w-4 h-4 text-slate-400" />}
+                        {res.type === 'topic' && <BookOpen className="w-4 h-4 text-emerald-500" />}
+                        {res.type === 'subtopic' && <ChevronRight className="w-4 h-4 text-amber-500" />}
+                        <span className="font-semibold text-sm text-slate-700 line-clamp-1">{res.name}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-medium ml-6 mt-0.5">
+                        {res.type === 'subtopic' ? `In ${res.parentTopic}` : res.phase}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Zoom Controls */}
       <div className="fixed top-20 sm:top-24 right-4 sm:right-6 z-40 flex flex-col gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 shadow-sm shadow-slate-200">
         <button 
@@ -267,9 +468,10 @@ export default function RoadmapTree() {
               const pDuration = phase.duration || "Self-paced";
               
               // Extract data correctly from AI format
-              const skillsList = phase.skills?.length 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const skillsList: any[] = phase.skills?.length 
                  ? phase.skills 
-                 : (phase.topics?.map(t => typeof t === 'string' ? t : t.name) || []);
+                 : (phase.topics || []);
                  
               const milestonesList = phase.milestones?.length
                  ? phase.milestones
@@ -278,7 +480,7 @@ export default function RoadmapTree() {
               const projectsList = phase.projects?.map(p => typeof p === 'string' ? p : (p.name || p.title || 'Project')) || [];
 
               return (
-                <div key={phaseIndex} className="mb-8 relative z-10">
+                <div key={phaseIndex} id={`phase-${phaseIndex}`} className="mb-8 relative z-10">
                   {/* Phase Header */}
                   <div className="flex items-center gap-4 mb-4 relative">
                     {/* Circle Node overlapping the continuous line */}
@@ -307,14 +509,30 @@ export default function RoadmapTree() {
                           Skills to Master
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                          {skillsList.map((skill, idx) => (
-                            <div
-                              key={idx}
-                              className="px-3 py-1.5 bg-gradient-to-br from-amber-50 to-white border border-amber-200 rounded-lg text-xs font-bold text-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer shadow-sm"
-                            >
-                              {skill}
-                            </div>
-                          ))}
+                          {skillsList.map((skill, idx) => {
+                            const name = typeof skill === 'string' ? skill : (skill.name || '');
+                            const desc = typeof skill === 'string' ? '' : (skill.description || '');
+                            const subtopics = typeof skill === 'string' ? [] : (skill.subtopics || []);
+                            const sId = typeof skill === 'string' ? undefined : skill.id;
+                            const isCompleted = (sId && completedTopics.has(sId)) || completedTopics.has(name);
+                            const topicNodeId = `topic-${phaseIndex}-${idx}`;
+                            const isSelected = selectedNode?.refId === topicNodeId;
+
+                            return (
+                              <div
+                                key={idx}
+                                id={topicNodeId}
+                                onClick={() => handleSelectNode({ id: topicNodeId, phase: pTitle, name, description: desc, type: 'topic', subtopics, isCompleted, topicId: sId, refId: topicNodeId })}
+                                className={`px-3 py-1.5 border rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm flex items-center gap-1.5
+                                  ${isSelected ? 'bg-emerald-100 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/50' : 
+                                    isCompleted ? 'bg-emerald-50/50 border-emerald-200 text-emerald-700 hover:bg-emerald-50' : 
+                                    'bg-gradient-to-br from-amber-50 to-white border-amber-200 text-slate-800 hover:shadow-lg hover:-translate-y-1'}`}
+                              >
+                                {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                                {name}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -392,6 +610,73 @@ export default function RoadmapTree() {
           </button>
         </div>
       </div>
+
+      {/* Details Panel */}
+      {selectedNode && (
+        <div className="fixed top-24 sm:top-20 bottom-4 right-4 sm:right-6 w-[calc(100%-2rem)] sm:w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col translate-x-0 transition-transform duration-300">
+          <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-emerald-600" />
+              <span className="font-bold text-slate-700 text-sm">Node Details</span>
+            </div>
+            <button 
+              onClick={() => setSelectedNode(null)}
+              className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="p-5 overflow-y-auto flex-1">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{selectedNode.phase}</div>
+            <h3 className="text-lg font-black text-slate-900 mb-3">{selectedNode.name}</h3>
+            
+            {selectedNode.type === 'subtopic' && (
+              <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 rounded-md text-xs font-semibold text-slate-600">
+                <ChevronRight className="w-3.5 h-3.5" />
+                Subtopic of {selectedNode.parentTopic}
+              </div>
+            )}
+
+            {selectedNode.isCompleted && (
+              <div className="mb-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-bold border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Completed
+              </div>
+            )}
+
+            {selectedNode.description ? (
+              <p className="text-sm text-slate-600 leading-relaxed mb-6">{selectedNode.description}</p>
+            ) : (
+              <p className="text-sm text-slate-400 italic mb-6">No description available.</p>
+            )}
+
+            {selectedNode.type === 'topic' && selectedNode.subtopics && selectedNode.subtopics.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-xs font-bold text-slate-900 mb-2">Subtopics ({selectedNode.subtopics.length})</h4>
+                <ul className="space-y-1">
+                  {selectedNode.subtopics.map((sub: string, i: number) => (
+                    <li key={i} className="text-sm text-slate-600 flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300 mt-1.5 shrink-0" />
+                      <span>{sub}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+            <button 
+              onClick={handleOpenLesson}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+            >
+              <PlayCircle className="w-4 h-4" />
+              {selectedNode.type === 'subtopic' ? 'Open Topic Lesson' : 'Open Lesson'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Custom Phase Modal */}
       {isAddingCustom && (

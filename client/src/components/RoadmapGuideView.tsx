@@ -59,8 +59,10 @@ export default function RoadmapGuideView() {
       topicId: "unknown-id",
       subtopics: [],
       roadmap: [],
-      parentTopicName: undefined
+      parentTopicName: undefined,
+      returnTo: '/roadmap'
   };
+  const returnTo = location.state?.returnTo || '/roadmap';
 
   const [currentTopic, setCurrentTopic] = useState({
       name: initialTopicName,
@@ -247,7 +249,7 @@ export default function RoadmapGuideView() {
               // Proceed
               setTimeout(() => {
                   if (nextTopic) handleTopicNav(nextTopic);
-                  else navigate('/roadmap', { state: { role, roadmap } });
+                  else navigate(returnTo + `?role=${encodeURIComponent(role)}`, { state: { role, roadmap } });
               }, 600);
           }
       } catch (error) {
@@ -265,7 +267,7 @@ export default function RoadmapGuideView() {
         <div className="px-4 md:px-6 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 overflow-hidden">
             <button 
-                onClick={() => navigate('/roadmap', { state: { role, roadmap } })} 
+                onClick={() => navigate(returnTo + `?role=${encodeURIComponent(role)}`, { state: { role, roadmap } })} 
                 className="flex items-center gap-2 p-2 -ml-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors font-medium whitespace-nowrap"
             >
               <ArrowLeft className="w-5 h-5" />

@@ -635,7 +635,7 @@ export default function LearningRoadmap() {
                             }
                         }}
                         onCustom={() => alert("Feature moved to backend generation logic or view tree. See implementation.")}
-                        onTree={() => navigate("/roadmap-tree", { state: { role, roadmap } })}
+                        onTree={() => navigate(`/roadmap-tree?role=${encodeURIComponent(role)}`, { state: { role, roadmap } })}
                         onResources={() => navigate("/resources")}
                     />
 
