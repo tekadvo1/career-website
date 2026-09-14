@@ -73,7 +73,7 @@ export default function RoadmapGuideView() {
   const [isLoading, setIsLoading] = useState(true);
   const [guideContent, setGuideContent] = useState("");
   const [error, setError] = useState(false);
-  const [isAiOpen, setIsAiOpen] = useState(false); // AI panel hidden by default to maximize reading width
+  const [aiLayout, setAiLayout] = useState<'hidden'|'normal'|'maximized'>('hidden'); // AI panel hidden by default to maximize reading width
   
   // Progress State
   const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
@@ -286,10 +286,10 @@ export default function RoadmapGuideView() {
                  )}
              </div>
              <button 
-                onClick={() => setIsAiOpen(!isAiOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-colors border ${isAiOpen ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'}`}
+                onClick={() => setAiLayout(aiLayout !== 'hidden' ? 'hidden' : 'normal')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium text-sm transition-colors border ${aiLayout !== 'hidden' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'}`}
              >
-                {isAiOpen ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+                {aiLayout !== 'hidden' ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
                 <span className="hidden sm:inline">AI Tutor</span>
              </button>
           </div>
@@ -443,22 +443,23 @@ export default function RoadmapGuideView() {
 
           {/* Right Sidebar (AI Tutor) */}
           <div className={`
-              absolute lg:static inset-y-0 right-0 z-20 w-full sm:w-96 bg-slate-900 transform transition-transform duration-300 ease-in-out flex flex-col border-l border-slate-800 shadow-2xl lg:shadow-none
-              ${isAiOpen ? 'translate-x-0' : 'translate-x-full lg:hidden hidden'}
+              absolute lg:static inset-y-0 right-0 z-20 bg-white transform transition-all duration-300 ease-in-out flex flex-col border-l border-slate-200 shadow-2xl lg:shadow-none overflow-hidden
+              ${aiLayout === 'maximized' ? 'w-full translate-x-0' : aiLayout === 'normal' ? 'w-full sm:w-[400px] xl:w-[450px] translate-x-0' : 'w-full sm:w-[400px] xl:w-[450px] translate-x-full lg:hidden hidden'}
           `}>
               <AIChatAssistant 
-                 key={currentTopic.id || currentTopic.name}
-                 isOpen={true} 
-                 onClose={() => setIsAiOpen(false)} 
+                 isOpen={aiLayout !== 'hidden'} 
+                 onClose={() => setAiLayout('hidden')}
+                 aiLayout={aiLayout}
+                 setAiLayout={setAiLayout} 
                  context={{ 
                      type: 'roadmap',
                      topicName: currentTopic.name,
+                     topicId: currentTopic.id,
+                     subtopicName: currentTopic.isSubtopic ? currentTopic.name : undefined,
                      guideContent: guideContent,
                      currentTask: `The user is studying: ${currentTopic.name}. You are their AI tutor for this specific topic. Use the lesson guide as your context.` 
                  }}  
                  role={role} 
-                 isEmbedded={true}
-                 initialQuery={""}
               />
           </div>
 

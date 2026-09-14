@@ -1,11 +1,25 @@
+import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '../../utils/apiFetch';
-import { useState, useEffect } from 'react';
-import { Bot, X, Sparkles, MessageSquare } from 'lucide-react';
+import { 
+    Bot, X, Sparkles, Plus, History, Loader2, 
+    Zap, Copy, Check, SendHorizontal, Maximize2, Minimize2, ArrowRight
+} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
+    timestamp: string;
+}
+
+interface ChatSession {
+    id: string;
+    title: string;
+    messages: ChatMessage[];
+    updatedAt: string;
+    topicId?: string;
+    topicName?: string;
 }
 
 interface AIChatAssistantProps {
@@ -13,232 +27,439 @@ interface AIChatAssistantProps {
     onClose: () => void;
     context: any;
     role: string;
-    initialQuery?: string;
+    aiLayout?: 'hidden'|'normal'|'maximized';
+    setAiLayout?: (layout: 'hidden'|'normal'|'maximized') => void;
 }
 
-export default function AIChatAssistant({ isOpen, onClose, context, role, isEmbedded = false, initialQuery }: AIChatAssistantProps & { isEmbedded?: boolean }) {
-    const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-        if (context && context.topicName) {
-            const saved = localStorage.getItem(`ai_chat_${context.topicName}`);
-            if (saved) return JSON.parse(saved);
-        }
-        return [];
-    });
-    const [chatInput, setChatInput] = useState('');
-    const [isChatLoading, setIsChatLoading] = useState(false);
-    const [hasSentInitial, setHasSentInitial] = useState(chatMessages.length > 0);
+export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayout, setAiLayout }: AIChatAssistantProps) {
+    const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [inputMessage, setInputMessage] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    
+    const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+    const [chatLoadingState, setChatLoadingState] = useState<'idle'|'loading'|'success'|'error'>('idle');
+    const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-    // Save to localStorage whenever messages change
-    useEffect(() => {
-        if (context && context.topicName && chatMessages.length > 0) {
-            localStorage.setItem(`ai_chat_${context.topicName}`, JSON.stringify(chatMessages));
-        }
-    }, [chatMessages, context]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const user = React.useMemo(() => {
+        const u = sessionStorage.getItem('user');
+        return u ? JSON.parse(u) : null;
+    }, []);
 
-    // Initial greeting or query handling
+    // Scroll to bottom
     useEffect(() => {
-        if (isOpen && context && !hasSentInitial) {
-            if (initialQuery) {
-                handleSendChat(initialQuery);
-                setHasSentInitial(true);
-            } else if (chatMessages.length === 0) {
-                 setChatMessages([
-                    { id: '1', role: 'assistant', content: `Hi! I see you have a question about: "${context.currentTask || 'this project'}".\n\nHow can I help you understand this better?` }
-                ]);
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isTyping]);
+
+    // Load Chat History
+    useEffect(() => {
+        if (!isOpen || !user || !context?.topicName) return;
+        if (chatLoadingState === 'loading' || chatLoadingState === 'success') return;
+
+        const loadHistory = async () => {
+            setChatLoadingState('loading');
+            try {
+                const queryParams = new URLSearchParams({
+                    userId: user.id.toString(),
+                    role: role || 'Software Engineer'
+                });
+                
+                if (context.topicId) {
+                    queryParams.append('topicId', context.topicId.toString());
+                } else if (context.topicName) {
+                    // Fallback to topic name if no id, but ideally we use topicId
+                    queryParams.append('topicId', context.topicName); // Hack: Since we fallback to topic_id match, we can just pass name as topicId if needed. But it's better to rely on topic_id if possible.
+                }
+                
+                const res = await apiFetch(`/api/ai/chat-history?${queryParams.toString()}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    const loadedHistory: ChatSession[] = data.history || [];
+                    // Filter history manually by topicName if the backend didn't use topicId
+                    const filtered = context.topicId ? loadedHistory : loadedHistory.filter(s => s.topicName === context.topicName);
+                    
+                    setChatHistory(filtered);
+                    
+                    if (filtered.length > 0) {
+                        const mostRecent = filtered[0];
+                        setActiveSessionId(mostRecent.id);
+                        setMessages(mostRecent.messages);
+                    } else {
+                        startNewChat();
+                    }
+                    setChatLoadingState('success');
+                } else {
+                    setChatLoadingState('error');
+                }
+            } catch (err) {
+                console.error("Failed to load chat history", err);
+                setChatLoadingState('error');
             }
-        }
-    }, [context, isOpen, initialQuery, hasSentInitial]);
+        };
 
-    const handleSendChat = async (manualMessage?: string) => {
-        const messageToSend = manualMessage || chatInput;
-        if (!messageToSend.trim()) return;
+        loadHistory();
+    }, [isOpen, user, context, role, chatLoadingState]);
+
+    // Reset state on topic switch
+    useEffect(() => {
+        setChatLoadingState('idle');
+    }, [context?.topicId, context?.topicName]);
+
+    const startNewChat = () => {
+        setActiveSessionId(null);
+        setMessages([]);
+        setIsHistoryVisible(false);
+    };
+
+    const syncChatHistoryToDB = async (sessionId: string, updatedMessages: ChatMessage[]) => {
+        if (!user) return;
         
-        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: messageToSend };
-        setChatMessages(prev => [...prev, userMsg]);
-        setChatInput('');
-        setIsChatLoading(true);
+        const title = updatedMessages.length > 1 && updatedMessages[0].role === 'user' 
+            ? updatedMessages[0].content.substring(0, 30) + '...'
+            : 'Roadmap Chat';
 
+        const newSession: ChatSession = {
+            id: sessionId,
+            title,
+            messages: updatedMessages,
+            updatedAt: new Date().toISOString(),
+            topicId: context.topicId,
+            topicName: context.topicName
+        };
+        
+        const updatedHistory = [...chatHistory.filter(s => s.id !== sessionId), newSession].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        setChatHistory(updatedHistory);
+        
         try {
-            const response = await apiFetch('/api/ai/chat', {
+            await apiFetch('/api/ai/chat-history', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: userMsg.content,
-                    context: context,
-                    role: role,
-                    conversationHistory: chatMessages
+                body: JSON.stringify({ 
+                    userId: user.id, 
+                    role, 
+                    topicId: context.topicId,
+                    topicName: context.topicName,
+                    chatHistory: [newSession] 
                 })
             });
-
-            const data = await response.json();
-            
-            if (response.ok) {
-                setChatMessages(prev => [...prev, {
-                    id: (Date.now()+1).toString(),
-                    role: 'assistant',
-                    content: data.reply
-                }]);
-            } else {
-                throw new Error(data.error || 'Failed to get response');
-            }
-        } catch (error) {
-            console.error('Chat error:', error);
-            setChatMessages(prev => [...prev, {
-                id: (Date.now()+1).toString(),
-                role: 'assistant',
-                content: "I'm having trouble connecting right now. Please try again."
-            }]);
-        } finally {
-            setIsChatLoading(false);
+        } catch (err) {
+            console.error("Failed to sync chat history", err);
         }
     };
 
-    if (!isOpen && !isEmbedded) return null;
+    const handleSendMessage = async (customMessage?: string) => {
+        const msgToSend = customMessage || inputMessage;
+        if (!msgToSend.trim() || !user) return;
 
-    if (isEmbedded) {
-        return (
-            <div className="flex flex-col h-full bg-gray-900 border-l border-gray-800">
-                <div className="p-4 border-b border-gray-800 bg-gray-900 flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <div className="bg-indigo-500/10 p-1.5 rounded-lg">
-                            <Bot className="w-4 h-4 text-indigo-400" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-sm text-white">AI Copilot</h3>
-                            <p className="text-[10px] text-gray-500">Context-aware assistant</p>
-                        </div>
-                    </div>
-                </div>
+        const userMessage: ChatMessage = {
+            id: Date.now().toString(), role: "user", content: msgToSend, timestamp: new Date().toISOString(),
+        };
+
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
+        if (!customMessage) setInputMessage("");
+        setIsTyping(true);
+
+        const sessionIdToUse = activeSessionId || `session_${Date.now()}`;
+        if (!activeSessionId) setActiveSessionId(sessionIdToUse);
+
+        syncChatHistoryToDB(sessionIdToUse, newMessages);
+
+        try {
+            const res = await apiFetch('/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: msgToSend,
+                    context: {
+                        ...context,
+                        type: 'roadmap',
+                    },
+                    role: role || 'Software Engineer',
+                    stream: true,
+                    conversationHistory: newMessages.map(m => ({ role: m.role, content: m.content }))
+                })
+            });
+            
+            if (!res.body) throw new Error("No body");
+            
+            const aiMessageId = (Date.now() + 1).toString();
+            let aiContent = "";
+            
+            setMessages(prev => [...prev, {
+                id: aiMessageId, role: "assistant" as const, content: "", timestamp: new Date().toISOString()
+            }]);
+            
+            setIsTyping(false);
+            
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
                 
-                <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800">
-                        {context && (
-                            <div className="bg-indigo-900/20 border border-indigo-500/20 p-3 rounded-lg text-xs text-indigo-300 mb-4 flex items-start gap-2">
-                                <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-indigo-400" />
-                                <div className="space-y-1">
-                                    <p className="font-bold text-indigo-200">Current Scope:</p>
-                                    <p className="opacity-80 line-clamp-2">{context.currentTask || context}</p>
-                                </div>
-                            </div>
-                        )}
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                        try {
+                            const data = JSON.parse(line.slice(5));
+                            if (data.content) {
+                                aiContent += data.content;
+                                setMessages(prev => prev.map(m => 
+                                    m.id === aiMessageId ? { ...m, content: aiContent } : m
+                                ));
+                            }
+                        } catch (e) {
+                            console.error("Error parsing stream chunk", e);
+                        }
+                    }
+                }
+            }
+            
+            const finalMessages = [...newMessages, {
+                id: aiMessageId, role: "assistant" as const, content: aiContent, timestamp: new Date().toISOString()
+            }];
+            syncChatHistoryToDB(sessionIdToUse, finalMessages);
 
-                        {chatMessages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[90%] p-3 rounded-2xl text-sm leading-relaxed ${
-                                    msg.role === 'user' 
-                                    ? 'bg-indigo-600 text-white rounded-tr-none' 
-                                    : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-none'
-                                }`}>
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
-                                </div>
-                            </div>
-                        ))}
-                        {isChatLoading && (
-                             <div className="flex justify-start">
-                                <div className="bg-gray-800 border border-gray-700 p-3 rounded-2xl rounded-tl-none flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce" />
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-75" />
-                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-150" />
-                                </div>
-                            </div>
-                        )}
-                </div>
+        } catch (error) {
+            console.error("Chat error:", error);
+            setIsTyping(false);
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(), role: "assistant" as const, content: "Sorry, I'm having trouble connecting right now. Please try again.", timestamp: new Date().toISOString()
+            }]);
+        }
+    };
 
-                <div className="p-3 border-t border-gray-800 bg-gray-900">
-                    <div className="flex gap-2 items-center bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 focus-within:ring-2 focus-within:ring-indigo-500/40 focus-within:border-indigo-500 transition-all">
-                        <input 
-                            type="text" 
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                            placeholder="Ask Copilot..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-200 placeholder:text-gray-500"
-                        />
-                        <button 
-                            onClick={() => handleSendChat()}
-                            disabled={!chatInput.trim()}
-                            className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] h-[600px] animate-in zoom-in-95 duration-200">
-                <div className="p-4 bg-indigo-600 text-white flex items-center justify-between shadow-md z-10">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-white/20 p-1.5 rounded-lg">
-                            <Bot className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-sm">AI Learning Assistant</h3>
-                            <p className="text-xs text-indigo-100 opacity-90">Here to help with your roadmap</p>
-                        </div>
+        <div className="flex flex-col h-full bg-white relative">
+            {/* Header */}
+            <div className="flex-shrink-0 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between z-10 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center border border-emerald-100">
+                        <Bot className="w-5 h-5 text-emerald-600" />
                     </div>
+                    <div>
+                        <h3 className="font-bold text-slate-800 text-sm leading-tight">AI Tutor</h3>
+                        <p className="text-[11px] text-slate-500 font-medium truncate max-w-[150px]">{context?.topicName || 'Roadmap'}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={() => setIsHistoryVisible(!isHistoryVisible)} 
+                        className={`p-1.5 rounded-md transition-colors ${isHistoryVisible ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-50'}`}
+                        title="Chat History"
+                    >
+                        <History className="w-4 h-4" />
+                    </button>
+                    <button 
+                        onClick={startNewChat} 
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-md transition-colors"
+                        title="New Chat"
+                    >
+                        <Plus className="w-4 h-4" />
+                    </button>
+                    {setAiLayout && (
+                        <button 
+                            onClick={() => setAiLayout(aiLayout === 'maximized' ? 'normal' : 'maximized')} 
+                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-md transition-colors hidden sm:block"
+                            title={aiLayout === 'maximized' ? "Restore" : "Maximize"}
+                        >
+                            {aiLayout === 'maximized' ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                        </button>
+                    )}
                     <button 
                         onClick={onClose} 
-                        className="p-1.5 hover:bg-white/20 rounded-full transition-colors text-white/90 hover:text-white"
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-md transition-colors"
+                        title="Close Tutor"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
-                
-                <div className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-4">
-                        {context && (
-                            <div className="bg-indigo-50 border border-indigo-100 p-2 rounded-lg text-xs text-indigo-800 mb-2 flex items-start gap-2">
-                                <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                <p className="line-clamp-2"><strong>Context:</strong> {context}</p>
-                            </div>
-                        )}
+            </div>
 
-                        {chatMessages.map(msg => (
-                            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
-                                    msg.role === 'user' 
-                                    ? 'bg-indigo-600 text-white rounded-tr-none shadow-sm' 
-                                    : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none shadow-sm'
-                                }`}>
-                                    <p className="whitespace-pre-wrap">{msg.content}</p>
+            {/* History Panel Overlay */}
+            {isHistoryVisible && (
+                <div className="absolute inset-0 top-[57px] bg-white z-20 overflow-y-auto border-r border-slate-200 shadow-xl">
+                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h4 className="font-bold text-slate-700 text-sm">Conversation History</h4>
+                        <button onClick={() => setIsHistoryVisible(false)} className="text-slate-400 hover:text-slate-600">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <div className="p-2 space-y-1">
+                        {chatHistory.length > 0 ? chatHistory.map(session => (
+                            <button 
+                                key={session.id}
+                                onClick={() => {
+                                    setActiveSessionId(session.id);
+                                    setMessages(session.messages);
+                                    setIsHistoryVisible(false);
+                                }}
+                                className={`w-full text-left p-3 rounded-lg transition-colors text-sm ${activeSessionId === session.id ? 'bg-emerald-50 border border-emerald-100 text-emerald-800 font-medium' : 'hover:bg-slate-50 text-slate-600 border border-transparent'}`}
+                            >
+                                <div className="truncate mb-1 font-medium">{session.title}</div>
+                                <div className="text-[10px] text-slate-400 font-normal">{new Date(session.updatedAt).toLocaleString()}</div>
+                            </button>
+                        )) : (
+                            <div className="p-4 text-center text-slate-500 text-sm">No previous conversations for this topic.</div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+                {chatLoadingState === 'loading' ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin text-emerald-600 mb-2" />
+                        <p className="text-xs font-medium">Loading session...</p>
+                    </div>
+                ) : chatLoadingState === 'error' ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                        <Zap className="w-8 h-8 text-rose-500 mb-2 opacity-50" />
+                        <p className="text-sm mb-4">Failed to load chat history.</p>
+                        <button onClick={() => setChatLoadingState('idle')} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition-colors">Retry</button>
+                    </div>
+                ) : messages.length === 0 ? (
+                    <div className="h-full flex flex-col justify-center pb-10">
+                        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm text-center">
+                            <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <Sparkles className="w-6 h-6 text-emerald-600" />
+                            </div>
+                            <h4 className="font-bold text-slate-800 text-base mb-2">Need help with {context?.topicName}?</h4>
+                            <p className="text-sm text-slate-500 mb-5">Your AI Tutor is ready to explain concepts, provide examples, or unblock you.</p>
+                            
+                            <div className="flex flex-col gap-2">
+                                <button onClick={() => handleSendMessage("Can you explain this topic simply?")} className="text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-colors flex items-center justify-between group">
+                                    Explain this simply
+                                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                                </button>
+                                <button onClick={() => handleSendMessage("Can you give me a practical example of this?")} className="text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-colors flex items-center justify-between group">
+                                    Give a practical example
+                                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                                </button>
+                                <button onClick={() => handleSendMessage("I'm stuck on an exercise for this topic. Can I get a hint?")} className="text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-colors flex items-center justify-between group">
+                                    I need a hint for an exercise
+                                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {messages.map((message) => (
+                            <div key={message.id} className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                                {message.role === "assistant" && (
+                                    <div className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 shadow-sm mt-1">
+                                        <Bot className="w-4 h-4 text-emerald-600" />
+                                    </div>
+                                )}
+                                <div className={`flex flex-col max-w-[88%] ${message.role === "user" ? "items-end" : "items-start"}`}>
+                                    <div className={`rounded-2xl p-4 text-[14px] leading-relaxed ${
+                                        message.role === "assistant"
+                                            ? "bg-white text-slate-800 border border-slate-200 rounded-tl-sm shadow-sm"
+                                            : "bg-emerald-600 text-white rounded-tr-sm shadow-sm"
+                                    }`}>
+                                        {message.role === "assistant" ? (
+                                            <div className="prose prose-sm max-w-none prose-emerald prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-headings:font-bold prose-headings:text-slate-800 prose-a:text-emerald-600 prose-code:text-slate-800 prose-code:bg-slate-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+                                                <ReactMarkdown
+                                                    components={{
+                                                        code({node, inline, className, children, ...props}: any) {
+                                                            const match = /language-(\w+)/.exec(className || '');
+                                                            const codeString = String(children).replace(/\n$/, '');
+                                                            
+                                                            if (!inline && match) {
+                                                                return (
+                                                                    <div className="relative group mt-3 mb-4 rounded-lg overflow-hidden bg-slate-900 border border-slate-800">
+                                                                        <div className="flex items-center justify-between px-3 py-1.5 bg-slate-800 border-b border-slate-700">
+                                                                            <span className="text-xs font-mono font-medium text-slate-400 uppercase tracking-wider">{match[1]}</span>
+                                                                            <button 
+                                                                                onClick={() => {
+                                                                                    navigator.clipboard.writeText(codeString);
+                                                                                    setCopiedCode(codeString);
+                                                                                    setTimeout(() => setCopiedCode(null), 2000);
+                                                                                }}
+                                                                                className="p-1.5 hover:bg-slate-700 rounded transition-colors"
+                                                                                title="Copy code"
+                                                                            >
+                                                                                {copiedCode === codeString ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400 group-hover:text-white" />}
+                                                                            </button>
+                                                                        </div>
+                                                                        <div className="p-3 overflow-x-auto text-[13px] leading-relaxed font-mono text-slate-50">
+                                                                            <code>{children}</code>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return <code className={className} {...props}>{children}</code>;
+                                                        }
+                                                    }}
+                                                >
+                                                    {message.content}
+                                                </ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            <div className="whitespace-pre-wrap">{message.content}</div>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] text-slate-400 mt-1 px-1">
+                                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
                             </div>
                         ))}
-                        {isChatLoading && (
-                            <div className="flex justify-start">
-                                <div className="bg-white border border-gray-100 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" />
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-75" />
-                                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce delay-150" />
+                        {isTyping && (
+                            <div className="flex gap-3 justify-start">
+                                <div className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 bg-white border border-slate-200 shadow-sm mt-1">
+                                    <Bot className="w-4 h-4 text-emerald-600" />
+                                </div>
+                                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm p-4 shadow-sm flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                                 </div>
                             </div>
                         )}
-                </div>
-
-                <div className="p-3 bg-white border-t border-gray-100">
-                    <div className="flex gap-2 items-center bg-gray-50 border border-gray-200 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-                        <input 
-                            type="text" 
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-                            placeholder="Type your question..."
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-gray-800 placeholder:text-gray-400"
-                            autoFocus
-                        />
-                        <button 
-                            onClick={() => handleSendChat()}
-                            disabled={!chatInput.trim()}
-                            className="p-1.5 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <MessageSquare className="w-4 h-4" />
-                        </button>
+                        <div ref={messagesEndRef} className="h-1" />
                     </div>
-                    <p className="text-[10px] text-center text-gray-400 mt-2">
-                        AI creates content. Check important info.
-                    </p>
+                )}
+            </div>
+
+            {/* Input Area */}
+            <div className="p-3 sm:p-4 bg-white border-t border-slate-200">
+                <div className="relative flex items-end shadow-sm border border-slate-300 rounded-xl bg-white focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+                    <textarea
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                            }
+                        }}
+                        placeholder="Ask your AI Tutor..."
+                        className="w-full max-h-32 min-h-[50px] p-3 pr-12 bg-transparent border-none focus:ring-0 resize-none text-sm text-slate-800 placeholder-slate-400"
+                        rows={1}
+                        style={{ height: inputMessage ? 'auto' : '50px' }}
+                    />
+                    <button
+                        onClick={() => handleSendMessage()}
+                        disabled={!inputMessage.trim() || isTyping}
+                        className="absolute right-2 bottom-2 p-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 text-white disabled:text-slate-400 rounded-lg transition-colors"
+                    >
+                        <SendHorizontal className="w-4 h-4" />
+                    </button>
+                </div>
+                <div className="text-center mt-2">
+                    <span className="text-[10px] text-slate-400">Do not include passwords, tokens, or sensitive data.</span>
                 </div>
             </div>
         </div>

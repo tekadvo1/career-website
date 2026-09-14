@@ -38,16 +38,29 @@ Your approach:
 
 Role: ${role || 'Software Engineer'}
 Current Topic: ${context.topicName}
+${context.subtopicName ? `Current Subtopic: ${context.subtopicName}` : ''}
 
 You must base your explanations and tutoring heavily on the following Lesson Guide that the user is currently reading.
 LESSON GUIDE CONTENT:
 ${context.guideContent || 'No specific guide available. Provide general guidance.'}
 
 Your approach:
-- Act as a supportive, highly knowledgeable tutor.
-- Don't just give away the answers; help the user think through problems.
-- Refer back to the lesson guide when clarifying concepts.
-- Use markdown, emojis, and be conversational but concise.`;
+- Answer the user’s question directly.
+- Explain unfamiliar terms. Use a small relevant example.
+- Suggest a practical next step when useful.
+- Ask a focused follow-up when essential context is missing.
+- For hints: Offer a useful clue before revealing a full solution. Allow the user to request more help.
+- For troubleshooting: State a likely cause with appropriate uncertainty. Suggest one diagnostic step. Explain a proposed fix. Explain how the user can check it.
+- Do not force every answer into a large fixed template.
+- Use markdown, emojis, and be conversational but concise.
+- Include a brief reminder near code/log inputs to exclude passwords, tokens, and secret connection strings.
+
+Honest feedback rules:
+- DO NOT claim you executed code without an actual integration.
+- DO NOT claim access to local files or the user’s computer.
+- DO NOT treat pasted output as independently verified.
+- DO NOT automatically complete topics or award XP.
+- DO NOT claim the user has mastered a skill based on a short chat. “Check my understanding” provides practice feedback, not a formal certification.`;
         } else {
             systemPrompt = `You are FindStreak AI — an expert career mentor and technical assistant specialising in ${role || 'Software Engineering'}.
 
@@ -220,21 +233,24 @@ router.post('/guide', checkAICredits, async (req, res) => {
 
 // GET /api/ai/chat-history - Sync user's previous chats from mobile/desktop
 router.get('/chat-history', async (req, res) => {
-    const { userId, role, projectId } = req.query;
+    const { userId, role, projectId, topicId } = req.query;
     if (!userId) {
         return res.status(400).json({ error: 'userId is required' });
     }
     const safeRole = role || 'General';
 
     try {
-        let queryStr = "SELECT id, title, messages, updated_at FROM chat_sessions WHERE user_id = $1 AND role = $2";
+        let queryStr = "SELECT id, title, messages, updated_at, topic_id, topic_name FROM chat_sessions WHERE user_id = $1 AND role = $2";
         let params = [userId, safeRole];
 
         if (projectId) {
-            queryStr += " AND project_id = $3";
+            queryStr += " AND project_id = $" + (params.length + 1);
             params.push(projectId);
+        } else if (topicId) {
+            queryStr += " AND topic_id = $" + (params.length + 1);
+            params.push(topicId);
         } else {
-            queryStr += " AND project_id IS NULL";
+            queryStr += " AND project_id IS NULL AND topic_id IS NULL";
         }
         
         queryStr += " ORDER BY updated_at DESC";
@@ -245,7 +261,9 @@ router.get('/chat-history', async (req, res) => {
             id: row.id,
             title: row.title,
             messages: typeof row.messages === 'string' ? JSON.parse(row.messages) : row.messages,
-            updatedAt: row.updated_at
+            updatedAt: row.updated_at,
+            topicId: row.topic_id,
+            topicName: row.topic_name
         }));
 
         res.json({ success: true, history });
@@ -257,7 +275,7 @@ router.get('/chat-history', async (req, res) => {
 
 // POST /api/ai/chat-history - Push changes from frontend client to persistent DB
 router.post('/chat-history', async (req, res) => {
-    const { userId, role, chatHistory, projectId } = req.body;
+    const { userId, role, chatHistory, projectId, topicId, topicName } = req.body;
     if (!userId || !Array.isArray(chatHistory)) {
         return res.status(400).json({ error: 'userId and chatHistory array are required' });
     }
@@ -272,10 +290,10 @@ router.post('/chat-history', async (req, res) => {
              const messagesObj = JSON.stringify(session.messages);
              const updatedAt = new Date(session.updatedAt || Date.now());
              await client.query(`
-                INSERT INTO chat_sessions (id, user_id, title, messages, updated_at, role, project_id) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7) 
-                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role, project_id = EXCLUDED.project_id
-             `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, safeRole, projectId || null]);
+                INSERT INTO chat_sessions (id, user_id, title, messages, updated_at, role, project_id, topic_id, topic_name) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role, project_id = EXCLUDED.project_id, topic_id = EXCLUDED.topic_id, topic_name = EXCLUDED.topic_name
+             `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, safeRole, projectId || null, topicId || null, topicName || null]);
         }
 
         await client.query('COMMIT');

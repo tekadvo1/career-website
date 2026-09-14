@@ -244,6 +244,12 @@ const updateSchema = async () => {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'project_id') THEN
           ALTER TABLE chat_sessions ADD COLUMN project_id INTEGER REFERENCES user_projects(id) ON DELETE CASCADE;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'topic_id') THEN
+          ALTER TABLE chat_sessions ADD COLUMN topic_id VARCHAR(255);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'topic_name') THEN
+          ALTER TABLE chat_sessions ADD COLUMN topic_name VARCHAR(255);
+        END IF;
       END $$;
     `);
 
