@@ -571,8 +571,12 @@ export default function LearningRoadmap() {
         }
     }, [nextTopicInfo, isLoading, roadmap.length, hasAutoExpanded]);
 
-    const handleOpenAIGuide = (topicName: string, subtopics: string[] | null, topicId?: string) => {
-        navigate("/roadmap-guide", { state: { role, topicName, topicId, subtopics: subtopics || [], roadmap } });
+    const handleOpenAIGuide = (topicName: string, subtopics: string[] | null, topicId?: string, subtopicName?: string) => {
+        if (subtopicName) {
+            navigate("/roadmap-guide", { state: { role, topicName: subtopicName, topicId: undefined, subtopics: null, parentTopicName: topicName, roadmap } });
+        } else {
+            navigate("/roadmap-guide", { state: { role, topicName, topicId, subtopics: subtopics || [], roadmap } });
+        }
     };
 
     if (isLoading) {

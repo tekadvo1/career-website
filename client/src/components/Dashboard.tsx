@@ -35,7 +35,7 @@ interface DashSnapshot {
   activeCount: number;
   completedCount: number;
   savedCount: number;
-  roadmapProgress: Array<{ role: string; topic_name: string }>;
+  roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string }>;
   journey?: JourneyData;
   timestamp: string;
 }
@@ -57,7 +57,7 @@ export default function Dashboard() {
 
   /* ---------- state --------------------------------------------------------- */
   const [userProjects,  setUserProjects]  = useState<Project[]>([]);
-  const [rtStats,       setRtStats]       = useState({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0, roadmapTopics: 0 });
+  const [rtStats,       setRtStats]       = useState<{ totalXP: number, activeCount: number, completedCount: number, savedCount: number, roadmapTopics: number, roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string }> }>({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0, roadmapTopics: 0, roadmapProgress: [] });
   
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
   const [roleSummaryData, setRoleSummaryData] = useState<any>(null);
@@ -155,7 +155,8 @@ export default function Dashboard() {
       activeCount:    mapped.filter(p => p.status === 'active').length,
       completedCount: mapped.filter(p => p.status === 'completed').length,
       savedCount:     mapped.filter(p => p.status === 'saved').length,
-      roadmapTopics:  snap.roadmapProgress?.length || 0
+      roadmapTopics:  snap.roadmapProgress?.length || 0,
+      roadmapProgress: snap.roadmapProgress || []
     });
     if (snap.journey) setJourneyData(snap.journey);
   }, [selectedRole, _rawRole]);
@@ -195,7 +196,43 @@ export default function Dashboard() {
       return { title: `Continue: ${activeProjects[0].title}`, desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate(`/project-workspace?projectId=${encodeURIComponent(activeProjects[0].id)}`), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
     }
     if (rtStats.roadmapTopics > 0 || hasRoadmap) {
-      return { title: 'Review your roadmap', desc: 'See what to learn next.', label: "View My Roadmap", action: () => navigate('/roadmap', { state: location.state }), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+      let nextTopicInfo = null;
+      if (roleSummaryData?.roadmap && Array.isArray(roleSummaryData.roadmap)) {
+          const completedSet = new Set(rtStats.roadmapProgress?.map((r: any) => r.topic_name) || []);
+          rtStats.roadmapProgress?.forEach((r: any) => { if (r.topic_id) completedSet.add(r.topic_id); });
+          
+          for (const phase of roleSummaryData.roadmap) {
+              const topicsList = phase.topics || phase.skills || [];
+              for (const skillObj of topicsList) {
+                  const name = typeof skillObj === 'string' ? skillObj : skillObj.name;
+                  const id = typeof skillObj === 'string' ? undefined : skillObj.id;
+                  
+                  if (!completedSet.has(name) && (!id || !completedSet.has(id))) {
+                      nextTopicInfo = {
+                          topicName: name,
+                          topicId: id,
+                          subtopics: typeof skillObj === 'string' ? null : skillObj.subtopics,
+                      };
+                      break;
+                  }
+              }
+              if (nextTopicInfo) break;
+          }
+      }
+
+      return { 
+          title: nextTopicInfo ? 'Continue your roadmap' : 'Review your roadmap', 
+          desc: nextTopicInfo ? 'Jump back into your next lesson.' : 'See what to learn next.', 
+          label: nextTopicInfo ? "Continue learning" : "View My Roadmap", 
+          action: () => {
+              if (nextTopicInfo) {
+                  navigate('/roadmap-guide', { state: { role: selectedRole, topicName: nextTopicInfo.topicName, topicId: nextTopicInfo.topicId, subtopics: nextTopicInfo.subtopics, roadmap: roleSummaryData.roadmap } });
+              } else {
+                  navigate('/roadmap', { state: location.state });
+              }
+          }, 
+          style: "bg-emerald-600 hover:bg-emerald-700 text-white" 
+      };
     }
     if (roleSummaryData) {
       return { title: 'Pick a starting project', desc: 'Apply your skills to a real-world scenario.', label: "Explore Projects", action: () => navigate('/projects'), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };

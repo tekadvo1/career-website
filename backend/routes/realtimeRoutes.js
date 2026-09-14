@@ -128,7 +128,7 @@ async function getUserDashboardData(userId) {
       [userId]
     ),
     recordDailyActivity(userId),
-    pool.query(`SELECT role, topic_name FROM roadmap_progress WHERE user_id = $1`, [userId]),
+    pool.query(`SELECT role, topic_name, topic_id FROM roadmap_progress WHERE user_id = $1`, [userId]),
     pool.query(
       `SELECT m.*, um.status, um.progress, um.xp_earned 
        FROM missions m 
