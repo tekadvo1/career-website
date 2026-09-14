@@ -513,26 +513,36 @@ router.post('/generate-interview-guide', checkAICredits, upload.single('resume')
     }
 });
 
-// GET /api/ai/interview-guides - Fetch saved interview guide and help
+// GET /api/ai/interview-guides - Fetch saved interview guide and help or recent sessions
 router.get('/interview-guides', async (req, res) => {
     const { userId, role } = req.query;
-    if (!userId || !role) {
-        return res.status(400).json({ error: 'userId and role are required' });
+    if (!userId) {
+        return res.status(400).json({ error: 'userId is required' });
     }
 
     try {
-        const result = await pool.query(
-            "SELECT guide_data, question_help FROM interview_guides WHERE user_id = $1 AND role = $2",
-            [userId, role]
-        );
-        if (result.rows.length > 0) {
-            res.json({
-                success: true,
-                guideData: typeof result.rows[0].guide_data === 'string' ? JSON.parse(result.rows[0].guide_data) : result.rows[0].guide_data,
-                questionHelp: typeof result.rows[0].question_help === 'string' ? JSON.parse(result.rows[0].question_help) : result.rows[0].question_help
-            });
+        if (role) {
+            // Fetch specific guide for a role
+            const result = await pool.query(
+                "SELECT guide_data, question_help FROM interview_guides WHERE user_id = $1 AND role = $2",
+                [userId, role]
+            );
+            if (result.rows.length > 0) {
+                res.json({
+                    success: true,
+                    guideData: typeof result.rows[0].guide_data === 'string' ? JSON.parse(result.rows[0].guide_data) : result.rows[0].guide_data,
+                    questionHelp: typeof result.rows[0].question_help === 'string' ? JSON.parse(result.rows[0].question_help) : result.rows[0].question_help
+                });
+            } else {
+                res.json({ success: true, guideData: null, questionHelp: {} });
+            }
         } else {
-            res.json({ success: true, guideData: null, questionHelp: {} });
+            // Fetch recent sessions history
+            const result = await pool.query(
+                "SELECT id, role, updated_at FROM interview_guides WHERE user_id = $1 ORDER BY updated_at DESC",
+                [userId]
+            );
+            res.json({ success: true, sessions: result.rows });
         }
     } catch (err) {
         console.error('Error fetching interview guide:', err);
