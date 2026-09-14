@@ -7,8 +7,6 @@ import {
     UploadCloud, 
     Sparkles, 
     ChevronRight, 
-    Lightbulb, 
-    UserCheck, 
     MessageSquare,
     Loader2,
     Bot,
@@ -18,7 +16,11 @@ import {
     Clock,
     FileText,
     Mic,
-    ArrowLeft
+    ArrowLeft,
+    ChevronLeft,
+    Save,
+    CheckCircle2,
+    UserCheck
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useAlert } from '../contexts/AlertContext';
@@ -40,24 +42,38 @@ interface SessionHistory {
   updated_at: string;
 }
 
+interface DetailedFeedback {
+    worked?: string;
+    improvement?: string;
+    suggestion?: string;
+    example?: string;
+}
+
+interface AnswerRecord {
+    draft: string;
+    submitted: string;
+    feedback: DetailedFeedback | string | null;
+}
+
 export default function InterviewGuide() {
     const { showAlert } = useAlert();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     // View state
-    const [view, setView] = useState<'overview' | 'setup' | 'session'>('overview');
+    const [view, setView] = useState<'overview' | 'setup' | 'session' | 'summary'>('overview');
     const [intent, setIntent] = useState<'text' | 'voice'>('text');
     
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [role, setRole] = useState("Software Engineer");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
-    const [loadingMore, setLoadingMore] = useState(false);
     
     // Data state
     const [guideData, setGuideData] = useState<GuideResponse | null>(null);
     const [questionHelp, setQuestionHelp] = useState<{[key: number]: string}>({});
+    const [answersData, setAnswersData] = useState<{[key: number]: AnswerRecord}>({});
+
     const [loadingHelp, setLoadingHelp] = useState<{[key: number]: boolean}>({});
 
     // History state
@@ -65,15 +81,16 @@ export default function InterviewGuide() {
     const [loadingHistory, setLoadingHistory] = useState(true);
     const [historyError, setHistoryError] = useState(false);
 
-    // Practice state
-    const [mockAnswers, setMockAnswers] = useState<{[key: number]: string}>({});
-    const [mockFeedback, setMockFeedback] = useState<{[key: number]: string}>({});
-    const [loadingFeedback, setLoadingFeedback] = useState<{[key: number]: boolean}>({});
+    // Practice Session State
+    const [currentIdx, setCurrentIdx] = useState(0);
+    const [currentDraft, setCurrentDraft] = useState("");
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [loadingFeedback, setLoadingFeedback] = useState(false);
     const [revealedAnswers, setRevealedAnswers] = useState<{[key: number]: boolean}>({});
 
-    const saveToBackend = async (data: GuideResponse, help: {[key: number]: string}, currentRole: string) => {
+    const saveToBackend = async (data: GuideResponse, help: {[key: number]: string}, ansData: {[key: number]: AnswerRecord}, currentRole: string) => {
         const userStr = sessionStorage.getItem('user');
-        if (!userStr) return;
+        if (!userStr) return false;
         const user = JSON.parse(userStr);
         try {
             await apiFetch('/api/ai/interview-guides', {
@@ -83,12 +100,15 @@ export default function InterviewGuide() {
                     userId: user.id,
                     role: currentRole,
                     guideData: data,
-                    questionHelp: help
+                    questionHelp: help,
+                    answersData: ansData
                 })
             });
             fetchHistory(); // refresh history after save
+            return true;
         } catch (err) {
             console.error("Failed to save interview guide:", err);
+            return false;
         }
     };
 
@@ -126,10 +146,15 @@ export default function InterviewGuide() {
             if (data.success && data.guideData) {
                 setGuideData(data.guideData);
                 setQuestionHelp(data.questionHelp || {});
+                setAnswersData(data.answersData || {});
+                setCurrentIdx(0);
+                setCurrentDraft((data.answersData || {})[0]?.draft || "");
                 return true;
             }
             setGuideData(null);
             setQuestionHelp({});
+            setAnswersData({});
+            setCurrentDraft("");
             return false;
         } catch(err) {
             console.error("Failed to load interview guide:", err);
@@ -145,16 +170,16 @@ export default function InterviewGuide() {
              if (parsed.role) initialRole = parsed.role;
         }
         setRole(initialRole);
-        
         fetchHistory();
         fetchSavedGuide(initialRole);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Also fetch when role changes in the input so the Resume button is accurate
     useEffect(() => {
         if (role) {
             fetchSavedGuide(role);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [role]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -185,9 +210,11 @@ export default function InterviewGuide() {
             const data = await res.json() as GuideResponse;
             setGuideData(data);
             setQuestionHelp({});
-            await saveToBackend(data, {}, role);
+            setAnswersData({});
+            setCurrentIdx(0);
+            setCurrentDraft("");
+            await saveToBackend(data, {}, {}, role);
             
-            // Navigate based on intent
             if (intent === 'voice') {
                 navigate('/realtime-mock-interview', { state: { guideData: data, role } });
             } else {
@@ -200,41 +227,84 @@ export default function InterviewGuide() {
         }
     };
 
-    const handleAddMore = async () => {
+    const handleSaveDraft = async () => {
         if (!guideData) return;
-        setLoadingMore(true);
+        setSaveStatus('saving');
+        
+        const updatedAnswers = { ...answersData };
+        if (!updatedAnswers[currentIdx]) {
+            updatedAnswers[currentIdx] = { draft: "", submitted: "", feedback: null };
+        }
+        updatedAnswers[currentIdx].draft = currentDraft;
+        
+        setAnswersData(updatedAnswers);
+        
+        const success = await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+        if (success) {
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        } else {
+            setSaveStatus('error');
+        }
+    };
+
+    const handleNavigateQuestion = async (direction: 'next' | 'prev') => {
+        if (!guideData) return;
+        // Auto-save draft before moving
+        if (currentDraft !== (answersData[currentIdx]?.draft || "")) {
+            await handleSaveDraft();
+        }
+        setSaveStatus('idle');
+
+        const newIdx = direction === 'next' ? currentIdx + 1 : currentIdx - 1;
+        if (newIdx >= 0 && newIdx < guideData.guide.length) {
+            setCurrentIdx(newIdx);
+            setCurrentDraft(answersData[newIdx]?.draft || "");
+        }
+    };
+
+    const handleSubmitMockAnswer = async () => {
+        if (!guideData || !currentDraft.trim()) return;
+        setLoadingFeedback(true);
         try {
-            const formData = new FormData();
-            formData.append('role', role);
-            if (notes) formData.append('notes', notes);
-            if (selectedFile) formData.append('resume', selectedFile);
-            
-            const existingQs = guideData.guide.map(q => q.question);
-            formData.append('existingQuestions', JSON.stringify(existingQs));
-
-            const res = await apiFetch('/api/ai/generate-interview-guide', {
+            const currentQ = guideData.guide[currentIdx];
+            const res = await apiFetch('/api/ai/mock-interview-evaluate', {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    question: currentQ.question,
+                    answer: currentDraft,
+                    role: role,
+                    detailed: true,
+                    expectedAnswer: currentQ.answer
+                })
             });
-
-            if (!res.ok) throw new Error("Failed to generate more questions");
-
-            const data = await res.json() as GuideResponse;
-            const newGuide = {
-                generalTips: guideData.generalTips,
-                guide: [...guideData.guide, ...data.guide]
-            };
-            setGuideData(newGuide);
-            saveToBackend(newGuide, questionHelp, role);
-        } catch (error: unknown) {
-            showAlert(error instanceof Error ? error.message : "An error occurred", "error");
+            
+            if (!res.ok) throw new Error("Feedback fetch failed");
+            
+            const data = await res.json();
+            
+            const updatedAnswers = { ...answersData };
+            if (!updatedAnswers[currentIdx]) {
+                updatedAnswers[currentIdx] = { draft: "", submitted: "", feedback: null };
+            }
+            updatedAnswers[currentIdx].draft = currentDraft;
+            updatedAnswers[currentIdx].submitted = currentDraft;
+            updatedAnswers[currentIdx].feedback = data.feedback; // can be detailed object or string
+            
+            setAnswersData(updatedAnswers);
+            setRevealedAnswers(prev => ({...prev, [currentIdx]: true}));
+            await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+            
+        } catch (err) {
+            showAlert("Failed to get mock feedback", "error");
         } finally {
-            setLoadingMore(false);
+            setLoadingFeedback(false);
         }
     };
 
     const handleGetHelp = async (idx: number, question: string) => {
-        if (questionHelp[idx]) return; 
+        if (questionHelp[idx] || !guideData) return; 
         setLoadingHelp(prev => ({...prev, [idx]: true}));
         try {
             const res = await apiFetch('/api/ai/chat', {
@@ -248,36 +318,13 @@ export default function InterviewGuide() {
             const data = await res.json();
             setQuestionHelp(prev => {
                 const updated = {...prev, [idx]: data.reply};
-                if (guideData) saveToBackend(guideData, updated, role);
+                saveToBackend(guideData, updated, answersData, role);
                 return updated;
             });
         } catch {
             showAlert("Failed to get realtime help", "error");
         } finally {
             setLoadingHelp(prev => ({...prev, [idx]: false}));
-        }
-    };
-
-    const handleSubmitMockAnswer = async (idx: number) => {
-        if (!guideData || !mockAnswers[idx]) return;
-        setLoadingFeedback(prev => ({...prev, [idx]: true}));
-        try {
-            const currentQ = guideData.guide[idx];
-            const res = await apiFetch('/api/ai/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: `I am doing a mock interview for a ${role} role. You are the interviewer. Your question was: "${currentQ.question}". My answer is: "${mockAnswers[idx]}". Provide brief, direct feedback on my answer. Tell me what I did well and 1 thing to improve. Keep it to 3-4 sentences total.`,
-                    role: role
-                })
-            });
-            const data = await res.json();
-            setMockFeedback(prev => ({...prev, [idx]: data.reply}));
-            setRevealedAnswers(prev => ({...prev, [idx]: true}));
-        } catch {
-            showAlert("Failed to get mock feedback", "error");
-        } finally {
-            setLoadingFeedback(prev => ({...prev, [idx]: false}));
         }
     };
 
@@ -291,6 +338,17 @@ export default function InterviewGuide() {
         }
     };
 
+    const handleFinish = async () => {
+        if (currentDraft !== (answersData[currentIdx]?.draft || "")) {
+            await handleSaveDraft();
+        }
+        setView('summary');
+    };
+
+    // Derived states
+    const isAnswerSubmitted = currentDraft === answersData[currentIdx]?.submitted && !!answersData[currentIdx]?.feedback;
+    const currentFeedback = answersData[currentIdx]?.feedback as DetailedFeedback | string | null;
+    
     return (
         <div className="flex flex-col md:flex-row min-h-[100dvh] bg-[#F8FAFC] font-sans">
             <div className="z-50 shrink-0"><Sidebar activePage="interview-guide" /></div>
@@ -385,11 +443,7 @@ export default function InterviewGuide() {
                                             }}
                                             className="w-full py-2.5 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-emerald-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
                                         >
-                                            {guideData ? (
-                                                <><Play className="w-4 h-4" /> Start Voice Mock</>
-                                            ) : (
-                                                <><Play className="w-4 h-4" /> Start Voice Mock</>
-                                            )}
+                                            <Play className="w-4 h-4" /> Start Voice Mock
                                         </button>
                                     </div>
                                 </div>
@@ -516,7 +570,7 @@ export default function InterviewGuide() {
                                 <div className="mt-6 flex sm:justify-end">
                                     <button 
                                         onClick={handleGenerate}
-                                        disabled={loading || loadingMore}
+                                        disabled={loading}
                                         className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
@@ -527,160 +581,280 @@ export default function InterviewGuide() {
                         </div>
                     )}
 
-                    {/* VIEW: SESSION */}
+                    {/* VIEW: SESSION (SINGLE QUESTION) */}
                     {view === 'session' && guideData && (
-                        <div className="space-y-6 pb-20 fade-in">
+                        <div className="space-y-6 pb-20 fade-in flex flex-col h-full max-w-3xl mx-auto">
+                            {/* Header */}
                             <div className="flex items-center justify-between mb-2">
                                 <button 
-                                    onClick={() => setView('overview')}
+                                    onClick={async () => {
+                                        await handleSaveDraft();
+                                        setView('overview');
+                                    }}
                                     className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
                                 >
-                                    <ArrowLeft className="w-4 h-4" /> Back to Overview
+                                    <ArrowLeft className="w-4 h-4" /> Save & Leave
                                 </button>
-                                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wide">
-                                    {role}
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold uppercase tracking-wide">
+                                        {role}
+                                    </span>
+                                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold tracking-wide">
+                                        Question {currentIdx + 1} of {guideData.guide.length}
+                                    </span>
+                                </div>
                             </div>
 
-                            {guideData.generalTips && guideData.generalTips.length > 0 && (
-                                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
-                                     <h3 className="font-bold text-amber-800 flex items-center gap-2 mb-3">
-                                         <Lightbulb className="w-5 h-5" />
-                                         Overall Interview Strategy
-                                     </h3>
-                                     <ul className="space-y-2">
-                                         {guideData.generalTips.map((tip, idx) => (
-                                             <li key={idx} className="flex gap-2 text-sm text-amber-900 leading-relaxed font-medium">
-                                                 <ChevronRight className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
-                                                 {tip}
-                                             </li>
-                                         ))}
-                                     </ul>
-                                </div>
-                            )}
-
-                            <h2 className="text-xl font-bold text-slate-800 mt-8 mb-4">Your Personalized Practice Questions</h2>
-                            
-                            <div className="space-y-4">
-                                {guideData.guide.map((qa, idx) => (
-                                    <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden group hover:border-emerald-300 transition-colors">
-                                        <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start gap-3">
-                                            <div className="flex gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center shrink-0">
-                                                    Q{idx + 1}
-                                                </div>
-                                                <h3 className="text-[15px] font-bold text-slate-800 mt-1.5 leading-snug">
-                                                    {qa.question}
-                                                </h3>
-                                            </div>
-                                            {!questionHelp[idx] && (
-                                                <button 
-                                                   onClick={() => handleGetHelp(idx, qa.question)}
-                                                   disabled={loadingHelp[idx]}
-                                                   className="shrink-0 flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-colors border border-emerald-100"
-                                                >
-                                                   {loadingHelp[idx] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
-                                                   {loadingHelp[idx] ? 'Thinking...' : 'AI Help'}
-                                                </button>
-                                            )}
+                            {/* Main Question Card */}
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+                                {/* Question Header */}
+                                <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start gap-4">
+                                    <div className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-black flex items-center justify-center shrink-0 text-lg">
+                                            Q{currentIdx + 1}
                                         </div>
-                                        <div className="p-5 space-y-4">
-                                            {/* Practice Area */}
-                                            <div className="bg-slate-50/50 border border-slate-200 rounded-xl p-4">
-                                                <label className="block text-xs font-bold text-slate-700 uppercase mb-2">Your Practice Answer</label>
-                                                <textarea 
-                                                     className="w-full p-3 border border-slate-200 rounded-lg min-h-[100px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all text-[13px] font-medium text-slate-800"
-                                                     placeholder="Type your answer here before revealing the optimal answer..."
-                                                     value={mockAnswers[idx] || ""}
-                                                     onChange={(e) => setMockAnswers(prev => ({...prev, [idx]: e.target.value}))}
-                                                     disabled={!!mockFeedback[idx] || loadingFeedback[idx]}
-                                                />
-                                                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                                    {!revealedAnswers[idx] ? (
-                                                        <button 
-                                                            onClick={() => setRevealedAnswers(prev => ({...prev, [idx]: true}))}
-                                                            className="text-[12px] text-slate-500 font-bold hover:text-slate-700 underline underline-offset-2 shrink-0"
-                                                        >
-                                                            Skip & Reveal Answer
-                                                        </button>
-                                                    ) : <div/>}
+                                        <h3 className="text-base sm:text-lg font-bold text-slate-800 mt-1 leading-snug">
+                                            {guideData.guide[currentIdx].question}
+                                        </h3>
+                                    </div>
+                                    {!questionHelp[currentIdx] && (
+                                        <button 
+                                           onClick={() => handleGetHelp(currentIdx, guideData.guide[currentIdx].question)}
+                                           disabled={loadingHelp[currentIdx]}
+                                           className="shrink-0 flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-colors border border-emerald-100"
+                                        >
+                                           {loadingHelp[currentIdx] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bot className="w-4 h-4" />}
+                                           {loadingHelp[currentIdx] ? 'Thinking...' : 'AI Help'}
+                                        </button>
+                                    )}
+                                </div>
 
-                                                    {!mockFeedback[idx] && (
-                                                        <button 
-                                                            onClick={() => handleSubmitMockAnswer(idx)}
-                                                            disabled={loadingFeedback[idx] || !mockAnswers[idx]}
-                                                            className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[12px] shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 shrink-0"
-                                                        >
-                                                            {loadingFeedback[idx] && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                                                            Submit for AI Feedback
-                                                        </button>
-                                                    )}
-                                                </div>
+                                {/* Editor Area */}
+                                <div className="p-5 sm:p-6 flex-1 flex flex-col gap-4">
+                                    
+                                    {questionHelp[currentIdx] && (
+                                        <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 animate-in fade-in slide-in-from-top-2">
+                                            <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                <Bot className="w-4 h-4" /> Real-time AI Assistant Insight
+                                            </h4>
+                                            <p className="text-[13px] sm:text-sm text-emerald-900 leading-relaxed font-medium">
+                                                {questionHelp[currentIdx]}
+                                            </p>
+                                        </div>
+                                    )}
 
-                                                {mockFeedback[idx] && (
-                                                    <div className="mt-4 p-4 bg-emerald-50 border border-emerald-100 rounded-xl custom-fade-in space-y-2">
-                                                        <h3 className="font-bold text-emerald-800 flex items-center gap-1.5 text-[11px] uppercase tracking-wider">
-                                                            <Bot className="w-3.5 h-3.5" /> AI Evaluation Feedback
-                                                        </h3>
-                                                        <p className="text-[13px] text-emerald-900 leading-relaxed font-medium">
-                                                            {mockFeedback[idx]}
-                                                        </p>
-                                                    </div>
-                                                )}
+                                    <div className="flex-1 flex flex-col">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <label className="block text-xs font-bold text-slate-700 uppercase">Your Answer</label>
+                                            
+                                            {/* Save Status Indicator */}
+                                            <div className="flex items-center gap-1.5 text-xs font-bold">
+                                                {saveStatus === 'saving' && <span className="text-slate-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> Saving...</span>}
+                                                {saveStatus === 'saved' && <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Saved</span>}
+                                                {saveStatus === 'error' && <span className="text-red-500 flex items-center gap-1">Save failed.</span>}
                                             </div>
+                                        </div>
+                                        
+                                        <textarea 
+                                             className="w-full p-4 border border-slate-200 rounded-xl flex-1 min-h-[200px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all text-sm font-medium text-slate-800 resize-y"
+                                             placeholder="Type your answer here..."
+                                             value={currentDraft}
+                                             onChange={(e) => {
+                                                 setCurrentDraft(e.target.value);
+                                                 if (saveStatus !== 'idle') setSaveStatus('idle');
+                                             }}
+                                             disabled={loadingFeedback}
+                                        />
+                                    </div>
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                                            <button 
+                                                onClick={handleSaveDraft}
+                                                disabled={!currentDraft.trim() || saveStatus === 'saving' || currentDraft === (answersData[currentIdx]?.draft || "")}
+                                                className="px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-all flex flex-1 sm:flex-none items-center justify-center gap-2 disabled:opacity-50"
+                                            >
+                                                <Save className="w-4 h-4" /> Save Draft
+                                            </button>
+                                            
+                                            {!revealedAnswers[currentIdx] && !isAnswerSubmitted ? (
+                                                <button 
+                                                    onClick={() => setRevealedAnswers(prev => ({...prev, [currentIdx]: true}))}
+                                                    className="px-4 py-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl font-bold text-sm transition-all flex flex-1 sm:flex-none items-center justify-center"
+                                                >
+                                                    Reveal Optimal Answer
+                                                </button>
+                                            ) : null}
+                                        </div>
 
-                                            {/* Revealed Answer & Tip */}
-                                            {revealedAnswers[idx] && (
-                                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                                    <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-4">
-                                                        <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                            <MessageSquare className="w-3.5 h-3.5" /> Optimal Answer Structure
-                                                        </h4>
-                                                        <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
-                                                            {qa.answer}
-                                                        </p>
-                                                    </div>
+                                        <button 
+                                            onClick={handleSubmitMockAnswer}
+                                            disabled={loadingFeedback || !currentDraft.trim() || isAnswerSubmitted}
+                                            className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                                        >
+                                            {loadingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                            {isAnswerSubmitted ? 'Feedback Received' : 'Submit for AI Feedback'}
+                                        </button>
+                                    </div>
 
-                                                    <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                                                        <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                            <UserCheck className="w-3.5 h-3.5" /> Pro Tip to Stand Out
-                                                        </h4>
-                                                        <p className="text-[13px] text-slate-700 leading-relaxed font-medium">
-                                                            {qa.tip}
-                                                        </p>
-                                                    </div>
-
-                                                    {questionHelp[idx] && (
-                                                        <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-4 mt-2">
-                                                            <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                                                <Bot className="w-3.5 h-3.5" /> Real-time AI Assistant Insight
-                                                            </h4>
-                                                            <p className="text-[13px] text-emerald-900 leading-relaxed font-medium">
-                                                                {questionHelp[idx]}
-                                                            </p>
+                                    {/* Evaluation Feedback */}
+                                    {currentFeedback && (
+                                        <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4">
+                                            {answersData[currentIdx]?.submitted !== currentDraft && (
+                                                <div className="mb-4 text-xs font-bold text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-center gap-2">
+                                                    <Clock className="w-4 h-4" /> You've modified your draft since receiving this feedback. Submit again for an updated evaluation.
+                                                </div>
+                                            )}
+                                            
+                                            <h3 className="font-bold text-emerald-800 flex items-center gap-2 text-xs uppercase tracking-widest mb-4">
+                                                <Bot className="w-4 h-4" /> AI Evaluation Feedback
+                                            </h3>
+                                            
+                                            {typeof currentFeedback === 'string' ? (
+                                                <p className="text-sm text-emerald-900 leading-relaxed font-medium bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                                    {currentFeedback}
+                                                </p>
+                                            ) : (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    {currentFeedback.worked && (
+                                                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                                            <h4 className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-1">What worked</h4>
+                                                            <p className="text-sm text-emerald-900 font-medium">{currentFeedback.worked}</p>
+                                                        </div>
+                                                    )}
+                                                    {currentFeedback.improvement && (
+                                                        <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                                                            <h4 className="text-xs font-black text-amber-700 uppercase tracking-widest mb-1">Needs Improvement</h4>
+                                                            <p className="text-sm text-amber-900 font-medium">{currentFeedback.improvement}</p>
+                                                        </div>
+                                                    )}
+                                                    {currentFeedback.suggestion && (
+                                                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 sm:col-span-2">
+                                                            <h4 className="text-xs font-black text-blue-700 uppercase tracking-widest mb-1">Specific Suggestion</h4>
+                                                            <p className="text-sm text-blue-900 font-medium">{currentFeedback.suggestion}</p>
+                                                        </div>
+                                                    )}
+                                                    {currentFeedback.example && (
+                                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:col-span-2">
+                                                            <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-1 flex items-center gap-1.5"><MessageSquare className="w-3.5 h-3.5" /> Example Phrasing</h4>
+                                                            <p className="text-sm text-slate-700 font-medium italic">"{currentFeedback.example}"</p>
                                                         </div>
                                                     )}
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
-                                ))}
+                                    )}
+
+                                    {/* Revealed Optimal Answer */}
+                                    {revealedAnswers[currentIdx] && (
+                                        <div className="mt-4 pt-4 border-t border-slate-100 space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                                            <div className="bg-slate-50/80 border border-slate-200 rounded-xl p-4">
+                                                <h4 className="text-xs font-black text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                    <MessageSquare className="w-3.5 h-3.5" /> Optimal Answer Structure
+                                                </h4>
+                                                <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                                                    {guideData.guide[currentIdx].answer}
+                                                </p>
+                                            </div>
+                                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
+                                                <h4 className="text-xs font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                                    <UserCheck className="w-3.5 h-3.5" /> Pro Tip to Stand Out
+                                                </h4>
+                                                <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                                                    {guideData.guide[currentIdx].tip}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                </div>
                             </div>
                             
-                            <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                            {/* Navigation Footer */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                                <div className="flex w-full sm:w-auto gap-3">
+                                    <button 
+                                        onClick={() => handleNavigateQuestion('prev')}
+                                        disabled={currentIdx === 0}
+                                        className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" /> Previous
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => handleNavigateQuestion('next')}
+                                        disabled={currentIdx === guideData.guide.length - 1}
+                                        className="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+                                    >
+                                        Next <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                
                                 <button 
-                                    onClick={() => navigate('/realtime-mock-interview', { state: { guideData, role } })}
-                                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
+                                    onClick={handleFinish}
+                                    className="w-full sm:w-auto px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 text-sm"
                                 >
-                                    Start Live Mock Interview (Voice)
+                                    Finish Practice
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* VIEW: SUMMARY */}
+                    {view === 'summary' && guideData && (
+                        <div className="fade-in max-w-2xl mx-auto space-y-6 pt-10">
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                                </div>
+                                <h1 className="text-3xl font-bold text-slate-800 mb-3">Practice Complete!</h1>
+                                <p className="text-slate-500">
+                                    You've finished your text-based practice for <strong className="text-slate-700">{role}</strong>.
+                                </p>
+                            </div>
+
+                            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 mt-8">
+                                <h2 className="font-bold text-lg text-slate-800 mb-6 border-b border-slate-100 pb-4">Session Summary</h2>
+                                
+                                <div className="space-y-4">
+                                    {guideData.guide.map((q, i) => {
+                                        const ans = answersData[i];
+                                        const status = ans?.feedback ? 'Evaluated' : (ans?.draft ? 'Draft Saved' : 'Not Answered');
+                                        const statusColor = status === 'Evaluated' ? 'text-emerald-600 bg-emerald-50 border-emerald-200' :
+                                                          status === 'Draft Saved' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                                                          'text-slate-500 bg-slate-50 border-slate-200';
+                                        return (
+                                            <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center text-xs shrink-0">
+                                                        Q{i+1}
+                                                    </div>
+                                                    <p className="text-sm font-medium text-slate-700 truncate max-w-xs sm:max-w-md">
+                                                        {q.question}
+                                                    </p>
+                                                </div>
+                                                <span className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border ${statusColor} shrink-0 text-center`}>
+                                                    {status}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+                                <button 
+                                    onClick={() => { setView('session'); setCurrentIdx(0); setCurrentDraft(answersData[0]?.draft || ""); }}
+                                    className="px-6 py-3 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2"
+                                >
+                                    <MessageSquare className="w-4 h-4" /> Review Answers
                                 </button>
                                 <button 
-                                    onClick={handleAddMore}
-                                    disabled={loadingMore}
-                                    className="w-full sm:w-auto px-6 py-3 bg-white border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 text-slate-700 rounded-xl font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
+                                    onClick={() => { setView('overview'); fetchHistory(); }}
+                                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2"
                                 >
-                                    {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 text-emerald-600" />}
-                                    {loadingMore ? 'Loading more...' : 'Add More Questions'}
+                                    Back to Overview
                                 </button>
                             </div>
                         </div>

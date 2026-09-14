@@ -524,14 +524,15 @@ router.get('/interview-guides', async (req, res) => {
         if (role) {
             // Fetch specific guide for a role
             const result = await pool.query(
-                "SELECT guide_data, question_help FROM interview_guides WHERE user_id = $1 AND role = $2",
+                "SELECT guide_data, question_help, answers_data FROM interview_guides WHERE user_id = $1 AND role = $2",
                 [userId, role]
             );
             if (result.rows.length > 0) {
                 res.json({
                     success: true,
                     guideData: typeof result.rows[0].guide_data === 'string' ? JSON.parse(result.rows[0].guide_data) : result.rows[0].guide_data,
-                    questionHelp: typeof result.rows[0].question_help === 'string' ? JSON.parse(result.rows[0].question_help) : result.rows[0].question_help
+                    questionHelp: typeof result.rows[0].question_help === 'string' ? JSON.parse(result.rows[0].question_help) : (result.rows[0].question_help || {}),
+                    answersData: typeof result.rows[0].answers_data === 'string' ? JSON.parse(result.rows[0].answers_data) : (result.rows[0].answers_data || {})
                 });
             } else {
                 res.json({ success: true, guideData: null, questionHelp: {} });
@@ -552,20 +553,21 @@ router.get('/interview-guides', async (req, res) => {
 
 // POST /api/ai/interview-guides - Save or update interview guide and help
 router.post('/interview-guides', async (req, res) => {
-    const { userId, role, guideData, questionHelp } = req.body;
+    const { userId, role, guideData, questionHelp, answersData } = req.body;
     if (!userId || !role) {
         return res.status(400).json({ error: 'userId and role are required' });
     }
 
     try {
         await pool.query(
-            `INSERT INTO interview_guides (user_id, role, guide_data, question_help)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO interview_guides (user_id, role, guide_data, question_help, answers_data)
+             VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id, role) DO UPDATE SET 
              guide_data = EXCLUDED.guide_data, 
              question_help = EXCLUDED.question_help,
+             answers_data = EXCLUDED.answers_data,
              updated_at = CURRENT_TIMESTAMP`,
-            [userId, role, JSON.stringify(guideData || {}), JSON.stringify(questionHelp || {})]
+            [userId, role, JSON.stringify(guideData || {}), JSON.stringify(questionHelp || {}), JSON.stringify(answersData || {})]
         );
         res.json({ success: true, message: 'Interview guide saved successfully' });
     } catch (err) {
@@ -577,13 +579,35 @@ router.post('/interview-guides', async (req, res) => {
 // POST /api/ai/mock-interview-evaluate - Evaluates an answer and provides a score and feedback
 router.post('/mock-interview-evaluate', async (req, res) => {
     try {
-        const { question, answer, role, expectedAnswer } = req.body;
+        const { question, answer, role, expectedAnswer, detailed } = req.body;
 
         if (!question || !answer) {
             return res.status(400).json({ error: 'Question and answer are required' });
         }
 
-        const systemPrompt = `You are an expert ${role || 'Software Engineering'} Technical Interviewer and Hiring Manager.
+        const systemPrompt = detailed 
+        ? `You are an expert ${role || 'Software Engineering'} Technical Interviewer and Hiring Manager.
+        
+        The user is doing a mock interview.
+        Question asked: "${question}"
+        User's answer: "${answer}"
+        Ideal answer structure based on their resume/role: "${expectedAnswer || 'Not provided'}"
+
+        Your task is to evaluate the user's answer. 
+        1. Give a score out of 100 based on clarity, correctness, and completeness.
+        2. Provide constructive feedback broken down into what worked, what needs improvement, a specific suggestion, and an improved example snippet/sentence (where appropriate).
+        
+        You MUST return your response as a valid JSON object matching this schema exactly:
+        {
+            "score": 85,
+            "feedback": {
+                "worked": "What they did well...",
+                "improvement": "What needs improvement...",
+                "suggestion": "A specific actionable suggestion...",
+                "example": "An improved example phrasing or conceptual snippet..."
+            }
+        }`
+        : `You are an expert ${role || 'Software Engineering'} Technical Interviewer and Hiring Manager.
         
         The user is doing a mock interview.
         Question asked: "${question}"
