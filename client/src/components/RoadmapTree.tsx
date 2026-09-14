@@ -17,7 +17,11 @@ import {
   X,
   PlayCircle,
   ChevronRight,
-  Info
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Maximize,
+  LocateFixed
 } from "lucide-react";
 import { apiFetch } from '../utils/apiFetch';
 
@@ -63,10 +67,40 @@ export default function RoadmapTree() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [zoom, setZoom] = useState(0.75);
 
   const _rawRole: string = location.state?.role || searchParams.get('role') || "Software Engineer";
   const selectedRole: string = _rawRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
+  
+  // View preferences
+  const userStr = sessionStorage.getItem('user');
+  const userId = userStr ? JSON.parse(userStr).id : 'guest';
+  const prefsKey = `roadmapTreePrefs_${userId}_${selectedRole}`;
+  
+  const [zoom, setZoom] = useState(() => {
+      try {
+          const saved = localStorage.getItem(prefsKey);
+          if (saved) {
+              const parsed = JSON.parse(saved);
+              if (parsed.zoom && typeof parsed.zoom === 'number') {
+                  return Math.min(Math.max(parsed.zoom, 0.4), 1.5); // Clamp zoom
+              }
+          }
+      } catch (e) {}
+      return 0.75;
+  });
+  
+  const [collapsedPhases, setCollapsedPhases] = useState<Set<string>>(() => {
+      try {
+          const saved = localStorage.getItem(prefsKey);
+          if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed.collapsedPhases)) {
+                  return new Set(parsed.collapsedPhases);
+              }
+          }
+      } catch (e) {}
+      return new Set();
+  });
 
   // Get real-time AI roadmap data passed via location
   const [roadmap, setRoadmap] = useState<RoadmapPhase[]>(location.state?.roadmap || []);
@@ -79,6 +113,20 @@ export default function RoadmapTree() {
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [customPrompt, setCustomPrompt] = useState("");
   const [isGeneratingCustom, setIsGeneratingCustom] = useState(false);
+
+  useEffect(() => {
+      const saveTimeout = setTimeout(() => {
+          try {
+              localStorage.setItem(prefsKey, JSON.stringify({
+                  zoom,
+                  collapsedPhases: Array.from(collapsedPhases)
+              }));
+          } catch (e) {
+              console.warn("Failed to save view preferences", e);
+          }
+      }, 500); // debounce saves
+      return () => clearTimeout(saveTimeout);
+  }, [zoom, collapsedPhases, prefsKey]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -162,7 +210,8 @@ export default function RoadmapTree() {
       const nodes: any[] = [];
       roadmap.forEach((phase, pIdx) => {
           const pTitle = phase.title || phase.phase || `Phase ${pIdx + 1}`;
-          nodes.push({ id: `phase-${pIdx}`, phase: pTitle, name: pTitle, type: 'phase', refId: `phase-${pIdx}` });
+          const phaseIdStr = `phase-${pIdx}`;
+          nodes.push({ id: phaseIdStr, phase: pTitle, phaseId: phaseIdStr, name: pTitle, type: 'phase', refId: phaseIdStr });
 
           const skillsList = phase.skills?.length ? phase.skills : (phase.topics || []);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,7 +225,7 @@ export default function RoadmapTree() {
               
               const topicNodeId = `topic-${pIdx}-${sIdx}`;
               nodes.push({ 
-                  id: topicNodeId, phase: pTitle, name, description: desc, 
+                  id: topicNodeId, phase: pTitle, phaseId: phaseIdStr, name, description: desc, 
                   type: 'topic', subtopics, isCompleted, topicId: sId, refId: topicNodeId,
                   originalData: skill
               });
@@ -184,7 +233,7 @@ export default function RoadmapTree() {
               subtopics.forEach((sub: string, subIdx: number) => {
                   const subNodeId = `subtopic-${pIdx}-${sIdx}-${subIdx}`;
                   nodes.push({
-                      id: subNodeId, phase: pTitle, parentTopic: name, name: sub, type: 'subtopic', 
+                      id: subNodeId, phase: pTitle, phaseId: phaseIdStr, parentTopic: name, name: sub, type: 'subtopic', 
                       isCompleted: false, refId: topicNodeId // subtopics scroll to their parent topic
                   });
               });
@@ -202,14 +251,86 @@ export default function RoadmapTree() {
       );
   }, [searchQuery, allNodes]);
 
+  const togglePhase = (phaseId: string) => {
+      setCollapsedPhases(prev => {
+          const next = new Set(prev);
+          if (next.has(phaseId)) next.delete(phaseId);
+          else next.add(phaseId);
+          return next;
+      });
+  };
+
+  const handleExpandAll = () => setCollapsedPhases(new Set());
+  const handleCollapseAll = () => setCollapsedPhases(new Set(roadmap.map((_, i) => `phase-${i}`)));
+
+  const handleFitToView = () => {
+      const container = document.getElementById('tree-viewport-container');
+      const content = document.getElementById('tree-scaled-content');
+      if (container && content) {
+          // Temporarily remove zoom to measure intrinsic size
+          const currentZoom = zoom;
+          content.style.zoom = '1';
+          
+          const contentWidth = content.scrollWidth;
+          const contentHeight = content.scrollHeight;
+          const viewportWidth = container.clientWidth - (selectedNode ? 400 : 40); // Account for details panel
+          const viewportHeight = container.clientHeight - 100;
+          
+          content.style.zoom = currentZoom.toString(); // Restore
+
+          if (contentWidth > 0 && contentHeight > 0) {
+              const scaleX = viewportWidth / contentWidth;
+              const scaleY = viewportHeight / contentHeight;
+              const newZoom = Math.min(scaleX, scaleY, 1.2);
+              setZoom(Math.max(0.4, newZoom));
+          }
+      }
+  };
+
+  const handleResetView = () => {
+      setZoom(0.75);
+      // setCollapsedPhases(new Set()); // Documented default is to not reset branches, or to reset to sensible? Plan said "clear expanded/collapsed or reset to default". Let's leave branch state as is, just reset zoom & scroll.
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleGoToCurrent = () => {
+      const firstIncomplete = allNodes.find(n => n.type === 'topic' && !n.isCompleted);
+      if (firstIncomplete) {
+          if (firstIncomplete.phaseId) {
+              setCollapsedPhases(prev => {
+                  const next = new Set(prev);
+                  next.delete(firstIncomplete.phaseId);
+                  return next;
+              });
+          }
+          // Slight delay to allow DOM to expand before scrolling
+          setTimeout(() => {
+              setSelectedNode(firstIncomplete);
+              const el = document.getElementById(firstIncomplete.refId);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 50);
+      } else {
+          alert("All available topics are completed!");
+      }
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSelectNode = (node: any) => {
       setSelectedNode(node);
       setSearchQuery("");
-      const el = document.getElementById(node.refId);
-      if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (node.phaseId) {
+          setCollapsedPhases(prev => {
+              const next = new Set(prev);
+              next.delete(node.phaseId);
+              return next;
+          });
       }
+      setTimeout(() => {
+          const el = document.getElementById(node.refId);
+          if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+      }, 50);
   };
 
   const handleOpenLesson = () => {
@@ -323,7 +444,7 @@ export default function RoadmapTree() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8 relative font-sans">
+    <div id="tree-viewport-container" className="min-h-[100dvh] bg-gradient-to-br from-slate-50 to-slate-100 p-4 py-8 relative font-sans">
       {/* Top Left Navigation Button */}
       <button 
         onClick={() => navigate(-1)}
@@ -389,8 +510,23 @@ export default function RoadmapTree() {
         </div>
       </div>
 
-      {/* Zoom Controls */}
-      <div className="fixed top-20 sm:top-24 right-4 sm:right-6 z-40 flex flex-col gap-2 bg-white/50 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/50 shadow-sm shadow-slate-200">
+      {/* Viewport and Branch Controls */}
+      <div className="fixed top-20 sm:top-24 right-4 sm:right-6 z-40 flex flex-col gap-2 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 shadow-sm shadow-slate-200">
+        <button 
+          onClick={handleGoToCurrent}
+          className="p-2 bg-white hover:bg-emerald-50 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Go to Current Topic"
+        >
+          <LocateFixed className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={handleFitToView}
+          className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Fit to View"
+        >
+          <Maximize className="w-5 h-5" />
+        </button>
+        <div className="w-full h-px bg-slate-200 my-1"></div>
         <button 
           onClick={() => setZoom(z => Math.min(z + 0.1, 1.5))}
           className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
@@ -399,9 +535,9 @@ export default function RoadmapTree() {
           <ZoomIn className="w-5 h-5" />
         </button>
         <button 
-          onClick={() => setZoom(1)}
+          onClick={handleResetView}
           className="bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600 flex items-center justify-center font-bold text-[10px] w-9 h-9 sm:w-auto sm:h-9 sm:px-2"
-          title="Reset Zoom"
+          title="Reset View"
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -412,10 +548,26 @@ export default function RoadmapTree() {
         >
           <ZoomOut className="w-5 h-5" />
         </button>
+        <div className="w-full h-px bg-slate-200 my-1"></div>
+        <button 
+          onClick={handleExpandAll}
+          className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Expand All Phases"
+        >
+          <ChevronDown className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={handleCollapseAll}
+          className="p-2 bg-white hover:bg-slate-100 rounded-xl transition-all shadow-sm border border-slate-100 text-slate-600 hover:text-emerald-600"
+          title="Collapse All Phases"
+        >
+          <ChevronUp className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Main Content */}
       <div 
+        id="tree-scaled-content"
         className="max-w-4xl mx-auto pt-16 sm:pt-4 transition-all duration-300" 
         style={{ zoom } as React.CSSProperties}
       >
@@ -479,28 +631,45 @@ export default function RoadmapTree() {
                  
               const projectsList = phase.projects?.map(p => typeof p === 'string' ? p : (p.name || p.title || 'Project')) || [];
 
+              const phaseId = `phase-${phaseIndex}`;
+              const isCollapsed = collapsedPhases.has(phaseId);
+              const hiddenTopicsCount = skillsList.length + milestonesList.length + projectsList.length;
+
               return (
-                <div key={phaseIndex} id={`phase-${phaseIndex}`} className="mb-8 relative z-10">
+                <div key={phaseIndex} id={phaseId} className="mb-8 relative z-10">
                   {/* Phase Header */}
                   <div className="flex items-center gap-4 mb-4 relative">
                     {/* Circle Node overlapping the continuous line */}
                     <div className="absolute left-[58px] w-4 h-4 rounded-full bg-emerald-500 border-[3px] border-white shadow-md hidden md:block"></div>
                     
-                    <div className="flex items-center gap-3 px-4 py-2 bg-slate-900 border-2 border-slate-800 text-white rounded-[12px] shadow-xl ml-8 relative z-10 overflow-hidden group">
+                    <button 
+                      onClick={() => togglePhase(phaseId)}
+                      className="flex items-center gap-3 px-4 py-2 bg-slate-900 border-2 border-slate-800 text-white rounded-[12px] shadow-xl ml-8 relative z-10 overflow-hidden group hover:bg-slate-800 transition-colors text-left"
+                      aria-expanded={!isCollapsed}
+                    >
                       <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center font-bold text-base shadow-inner border border-emerald-400">
+                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center font-bold text-base shadow-inner border border-emerald-400 shrink-0">
                         {phaseIndex + 1}
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold tracking-tight">{pTitle}</h3>
+                      <div className="flex-1 min-w-0 pr-4">
+                        <h3 className="text-lg font-bold tracking-tight truncate">{pTitle}</h3>
                         <p className="text-[10px] text-emerald-400 font-semibold">{pDuration}</p>
                       </div>
-                    </div>
+                      <div className="shrink-0 bg-slate-800 p-1 rounded-md group-hover:bg-slate-700 transition-colors">
+                          {isCollapsed ? <ChevronDown className="w-4 h-4 text-emerald-400" /> : <ChevronUp className="w-4 h-4 text-emerald-400" />}
+                      </div>
+                    </button>
+                    {isCollapsed && hiddenTopicsCount > 0 && (
+                        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 rounded-full text-xs font-bold text-slate-500 shadow-sm relative z-10 cursor-default" title={`${hiddenTopicsCount} items hidden`}>
+                            {hiddenTopicsCount} item{hiddenTopicsCount !== 1 ? 's' : ''} hidden
+                        </div>
+                    )}
                     <div className="flex-1 h-0.5 bg-gradient-to-r from-slate-200 to-transparent"></div>
                   </div>
 
                   {/* Content Grid - Staggered Layout */}
-                  <div className="space-y-4 md:pl-[100px] pl-8">
+                  {!isCollapsed && (
+                    <div className="space-y-4 md:pl-[100px] pl-8">
                     {/* Skills Section */}
                     {skillsList.length > 0 && (
                       <div>
@@ -579,6 +748,7 @@ export default function RoadmapTree() {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               );
             })}
