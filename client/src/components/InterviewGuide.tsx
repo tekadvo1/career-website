@@ -20,7 +20,9 @@ import {
     ChevronLeft,
     Save,
     CheckCircle2,
-    UserCheck
+    UserCheck,
+    Edit2,
+    Trash2
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useAlert } from '../contexts/AlertContext';
@@ -146,6 +148,55 @@ export default function InterviewGuide() {
             setHistoryError(true);
         } finally {
             setLoadingHistory(false);
+        }
+    };
+
+    const handleDeleteSession = async (id: number) => {
+        const userStrLocal = sessionStorage.getItem('user');
+        if (!userStrLocal) return;
+        const user = JSON.parse(userStrLocal);
+        
+        if (window.confirm("Are you sure you want to delete this interview session? All drafts and feedback will be lost.")) {
+            try {
+                const res = await apiFetch(`/api/ai/interview-guides/${id}?userId=${user.id}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchHistory();
+                } else {
+                    showAlert(data.error || "Failed to delete session", "error");
+                }
+            } catch (err) {
+                console.error("Failed to delete session:", err);
+                showAlert("Failed to delete session", "error");
+            }
+        }
+    };
+
+    const handleEditSession = async (id: number, currentRole: string) => {
+        const userStrLocal = sessionStorage.getItem('user');
+        if (!userStrLocal) return;
+        const user = JSON.parse(userStrLocal);
+
+        const newRole = window.prompt("Enter new role name for this session:", currentRole);
+        if (newRole && newRole.trim() !== "" && newRole !== currentRole) {
+            try {
+                const res = await apiFetch(`/api/ai/interview-guides/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: user.id, role: newRole.trim() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    fetchHistory();
+                } else {
+                    showAlert(data.error || "Failed to update session", "error");
+                }
+            } catch (err) {
+                console.error("Failed to update session:", err);
+                showAlert("Failed to update session", "error");
+            }
         }
     };
 
@@ -572,21 +623,40 @@ export default function InterviewGuide() {
                                                     </div>
                                                 </div>
                                                 
-                                                {session.status === 'Finished' ? (
-                                                    <button 
-                                                        onClick={() => handleReviewHistory(session.role)}
-                                                        className="shrink-0 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                                                    >
-                                                        Review Session
-                                                    </button>
-                                                ) : (
-                                                    <button 
-                                                        onClick={() => handleResumeHistory(session.role)}
-                                                        className="shrink-0 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
-                                                    >
-                                                        <Play className="w-3.5 h-3.5" /> Resume Practice
-                                                    </button>
-                                                )}
+                                                <div className="flex items-center gap-2 mt-4 sm:mt-0">
+                                                    {session.status === 'Finished' ? (
+                                                        <button 
+                                                            onClick={() => handleReviewHistory(session.role)}
+                                                            className="shrink-0 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                        >
+                                                            Review Session
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => handleResumeHistory(session.role)}
+                                                            className="shrink-0 px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                                                        >
+                                                            <Play className="w-3.5 h-3.5" /> Resume Practice
+                                                        </button>
+                                                    )}
+                                                    
+                                                    <div className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1">
+                                                        <button 
+                                                            onClick={() => handleEditSession(session.id, session.role)}
+                                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Edit Role Name"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteSession(session.id)}
+                                                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete Session"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                         

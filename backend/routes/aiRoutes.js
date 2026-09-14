@@ -608,6 +608,59 @@ router.post('/interview-guides', async (req, res) => {
     }
 });
 
+// DELETE /api/ai/interview-guides/:id - Delete an interview session
+router.delete('/interview-guides/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.query; // Expect userId to be passed for ownership verification
+    
+    if (!id || !userId) {
+        return res.status(400).json({ error: 'id and userId are required' });
+    }
+    
+    try {
+        const result = await pool.query(
+            "DELETE FROM interview_guides WHERE id = $1 AND user_id = $2 RETURNING id",
+            [id, userId]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Session not found or unauthorized' });
+        }
+        res.json({ success: true, message: 'Session deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting interview session:', err);
+        res.status(500).json({ error: 'Failed to delete interview session' });
+    }
+});
+
+// PUT /api/ai/interview-guides/:id - Update the role name of a session
+router.put('/interview-guides/:id', async (req, res) => {
+    const { id } = req.params;
+    const { userId, role } = req.body;
+    
+    if (!id || !userId || !role) {
+        return res.status(400).json({ error: 'id, userId, and role are required' });
+    }
+    
+    try {
+        // Update the role, relies on DB constraints to catch duplicates
+        const result = await pool.query(
+            "UPDATE interview_guides SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3 RETURNING id",
+            [role, id, userId]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Session not found or unauthorized' });
+        }
+        res.json({ success: true, message: 'Session updated successfully' });
+    } catch (err) {
+        console.error('Error updating interview session:', err);
+        // Handle unique constraint violation specifically if needed
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'A session for this role already exists.' });
+        }
+        res.status(500).json({ error: 'Failed to update interview session' });
+    }
+});
+
 // POST /api/ai/mock-interview-evaluate - Evaluates an answer and provides a score and feedback
 router.post('/mock-interview-evaluate', async (req, res) => {
     try {
