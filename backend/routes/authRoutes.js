@@ -86,7 +86,8 @@ router.get('/me', protect, async (req, res) => {
         available_xp,
         lastRoleAnalysis,
         free_time_schedule: userRecord.free_time_schedule || '',
-        daily_email_enabled: userRecord.daily_email_enabled !== false
+        daily_email_enabled: userRecord.daily_email_enabled !== false,
+        preferences: typeof userRecord.preferences === 'string' ? JSON.parse(userRecord.preferences) : (userRecord.preferences || {})
       }
     });
   } catch (error) {
@@ -341,16 +342,32 @@ router.get('/public-profile/:username', async (req, res) => {
   }
 });
 
-// @route   PUT /api/auth/visibility
-// @desc    Update public visibility toggle for logged-in user
+// @route   PUT /api/auth/settings
+// @desc    Update public visibility and preferences for logged-in user
 // @access  Private
-router.put('/visibility', protect, async (req, res) => {
+router.put('/settings', protect, async (req, res) => {
   try {
-    const { isPublic } = req.body;
-    await pool.query('UPDATE users SET is_public = $1 WHERE id = $2', [!!isPublic, req.user.id]);
-    res.json({ success: true, isPublic: !!isPublic });
+    const { isPublic, preferences } = req.body;
+    let queryArgs = [req.user.id];
+    let querySets = [];
+    
+    if (isPublic !== undefined) {
+       queryArgs.push(!!isPublic);
+       querySets.push(`is_public = $${queryArgs.length}`);
+    }
+    
+    if (preferences !== undefined) {
+       queryArgs.push(JSON.stringify(preferences));
+       querySets.push(`preferences = $${queryArgs.length}`);
+    }
+    
+    if (querySets.length > 0) {
+       await pool.query(`UPDATE users SET ${querySets.join(', ')} WHERE id = $1`, queryArgs);
+    }
+    
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error updating visibility:', error);
+    console.error('Error updating settings:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
@@ -361,6 +378,15 @@ router.put('/visibility', protect, async (req, res) => {
 router.put('/profile', protect, async (req, res) => {
   try {
     const { bio, phone, location, countryCode, avatar, customSkills } = req.body;
+    // Ensure preferences column exists
+    await pool.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='preferences') THEN
+          ALTER TABLE users ADD COLUMN preferences JSONB DEFAULT '{}';
+        END IF;
+      END $$;
+    `).catch(() => {});
+
     // Ensure custom_skills column exists (safe to run every time — idempotent)
     await pool.query(`
       DO $$ BEGIN
