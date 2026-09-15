@@ -596,8 +596,8 @@ router.post('/interview-guides', async (req, res) => {
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id, role) DO UPDATE SET 
              guide_data = EXCLUDED.guide_data, 
-             question_help = EXCLUDED.question_help,
-             answers_data = EXCLUDED.answers_data,
+             question_help = COALESCE(interview_guides.question_help, '{}'::jsonb) || EXCLUDED.question_help,
+             answers_data = COALESCE(interview_guides.answers_data, '{}'::jsonb) || EXCLUDED.answers_data,
              updated_at = CURRENT_TIMESTAMP`,
             [userId, role, JSON.stringify(guideData || {}), JSON.stringify(questionHelp || {}), JSON.stringify(answersData || {})]
         );

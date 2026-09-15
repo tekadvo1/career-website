@@ -85,6 +85,7 @@ export default function InterviewGuide() {
     const [guideData, setGuideData] = useState<GuideResponse | null>(null);
     const [questionHelp, setQuestionHelp] = useState<{[key: number]: string}>({});
     const [answersData, setAnswersData] = useState<{[key: number]: AnswerRecord}>({});
+    const answersDataRef = useRef<{[key: number]: AnswerRecord}>({});
 
     const [loadingHelp, setLoadingHelp] = useState<{[key: number]: boolean}>({});
 
@@ -108,7 +109,7 @@ export default function InterviewGuide() {
         if (!userStr) return false;
         const user = JSON.parse(userStr);
         try {
-            await apiFetch('/api/ai/interview-guides', {
+            const res = await apiFetch('/api/ai/interview-guides', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -119,6 +120,10 @@ export default function InterviewGuide() {
                     answersData: ansData
                 })
             });
+            if (!res.ok) {
+                 console.error("Failed to save interview guide, status:", res.status);
+                 return false;
+            }
             fetchHistory(); // refresh history after save
             return true;
         } catch (err) {
@@ -206,11 +211,13 @@ export default function InterviewGuide() {
         const user = JSON.parse(userStrLocal);
         try {
             const res = await apiFetch(`/api/ai/interview-guides?userId=${user.id}&role=${encodeURIComponent(targetRole)}`);
+            if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
             const data = await res.json();
             if (data.success && data.guideData) {
                 setGuideData(data.guideData);
                 setQuestionHelp(data.questionHelp || {});
                 setAnswersData(data.answersData || {});
+                answersDataRef.current = data.answersData || {};
                 setCurrentIdx(0);
                 setCurrentDraft((data.answersData || {})[0]?.draft || "");
                 return true;
@@ -218,6 +225,7 @@ export default function InterviewGuide() {
             setGuideData(null);
             setQuestionHelp({});
             setAnswersData({});
+            answersDataRef.current = {};
             setCurrentDraft("");
             return false;
         } catch(err) {
@@ -283,6 +291,7 @@ export default function InterviewGuide() {
             setGuideData(data);
             setQuestionHelp({});
             setAnswersData({});
+            answersDataRef.current = {};
             setCurrentIdx(0);
             setCurrentDraft("");
             await saveToBackend(data, {}, {}, role);
@@ -301,73 +310,94 @@ export default function InterviewGuide() {
 
     const handleRetryQuestion = async () => {
         if (!guideData) return;
-        const updatedAnswers = { ...answersData };
-        const ans = updatedAnswers[reviewIdx];
-        if (ans && (ans.submitted || ans.draft)) {
-            const prev = ans.previousAttempts || [];
-            prev.push({
-                submitted: ans.submitted || ans.draft,
-                feedback: ans.feedback
-            });
-            ans.previousAttempts = prev;
-            ans.submitted = "";
-            ans.draft = "";
-            ans.feedback = null;
-        }
-        setAnswersData(updatedAnswers);
-        await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+        
+        let newAnsData: {[key: number]: AnswerRecord} = {};
+        setAnswersData(prev => {
+             const updated = { ...prev };
+             const ans = updated[reviewIdx];
+             if (ans && (ans.submitted || ans.draft)) {
+                 const prevAttempts = ans.previousAttempts || [];
+                 prevAttempts.push({
+                     submitted: ans.submitted || ans.draft,
+                     feedback: ans.feedback
+                 });
+                 ans.previousAttempts = prevAttempts;
+                 ans.submitted = "";
+                 ans.draft = "";
+                 ans.feedback = null;
+             }
+             newAnsData = updated;
+             return updated;
+        });
+        answersDataRef.current = newAnsData;
+        
+        await saveToBackend(guideData, questionHelp, newAnsData, role);
         setCurrentIdx(reviewIdx);
         setCurrentDraft("");
         setView('session');
     };
 
     const handleSaveDraft = async () => {
-        if (!guideData) return;
+        if (!guideData) return false;
         setSaveStatus('saving');
         
-        const updatedAnswers = { ...answersData };
-        if (!updatedAnswers[currentIdx]) {
-            updatedAnswers[currentIdx] = { draft: "", submitted: "", feedback: null };
-        }
-        updatedAnswers[currentIdx].draft = currentDraft;
+        let newAnsData: {[key: number]: AnswerRecord} = {};
+        setAnswersData(prev => {
+            const updated = { ...prev };
+            if (!updated[currentIdx]) {
+                updated[currentIdx] = { draft: "", submitted: "", feedback: null };
+            }
+            updated[currentIdx].draft = currentDraft;
+            newAnsData = updated;
+            return updated;
+        });
+        answersDataRef.current = newAnsData;
         
-        setAnswersData(updatedAnswers);
-        
-        const success = await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+        const success = await saveToBackend(guideData, questionHelp, newAnsData, role);
         if (success) {
             setSaveStatus('saved');
             setTimeout(() => setSaveStatus('idle'), 3000);
+            return true;
         } else {
             setSaveStatus('error');
+            return false;
         }
     };
 
     const handleNavigateQuestion = async (direction: 'next' | 'prev') => {
         if (!guideData) return;
         // Auto-save draft before moving
-        if (currentDraft !== (answersData[currentIdx]?.draft || "")) {
-            await handleSaveDraft();
+        if (currentDraft !== (answersDataRef.current[currentIdx]?.draft || "")) {
+            const success = await handleSaveDraft();
+            if (!success) {
+                showAlert("Failed to auto-save draft. Please try again.", "error");
+                return; // Prevent navigating away if save fails
+            }
         }
         setSaveStatus('idle');
 
         const newIdx = direction === 'next' ? currentIdx + 1 : currentIdx - 1;
         if (newIdx >= 0 && newIdx < guideData.guide.length) {
             setCurrentIdx(newIdx);
-            setCurrentDraft(answersData[newIdx]?.draft || "");
+            setCurrentDraft(answersDataRef.current[newIdx]?.draft || "");
         }
     };
 
     const handleSubmitMockAnswer = async () => {
         if (!guideData || !currentDraft.trim()) return;
+        const targetIdx = currentIdx;
+        const submittedAnswer = currentDraft;
         setLoadingFeedback(true);
+        
+        let newAnsData: {[key: number]: AnswerRecord} = {};
         try {
-            const currentQ = guideData.guide[currentIdx];
+            const currentQ = guideData.guide[targetIdx];
             const res = await apiFetch('/api/ai/mock-interview-evaluate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     question: currentQ.question,
-                    answer: currentDraft,
+                    answer: submittedAnswer,
                     role: role,
                     detailed: true,
                     expectedAnswer: currentQ.answer
@@ -375,23 +405,44 @@ export default function InterviewGuide() {
             });
             
             if (!res.ok) throw new Error("Feedback fetch failed");
-            
             const data = await res.json();
             
-            const updatedAnswers = { ...answersData };
-            if (!updatedAnswers[currentIdx]) {
-                updatedAnswers[currentIdx] = { draft: "", submitted: "", feedback: null };
-            }
-            updatedAnswers[currentIdx].draft = currentDraft;
-            updatedAnswers[currentIdx].submitted = currentDraft;
-            updatedAnswers[currentIdx].feedback = data.feedback; // can be detailed object or string
+            setAnswersData(prev => {
+                const updated = { ...prev };
+                if (!updated[targetIdx]) updated[targetIdx] = { draft: "", submitted: "", feedback: null };
+                
+                const existing = updated[targetIdx];
+                if (existing.submitted && existing.feedback) {
+                    const prevAttempts = existing.previousAttempts || [];
+                    prevAttempts.push({ submitted: existing.submitted, feedback: existing.feedback });
+                    existing.previousAttempts = prevAttempts;
+                }
+                
+                existing.draft = submittedAnswer;
+                existing.submitted = submittedAnswer;
+                existing.feedback = data.feedback;
+                
+                newAnsData = updated;
+                return updated;
+            });
+            answersDataRef.current = newAnsData;
             
-            setAnswersData(updatedAnswers);
-            setRevealedAnswers(prev => ({...prev, [currentIdx]: true}));
-            await saveToBackend(guideData, questionHelp, updatedAnswers, role);
+            setRevealedAnswers(prev => ({...prev, [targetIdx]: true}));
+            await saveToBackend(guideData, questionHelp, newAnsData, role);
             
         } catch (err) {
             showAlert("Failed to get mock feedback", "error");
+            setAnswersData(prev => {
+                const updated = { ...prev };
+                if (!updated[targetIdx]) updated[targetIdx] = { draft: "", submitted: "", feedback: null };
+                updated[targetIdx].draft = submittedAnswer;
+                updated[targetIdx].submitted = submittedAnswer;
+                updated[targetIdx].feedback = "Evaluation failed. Please try again.";
+                newAnsData = updated;
+                return updated;
+            });
+            answersDataRef.current = newAnsData;
+            await saveToBackend(guideData, questionHelp, newAnsData, role);
         } finally {
             setLoadingFeedback(false);
         }
@@ -440,7 +491,7 @@ export default function InterviewGuide() {
     };
 
     // Derived states
-    const isAnswerSubmitted = currentDraft === answersData[currentIdx]?.submitted && !!answersData[currentIdx]?.feedback;
+    const isAnswerSubmitted = currentDraft === answersData[currentIdx]?.submitted && !!answersData[currentIdx]?.feedback && answersData[currentIdx]?.feedback !== "Evaluation failed. Please try again.";
     const currentFeedback = answersData[currentIdx]?.feedback as DetailedFeedback | string | null;
     
     return (
@@ -847,7 +898,7 @@ export default function InterviewGuide() {
                                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                                         <div className="flex items-center gap-2 w-full sm:w-auto">
                                             <button 
-                                                onClick={handleSaveDraft}
+                                                onClick={() => handleSaveDraft()}
                                                 disabled={!currentDraft.trim() || saveStatus === 'saving' || currentDraft === (answersData[currentIdx]?.draft || "")}
                                                 className="px-4 py-2.5 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold text-sm transition-all flex flex-1 sm:flex-none items-center justify-center gap-2 disabled:opacity-50"
                                             >
