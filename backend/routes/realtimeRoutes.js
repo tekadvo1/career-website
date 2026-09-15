@@ -115,7 +115,7 @@ async function getUserDashboardData(userId) {
   const [
     projResult, xpResult, streak,
     roadmapResult, missionsResult, missionsXpResult,
-    journeyResult
+    journeyResult, interviewResult
   ] = await Promise.all([
     pool.query(
       `SELECT id, title, description, role, status, progress_data, project_data, last_updated, created_at
@@ -128,7 +128,7 @@ async function getUserDashboardData(userId) {
       [userId]
     ),
     recordDailyActivity(userId),
-    pool.query(`SELECT role, topic_name, topic_id FROM roadmap_progress WHERE user_id = $1`, [userId]),
+    pool.query(`SELECT role, topic_name, topic_id, completed_at FROM roadmap_progress WHERE user_id = $1 ORDER BY completed_at DESC`, [userId]),
     pool.query(
       `SELECT m.*, um.status, um.progress, um.xp_earned 
        FROM missions m 
@@ -152,6 +152,13 @@ async function getUserDashboardData(userId) {
          (SELECT COALESCE(is_public, false)        FROM users WHERE id = $1)   AS is_public_profile,
          (SELECT COALESCE(onboarding_completed, false) FROM users WHERE id=$1) AS onboarding_complete`,
       [userId]
+    ),
+    pool.query(
+      `SELECT id, role, updated_at, 
+       COALESCE(jsonb_array_length(NULLIF(guide_data->'guide', 'null'::jsonb)), 0) as total_questions,
+       (SELECT count(*) FROM jsonb_each(COALESCE(answers_data, '{}'::jsonb)) WHERE (value->>'submitted') IS NOT NULL AND (value->>'submitted') != '') as answered_count
+       FROM interview_guides WHERE user_id = $1 ORDER BY updated_at DESC`,
+      [userId]
     )
   ]);
 
@@ -173,6 +180,7 @@ async function getUserDashboardData(userId) {
     roadmapProgress: roadmapResult.rows,
     missions: missionsResult.rows,
     missionsTotalXp: parseInt(missionsXpResult.rows[0]?.total_xp || 0, 10),
+    interviewSessions: interviewResult.rows.map(r => ({ ...r, total_questions: parseInt(r.total_questions||0, 10), answered_count: parseInt(r.answered_count||0, 10) })),
     // ── Journey: computed from real DB rows, zero client-side heuristics ─────
     journey: {
       onboardingComplete:   !!j.onboarding_complete,

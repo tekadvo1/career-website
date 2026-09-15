@@ -17,6 +17,8 @@ interface Project {
   progress_data?: any;
   project_data?: any;
   role?: string;
+  last_updated?: string;
+  created_at?: string;
 }
 
 /* ─── Real-time snapshot from SSE ─────────────────────────────────────────── */
@@ -35,7 +37,8 @@ interface DashSnapshot {
   activeCount: number;
   completedCount: number;
   savedCount: number;
-  roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string }>;
+  roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string; completed_at?: string }>;
+  interviewSessions?: Array<{ id: number; role: string; updated_at: string; total_questions: number; answered_count: number }>;
   journey?: JourneyData;
   timestamp: string;
 }
@@ -57,11 +60,14 @@ export default function Dashboard() {
 
   /* ---------- state --------------------------------------------------------- */
   const [userProjects,  setUserProjects]  = useState<Project[]>([]);
-  const [rtStats,       setRtStats]       = useState<{ totalXP: number, activeCount: number, completedCount: number, savedCount: number, roadmapTopics: number, roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string }> }>({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0, roadmapTopics: 0, roadmapProgress: [] });
+  const [rtStats,       setRtStats]       = useState<{ totalXP: number, activeCount: number, completedCount: number, savedCount: number, roadmapTopics: number, roadmapProgress: Array<{ role: string; topic_name: string; topic_id?: string; completed_at?: string }> }>({ totalXP: 0, activeCount: 0, completedCount: 0, savedCount: 0, roadmapTopics: 0, roadmapProgress: [] });
   
   const [journeyData, setJourneyData] = useState<JourneyData | null>(null);
   const [roleSummaryData, setRoleSummaryData] = useState<any>(null);
   const [isRoleSummaryLoading, setIsRoleSummaryLoading] = useState(false);
+  const [interviewSessions, setInterviewSessions] = useState<any[]>([]);
+  const [hasInitialSnapshot, setHasInitialSnapshot] = useState(false);
+  const [sseError, setSseError] = useState(false);
   const sseRef  = useRef<EventSource | null>(null);
 
   /* ── Fetch Role Analysis Cache / Polling ─────────────────────────────────── */
@@ -144,7 +150,7 @@ export default function Dashboard() {
     const mapDbProject = (p: any): Project => {
       const pd = typeof p.project_data  === 'string' ? JSON.parse(p.project_data)  : (p.project_data  || {});
       const pr = typeof p.progress_data === 'string' ? JSON.parse(p.progress_data) : (p.progress_data || {});
-      return { ...pd, id: String(p.id), title: p.title, description: p.description, status: p.status, progress_data: pr, project_data: pd };
+      return { ...pd, id: String(p.id), title: p.title, description: p.description, status: p.status, progress_data: pr, project_data: pd, last_updated: p.last_updated, created_at: p.created_at };
     };
 
     const mapped = workspaceProjects.map(mapDbProject);
@@ -158,6 +164,9 @@ export default function Dashboard() {
       roadmapTopics:  snap.roadmapProgress?.length || 0,
       roadmapProgress: snap.roadmapProgress || []
     });
+    setInterviewSessions(snap.interviewSessions || []);
+    setHasInitialSnapshot(true);
+    setSseError(false);
     if (snap.journey) setJourneyData(snap.journey);
   }, [selectedRole, _rawRole]);
 
@@ -170,6 +179,9 @@ export default function Dashboard() {
 
     es.addEventListener('snapshot', (e: MessageEvent) => {
       try { applySnapshot(JSON.parse(e.data)); } catch { /* ignore */ }
+    });
+    es.addEventListener('error', () => {
+      setSseError(true);
     });
     es.addEventListener('project_update', (_e: MessageEvent) => {
       try {
@@ -184,17 +196,13 @@ export default function Dashboard() {
 
   /* ── User Progress State ─────────────────────────────────────────────────── */
   const activeProjects = userProjects.filter(p => p.status === 'active').slice(0, 3);
-  
   const hasRoadmap = journeyData?.hasRoleAnalysis;
-  const isNewUser = rtStats.activeCount === 0 && rtStats.completedCount === 0 && rtStats.roadmapTopics === 0;
+  const isNewUser = rtStats.activeCount === 0 && rtStats.completedCount === 0 && rtStats.roadmapTopics === 0 && (!interviewSessions || interviewSessions.length === 0);
 
-  const getPrimaryAction = () => {
-    if (isRoleSummaryLoading) {
-      return { title: 'Analysis processing...', desc: 'We are generating your career blueprint.', label: "Generating...", action: () => {}, style: "bg-emerald-200 text-emerald-700 cursor-not-allowed" };
-    }
-    if (activeProjects.length > 0) {
-      return { title: `Continue: ${activeProjects[0].title}`, desc: 'Jump back into your active work.', label: "Continue Project", action: () => navigate(`/project-workspace?projectId=${encodeURIComponent(activeProjects[0].id)}`), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
-    }
+  const getContinuationActions = () => {
+    const actions: any[] = [];
+    
+    // 1. Learning Action
     if (rtStats.roadmapTopics > 0 || hasRoadmap) {
       let nextTopicInfo = null;
       if (roleSummaryData?.roadmap && Array.isArray(roleSummaryData.roadmap)) {
@@ -219,28 +227,79 @@ export default function Dashboard() {
               if (nextTopicInfo) break;
           }
       }
+      
+      let latestLearningDate = null;
+      if (rtStats.roadmapProgress && rtStats.roadmapProgress.length > 0) {
+         const dates = rtStats.roadmapProgress.map(r => r.completed_at ? new Date(r.completed_at).getTime() : 0).filter(d => d > 0);
+         if (dates.length > 0) latestLearningDate = new Date(Math.max(...dates));
+      }
 
-      return { 
-          title: nextTopicInfo ? 'Continue your roadmap' : 'Review your roadmap', 
-          desc: nextTopicInfo ? 'Jump back into your next lesson.' : 'See what to learn next.', 
-          label: nextTopicInfo ? "Continue learning" : "View My Roadmap", 
-          action: () => {
-              if (nextTopicInfo) {
-                  navigate('/roadmap-guide', { state: { role: selectedRole, topicName: nextTopicInfo.topicName, topicId: nextTopicInfo.topicId, subtopics: nextTopicInfo.subtopics, roadmap: roleSummaryData.roadmap } });
-              } else {
-                  navigate('/roadmap', { state: location.state });
-              }
-          }, 
-          style: "bg-emerald-600 hover:bg-emerald-700 text-white" 
-      };
+      if (nextTopicInfo) {
+         actions.push({
+            type: 'learning',
+            title: `Topic: ${nextTopicInfo.topicName}`,
+            desc: 'Continue your roadmap',
+            label: 'Continue learning',
+            action: () => navigate('/roadmap-guide', { state: { role: selectedRole, topicName: nextTopicInfo.topicName, topicId: nextTopicInfo.topicId, subtopics: nextTopicInfo.subtopics, roadmap: roleSummaryData.roadmap } }),
+            style: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+            icon: BookOpen,
+            timestamp: latestLearningDate
+         });
+      }
     }
-    if (roleSummaryData) {
-      return { title: 'Pick a starting project', desc: 'Apply your skills to a real-world scenario.', label: "Explore Projects", action: () => navigate('/projects'), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+
+    // 2. Project Action
+    if (activeProjects.length > 0) {
+      const p = activeProjects[0];
+      actions.push({
+         type: 'project',
+         title: `Project: ${p.title}`,
+         desc: `Current task: ${p.progress_data?.currentTask || 0}/${p.progress_data?.completedTasks?.length ? p.progress_data.completedTasks.length + (p.progress_data?.currentTask||0) : 0} completed`,
+         label: 'Continue Project',
+         action: () => navigate(`/project-workspace?projectId=${encodeURIComponent(p.id)}`),
+         style: 'bg-blue-600 hover:bg-blue-700 text-white',
+         icon: FolderKanban,
+         timestamp: p.last_updated ? new Date(p.last_updated) : null
+      });
     }
-    return { title: 'Complete your onboarding', desc: 'Generate your personalized career analysis.', label: "Start Onboarding", action: () => navigate('/onboarding'), style: "bg-emerald-600 hover:bg-emerald-700 text-white" };
+
+    // 3. Interview Action
+    const unfinishedInterview = interviewSessions?.find(s => s.answered_count < s.total_questions && s.total_questions > 0);
+    if (unfinishedInterview) {
+      actions.push({
+         type: 'interview',
+         title: `Mock Interview: ${unfinishedInterview.role}`,
+         desc: `Resume practice (${unfinishedInterview.answered_count}/${unfinishedInterview.total_questions} answered)`,
+         label: 'Resume Interview',
+         action: () => navigate('/interview-guide', { state: { role: unfinishedInterview.role } }),
+         style: 'bg-indigo-600 hover:bg-indigo-700 text-white',
+         icon: Radio,
+         timestamp: unfinishedInterview.updated_at ? new Date(unfinishedInterview.updated_at) : null
+      });
+    } else if (hasRoadmap) {
+      actions.push({
+         type: 'interview',
+         title: 'Start Practice',
+         desc: 'Hone your interview skills',
+         label: 'Start practice',
+         action: () => navigate('/interview-guide'),
+         style: 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+         icon: Radio,
+         timestamp: null
+      });
+    }
+
+    actions.sort((a, b) => {
+       if (a.timestamp && b.timestamp) return b.timestamp.getTime() - a.timestamp.getTime();
+       if (a.timestamp) return -1;
+       if (b.timestamp) return 1;
+       return 0;
+    });
+
+    return actions;
   };
 
-  const nextStep = getPrimaryAction();
+  const continuationActions = getContinuationActions();
 
   const resumeSkills = location.state?.resumeSkills || (() => {
     try {
@@ -278,7 +337,20 @@ export default function Dashboard() {
         <div className="px-6 md:px-10 pb-12 flex flex-col gap-6 max-w-6xl">
           
           {/* Your next step */}
-          {isNewUser ? (
+          {!hasInitialSnapshot ? (
+             <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200 animate-pulse">
+                <div className="h-4 bg-slate-200 rounded w-1/4 mb-4"></div>
+                <div className="h-16 bg-white rounded-xl border border-slate-100"></div>
+             </section>
+          ) : sseError && !hasInitialSnapshot ? (
+             <section className="bg-red-50 rounded-2xl p-6 border border-red-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-red-800 tracking-wide mb-1">Connection Error</h2>
+                  <p className="text-red-700/80">Failed to load your career data.</p>
+                </div>
+                <button onClick={() => window.location.reload()} className="px-4 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700">Retry</button>
+             </section>
+          ) : isNewUser ? (
              <section className="bg-slate-50 rounded-2xl p-6 border border-slate-200">
                  <h2 className="text-sm font-bold text-slate-800 tracking-wide uppercase mb-4">Getting Started</h2>
                  <div className="flex flex-col gap-3">
@@ -303,18 +375,50 @@ export default function Dashboard() {
                      </div>
                  </div>
              </section>
-          ) : (
-             <section className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                   <h2 className="text-sm font-bold text-emerald-800 tracking-wide uppercase mb-1">Your next step</h2>
-                   <h3 className="text-xl font-bold text-slate-900 mb-1">{nextStep.title}</h3>
-                   <p className="text-emerald-700/80">{nextStep.desc}</p>
+          ) : continuationActions.length > 0 ? (
+             <section>
+                <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Continue where you left off</h2>
+                <div className="flex flex-col gap-4">
+                  {/* Primary Action (first item) */}
+                  <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+                    <div className="flex items-start gap-4">
+                       <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                          {(() => { const Icon = continuationActions[0].icon; return <Icon className="w-6 h-6" />; })()}
+                       </div>
+                       <div>
+                         <h3 className="text-xl font-bold text-slate-900 mb-1">{continuationActions[0].title}</h3>
+                         <p className="text-emerald-800/80">{continuationActions[0].desc}</p>
+                       </div>
+                    </div>
+                    <button onClick={continuationActions[0].action} className={`px-6 py-3 rounded-xl font-semibold shadow-sm transition-all whitespace-nowrap ${continuationActions[0].style}`}>
+                       {continuationActions[0].label}
+                    </button>
+                  </div>
+                  
+                  {/* Secondary Actions */}
+                  {continuationActions.length > 1 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {continuationActions.slice(1, 3).map((action, idx) => (
+                        <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm hover:border-slate-300 transition-colors cursor-pointer" onClick={action.action}>
+                           <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 shrink-0">
+                                 {(() => { const Icon = action.icon; return <Icon className="w-5 h-5" />; })()}
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-slate-800 text-sm">{action.title}</h4>
+                                <p className="text-xs text-slate-500">{action.desc}</p>
+                              </div>
+                           </div>
+                           <button className="text-sm font-bold text-slate-600 group-hover:text-emerald-600">
+                             <ArrowRight className="w-4 h-4" />
+                           </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button onClick={nextStep.action} className={`px-6 py-3 rounded-xl font-semibold shadow-sm transition-all whitespace-nowrap ${nextStep.style}`}>
-                   {nextStep.label}
-                </button>
              </section>
-          )}
+          ) : null}
 
           {/* Career Progress */}
           <section>
@@ -335,10 +439,10 @@ export default function Dashboard() {
                   </div>
                </div>
                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600"><CheckCircle className="w-5 h-5"/></div>
+                  <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600"><Radio className="w-5 h-5"/></div>
                   <div>
-                    <p className="text-2xl font-bold">{rtStats.completedCount}</p>
-                    <p className="text-sm text-slate-500 font-medium">Projects completed</p>
+                    <p className="text-2xl font-bold">{interviewSessions.filter(s => s.answered_count >= s.total_questions && s.total_questions > 0).length}</p>
+                    <p className="text-sm text-slate-500 font-medium">Finished practice sessions</p>
                   </div>
                </div>
              </div>
@@ -355,7 +459,7 @@ export default function Dashboard() {
              
              {activeProjects.length > 0 ? (
                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 {activeProjects.map((p) => (
+                 {activeProjects.map((p: Project) => (
                     <div key={p.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => navigate(`/project-workspace?projectId=${p.id}`, { state: { project: p }})}>
                        <h3 className="font-bold text-slate-900 mb-2 line-clamp-1">{p.title}</h3>
                        <div className="flex-1" />
