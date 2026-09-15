@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getUser } from '../utils/auth';
 import {
   ArrowLeft, Briefcase, Eye, Edit2, Shield, Settings, Link as LinkIcon,
-  User as UserIcon, Code, X, Plus, Save, Globe, Linkedin, LayoutTemplate
+  User as UserIcon, Code, X, Plus, Save, Globe, Linkedin, LayoutTemplate,
+  AlertTriangle
 } from "lucide-react";
 
 // Themes definition
@@ -61,43 +62,79 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     about: "",
     experiences: [] as any[],
     skills: [] as string[],
-    theme: "minimalist"
+    theme: "minimalist",
+    draft_revision: 1
   };
 
   const [savedData, setSavedData] = useState(defaultData);
   const [editForm, setEditForm] = useState(defaultData);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success'>('idle');
   
+  const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
+  const [legacyData, setLegacyData] = useState<any>(null);
+  const [conflictError, setConflictError] = useState<string | null>(null);
+
   const isDirty = JSON.stringify(editForm) !== JSON.stringify(savedData);
   const t = THEMES[editForm.theme] || THEMES.minimalist;
 
   useEffect(() => {
-    // Load from sessionStorage (since it's a browser-only save for now)
-    const stored = sessionStorage.getItem('user_portfolio_details');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setSavedData(parsed);
-      setEditForm(parsed);
-    }
-    
-    // Load skills from active role if empty
-    const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
-    const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-    
-    if (!stored || !JSON.parse(stored).skills?.length) {
-       let activeSkills = ["JavaScript", "React", "Node.js", "TypeScript", "TailwindCSS"];
-       if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
-           activeSkills = lastRoleState.analysis.technicalSkills.filter((s:any)=>typeof s==='string');
-       } else if (lastRoleState?.analysis?.existingSkills?.length > 0) {
-           activeSkills = lastRoleState.analysis.existingSkills.map((s: any) => s.name);
-       }
-       setEditForm(prev => ({...prev, skills: activeSkills.slice(0, 8)}));
-       setSavedData(prev => ({...prev, skills: activeSkills.slice(0, 8)}));
-    }
+    if (isPublic) return; // Public view will be handled in another task via a public endpoint
 
-    if (!isPublic) {
-        fetchPortfolioDrafts();
-    }
+    const loadDraft = async () => {
+      try {
+        const { apiFetch } = await import('../utils/apiFetch');
+        const res = await apiFetch('/api/portfolio/draft');
+        const data = await res.json();
+        
+        let hasBackendData = false;
+        if (data.success && data.draft) {
+          hasBackendData = true;
+          const draftData = {
+            linkedin: data.draft.linkedin || "",
+            website: data.draft.website || "",
+            isPrivate: data.draft.is_private,
+            about: data.draft.about || "",
+            experiences: Array.isArray(data.draft.experiences) ? data.draft.experiences : (typeof data.draft.experiences === 'string' ? JSON.parse(data.draft.experiences) : []),
+            skills: Array.isArray(data.draft.skills) ? data.draft.skills : (typeof data.draft.skills === 'string' ? JSON.parse(data.draft.skills) : []),
+            theme: data.draft.theme || "minimalist",
+            draft_revision: data.draft.draft_revision || 1
+          };
+          setSavedData(draftData);
+          setEditForm(draftData);
+        } else {
+            // Load initial skills from active role if brand new
+            const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
+            const lastRoleState = lastStateRaw ? JSON.parse(lastStateRaw) : null;
+            let activeSkills = ["JavaScript", "React", "Node.js", "TypeScript", "TailwindCSS"];
+            if (lastRoleState?.analysis?.technicalSkills?.length > 0) {
+                activeSkills = lastRoleState.analysis.technicalSkills.filter((s:any)=>typeof s==='string');
+            } else if (lastRoleState?.analysis?.existingSkills?.length > 0) {
+                activeSkills = lastRoleState.analysis.existingSkills.map((s: any) => s.name);
+            }
+            setEditForm(prev => ({...prev, skills: activeSkills.slice(0, 8)}));
+            setSavedData(prev => ({...prev, skills: activeSkills.slice(0, 8)}));
+            fetchPortfolioDrafts(); // Pull project drafts
+        }
+
+        // Check for legacy sessionStorage data
+        const stored = sessionStorage.getItem('user_portfolio_details');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (!hasBackendData) {
+                // If backend is empty but we have local data, prompt recovery
+                setLegacyData(parsed);
+                setShowRecoveryPrompt(true);
+            } else {
+                // Backend is authoritative, safe to clear old browser data
+                sessionStorage.removeItem('user_portfolio_details');
+            }
+        }
+      } catch (err) {
+        console.error("Failed to load portfolio draft", err);
+      }
+    };
+
+    loadDraft();
   }, [isPublic]);
 
   const fetchPortfolioDrafts = async () => {
@@ -120,7 +157,6 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                 };
             });
             
-            // Only merge if we don't already have experiences saved
             setSavedData(prev => {
                 if (prev.experiences?.length > 0) return prev;
                 return { ...prev, experiences: mappedExps };
@@ -135,20 +171,77 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     }
   };
 
-  const handleSave = () => {
+  const handleRecoverLegacy = async () => {
+      if (!legacyData) return;
+      try {
+          const { apiFetch } = await import('../utils/apiFetch');
+          const res = await apiFetch('/api/portfolio/import-legacy', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(legacyData)
+          });
+          const data = await res.json();
+          if (data.success) {
+              const updatedData = { ...legacyData, draft_revision: data.draft_revision };
+              setSavedData(updatedData);
+              setEditForm(updatedData);
+              setShowRecoveryPrompt(false);
+              sessionStorage.removeItem('user_portfolio_details');
+          }
+      } catch (err) {
+          console.error("Failed to import legacy data", err);
+      }
+  };
+
+  const handleSave = async () => {
     setSaveStatus('saving');
-    setTimeout(() => {
-      setSavedData(editForm);
-      sessionStorage.setItem('user_portfolio_details', JSON.stringify(editForm));
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    }, 500); // Simulate brief network delay
+    setConflictError(null);
+    try {
+        const { apiFetch } = await import('../utils/apiFetch');
+        const res = await apiFetch('/api/portfolio/draft', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                is_private: editForm.isPrivate,
+                about: editForm.about,
+                experiences: editForm.experiences,
+                skills: editForm.skills,
+                linkedin: editForm.linkedin,
+                website: editForm.website,
+                theme: editForm.theme,
+                draft_revision: editForm.draft_revision
+            })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            const updatedForm = { ...editForm, draft_revision: data.draft_revision };
+            setSavedData(updatedForm);
+            setEditForm(updatedForm);
+            setSaveStatus('success');
+            sessionStorage.removeItem('user_portfolio_details'); // Clean up old browser cache
+            setTimeout(() => setSaveStatus('idle'), 2000);
+        } else if (res.status === 409) {
+            setSaveStatus('idle');
+            setConflictError(data.message);
+        } else {
+            setSaveStatus('idle');
+            alert(data.message || 'Failed to save portfolio');
+        }
+    } catch (err) {
+        console.error("Failed to save portfolio", err);
+        setSaveStatus('idle');
+    }
   };
 
   const handleDiscard = () => {
     if (confirm("Discard all unsaved changes in this session?")) {
       setEditForm(savedData);
     }
+  };
+
+  const handleReloadLatest = () => {
+      window.location.reload();
   };
 
   const updateExperience = (index: number, field: string, value: string) => {
@@ -253,7 +346,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                       <section>
                           <h2 className={`text-lg font-bold ${t.textPrimary} mb-3`}>Skills</h2>
                           <div className="flex flex-wrap gap-2">
-                              {dataToRender.skills.map((skill, i) => (
+                              {dataToRender.skills.map((skill: string, i: number) => (
                                   <span key={i} className={`px-2.5 py-1.5 ${t.skillBadge} rounded-lg text-[12px] font-bold border`}>
                                       {skill}
                                   </span>
@@ -281,8 +374,35 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      
+      {/* Top Alerts */}
+      {showRecoveryPrompt && (
+          <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between z-40 relative">
+              <div className="flex items-center gap-2 text-[13px] text-blue-800">
+                  <LayoutTemplate className="w-4 h-4 shrink-0" />
+                  We found an unsaved browser draft. Would you like to recover it?
+              </div>
+              <div className="flex gap-2">
+                  <button onClick={() => { setShowRecoveryPrompt(false); sessionStorage.removeItem('user_portfolio_details'); }} className="px-3 py-1.5 text-[12px] font-bold text-blue-700 hover:bg-blue-100 rounded">Discard</button>
+                  <button onClick={handleRecoverLegacy} className="px-3 py-1.5 text-[12px] font-bold bg-blue-600 hover:bg-blue-700 text-white rounded shadow-sm whitespace-nowrap">Recover Draft</button>
+              </div>
+          </div>
+      )}
+
+      {conflictError && (
+          <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center justify-between z-40 relative">
+              <div className="flex items-center gap-2 text-[13px] text-red-800">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  {conflictError}
+              </div>
+              <div className="flex gap-2">
+                  <button onClick={handleReloadLatest} className="px-3 py-1.5 text-[12px] font-bold bg-red-600 hover:bg-red-700 text-white rounded shadow-sm whitespace-nowrap">Reload Latest</button>
+              </div>
+          </div>
+      )}
+
       {/* Editor Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 h-16 flex items-center justify-between shadow-sm">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-4">
            <button onClick={() => navigate(-1)} className="text-slate-500 hover:text-slate-800">
              <ArrowLeft className="w-5 h-5" />
@@ -318,11 +438,11 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
             )}
             <button 
                 onClick={handleSave}
-                disabled={!isDirty || saveStatus === 'saving'}
-                className={`px-4 py-2 rounded-lg font-bold text-[12px] flex items-center gap-1.5 transition-colors ${isDirty ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}
+                disabled={!isDirty || saveStatus === 'saving' || !!conflictError}
+                className={`px-4 py-2 rounded-lg font-bold text-[12px] flex items-center gap-1.5 transition-colors ${isDirty && !conflictError ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}
             >
                 <Save className="w-3.5 h-3.5" />
-                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved in browser' : isDirty ? 'Save in browser' : 'Saved'}
+                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved' : isDirty ? 'Save Draft' : 'Saved'}
             </button>
         </div>
       </header>
@@ -331,7 +451,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
       <div className="flex-1 max-w-6xl w-full mx-auto flex flex-col md:flex-row mt-6 px-4 gap-6 pb-20">
          
          {mode === 'edit' && (
-             <aside className="w-full md:w-56 shrink-0 md:sticky md:top-24 h-fit">
+             <aside className="w-full md:w-56 shrink-0 md:sticky md:top-24 h-fit z-10">
                 <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                     {[
                       { id: 'about', label: 'About', icon: UserIcon },

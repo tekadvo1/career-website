@@ -130,6 +130,24 @@ CREATE TABLE IF NOT EXISTS quiz_results (
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Portfolios table (for managing user portfolios and drafts)
+CREATE TABLE IF NOT EXISTS portfolios (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  is_private BOOLEAN DEFAULT true,
+  is_published BOOLEAN DEFAULT false,
+  about TEXT,
+  experiences JSONB DEFAULT '[]',
+  skills JSONB DEFAULT '[]',
+  linkedin VARCHAR(255),
+  website VARCHAR(255),
+  theme VARCHAR(50) DEFAULT 'minimalist',
+  draft_revision INTEGER DEFAULT 1,
+  published_data JSONB,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- NEW: User Projects Table for detailed execution tracking
 CREATE TABLE IF NOT EXISTS user_projects (
   id SERIAL PRIMARY KEY,

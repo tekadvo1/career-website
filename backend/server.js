@@ -108,6 +108,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const portfolioRoutes = require('./routes/portfolioRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 const { adminProtect } = require('./middleware/adminMiddleware');
@@ -122,6 +123,7 @@ app.use('/api/admin-auth', adminAuthRoutes);   // Public admin login — no user
 app.use('/api/ai',          protect, aiRoutes);
 app.use('/api/resume',      protect, resumeRoutes);
 app.use('/api/role',        protect, roleRoutes);
+app.use('/api/portfolio',   protect, portfolioRoutes);
 app.use('/api/missions',    protect, missionRoutes);
 app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);
@@ -194,6 +196,26 @@ const updateSchema = async () => {
         guide_data JSONB NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(project_title, task_text)
+      );
+    `);
+
+    // Create portfolios table for managing user portfolios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS portfolios (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        is_private BOOLEAN DEFAULT true,
+        is_published BOOLEAN DEFAULT false,
+        about TEXT,
+        experiences JSONB DEFAULT '[]',
+        skills JSONB DEFAULT '[]',
+        linkedin VARCHAR(255),
+        website VARCHAR(255),
+        theme VARCHAR(50) DEFAULT 'minimalist',
+        draft_revision INTEGER DEFAULT 1,
+        published_data JSONB,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `);
 
