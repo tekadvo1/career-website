@@ -45,6 +45,13 @@ export default function ResourcesHub() {
   const [activeTab, setActiveTab] = useState<"all" | "saved">("all");
   
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Role-based filtering state
+  const [learningRoles, setLearningRoles] = useState<{id: string, title: string, topics: string[]}[]>([]);
+  const [selectedRoleId, setSelectedRoleId] = useState<string>("all");
+  
+  // Robust bookmarking state
+  const [isSavingResourceIds, setIsSavingResourceIds] = useState<Set<string>>(new Set());
 
   const topicContext = location.state?.topicContext;
   const [contextFilter, setContextFilter] = useState<{ topicName: string; subtopicName: string | null } | null>(
@@ -58,9 +65,10 @@ export default function ResourcesHub() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [resAll, resSaved] = await Promise.all([
+        const [resAll, resSaved, resRoles] = await Promise.all([
            apiFetch("/api/resources"),
-           apiFetch("/api/resources/saved").catch(() => null)
+           apiFetch("/api/resources/saved").catch(() => null),
+           apiFetch("/api/resources/role-context").catch(() => null)
         ]);
         
         let merged = [];
@@ -84,6 +92,13 @@ export default function ResourcesHub() {
            }
         }
         
+        if (resRoles && resRoles.ok) {
+           const dataRoles = await resRoles.json();
+           if (dataRoles.success) {
+               setLearningRoles(dataRoles.roles || []);
+           }
+        }
+        
         const mappedResources = merged.map((r: Resource & { resource_type?: string, id: number|string }) => ({
           ...r,
           id: String(r.id),
@@ -104,6 +119,9 @@ export default function ResourcesHub() {
       e.preventDefault();
       e.stopPropagation();
       
+      if (isSavingResourceIds.has(resourceId)) return; // Prevent duplicate requests
+      
+      setIsSavingResourceIds(prev => new Set(prev).add(resourceId));
       const isSaved = savedResourceIds.has(resourceId);
       
       setSavedResourceIds(prev => {
@@ -127,10 +145,17 @@ export default function ResourcesHub() {
                throw new Error("Failed to save");
           }
       } catch (e) {
+          // Revert on failure
           setSavedResourceIds(prev => {
               const newSet = new Set(prev);
               if (isSaved) newSet.add(resourceId);
               else newSet.delete(resourceId);
+              return newSet;
+          });
+      } finally {
+          setIsSavingResourceIds(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(resourceId);
               return newSet;
           });
       }
@@ -146,6 +171,15 @@ export default function ResourcesHub() {
        );
        const hasTitleMatch = resource.title.toLowerCase().includes(contextFilter.topicName.toLowerCase());
        if (!hasTopic && !hasTitleMatch) return false;
+    }
+
+    if (selectedRoleId !== "all") {
+        const selectedRole = learningRoles.find(r => r.id === selectedRoleId);
+        if (selectedRole && selectedRole.topics.length > 0) {
+            const roleTopicsNormalized = selectedRole.topics.map(t => t.toLowerCase().trim());
+            const hasMatchingTopic = resource.topics?.some(t => roleTopicsNormalized.includes(t.toLowerCase().trim()));
+            if (!hasMatchingTopic) return false;
+        }
     }
 
     const matchesSearch = !searchQuery || (
@@ -230,13 +264,14 @@ export default function ResourcesHub() {
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm"
               />
             </div>
-            {(searchQuery || selectedTopic !== "all" || selectedType !== "all" || selectedLevel !== "all") && (
+            {(searchQuery || selectedTopic !== "all" || selectedType !== "all" || selectedLevel !== "all" || selectedRoleId !== "all") && (
               <button
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedTopic("all");
                   setSelectedType("all");
                   setSelectedLevel("all");
+                  setSelectedRoleId("all");
                 }}
                 className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
               >
@@ -246,6 +281,14 @@ export default function ResourcesHub() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+            {learningRoles.length > 0 && (
+               <select value={selectedRoleId} onChange={(e) => setSelectedRoleId(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[160px] flex-1 sm:flex-none font-medium">
+                 <option value="all">All Roles / Goals</option>
+                 {learningRoles.map(role => (
+                    <option key={role.id} value={role.id}>{role.title}</option>
+                 ))}
+               </select>
+            )}
             <select value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[140px] flex-1 sm:flex-none">
               <option value="all">All Topics</option>
               {availableTopics.map(topic => (
@@ -299,11 +342,20 @@ export default function ResourcesHub() {
               <Search className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">
-               {contextFilter ? `No resources found for ${contextFilter.topicName}` : "No resources found"}
+               {contextFilter ? `No resources found for ${contextFilter.topicName}` : selectedRoleId !== "all" ? "No resources perfectly match this role's topics yet" : "No resources found"}
             </h3>
-            <p className="text-slate-600 mb-6">Try adjusting your filters or clearing the topic context.</p>
+            <p className="text-slate-600 mb-6">
+               {selectedRoleId !== "all" 
+                 ? "Our mapping may be incomplete. Clear the role filter to view all available resources." 
+                 : "Try adjusting your filters or clearing the topic context."}
+            </p>
             {contextFilter && (
                <button onClick={() => setContextFilter(null)} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors">
+                  Browse All Resources
+               </button>
+            )}
+            {selectedRoleId !== "all" && !contextFilter && (
+               <button onClick={() => setSelectedRoleId("all")} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition-colors mt-2 inline-block">
                   Browse All Resources
                </button>
             )}
@@ -312,6 +364,15 @@ export default function ResourcesHub() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredResources.map((resource) => {
               const isSaved = savedResourceIds.has(resource.id);
+              let matchReason = null;
+              if (selectedRoleId !== "all") {
+                  const selectedRole = learningRoles.find(r => r.id === selectedRoleId);
+                  if (selectedRole && selectedRole.topics.length > 0) {
+                      const roleTopicsNormalized = selectedRole.topics.map(t => t.toLowerCase().trim());
+                      matchReason = resource.topics?.find(t => roleTopicsNormalized.includes(t.toLowerCase().trim()));
+                  }
+              }
+
               return (
               <div key={resource.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col border border-slate-200 overflow-hidden group">
                 <div className="p-4 border-b border-slate-100 flex items-start justify-between bg-slate-50/50">
@@ -330,6 +391,13 @@ export default function ResourcesHub() {
 
                 <div className="p-4 flex flex-col flex-1 gap-4">
                   <p className="text-sm text-slate-600 line-clamp-2">{resource.description}</p>
+                  
+                  {matchReason && (
+                     <div className="px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-md text-xs font-medium text-emerald-800">
+                        <Sparkles className="w-3.5 h-3.5 inline-block mr-1 text-emerald-600" />
+                        Matches <strong>{matchReason}</strong> in your saved learning plan.
+                     </div>
+                  )}
 
                   <div className="flex flex-wrap gap-2 text-xs">
                      {resource.free ? (

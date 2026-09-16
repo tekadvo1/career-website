@@ -153,6 +153,42 @@ router.get('/saved', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/resources/role-context - Get user's learning plans to power role-based filtering
+router.get('/role-context', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT id, role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND lifecycle_status = 'ready' ORDER BY created_at DESC",
+            [req.user.id]
+        );
+
+        const roles = result.rows.map(row => {
+            const topicsSet = new Set();
+            if (row.analysis_data && Array.isArray(row.analysis_data.roadmap)) {
+                row.analysis_data.roadmap.forEach(phase => {
+                    if (Array.isArray(phase.topics)) {
+                        phase.topics.forEach(topic => {
+                            if (topic && topic.name) {
+                                topicsSet.add(topic.name.trim());
+                            }
+                        });
+                    }
+                });
+            }
+
+            return {
+                id: row.id,
+                title: row.role_title,
+                topics: Array.from(topicsSet)
+            };
+        });
+
+        res.json({ success: true, roles });
+    } catch (error) {
+        console.error('Fetch Role Context Error:', error);
+        res.status(500).json({ error: 'Failed to fetch role context' });
+    }
+});
+
 // POST /api/resources/search - AI-powered resource search
 router.post('/search', async (req, res) => {
   const { query, role, filters } = req.body;
