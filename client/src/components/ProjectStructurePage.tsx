@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Code2,
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import Sidebar from './Sidebar';
 import { apiFetch } from '../utils/apiFetch';
 
@@ -82,7 +83,7 @@ const QUICK_PROMPTS = [
 
 // ── Markdown renderer (simple) ────────────────────────────────────────────────
 function renderMarkdown(text: string): string {
-  return text
+  const rawHtml = text
     .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-black/30 rounded-lg p-3 text-xs font-mono overflow-x-auto my-2 border border-white/5"><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono text-emerald-300">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong class="text-white font-semibold">$1</strong>')
@@ -92,6 +93,7 @@ function renderMarkdown(text: string): string {
     .replace(/^- (.+)$/gm,   '<div class="flex gap-1.5 items-start my-0.5"><span class="text-emerald-400 mt-0.5 flex-shrink-0">•</span><span>$1</span></div>')
     .replace(/\n\n/g, '<br/>')
     .replace(/\n/g,   ' ');
+  return DOMPurify.sanitize(rawHtml);
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────────

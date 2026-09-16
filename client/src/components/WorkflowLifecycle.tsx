@@ -40,7 +40,7 @@ export default function WorkflowLifecycle() {
   // Try to load from sessionStorage if state is missing
   const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
   const storedData = lastStateRaw ? JSON.parse(lastStateRaw) : null;
-  const defaultRole = storedData?.role || 'Software Engineer';
+  const defaultRole = storedData?.role || '';
   const defaultAnalysis = storedData?.analysis || null;
   
   const { role = defaultRole, analysis = defaultAnalysis } = location.state || {};

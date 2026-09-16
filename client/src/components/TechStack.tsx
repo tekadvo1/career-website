@@ -8,7 +8,7 @@ import { useAlert } from '../contexts/AlertContext';
 export default function TechStack() {
     const { showAlert } = useAlert();
     const navigate = useNavigate();
-    const [role, setRole] = useState("Software Engineer");
+    const [role, setRole] = useState("");
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     
@@ -22,7 +22,7 @@ export default function TechStack() {
     const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
 
     useEffect(() => {
-        let currentRole = "Software Engineer";
+        let currentRole = "";
         let currentRoleId: number | null = null;
         
         const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
@@ -71,7 +71,6 @@ export default function TechStack() {
         setShowRefreshConfirm(false);
 
         setIsLoading(true);
-        setResult(null);
         setIsSaved(false);
 
         const formData = new FormData();
@@ -146,7 +145,7 @@ export default function TechStack() {
                                 </h1>
                             </div>
                             <p className="text-slate-500 max-w-2xl text-[14px] leading-relaxed">
-                                Get a real-time, AI-powered breakdown of the exact programming languages, frameworks, and modern tools you need based on the absolute latest industry trends for your role.
+                                Get an AI-powered breakdown of the exact programming languages, frameworks, and modern tools you need based on industry trends for your role.
                             </p>
                         </div>
                     </div>
@@ -227,7 +226,7 @@ export default function TechStack() {
                                         className="w-full mt-4 py-3 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                                     >
                                         {isLoading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                                        {isLoading ? 'Searching live trends...' : 'Generate Tech Stack'}
+                                        {isLoading ? 'Analyzing role...' : 'Generate Tech Stack'}
                                     </button>
                                 </div>
                             </div>
@@ -239,7 +238,7 @@ export default function TechStack() {
                                 <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200">
                                     <BrainCircuit className="w-12 h-12 text-teal-400 animate-pulse mb-4" />
                                     <h3 className="text-lg font-bold text-slate-700">FindStreak AI is analyzing...</h3>
-                                    <p className="text-sm text-slate-500 mt-2">Connecting to live industry data for {role}.</p>
+                                    <p className="text-sm text-slate-500 mt-2">Generating tech stack recommendations for {role}.</p>
                                 </div>
                             ) : result ? (
                                 <div className="space-y-4">

@@ -890,6 +890,22 @@ router.post('/save-workflow', protect, async (req, res) => {
     }
 
     try {
+        const existing = await pool.query(
+            `SELECT id FROM workflow_results WHERE user_id = $1 AND role_analysis_id = $2`,
+            [userId, role_analysis_id || null]
+        );
+
+        if (existing.rows.length > 0) {
+            const result = await pool.query(
+                `UPDATE workflow_results 
+                 SET role_title = $3, workflow_data = $4, is_custom = $5, updated_at = NOW() 
+                 WHERE id = $1 AND user_id = $2 
+                 RETURNING id, updated_at as created_at`,
+                [existing.rows[0].id, userId, role, JSON.stringify(workflow), !!is_custom]
+            );
+            return res.json({ success: true, message: "Workflow saved successfully", id: result.rows[0].id, savedAt: result.rows[0].created_at });
+        }
+
         const result = await pool.query(
             `INSERT INTO workflow_results (user_id, role_analysis_id, role_title, workflow_data, is_custom)
              VALUES ($1, $2, $3, $4, $5)
@@ -1224,8 +1240,8 @@ router.post('/adaptive-schedule', async (req, res) => {
 
 
 // POST /api/role/start-project - Saves a project to user_projects
-router.post('/start-project', async (req, res) => {
-    const userId = req.user ? req.user.id : req.body.userId;
+router.post('/start-project', protect, async (req, res) => {
+    const userId = req.user.id;
     const { project, role, curriculum, status = 'active', schedule_data = {}, source_provenance = 'generated', template_version = '1.0' } = req.body;
 
     if (!userId || !project) {

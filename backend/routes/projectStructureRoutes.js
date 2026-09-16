@@ -218,6 +218,22 @@ router.post('/save-advisor', protect, async (req, res) => {
   if (!type || !goal) return res.status(400).json({ error: 'type and goal are required' });
 
   try {
+    const existing = await pool.query(
+      `SELECT id FROM project_structures_custom WHERE user_id = $1 AND role = $2 AND description = $3`,
+      [userId, type, goal]
+    );
+
+    if (existing.rows.length > 0) {
+      const result = await pool.query(
+        `UPDATE project_structures_custom 
+         SET structure_data = $4, updated_at = NOW() 
+         WHERE id = $1 AND user_id = $2 
+         RETURNING id, updated_at as created_at`,
+        [existing.rows[0].id, userId, type, JSON.stringify({ level, recs, structure })]
+      );
+      return res.json({ success: true, id: result.rows[0].id, savedAt: result.rows[0].created_at });
+    }
+
     const result = await pool.query(
       `INSERT INTO project_structures_custom (user_id, role, description, structure_data)
        VALUES ($1, $2, $3, $4)

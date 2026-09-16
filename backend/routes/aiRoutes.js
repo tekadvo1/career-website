@@ -870,6 +870,22 @@ router.post('/tech-stack/save', protect, async (req, res) => {
     }
 
     try {
+        const existing = await pool.query(
+            `SELECT id FROM tech_stack_results WHERE user_id = $1 AND role_analysis_id = $2`,
+            [userId, role_analysis_id || null]
+        );
+
+        if (existing.rows.length > 0) {
+            const result = await pool.query(
+                `UPDATE tech_stack_results 
+                 SET role_title = $3, result_data = $4, input_context = $5, updated_at = NOW() 
+                 WHERE id = $1 AND user_id = $2 
+                 RETURNING id, updated_at as created_at`,
+                [existing.rows[0].id, userId, role_title, JSON.stringify(result_data), input_context ? JSON.stringify(input_context) : null]
+            );
+            return res.json({ success: true, id: result.rows[0].id, savedAt: result.rows[0].created_at });
+        }
+
         const result = await pool.query(
             `INSERT INTO tech_stack_results (user_id, role_analysis_id, role_title, result_data, input_context)
              VALUES ($1, $2, $3, $4, $5)

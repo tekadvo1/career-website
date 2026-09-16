@@ -96,7 +96,8 @@ For each requirement, provide:
 - related_user_data: The specific piece of user data that led to this conclusion (or null).
 - recommended_next_step: A brief suggestion (e.g., "Add to learning plan", "Take a quiz", "Review documentation")
 
-Return a JSON object with a 'comparisons' array. Do not invent missing skills as a negative; just use 'Not Enough Information'.`
+Return a JSON object with a 'comparisons' array. Do not invent missing skills as a negative; just use 'Not Enough Information'.
+CRITICAL: Do NOT generate or include any "ATS score", "match percentage", or "hiring probability" in your response or explanations. Focus only on the specific requirements.`
                 },
                 {
                     role: "user",
