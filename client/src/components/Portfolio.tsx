@@ -4,7 +4,7 @@ import { getUser } from '../utils/auth';
 import {
   ArrowLeft, Briefcase, Eye, Edit2, Shield, Settings, Link as LinkIcon,
   User as UserIcon, Code, X, Plus, Save, Globe, Linkedin, LayoutTemplate,
-  AlertTriangle
+  AlertTriangle, ChevronUp, ChevronDown, Star, Trash2, CheckCircle2, Github, FolderGit2
 } from "lucide-react";
 
 // Themes definition
@@ -44,7 +44,7 @@ const THEMES: Record<string, any> = {
   }
 };
 
-type PortfolioSection = 'about' | 'projects' | 'skills' | 'links' | 'settings';
+type PortfolioSection = 'about' | 'projects' | 'experience' | 'skills' | 'links' | 'settings';
 
 export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
@@ -73,6 +73,11 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [legacyData, setLegacyData] = useState<any>(null);
   const [conflictError, setConflictError] = useState<string | null>(null);
+
+  const [showProjectPicker, setShowProjectPicker] = useState(false);
+  const [myProjects, setMyProjects] = useState<any[]>([]);
+  const [expandedProjectId, setExpandedProjectId] = useState<string | number | null>(null);
+
 
   const isDirty = JSON.stringify(editForm) !== JSON.stringify(savedData);
   const t = THEMES[editForm.theme] || THEMES.minimalist;
@@ -187,6 +192,59 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     } catch (e) {
         console.error("Failed to fetch portfolio drafts", e);
     }
+  };
+
+  const fetchMyProjects = async () => {
+      try {
+          const { apiFetch } = await import('../utils/apiFetch');
+          const res = await apiFetch('/api/role/my-projects');
+          const data = await res.json();
+          if (data.success) {
+              setMyProjects(data.projects || []);
+              setShowProjectPicker(true);
+          }
+      } catch (err) {
+          console.error("Failed to fetch my projects", err);
+      }
+  };
+
+  const addProjectToPortfolio = (proj: any) => {
+      const pData = typeof proj.project_data === 'string' ? JSON.parse(proj.project_data) : (proj.project_data || {});
+      const newExp = {
+          id: proj.id,
+          title: proj.title,
+          role: proj.role || "Developer",
+          date: new Date(proj.created_at || Date.now()).getFullYear().toString(),
+          description: proj.description || "",
+          summary: proj.description || "",
+          problem: pData.problem || "",
+          built: pData.built || "",
+          technologies: pData.technologies ? pData.technologies.join(", ") : "",
+          isProject: true,
+          isFeatured: false
+      };
+      setEditForm(prev => ({
+          ...prev,
+          experiences: [newExp, ...prev.experiences]
+      }));
+      setShowProjectPicker(false);
+      setExpandedProjectId(proj.id);
+  };
+
+  const moveExperience = (index: number, direction: 'up' | 'down') => {
+      const newExps = [...editForm.experiences];
+      if (direction === 'up' && index > 0) {
+          [newExps[index - 1], newExps[index]] = [newExps[index], newExps[index - 1]];
+      } else if (direction === 'down' && index < newExps.length - 1) {
+          [newExps[index + 1], newExps[index]] = [newExps[index], newExps[index + 1]];
+      }
+      setEditForm({ ...editForm, experiences: newExps });
+  };
+
+  const toggleFeatureExperience = (index: number) => {
+      const newExps = [...editForm.experiences];
+      newExps[index].isFeatured = !newExps[index].isFeatured;
+      setEditForm({ ...editForm, experiences: newExps });
   };
 
   const handleRecoverLegacy = async () => {
@@ -342,11 +400,63 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                       </section>
                     )}
 
-                    {dataToRender.experiences.length > 0 && (
+                    {dataToRender.experiences.filter((e: any) => e.isProject).length > 0 && (
                       <section>
-                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-4`}>Experience & Projects</h2>
+                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-4`}>Featured Projects</h2>
                           <div className="space-y-6">
-                              {dataToRender.experiences.map((exp: any, i: number) => (
+                              {dataToRender.experiences.filter((e: any) => e.isProject).map((exp: any, i: number) => (
+                                  <div key={i} className={`p-5 rounded-xl border ${t.card}`}>
+                                      <div className="flex justify-between items-start mb-3">
+                                          <div>
+                                              <h3 className={`text-[16px] font-bold ${t.textPrimary} flex items-center gap-2`}>
+                                                  {exp.title}
+                                                  {exp.isFeatured && <span className="bg-amber-100 text-amber-700 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1"><Star className="w-3 h-3 fill-amber-700" /> Featured</span>}
+                                              </h3>
+                                              <p className={`text-[13px] font-medium ${t.accentText} mt-1`}>{exp.role} <span className={`${t.textSecondary} font-medium`}>| {exp.date}</span></p>
+                                          </div>
+                                      </div>
+                                      
+                                      <p className={`text-[14px] ${t.textSecondary} leading-relaxed mb-4 whitespace-pre-wrap`}>{exp.summary || exp.description}</p>
+                                      
+                                      {exp.technologies && (
+                                          <div className="mb-4 flex flex-wrap gap-1.5">
+                                              {exp.technologies.split(',').map((tech: string, j: number) => tech.trim() ? (
+                                                  <span key={j} className={`px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-600 rounded`}>{tech.trim()}</span>
+                                              ) : null)}
+                                          </div>
+                                      )}
+                                      
+                                      {/* Extra structured fields shown if available */}
+                                      {exp.problem && (
+                                          <div className="mb-3">
+                                              <h4 className={`text-[12px] font-bold ${t.textPrimary} mb-1`}>Problem</h4>
+                                              <p className={`text-[13px] ${t.textSecondary}`}>{exp.problem}</p>
+                                          </div>
+                                      )}
+                                      {exp.built && (
+                                          <div className="mb-3">
+                                              <h4 className={`text-[12px] font-bold ${t.textPrimary} mb-1`}>What I Built</h4>
+                                              <p className={`text-[13px] ${t.textSecondary}`}>{exp.built}</p>
+                                          </div>
+                                      )}
+                                      
+                                      {(exp.repoUrl || exp.liveUrl) && (
+                                          <div className="mt-5 flex gap-3">
+                                              {exp.repoUrl && <a href={exp.repoUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-bold rounded-lg transition-colors`}><Github className="w-4 h-4" /> Repository</a>}
+                                              {exp.liveUrl && <a href={exp.liveUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-[12px] font-bold rounded-lg transition-colors`}><Globe className="w-4 h-4" /> Live Demo</a>}
+                                          </div>
+                                      )}
+                                  </div>
+                              ))}
+                          </div>
+                      </section>
+                    )}
+
+                    {dataToRender.experiences.filter((e: any) => !e.isProject).length > 0 && (
+                      <section>
+                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-4`}>Experience</h2>
+                          <div className="space-y-6">
+                              {dataToRender.experiences.filter((e: any) => !e.isProject).map((exp: any, i: number) => (
                                   <div key={i} className={`p-4 rounded-xl border ${t.card}`}>
                                       <h3 className={`text-[15px] font-bold ${t.textPrimary}`}>{exp.title}</h3>
                                       <p className={`text-[13px] font-semibold ${t.accentText} mb-2`}>{exp.role} <span className={`${t.textSecondary} font-medium`}>| {exp.date}</span></p>
@@ -482,7 +592,8 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                 <nav className="flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
                     {[
                       { id: 'about', label: 'About', icon: UserIcon },
-                      { id: 'projects', label: 'Projects & Experience', icon: Briefcase },
+                      { id: 'projects', label: 'Projects', icon: FolderGit2 },
+                      { id: 'experience', label: 'Experience', icon: Briefcase },
                       { id: 'skills', label: 'Skills', icon: Code },
                       { id: 'links', label: 'Links', icon: LinkIcon },
                       { id: 'settings', label: 'Settings', icon: Settings },
@@ -528,11 +639,126 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
                     {activeSection === 'projects' && (
                         <div className="animate-in fade-in">
-                            <h2 className="text-lg font-bold text-slate-800 mb-4">Projects & Experience</h2>
-                            <p className="text-[12px] text-slate-500 mb-4">Showcase your work history and major projects.</p>
+                            <h2 className="text-lg font-bold text-slate-800 mb-4">Projects</h2>
+                            <p className="text-[12px] text-slate-500 mb-4">Select projects you've built and detail your work.</p>
                             
                             <div className="space-y-4">
-                                {editForm.experiences.map((exp, i) => (
+                                {editForm.experiences.filter(e => e.isProject).length === 0 ? (
+                                    <div className="bg-slate-50 rounded-xl p-8 text-center border border-slate-200">
+                                        <FolderGit2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                                        <p className="text-[13px] font-semibold text-slate-600 mb-2">No projects selected</p>
+                                        <p className="text-[12px] text-slate-500 mb-4 max-w-sm mx-auto">Choose a project and explain what you built to showcase your technical skills.</p>
+                                        <button onClick={fetchMyProjects} className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-bold text-[13px] shadow-sm transition-colors">
+                                            Add from My Projects
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {editForm.experiences.map((exp, i) => exp.isProject ? (
+                                            <div key={i} className={`border rounded-xl bg-white overflow-hidden transition-all duration-200 ${expandedProjectId === exp.id ? 'border-teal-300 shadow-md ring-4 ring-teal-50' : 'border-slate-200 shadow-sm'}`}>
+                                                <div className="flex items-center justify-between p-4 bg-slate-50 border-b border-slate-100">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="flex flex-col gap-1 items-center bg-slate-100 rounded-md p-1">
+                                                            <button onClick={() => moveExperience(i, 'up')} className="text-slate-400 hover:text-teal-600 p-0.5 rounded transition-colors" disabled={i === 0 || !editForm.experiences[i-1]?.isProject}><ChevronUp className="w-4 h-4" /></button>
+                                                            <button onClick={() => moveExperience(i, 'down')} className="text-slate-400 hover:text-teal-600 p-0.5 rounded transition-colors" disabled={i === editForm.experiences.length - 1 || !editForm.experiences[i+1]?.isProject}><ChevronDown className="w-4 h-4" /></button>
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-bold text-[14px] text-slate-800 flex items-center gap-2">
+                                                                {exp.title}
+                                                                {exp.isFeatured && <span className="bg-amber-100 text-amber-700 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1"><Star className="w-3 h-3 fill-amber-700" /> Featured</span>}
+                                                            </h3>
+                                                            <p className="text-[12px] text-slate-500 truncate max-w-[200px] sm:max-w-sm">{exp.summary || exp.description || 'No summary provided'}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button onClick={() => toggleFeatureExperience(i)} className={`p-1.5 rounded-md transition-colors ${exp.isFeatured ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`} title="Feature Project">
+                                                            <Star className={`w-4 h-4 ${exp.isFeatured ? 'fill-amber-700' : ''}`} />
+                                                        </button>
+                                                        <button onClick={() => setExpandedProjectId(expandedProjectId === exp.id ? null : exp.id)} className="p-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-md font-bold text-[12px] px-3 transition-colors">
+                                                            {expandedProjectId === exp.id ? 'Close' : 'Edit'}
+                                                        </button>
+                                                        <button onClick={() => removeExperience(i)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Remove from portfolio">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {expandedProjectId === exp.id && (
+                                                    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-5 bg-white">
+                                                        <div className="md:col-span-2 space-y-4">
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Portfolio Display Title</label>
+                                                                <input value={exp.title} onChange={e => updateExperience(i, 'title', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. My E-commerce App" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Short Summary (Used in cards)</label>
+                                                                <input value={exp.summary || ''} onChange={e => updateExperience(i, 'summary', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. A full-stack application for selling shoes." />
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Problem & Intended Users</label>
+                                                                <textarea value={exp.problem || ''} onChange={e => updateExperience(i, 'problem', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Who is this for and what problem does it solve?" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">What I Built</label>
+                                                                <textarea value={exp.built || ''} onChange={e => updateExperience(i, 'built', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe the final product and features..." />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">My Contribution</label>
+                                                                <textarea value={exp.contribution || ''} onChange={e => updateExperience(i, 'contribution', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="What specific parts did you build?" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Technologies Used</label>
+                                                                <input value={exp.technologies || ''} onChange={e => updateExperience(i, 'technologies', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. React, Node.js, PostgreSQL" />
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Challenge & Solution</label>
+                                                                <textarea value={exp.challenge || ''} onChange={e => updateExperience(i, 'challenge', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe a technical challenge and how you solved it..." />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">What I Learned</label>
+                                                                <textarea value={exp.learned || ''} onChange={e => updateExperience(i, 'learned', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Key takeaways from this project..." />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Limitations / Next Steps</label>
+                                                                <textarea value={exp.nextSteps || ''} onChange={e => updateExperience(i, 'nextSteps', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="What would you add next?" />
+                                                            </div>
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <div>
+                                                                    <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex items-center gap-1"><Github className="w-3.5 h-3.5" /> Repository</label>
+                                                                    <input value={exp.repoUrl || ''} onChange={e => updateExperience(i, 'repoUrl', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="https://github.com/..." />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex items-center gap-1"><Globe className="w-3.5 h-3.5" /> Live Demo</label>
+                                                                    <input value={exp.liveUrl || ''} onChange={e => updateExperience(i, 'liveUrl', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="https://..." />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : null)}
+                                        <button onClick={fetchMyProjects} className="mt-4 w-full py-3 border-2 border-dashed border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-colors">
+                                            <Plus className="w-4 h-4" /> Add Another Project
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeSection === 'experience' && (
+                        <div className="animate-in fade-in">
+                            <h2 className="text-lg font-bold text-slate-800 mb-4">Work Experience</h2>
+                            <p className="text-[12px] text-slate-500 mb-4">Showcase your work history and roles.</p>
+                            
+                            <div className="space-y-4">
+                                {editForm.experiences.map((exp, i) => !exp.isProject ? (
                                     <div key={i} className="bg-slate-50 border border-slate-200 rounded-xl p-4 relative group">
                                         <button onClick={() => removeExperience(i)} className="absolute top-4 right-4 text-slate-400 hover:text-red-600 transition-colors">
                                            <X className="w-4 h-4" />
@@ -540,11 +766,11 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 pr-6">
                                             <div>
                                                 <label className="block text-[12px] font-semibold text-slate-600 mb-1">Title</label>
-                                                <input value={exp.title} onChange={e => updateExperience(i, 'title', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. Frontend Engineer / E-commerce App" />
+                                                <input value={exp.title} onChange={e => updateExperience(i, 'title', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. Frontend Engineer" />
                                             </div>
                                             <div>
                                                 <label className="block text-[12px] font-semibold text-slate-600 mb-1">Company / Context</label>
-                                                <input value={exp.role} onChange={e => updateExperience(i, 'role', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. Tech Corp / Personal Project" />
+                                                <input value={exp.role} onChange={e => updateExperience(i, 'role', e.target.value)} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="e.g. Tech Corp" />
                                             </div>
                                             <div className="sm:col-span-2">
                                                 <label className="block text-[12px] font-semibold text-slate-600 mb-1">Date</label>
@@ -553,14 +779,14 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                                         </div>
                                         <div>
                                             <label className="block text-[12px] font-semibold text-slate-600 mb-1">Description</label>
-                                            <textarea value={exp.description} onChange={e => updateExperience(i, 'description', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe your achievements and technologies used..." />
+                                            <textarea value={exp.description} onChange={e => updateExperience(i, 'description', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe your achievements..." />
                                         </div>
                                     </div>
-                                ))}
+                                ) : null)}
                             </div>
                             
                             <button onClick={addExperience} className="mt-4 w-full py-3 border-2 border-dashed border-slate-200 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-xl font-bold text-[13px] flex items-center justify-center gap-2 transition-colors">
-                                <Plus className="w-4 h-4" /> Add Experience / Project
+                                <Plus className="w-4 h-4" /> Add Experience
                             </button>
                         </div>
                     )}
@@ -632,6 +858,45 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
          </main>
       </div>
       
+      {showProjectPicker && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                      <h3 className="font-bold text-slate-800 flex items-center gap-2"><FolderGit2 className="w-5 h-5 text-teal-600" /> Add from My Projects</h3>
+                      <button onClick={() => setShowProjectPicker(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors"><X className="w-5 h-5" /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                      {myProjects.length === 0 ? (
+                          <div className="text-center py-12">
+                              <p className="text-slate-500 text-[13px]">No active projects found.</p>
+                          </div>
+                      ) : myProjects.map(proj => {
+                          const isAdded = editForm.experiences.some(e => e.id === proj.id && e.isProject);
+                          return (
+                              <div key={proj.id} className="border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white hover:border-slate-300 transition-colors">
+                                  <div>
+                                      <div className="flex items-center gap-2 mb-1">
+                                          <h4 className="font-bold text-[14px] text-slate-800">{proj.title}</h4>
+                                          <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{proj.status}</span>
+                                          {isAdded && <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-teal-50 text-teal-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Added</span>}
+                                      </div>
+                                      <p className="text-[12px] text-slate-500 line-clamp-2 max-w-lg">{proj.description}</p>
+                                  </div>
+                                  <button 
+                                      onClick={() => addProjectToPortfolio(proj)}
+                                      disabled={isAdded}
+                                      className={`shrink-0 px-4 py-2 rounded-lg font-bold text-[12px] transition-colors ${isAdded ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
+                                  >
+                                      {isAdded ? 'Already Added' : 'Add to Portfolio'}
+                                  </button>
+                              </div>
+                          );
+                      })}
+                  </div>
+              </div>
+          </div>
+      )}
+
       {/* Mobile Bottom Nav Bar (if in edit mode) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2 flex items-center justify-around z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
           <button onClick={() => setMode('edit')} className={`flex flex-col items-center p-2 rounded-lg ${mode === 'edit' ? 'text-teal-600' : 'text-slate-500'}`}>

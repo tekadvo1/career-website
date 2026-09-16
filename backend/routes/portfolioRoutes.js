@@ -58,6 +58,28 @@ async function validatePortfolioData(reqBody, userId) {
         if (exp.role) exp.role = stripHtml(exp.role).substring(0, 255);
         if (exp.date) exp.date = stripHtml(exp.date).substring(0, 100);
         if (exp.description) exp.description = stripHtml(exp.description).substring(0, 2000);
+        
+        // Structured project fields
+        if (exp.summary) exp.summary = stripHtml(exp.summary).substring(0, 500);
+        if (exp.problem) exp.problem = stripHtml(exp.problem).substring(0, 2000);
+        if (exp.built) exp.built = stripHtml(exp.built).substring(0, 2000);
+        if (exp.contribution) exp.contribution = stripHtml(exp.contribution).substring(0, 2000);
+        if (exp.technologies) exp.technologies = stripHtml(exp.technologies).substring(0, 500);
+        if (exp.challenge) exp.challenge = stripHtml(exp.challenge).substring(0, 2000);
+        if (exp.learned) exp.learned = stripHtml(exp.learned).substring(0, 2000);
+        if (exp.nextSteps) exp.nextSteps = stripHtml(exp.nextSteps).substring(0, 2000);
+        
+        // Links
+        if (exp.repoUrl && (!isSafeUrl(exp.repoUrl) || exp.repoUrl.length > 255)) {
+            delete exp.repoUrl;
+        }
+        if (exp.liveUrl && (!isSafeUrl(exp.liveUrl) || exp.liveUrl.length > 255)) {
+            delete exp.liveUrl;
+        }
+        
+        // Booleans
+        if (exp.isProject !== undefined) exp.isProject = !!exp.isProject;
+        if (exp.isFeatured !== undefined) exp.isFeatured = !!exp.isFeatured;
     }
 
     let safeSkills = Array.isArray(skills) ? skills : [];
