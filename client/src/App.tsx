@@ -42,8 +42,6 @@ import SkillComparison from './components/SkillComparison';
 // @ts-ignore
 import MyLearningNotes from './components/MyLearningNotes';
 import GettingStarted from './components/GettingStarted';
-// @ts-ignore
-import QuizGame from './components/QuizGame';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
