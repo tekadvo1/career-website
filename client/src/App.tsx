@@ -37,6 +37,7 @@ import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
+import SkillComparison from './components/SkillComparison';
 import GettingStarted from './components/GettingStarted';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
@@ -191,6 +192,8 @@ function App() {
           <Route path="/onboarding"              element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/dashboard"               element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/role-analysis"           element={<ProtectedRoute><RoleAnalysis /></ProtectedRoute>} />
+          <Route path="/skill-comparison"        element={<ProtectedRoute><SkillComparison /></ProtectedRoute>} />
+          <Route path="/learning-roadmap"        element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
           <Route path="/profile"               element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/roadmap"                 element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
           <Route path="/resources"               element={<ProtectedRoute><ResourcesHub /></ProtectedRoute>} />

@@ -98,6 +98,15 @@ export default function ToolsPage() {
           icon: <Wrench className="w-5 h-5 text-orange-600" />,
           bgColor: 'bg-orange-100',
           route: '/workflow-lifecycle',
+        },
+        {
+          id: 'skill-comparison',
+          label: 'Compare a job description',
+          description: 'Understand the requirements and see what to learn next.',
+          actionText: 'Compare my skills',
+          icon: <Search className="w-5 h-5 text-teal-600" />,
+          bgColor: 'bg-teal-100',
+          route: '/skill-comparison',
         }
       ]
     },
