@@ -31,7 +31,7 @@ async function validatePortfolioData(reqBody, userId) {
         theme
     } = reqBody;
 
-    if (theme && !['minimalist', 'dark', 'executive'].includes(theme)) {
+    if (theme && !['minimalist', 'dark', 'executive', 'emerald', 'creative'].includes(theme)) {
         throw new Error('Invalid theme selected');
     }
     if (linkedin && (linkedin.length > 255 || !isSafeUrl(linkedin))) {

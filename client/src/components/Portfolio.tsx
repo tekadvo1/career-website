@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getUser } from '../utils/auth';
 import {
-  ArrowLeft, Briefcase, Eye, Edit2, Settings, Link as LinkIcon,
+  ArrowLeft, Briefcase, Eye, Edit2, Link as LinkIcon,
   User as UserIcon, Code, X, Plus, Save, Globe, Linkedin, LayoutTemplate,
   AlertTriangle, ChevronUp, ChevronDown, Star, Trash2, CheckCircle2, Github, FolderGit2
 } from "lucide-react";
@@ -10,42 +10,24 @@ import PortfolioPresentation from "./PortfolioPresentation";
 import PortfolioWritingHelp from "./PortfolioWritingHelp";
 // Themes definition
 const THEMES: Record<string, any> = {
+  emerald: {
+    id: "emerald", label: "Emerald Professional", description: "White surfaces, emerald accents, balanced introduction, featured-project grid."
+  },
   minimalist: {
-    id: "minimalist", label: "Minimalist Clean",
-    bg: "bg-[#F8FAFC]", card: "bg-white border-slate-200 shadow-sm",
-    textPrimary: "text-slate-900", textSecondary: "text-slate-600",
-    accentText: "text-teal-600", accentBg: "bg-teal-50",
-    headerBg: "from-slate-900 via-teal-900 to-emerald-900",
-    badge: "bg-teal-50 text-teal-700 border-teal-100",
-    skillBadge: "bg-slate-100 text-slate-700 border-slate-200",
-    primaryBtn: "bg-slate-900 hover:bg-slate-800 text-white",
-    socialBtn: "bg-slate-900 hover:bg-slate-800 text-white",
+    id: "minimalist", label: "Minimal Editorial", description: "Warm-white surfaces, strong typography, restrained borders, spacious project stories."
   },
   dark: {
-    id: "dark", label: "Dark Mode Obsidian",
-    bg: "bg-slate-950", card: "bg-slate-900 border-slate-800 shadow-md",
-    textPrimary: "text-white", textSecondary: "text-slate-400",
-    accentText: "text-emerald-400", accentBg: "bg-emerald-900/30",
-    headerBg: "from-slate-950 via-emerald-950/20 to-slate-900",
-    badge: "bg-emerald-900/30 text-emerald-400 border-emerald-800/50",
-    skillBadge: "bg-slate-800 text-emerald-100 border-slate-700",
-    primaryBtn: "bg-emerald-600 hover:bg-emerald-700 text-white",
-    socialBtn: "bg-slate-800 hover:bg-slate-700 text-white",
+    id: "dark", label: "Midnight Developer", description: "Dark surfaces, accessible contrast, subtle technical styling, clear project and repository links."
+  },
+  creative: {
+    id: "creative", label: "Creative Studio", description: "Expressive typography and an asymmetric project layout."
   },
   executive: {
-    id: "executive", label: "Executive Professional",
-    bg: "bg-slate-100", card: "bg-white border-slate-300 shadow-xl",
-    textPrimary: "text-slate-900", textSecondary: "text-slate-600",
-    accentText: "text-blue-700", accentBg: "bg-blue-50",
-    headerBg: "from-slate-800 via-slate-700 to-slate-900",
-    badge: "bg-slate-100 text-blue-900 border-slate-200",
-    skillBadge: "bg-slate-100 text-blue-900 border-slate-200",
-    primaryBtn: "bg-blue-700 hover:bg-blue-800 text-white",
-    socialBtn: "bg-slate-800 hover:bg-slate-700 text-white",
+    id: "executive", label: "Executive Classic", description: "Navy-and-white palette, compact professional introduction, structured experience and projects."
   }
 };
 
-type PortfolioSection = 'about' | 'projects' | 'experience' | 'skills' | 'links' | 'settings';
+type PortfolioSection = 'about' | 'projects' | 'experience' | 'skills' | 'links' | 'appearance';
 
 export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) {
   const navigate = useNavigate();
@@ -86,7 +68,6 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [activeAIField, setActiveAIField] = useState<string | null>(null);
 
   const isDirty = JSON.stringify(editForm) !== JSON.stringify(savedData);
-  const t = THEMES[editForm.theme] || THEMES.minimalist;
 
   useEffect(() => {
     if (isPublic) {
@@ -402,7 +383,6 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
         <PortfolioPresentation 
             data={dataToRender} 
             displayName={displayName} 
-            t={t} 
             isPublic={isPublic} 
             isPrivate={savedData.isPrivate}
         />
@@ -536,7 +516,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                       { id: 'experience', label: 'Experience', icon: Briefcase },
                       { id: 'skills', label: 'Skills', icon: Code },
                       { id: 'links', label: 'Links', icon: LinkIcon },
-                      { id: 'settings', label: 'Settings', icon: Settings },
+                      { id: 'appearance', label: 'Appearance', icon: LayoutTemplate },
                     ].map(nav => (
                        <button
                           key={nav.id}
@@ -846,25 +826,40 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                         </div>
                     )}
 
-                    {activeSection === 'settings' && (
+                    {activeSection === 'appearance' && (
                         <div className="animate-in fade-in">
-                            <h2 className="text-lg font-bold text-slate-800 mb-4">Portfolio Settings</h2>
+                            <h2 className="text-lg font-bold text-slate-800 mb-4">Portfolio Appearance</h2>
+                            <p className="text-[12px] text-slate-500 mb-6 max-w-md">Select a theme to change how your portfolio looks. This updates immediately in the preview.</p>
                             
-                            <div className="space-y-6 max-w-md">
-                                <div>
-                                    <label className="block text-[13px] font-semibold text-slate-600 mb-2">Theme</label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {Object.values(THEMES).map(themeDef => (
-                                            <button 
-                                                key={themeDef.id} 
-                                                onClick={() => setEditForm({...editForm, theme: themeDef.id})}
-                                                className={`text-left px-3 py-2 text-[13px] font-bold rounded-lg border transition-colors ${editForm.theme === themeDef.id ? 'bg-teal-50 text-teal-700 border-teal-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                                            >
-                                                {themeDef.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl">
+                                {Object.values(THEMES).map(themeDef => (
+                                    <button 
+                                        key={themeDef.id} 
+                                        onClick={() => setEditForm({...editForm, theme: themeDef.id})}
+                                        className={`text-left rounded-xl border-2 transition-all overflow-hidden flex flex-col ${editForm.theme === themeDef.id ? 'border-teal-500 shadow-md ring-4 ring-teal-50' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm bg-white'}`}
+                                    >
+                                        <div className="h-32 bg-slate-100 border-b border-slate-200 p-4 flex flex-col justify-between relative overflow-hidden">
+                                            {/* Generic abstract layout preview */}
+                                            <div className="w-1/2 h-3 bg-slate-300 rounded mb-2"></div>
+                                            <div className="w-1/3 h-2 bg-slate-200 rounded mb-4"></div>
+                                            
+                                            <div className="flex gap-2">
+                                                <div className="w-1/2 h-12 bg-white rounded shadow-sm"></div>
+                                                <div className="w-1/2 h-12 bg-white rounded shadow-sm"></div>
+                                            </div>
+                                            
+                                            {editForm.theme === themeDef.id && (
+                                                <div className="absolute top-3 right-3 bg-teal-500 text-white rounded-full p-1 shadow-sm">
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 flex-1 flex flex-col bg-white">
+                                            <h3 className="font-bold text-[14px] text-slate-800 mb-1">{themeDef.label}</h3>
+                                            <p className="text-[12px] text-slate-500 leading-relaxed">{themeDef.description}</p>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     )}
