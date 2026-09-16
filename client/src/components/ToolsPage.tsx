@@ -6,10 +6,11 @@ import { getUser } from '../utils/auth';
 import {
   Search,
   Wrench,
-  LayoutGrid,
   Terminal,
   MessageSquare,
   ChevronRight,
+  Gamepad2,
+  LayoutGrid,
   FolderTree,
 } from 'lucide-react';
 
@@ -131,6 +132,15 @@ export default function ToolsPage() {
           icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
           bgColor: 'bg-emerald-100',
           route: '/my-learning-notes',
+        },
+        {
+          id: 'practice-revision',
+          label: 'Practice & Revision',
+          description: 'Check your understanding and revisit concepts you want to improve.',
+          actionText: 'Start practising',
+          icon: <Gamepad2 className="w-5 h-5 text-indigo-600" />,
+          bgColor: 'bg-indigo-100',
+          route: '/quiz',
         }
       ]
     }

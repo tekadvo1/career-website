@@ -111,6 +111,7 @@ const customerRoutes = require('./routes/customerRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const skillComparisonRoutes = require('./routes/skillComparisonRoutes');
 const noteRoutes = require('./routes/noteRoutes');
+const practiceRoutes = require('./routes/practiceRoutes');
 
 const { protect } = require('./middleware/authMiddleware');
 const { adminProtect } = require('./middleware/adminMiddleware');
@@ -133,6 +134,7 @@ app.use('/api/workspaces',  protect, workspaceRoutes);
 app.use('/api/project-structure', protect, projectStructureRoutes);
 app.use('/api/skill-comparison', protect, skillComparisonRoutes);
 app.use('/api/notes',       protect, noteRoutes);
+app.use('/api/practice',    protect, practiceRoutes);
 app.use('/api/admin/courses', adminProtect, courseRoutes);
 app.use('/api/admin/customers', adminProtect, customerRoutes);
 app.use('/api/admin/invoices', adminProtect, invoiceRoutes.adminRouter);

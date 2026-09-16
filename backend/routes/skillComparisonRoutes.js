@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const pool = require('../config/db');
 const { protect } = require('../middleware/authMiddleware');
 const { checkAICredits } = require('../middleware/creditMiddleware');
 const { OpenAI } = require('openai');

@@ -37,8 +37,10 @@ import Missions from './components/Missions';
 import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
+// @ts-ignore
 import SkillComparison from './components/SkillComparison';
-import MyLearningNotes from './components/MyLearningNotes'; // ide cache trigger
+// @ts-ignore
+import MyLearningNotes from './components/MyLearningNotes';
 import GettingStarted from './components/GettingStarted';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
