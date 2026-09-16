@@ -1,29 +1,18 @@
-import { apiFetch } from '../utils/apiFetch';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getToken, getUser } from '../utils/auth';
+import { apiFetch } from '../utils/apiFetch';
+import type { NormalizedRoleAnalysis } from '../types/roleAnalysis';
 
-import { 
-
-  TrendingUp, 
-  DollarSign, 
-  ChevronRight, 
-  Code, 
-  BookOpen, 
-
-  Wrench, 
-  Clock, 
-  Award, 
-  ExternalLink,
-  User, 
-  Globe,
-  ArrowRight,
-  GitBranch,
-  Sparkles
-} from 'lucide-react';
 import Sidebar from './Sidebar';
-
-  /* Removed hardcoded roleDatabase and getDefaultRoleData */
+import RoleAnalysisHeader from './role-analysis/RoleAnalysisHeader';
+import RoleOverviewSection from './role-analysis/RoleOverviewSection';
+import RoleTypicalWorkSection from './role-analysis/RoleTypicalWorkSection';
+import RoleSkillsSection from './role-analysis/RoleSkillsSection';
+import RoleToolsSection from './role-analysis/RoleToolsSection';
+import RoleStartingPointSection from './role-analysis/RoleStartingPointSection';
+import RoleOutlookSection from './role-analysis/RoleOutlookSection';
+import RoleNextAction from './role-analysis/RoleNextAction';
 
 export default function RoleAnalysis() {
   const location = useLocation();
@@ -39,9 +28,10 @@ export default function RoleAnalysis() {
     }
   })();
 
-  // Using location state first, but falling back to local storage if available for persistence
-  const [roleDataState, setRoleDataState] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [roleDataState, setRoleDataState] = useState<NormalizedRoleAnalysis | null>(null);
+  
+  // Honest API states
+  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   const [error, setError] = useState<string | null>(null);
   
   const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
@@ -57,59 +47,24 @@ export default function RoleAnalysis() {
   // Extract custom path intent and skills from Onboarding
   const skillPreference = location.state?.learningPath;
   const resumeSkills = location.state?.resumeSkills;
-  /* New Tab State */
-  const [activeTab, setActiveTab] = useState<'skills' | 'tools' | 'languages' | 'resources' | 'daylife' | 'interview' | 'workflow'>('workflow');
 
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [loadingMessage, setLoadingMessage] = useState("Initializing...");
-  
-  // Collapse state for day in life
-  const [expandedDayItems, setExpandedDayItems] = useState<number[]>([]);
-  // Use sets for other collections as indices might change if sorting happens later, but index is fine for now
-  const [expandedSkills, setExpandedSkills] = useState<Set<number>>(new Set());
-  const [expandedTools, setExpandedTools] = useState<Set<number>>(new Set());
+  const experienceLevel = location.state?.experienceLevel;
+  const country = location.state?.country;
 
-  const toggleDayItem = (index: number) => {
-      setExpandedDayItems(prev => 
-          prev.includes(index) 
-          ? prev.filter(i => i !== index) 
-          : [...prev, index]
-      );
-  };
-
-  const toggleSkill = (index: number) => {
-      setExpandedSkills(prev => {
-          const newSet = new Set(prev);
-          if (newSet.has(index)) newSet.delete(index);
-          else newSet.add(index);
-          return newSet;
-      });
-  };
-
-  const toggleTool = (index: number) => {
-      setExpandedTools(prev => {
-          const newSet = new Set(prev);
-          if (newSet.has(index)) newSet.delete(index);
-          else newSet.add(index);
-          return newSet;
-      });
-  };
-
-  // Helper to convert AI analysis to Role Data structure with SAFE DEFAULTS
-  const getAiRoleData = useCallback((analysis: any, roleName: string) => {
+  // Strict Normalizer
+  const getAiRoleData = useCallback((analysis: any, roleName: string): NormalizedRoleAnalysis => {
     return {
       title: analysis.title || roleName,
-      description: analysis.description || "No description available.",
-      jobGrowth: analysis.jobGrowth || "Growth data unavailable",
-      salaryRange: analysis.salaryRange || "Salary data unavailable",
+      description: analysis.description || "",
+      jobGrowth: analysis.jobGrowth,
+      salaryRange: analysis.salaryRange,
       
-      // New Data Fields (Safe Access)
-      salary_insights: analysis.salary_insights || {
-         entry_level: "N/A",
-         senior_level: "N/A",
-         salary_growth_potential: "Medium",
-         negotiation_tips: "Focus on your unique value proposition."
-      },
+      salary_insights: analysis.salary_insights ? {
+         entry_level: analysis.salary_insights.entry_level,
+         senior_level: analysis.salary_insights.senior_level,
+         salary_growth_potential: analysis.salary_insights.salary_growth_potential,
+         negotiation_tips: analysis.salary_insights.negotiation_tips
+      } : undefined,
       day_in_the_life: analysis.day_in_the_life || [],
       career_paths: analysis.career_paths || [],
       interview_prep: analysis.interview_prep || [],
@@ -124,43 +79,24 @@ export default function RoleAnalysis() {
     };
   }, []);
 
-  // Loading message rotator
-  useEffect(() => {
-    if (isLoading && !aiAnalysis) {
-      const messages = [
-        "Extracting your skills...",
-        "Mapping career trajectories...",
-        "Generating custom day-in-the-life...",
-        "Finalizing guide..."
-      ];
-      let i = 0;
-      const interval = setInterval(() => {
-        setLoadingMessage(messages[i % messages.length]);
-        i++;
-      }, 2500);
-      return () => clearInterval(interval);
-    }
-  }, [isLoading, aiAnalysis]);
-
   // Effect to load data from location, local storage, or API
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      setStatus('loading');
       setError(null);
 
       try {
         if (aiAnalysis) {
-          console.log("Using analysis from location state");
-          setRoleDataState(getAiRoleData(aiAnalysis, role));
-          // Save to local storage for persistence on refresh
+          const normalized = getAiRoleData(aiAnalysis, role);
+          setRoleDataState(normalized);
           sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
             role,
-            analysis: aiAnalysis,
+            analysis: aiAnalysis, // store raw analysis
             hasResume,
             resumeFileName,
             timestamp: new Date().getTime()
           }));
-          setIsLoading(false);
+          setStatus('ready');
           return;
         }
 
@@ -170,25 +106,13 @@ export default function RoleAnalysis() {
           const parsed = JSON.parse(saved);
           const hasWorkflow = parsed.analysis && parsed.analysis.workflow && parsed.analysis.workflow.length > 0;
           if (parsed.role === role && (new Date().getTime() - parsed.timestamp < 3600000) && hasWorkflow) {
-             console.log("Using analysis from local storage");
              setRoleDataState(getAiRoleData(parsed.analysis, parsed.role));
-             setIsLoading(false);
+             setStatus('ready');
              return;
           }
         }
 
         // If no state and no valid local storage, FETCH from API
-        console.log("Fetching analysis from API for:", role);
-
-        // --- Start Progress Bar Simulation for Real-Time feedback ---
-        setLoadingProgress(0);
-        const interval = setInterval(() => {
-           setLoadingProgress(prev => {
-              if (prev >= 95) return prev;
-              const increment = Math.random() * 4; // Slower random jumps
-              return Math.min(95, prev + increment);
-           });
-        }, 800);
         const userStr = sessionStorage.getItem('user');
         const user = userStr ? JSON.parse(userStr) : {};
         
@@ -196,10 +120,10 @@ export default function RoleAnalysis() {
           method: 'POST',
           body: JSON.stringify({ 
             role: role, 
-            userId: user.id || null, // Pass userId if logged in
-            experienceLevel: location.state?.experienceLevel || 'Beginner', 
-            country: location.state?.country || 'USA',
-            learningPath: location.state?.learningPath
+            userId: user.id || null,
+            experienceLevel: experienceLevel || 'Beginner', 
+            country: country || 'USA',
+            learningPath: skillPreference
           }) 
         });
 
@@ -209,13 +133,8 @@ export default function RoleAnalysis() {
 
         const data = await response.json();
         
-        // --- Complete Progress Bar Simulation ---
-        clearInterval(interval);
-        setLoadingProgress(100);
-
         if (data.success && data.data) {
            setRoleDataState(getAiRoleData(data.data, role));
-           // Save this new fetch to local storage
            sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
              role,
              analysis: data.data,
@@ -223,6 +142,7 @@ export default function RoleAnalysis() {
              resumeFileName: null,
              timestamp: new Date().getTime()
            }));
+           setStatus('ready');
         } else {
            throw new Error('Invalid data received from API');
         }
@@ -230,840 +150,113 @@ export default function RoleAnalysis() {
       } catch (err: any) {
         console.error("Error loading role analysis:", err);
         setError(err.message || "Failed to load analysis");
-        // Optional: navigate back to onboarding after a delay or show error button
-      } finally {
-        setIsLoading(false);
+        setStatus('failed');
       }
     };
 
     fetchData();
-  }, [aiAnalysis, role, getAiRoleData, hasResume, resumeFileName]);
+  }, [aiAnalysis, role, getAiRoleData, hasResume, resumeFileName, experienceLevel, country, skillPreference]);
 
-  // Effect to mark onboarding as complete once data is loaded (NEW)
+  // Effect to mark onboarding as complete once data is loaded
   useEffect(() => {
     const markOnboardingComplete = async () => {
-      if (isLoading || !roleDataState) return;
+      if (status !== 'ready' || !roleDataState) return;
 
       const userStr = sessionStorage.getItem('user');
       const token = getToken();
       
       if (userStr && token) {
-        const user = JSON.parse(userStr);
-        if (!user.onboarding_completed) {
-          try {
-             const res = await apiFetch('/api/auth/complete-onboarding', {
-               method: 'POST',
-               headers: {
-                 'Authorization': `Bearer ${token}`,
-                 'Content-Type': 'application/json'
-               }
-             });
-             
-             if (res.ok) {
-               console.log("Marked onboarding as complete.");
-               user.onboarding_completed = true;
-               sessionStorage.setItem('user', JSON.stringify(user));
-             }
-          } catch (e) {
-             console.error("Failed to mark onboarding complete silently", e);
+        try {
+          const user = JSON.parse(userStr);
+          if (!user.onboarding_completed) {
+            await apiFetch('/api/auth/complete-onboarding', {
+              method: 'POST',
+              body: JSON.stringify({ userId: user.id })
+            });
+            user.onboarding_completed = true;
+            sessionStorage.setItem('user', JSON.stringify(user));
           }
+        } catch (e) {
+          console.error("Error marking onboarding complete:", e);
         }
       }
     };
-    
+
     markOnboardingComplete();
-  }, [isLoading, roleDataState]);
+  }, [status, roleDataState]);
 
-
-
-  // Guard clause while loading
-  if (isLoading) {
-      return (
-        <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-gray-50 p-6">
-          {isReturningUser && <Sidebar activePage="role-analysis" />}
-          <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-slate-100 flex flex-col items-center">
-            {/* Animated Icon */}
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-75"></div>
-              <div className="relative bg-emerald-500 rounded-full p-4 shadow-xl flex items-center justify-center text-white">
-                <Sparkles className="w-8 h-8 animate-pulse" />
-              </div>
-            </div>
-
-            <h2 className="text-xl font-bold text-slate-800 mb-2">Analyzing Resume Data</h2>
-            <p className="text-sm text-slate-500 mb-8 text-center px-4">
-              Generating your definitive {location.state?.learningPath === 'expand' ? 'expansion' : 'mastery'} guide for {role}...
-            </p>
-
-            {/* Progress Bar Container */}
-            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden mb-3">
-              <div 
-                className="h-full bg-emerald-500 transition-all duration-300 ease-out flex items-center justify-end"
-                style={{ width: `${loadingProgress}%` }}
-              >
-                {/* Optional shimmer effect on the bar itself */}
-                <div className="w-full h-full bg-white/20"></div>
-              </div>
-            </div>
-
-            {/* Percentage Text */}
-            <div className="w-full flex justify-between items-center text-xs font-bold text-slate-400">
-               <span className="animate-pulse">{loadingMessage}</span>
-               <span className="text-emerald-600 font-extrabold">{Math.floor(loadingProgress)}%</span>
-            </div>
-          </div>
-        </div>
-      );
-  }
-
-  if (error) {
-      return (
-        <div className="min-h-[100dvh] flex items-center justify-center bg-gray-50">
-          {isReturningUser && <Sidebar activePage="role-analysis" />}
-          <div className="text-center p-6 max-w-md bg-white rounded-xl shadow-lg border border-gray-100">
-             <div className="text-red-500 mb-4 text-4xl">⚠️</div>
-             <h3 className="text-xl font-bold text-gray-900 mb-2">Analysis Failed</h3>
-             <p className="text-gray-600 mb-6">{error}</p>
-             <button 
-                onClick={() => navigate('/onboarding')}
-                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-             >
-                Try Again
-             </button>
-          </div>
-        </div>
-      );
-  }
-
-  if (!roleDataState) return null;
-
-  const roleData = roleDataState;
-
-  const getPriorityColor = (priority: string) => {
-    if (priority === "High Priority") return "bg-red-100 text-red-700 border-red-200";
-    if (priority === "Medium Priority") return "bg-gray-800 text-white";
-    return "bg-gray-100 text-gray-700 border-gray-200";
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    if (difficulty === "Easy") return "bg-green-100 text-green-700";
-    if (difficulty === "Medium") return "bg-amber-100 text-amber-700";
-    return "bg-red-100 text-red-700";
+  const handleContinue = () => {
+    navigate('/dashboard', { state: { role, analysis: roleDataState } });
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-[100dvh] bg-gradient-to-br from-gray-50 to-gray-100 font-sans" id="role-analysis-content">
-      {isReturningUser && <div className="z-50 shrink-0"><Sidebar activePage="role-analysis" /></div>}
-      <div className="flex-1 w-full flex flex-col min-h-0 overflow-y-auto p-2 md:p-4">
-      <div className="max-w-5xl mx-auto w-full">
-        
+    <div className="flex h-screen bg-slate-50 font-sans">
+      <Sidebar activePage="/dashboard" />
 
-        {/* Header Card */}
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4">
-          <div className="flex flex-col md:flex-row md:items-start justify-between mb-2 md:mb-3 gap-2">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-teal-600 text-white rounded-full text-[10px] font-bold mb-1.5 shadow-sm">
-                <Award className="w-3 h-3" />
-                <span>AI-Powered Career Guide</span>
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-4 md:p-8 w-full pt-16 md:pt-8">
+          
+          {status === 'loading' && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
+              <h2 className="text-xl font-semibold text-slate-800">Generating role guidance...</h2>
+              <p className="text-slate-500 mt-2">This usually takes a few seconds.</p>
+            </div>
+          )}
+
+          {status === 'failed' && (
+            <div className="bg-white rounded-xl shadow-sm border border-red-200 p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
               </div>
-              <h1 className="text-xl md:text-xl font-bold text-gray-900 mb-1">{roleData.title}</h1>
-              <p className="text-xs text-gray-600 leading-snug line-clamp-2">{roleData.description}</p>
-              
-              {/* Career Path Quick View */}
-              {roleData.career_paths && roleData.career_paths.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-500 mt-1.5">
-                     <span className="font-bold uppercase tracking-wide">Next Steps:</span>
-                     {roleData.career_paths.map((path: any, i: number) => (
-                        <span key={i} className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 border border-gray-200">
-                           {path.role}
-                        </span>
-                     ))}
-                  </div>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Could not load analysis</h2>
+              <p className="text-slate-600 mb-6">{error || "An unexpected error occurred while analyzing the role."}</p>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {status === 'ready' && roleDataState && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <RoleAnalysisHeader 
+                roleName={roleDataState.title}
+                experienceLevel={experienceLevel}
+                country={country}
+                hasResume={hasResume}
+              />
+
+              {(resumeSkills || skillPreference) && (
+                <RoleStartingPointSection 
+                  hasResume={hasResume}
+                  resumeSkills={resumeSkills}
+                  learningPath={skillPreference}
+                />
               )}
 
-              {hasResume && resumeFileName && (
-                <p className="text-[10px] text-teal-600 font-medium mt-1 flex items-center gap-1">
-                  ✓ Resume analyzed: <span className="truncate max-w-[200px]">{resumeFileName}</span>
-                </p>
-              )}
-            </div>
-            
-
-          </div>
-
-          {/* Enhanced Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2 md:mt-0">
-            
-            {/* Job Growth */}
-            <div className="p-2 bg-green-50 rounded-lg border border-green-200">
-               <div className="flex items-center gap-1.5 mb-0.5">
-                  <div className="p-1 bg-green-100 rounded text-green-600">
-                     <TrendingUp className="w-3 h-3" />
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Growth</span>
-               </div>
-               <p className="font-bold text-[11px] text-gray-900 line-clamp-2 md:line-clamp-none">{roleData.jobGrowth}</p>
-            </div>
-
-            {/* Entry Salary */}
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
-               <div className="flex items-center gap-1.5 mb-0.5">
-                  <div className="p-1 bg-blue-100 rounded text-blue-600">
-                     <DollarSign className="w-3 h-3" />
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Entry Level</span>
-               </div>
-               <p className="font-bold text-xs text-gray-900">{roleData.salary_insights?.entry_level || roleData.salaryRange}</p>
-            </div>
-
-            {/* Senior Salary */}
-            <div className="p-2 bg-teal-50 rounded-lg border border-teal-200">
-               <div className="flex items-center gap-1.5 mb-0.5">
-                  <div className="p-1 bg-teal-100 rounded text-teal-600">
-                     <DollarSign className="w-3 h-3" />
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Senior Level</span>
-               </div>
-               <p className="font-bold text-xs text-gray-900">{roleData.salary_insights?.senior_level || "N/A"}</p>
-            </div>
-          </div>
-          
-          
-          {/* Learning Path Banner - Only shown if skillPreference exists */}
-          {skillPreference && (
-            <div
-              className={`mt-6 p-5 rounded-lg border-2 ${
-                skillPreference === "master"
-                  ? "bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-300"
-                  : "bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-300"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    skillPreference === "master"
-                      ? "bg-emerald-600"
-                      : "bg-teal-600"
-                  }`}
-                >
-                  {skillPreference === "master" ? (
-                    <TrendingUp className="w-6 h-6 text-white" />
-                  ) : (
-                    <Sparkles className="w-6 h-6 text-white" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-slate-900 mb-1">
-                    {skillPreference === "master"
-                      ? "🎯 Focusing on: Developing & Mastering Current Skills"
-                      : "🚀 Focusing on: Adding New Skills & Expanding"}
-                  </h3>
-                  <p className="text-sm text-slate-700">
-                    {skillPreference === "master"
-                      ? "Your role analysis is tailored to deepen your expertise in your current skill set. You'll focus on advanced concepts that strengthen your foundation."
-                      : "Your role analysis is tailored to help you learn complementary skills. You'll explore trending technologies in this AI-generated guide to expand your capabilities."}
-                  </p>
-                  
-                  {resumeSkills && resumeSkills.technicalSkills && (
-                    <div className="mt-3 flex flex-wrap gap-2 items-center">
-                      <span className="text-xs font-medium text-slate-600">
-                        Analyzing based on your:
-                      </span>
-                      {resumeSkills.technicalSkills.slice(0, 4).map((skill: string, index: number) => (
-                        <span
-                          key={index}
-                          className={`px-2 py-1 text-xs font-medium rounded ${
-                            skillPreference === "master"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-teal-100 text-teal-700"
-                          }`}
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Start Tabs Container (Wrapped on Mobile, Grid on Desktop) */}
-        <div className="bg-white rounded-lg shadow-sm p-1.5 mb-4 border border-slate-100">
-            <div className="flex flex-wrap md:grid md:grid-cols-7 gap-1 md:gap-1.5 justify-center">
-              <button
-                onClick={() => setActiveTab('workflow')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'workflow' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <GitBranch className="w-3 h-3" /> Workflow
-              </button>
-              <button
-                onClick={() => setActiveTab('skills')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'skills' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Award className="w-3 h-3" /> Skills
-              </button>
-              <button
-                onClick={() => setActiveTab('daylife')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'daylife' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Clock className="w-3 h-3" /> Day in Life
-              </button>
-              <button
-                onClick={() => setActiveTab('interview')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'interview' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <User className="w-3 h-3" /> Interview
-              </button>
-              <button
-                onClick={() => setActiveTab('tools')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'tools' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Wrench className="w-3 h-3" /> Tools
-              </button>
-              <button
-                onClick={() => setActiveTab('languages')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'languages' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Code className="w-3 h-3" /> Tech
-              </button>
-              <button
-                onClick={() => setActiveTab('resources')}
-                className={`flex-auto md:flex-none flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md font-bold text-[10px] md:text-xs transition-all whitespace-nowrap ${
-                  activeTab === 'resources' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <BookOpen className="w-3 h-3" /> Resources
-              </button>
-            </div>
-        </div>
-        
-        {/* Content Area */}
-        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 mb-4 relative">
-           {/* SKILLS TAB */}
-           {activeTab === 'skills' && (
-             <div className="space-y-4">
-                 {/* Title logic from the new design */}
-                 <div className="mb-3">
-                    <h2 className="text-lg font-bold text-slate-900 mb-0.5">
-                      {skillPreference === "master" 
-                        ? "Master Your Current Skills - Advanced Path"
-                        : skillPreference === "expand"
-                        ? "Expand Your Skillset - Growth Path"
-                        : "Required Skills & Competencies"}
-                    </h2>
-                    <p className="text-xs text-slate-600">
-                      {skillPreference === "master"
-                        ? "Based on your resume analysis, here is the AI-generated path to mastery for your current stack."
-                        : skillPreference === "expand"
-                        ? "Based on your current skills, the AI recommends these complementary skills to expand your capability."
-                        : "Essential skills needed for this role"}
-                    </p>
-                 </div>
-                
-                {/* Soft Skills Section */}
-                {roleData.soft_skills && roleData.soft_skills.length > 0 && (
-                   <div className="mb-6">
-                      <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                         <User className="w-5 h-5 text-teal-500" />
-                         Crucial Soft Skills
-                      </h3>
-                      <div className="grid md:grid-cols-2 gap-3">
-                         {roleData.soft_skills.map((skill: any, i: number) => (
-                            <div key={i} className="p-3 bg-orange-50/50 border border-orange-100 rounded-lg">
-                               <div className="font-bold text-orange-900 mb-1">{skill.name}</div>
-                               <div className="text-sm text-orange-800">{skill.description}</div>
-                            </div>
-                         ))}
-                      </div>
-                   </div>
-                )}
-
-                {/* Hard Skills (Existing Logic) */}
-                <div>
-                   <h3 className="text-lg font-bold text-gray-900 mb-3">Technical Skills</h3>
-                   <p className="text-sm text-gray-500 mb-4">Click to see why each skill matters.</p>
-                   <div className="space-y-3">
-                     {roleData.skills.length > 0 ? roleData.skills.map((skill: any, index: number) => {
-                       const isExpanded = expandedSkills.has(index);
-                       return (
-                       <div key={index} 
-                            onClick={() => toggleSkill(index)}
-                            className={`flex flex-col gap-3 p-4 rounded-xl border transition-all shadow-sm cursor-pointer group ${isExpanded ? 'bg-teal-50/30 border-teal-200' : 'bg-white border-gray-200 hover:border-teal-300'}`}
-                       >
-                         <div className="flex items-center gap-4">
-                             <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${skill.priority?.includes('High') ? 'bg-teal-100 text-teal-600' : 'bg-gray-100 text-gray-600'}`}>
-                               <Award className="w-5 h-5" />
-                             </div>
-                             <div className="flex-1">
-                               <div className="flex items-center justify-between">
-                                 <h3 className="font-bold text-lg text-gray-900">{skill.name}</h3>
-                                 <div className="flex items-center gap-2">
-                                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${getPriorityColor(skill.priority || 'Medium Priority')}`}>
-                                      {skill.priority || 'Essential'}
-                                    </span>
-                                    <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                                  </div>
-                               </div>
-                             </div>
-                         </div>
-                         
-                         {/* Expanded Content */}
-                         <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-                             <div className="overflow-hidden">
-                                  <div className="pt-3 border-t border-gray-100 mt-1">
-                                    {skill.reason && (
-                                       <div className="mb-3 pl-3 border-l-2 border-teal-200">
-                                          <p className="text-sm text-gray-700 leading-relaxed"><span className="font-bold text-teal-700 block mb-1">Why it matters:</span> {skill.reason}</p>
-                                       </div>
-                                    )}
-                                    {skill.practical_application && (
-                                       <div className="bg-green-50 p-3 rounded-lg border border-green-100">
-                                          <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 uppercase tracking-wide mb-1">
-                                             <Code className="w-3.5 h-3.5" /> Practical Application
-                                          </div>
-                                          <p className="text-sm text-gray-800">{skill.practical_application}</p>
-                                       </div>
-                                    )}
-                                  </div>
-                             </div>
-                         </div>
-                       </div>
-                     )}) : <p>No skills data.</p>}
-                   </div>
-                </div>
-             </div>
-           )}
-
-           {/* Recommended Projects or Resources (if standard skills view or custom) */}
-           {activeTab === 'skills' && skillPreference && (
-              <div className="mt-8 bg-slate-50 border border-slate-200 rounded-xl p-6 mb-6">
-                 <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <Code className="w-5 h-5 text-teal-500" />
-                    {skillPreference === 'master' ? 'Advanced Mastery Projects' : 'Projects to Learn New Skills'}
-                 </h3>
-                 <p className="text-sm text-slate-600 mb-4">
-                    Apply your AI-generated {skillPreference === 'master' ? 'deep dive' : 'expansion'} knowledge.
-                 </p>
-                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-teal-300 transition-colors">
-                        <h4 className="font-bold text-slate-800 mb-2">Build a Production-Ready System</h4>
-                        <p className="text-xs text-slate-500 mb-2">Take the core technical skills from above and implement them with full CI/CD, testing, and optimization.</p>
-                        <span className="text-xs font-bold text-teal-600">{skillPreference === 'master' ? 'Focus: Architecture' : 'Focus: Implementation'}</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-100 hover:border-teal-300 transition-colors">
-                        <h4 className="font-bold text-slate-800 mb-2">Open Source Contribution</h4>
-                        <p className="text-xs text-slate-500 mb-2">Contribute to a major repository utilizing the primary skills listed in your personalized guide.</p>
-                        <span className="text-xs font-bold text-teal-600">Focus: Collaboration</span>
-                    </div>
-                 </div>
-              </div>
-           )}
-
-           {/* DAY IN THE LIFE TAB (NEW) */}
-           {activeTab === 'daylife' && (
-              <div>
-                 <h2 className="text-xl font-bold text-gray-900 mb-2">A Day in the Life</h2>
-                 <p className="text-gray-500 mb-6">What you can expect on a typical day in this role. Click on an item to see details.</p>
-
-                 <div className="space-y-0 relative border-l-2 border-teal-100 ml-3 md:ml-6">
-                    {roleData.day_in_the_life && roleData.day_in_the_life.length > 0 ? (
-                       roleData.day_in_the_life.map((item: any, i: number) => {
-                          const isExpanded = expandedDayItems.includes(i);
-                          
-                          return (
-                          <div key={i} className="mb-8 ml-6 relative">
-                             {/* Timeline Dot */}
-                             <div className={`absolute -left-[31px] w-4 h-4 rounded-full border-4 border-white shadow-sm transition-colors ${isExpanded ? 'bg-teal-600' : 'bg-gray-300'}`}></div>
-                             
-                             <div 
-                                className={`group p-4 bg-white rounded-xl border transition-all cursor-pointer ${isExpanded ? 'border-teal-200 shadow-md' : 'border-gray-200 hover:border-teal-300'}`}
-                                onClick={() => toggleDayItem(i)}
-                             >
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className={`inline-block px-2 py-1 font-bold text-xs rounded ${isExpanded ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-600'}`}>
-                                       {item.time}
-                                    </span>
-                                    <button className="text-xs text-teal-600 font-medium hover:underline focus:outline-none">
-                                        {isExpanded ? 'Show Less' : 'Show Details'}
-                                    </button>
-                                </div>
-                                
-                                <h3 className={`text-lg font-bold transition-colors ${isExpanded ? 'text-teal-900' : 'text-gray-900'}`}>{item.activity}</h3>
-                                
-                                <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-3 border-t border-indigo-50 pt-3' : 'grid-rows-[0fr] opacity-0'}`}>
-                                    <div className="overflow-hidden">
-                                        <p className="text-gray-600 leading-relaxed text-sm">
-                                            {item.description}
-                                        </p>
-                                    </div>
-                                </div>
-                             </div>
-                          </div>
-                       )})
-                    ) : (
-                       <div className="ml-6 text-gray-500 italic">Day in the life data not available.</div>
-                    )}
-                 </div>
-              </div>
-           )}
-
-           {/* INTERVIEW PREP TAB (NEW) */}
-           {activeTab === 'interview' && (
-              <div>
-                 <h2 className="text-xl font-bold text-gray-900 mb-2">Interview Preparation</h2>
-                 <p className="text-gray-500 mb-6">Master the most common questions for this role.</p>
-                 
-                 <div className="space-y-4">
-                    {roleData.interview_prep && roleData.interview_prep.length > 0 ? (
-                       roleData.interview_prep.map((item: any, i: number) => (
-                          <div key={i} className="p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
-                             <h3 className="font-bold text-lg text-gray-900 mb-3 flex items-start gap-2">
-                                <span className="bg-teal-100 text-teal-700 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 text-sm">Q</span>
-                                {item.question}
-                             </h3>
-                             <div className="bg-teal-50/50 p-4 rounded-lg border border-teal-100">
-                                <div className="font-bold text-teal-800 text-xs uppercase mb-1">How to Answer</div>
-                                <p className="text-teal-900 leading-relaxed text-sm">
-                                   {item.answer_tip}
-                                </p>
-                             </div>
-                          </div>
-                       ))
-                    ) : (
-                       <div className="text-center py-10 bg-gray-50 rounded-lg text-gray-500">No interview prep data available.</div>
-                    )}
-                 </div>
-
-                 {/* Negotiation Tip */}
-                 {roleData.salary_insights?.negotiation_tips && (
-                    <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-                       <h3 className="font-bold text-green-800 flex items-center gap-2 mb-2">
-                          <DollarSign className="w-5 h-5" /> Salary Negotiation Tip
-                       </h3>
-                       <p className="text-green-900 text-sm italic">
-                          "{roleData.salary_insights.negotiation_tips}"
-                       </p>
-                    </div>
-                 )}
-              </div>
-           )}
-
-           {/* TOOLS TAB (Existing) */}
-           {activeTab === 'tools' && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Essential Tools & Software</h2>
-              <p className="text-sm text-gray-500 mb-6">The specific software stack you need to be proficient in.</p>
+              <RoleOverviewSection roleData={roleDataState} />
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                {roleData.tools.length > 0 ? (
-                    roleData.tools.map((tool: any, index: number) => {
-                     const isExpanded = expandedTools.has(index);
-                     return (
-                      <div
-                        key={index}
-                        onClick={() => toggleTool(index)}
-                        className={`p-5 rounded-xl border transition-all cursor-pointer flex flex-col h-full ${isExpanded ? 'bg-white border-teal-300 shadow-md ring-1 ring-teal-100' : 'bg-white border-gray-200 hover:border-teal-200 hover:shadow-sm'}`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-bold text-base text-gray-900">{tool.name}</h3>
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-medium">
-                                {tool.category || 'General Tool'}
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                              <span
-                                className={`px-2 py-1 rounded text-xs font-bold ${getDifficultyColor(tool.difficulty || 'Medium')}`}
-                              >
-                                {tool.difficulty || 'Medium'}
-                              </span>
-                              <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                            </div>
-                        </div>
-                        
-                        {/* Expanded Area */}
-                         <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100 mt-2' : 'grid-rows-[0fr] opacity-0'}`}>
-                              <div className="overflow-hidden">
-                                <p className="text-sm text-gray-600 mb-4 pt-2 border-t border-gray-50">
-                                    {tool.description}
-                                </p>
-
-                                {/* Usage Context - The "When/How" */}
-                                {tool.usage_context && (
-                                    <div className="pt-3 border-t border-gray-100 bg-gray-50/50 p-2 rounded">
-                                        <p className="text-xs text-gray-500 leading-relaxed">
-                                            <span className="font-bold text-gray-700 block mb-0.5">Usage in this role:</span>
-                                            {tool.usage_context}
-                                        </p>
-                                    </div>
-                                )}
-                              </div>
-                         </div>
-                      </div>
-                    )})
-                ) : (
-                    <div className="col-span-2 text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <p className="text-gray-500">No tools data available.</p>
-                    </div>
-                )}
-              </div>
-            </div>
-          )}
-
-           {/* LANGUAGES TAB (Existing) */}
-           {activeTab === 'languages' && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-6">Languages & Frameworks</h2>
+              <RoleTypicalWorkSection roleData={roleDataState} />
               
-              <div className="space-y-8">
-                {roleData.languages && roleData.languages.length > 0 && (
-                    <div>
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
-                        <Code className="w-4 h-4" /> Core Technical Languages
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {roleData.languages.map((lang: any, index: number) => {
-                             // Handle backward compatibility where lang might be a string
-                             const langName = typeof lang === 'string' ? lang : lang.name;
-                             const langDesc = typeof lang === 'string' ? '' : lang.description;
-                             const langUsage = typeof lang === 'string' ? '' : lang.usage;
-
-                             return (
-                                <div key={index} className="p-4 rounded-xl bg-teal-50/50 border border-teal-100">
-                                    <div className="font-bold text-teal-900 text-lg mb-1">{langName}</div>
-                                    {langDesc && <p className="text-sm text-teal-800 mb-2">{langDesc}</p>}
-                                    {langUsage && (
-                                        <div className="text-xs text-teal-700 bg-teal-100/50 p-2 rounded mt-2">
-                                            <strong>Why:</strong> {langUsage}
-                                        </div>
-                                    )}
-                                </div>
-                             );
-                        })}
-                    </div>
-                    </div>
-                )}
-
-                {roleData.frameworks && roleData.frameworks.length > 0 && (
-                    <div>
-                    <h3 className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
-                        <Wrench className="w-4 h-4" /> Key Frameworks & Technologies
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {roleData.frameworks.map((fw: any, index: number) => {
-                             // Backward compatibility
-                             const fwName = typeof fw === 'string' ? fw : fw.name;
-                             const fwDesc = typeof fw === 'string' ? '' : fw.description;
-                             const fwUsage = typeof fw === 'string' ? '' : fw.usage;
-
-                             return (
-                                <div key={index} className="p-4 rounded-xl bg-purple-50/50 border border-purple-100">
-                                    <div className="font-bold text-purple-900 text-lg mb-1">{fwName}</div>
-                                    {fwDesc && <p className="text-sm text-purple-800 mb-2">{fwDesc}</p>}
-                                    {fwUsage && (
-                                        <div className="text-xs text-purple-700 bg-purple-100/50 p-2 rounded mt-2">
-                                            <strong>Why:</strong> {fwUsage}
-                                        </div>
-                                    )}
-                                </div>
-                             );
-                        })}
-                    </div>
-                    </div>
-                )}
-                
-                {(!roleData.languages?.length && !roleData.frameworks?.length) && (
-                     <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <p className="text-gray-500">No specific coding languages or frameworks required for this role.</p>
-                     </div>
-                )}
-              </div>
+              <RoleSkillsSection roleData={roleDataState} />
+              
+              <RoleToolsSection roleData={roleDataState} />
+              
+              <RoleOutlookSection roleData={roleDataState} country={country} />
+              
+              <RoleNextAction 
+                onContinue={handleContinue}
+                roleData={roleDataState}
+                isReturningUser={isReturningUser}
+              />
             </div>
           )}
-
-           {/* RESOURCES TAB (Existing) */}
-           {activeTab === 'resources' && (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Curated Learning Resources</h2>
-              <p className="text-sm text-gray-500 mb-6">Hand-picked courses and materials to accelerate your learning.</p>
-
-              <div className="space-y-4">
-                {roleData.resources.length > 0 ? (
-                    <>
-                    {roleData.resources.slice(0, 3).map((resource: any, index: number) => {
-                  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(resource.name + ' ' + (resource.provider || '') + ' course')}`;
-                  const finalUrl = (resource.url && resource.url.startsWith('http')) ? resource.url : searchUrl;
-
-                  return (
-                  <a
-                    key={index}
-                    href={finalUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all group relative overflow-hidden"
-                  >
-                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <ExternalLink className="w-24 h-24 text-teal-900 transform rotate-12 -translate-y-4 translate-x-4" />
-                    </div>
-
-                    <div className="relative z-10 flex flex-col md:flex-row gap-4 items-start">
-                        <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                           <BookOpen className="w-6 h-6 text-teal-600" />
-                        </div>
-                        
-                        <div className="flex-1">
-                             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                <h3 className="font-bold text-lg text-gray-900 group-hover:text-teal-700 transition-colors">
-                                    {resource.name}
-                                </h3>
-                                <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider ${
-                                  resource.type?.toLowerCase().includes('free') 
-                                    ? 'bg-green-100 text-green-700' 
-                                    : 'bg-amber-100 text-amber-700'
-                                }`}>
-                                  {resource.type || 'Course'}
-                                </span>
-                             </div>
-
-                             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-gray-500 mb-3">
-                                <span className="flex items-center gap-1.5">
-                                    <Award className="w-3.5 h-3.5" /> {resource.provider || 'Provider'}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5" /> {resource.duration || 'Self-paced'}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <Globe className="w-3.5 h-3.5" /> {resource.category || 'Online'}
-                                </span>
-                             </div>
-
-                             {resource.description && (
-                                 <p className="text-sm text-gray-600 leading-relaxed mb-1">
-                                    {resource.description}
-                                 </p>
-                             )}
-
-                             {resource.type && !resource.type.toLowerCase().includes('free') && (
-                                <div className="mt-2 p-2.5 bg-amber-50/80 rounded-lg border border-amber-100 flex items-start gap-2">
-                                   <DollarSign className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                                   <p className="text-xs text-amber-800 leading-tight">
-                                      <strong className="block mb-0.5">Paid Resource:</strong> 
-                                      Click the link to proceed to the provider's site to view exact pricing, enroll, and unlock full access.
-                                   </p>
-                                </div>
-                             )}
-                             
-                             <div className="mt-3 flex gap-2">
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(resource.name + ' tutorial')}`, '_blank');
-                                    }}
-                                    className="inline-flex items-center gap-1.5 text-xs text-red-600 font-bold bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 rounded-lg transition-colors z-20"
-                                >
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                                    Watch Video Explanations
-                                </button>
-                             </div>
-                        </div>
-                        
-                        <div className="mt-2 md:mt-0 flex-shrink-0 flex sm:flex-col justify-end">
-                             <span className="flex items-center gap-1.5 text-sm font-bold text-teal-600 group-hover:translate-x-1 transition-transform bg-white/50 px-3 py-1.5 rounded-lg">
-                                 {resource.type && !resource.type.toLowerCase().includes('free') ? 'View Pricing' : 'Start Learning'} <ChevronRight className="w-4 h-4" />
-                             </span>
-                        </div>
-                    </div>
-                  </a>
-                  );
-                })}
-                
-                <button
-                    onClick={() => navigate('/resources', { state: { role } })}
-                    className="w-full py-3 mt-4 bg-gray-50 border border-gray-200 text-teal-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-                >
-                    See More Resources <ArrowRight className="w-4 h-4" />
-                </button>
-                </>
-                ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                        <p className="text-gray-500">No specific resources found.</p>
-                    </div>
-                )}
-              </div>
-            </div>
-          )}
-
-           {/* WORKFLOW TAB (NEW) */}
-           {activeTab === 'workflow' && (
-             <div>
-               <h2 className="text-xl font-bold text-gray-900 mb-2">Role Workflow & Lifecycle</h2>
-               <p className="text-gray-500 mb-6">A high-level overview of how projects are executed in this role.</p>
-
-               <div className="space-y-6">
-                 {roleData.workflow && roleData.workflow.length > 0 ? (
-                   <>
-                     <div className="relative border-l-2 border-teal-100 ml-3 space-y-8 py-2">
-                       {roleData.workflow.slice(0, 3).map((step: any, index: number) => (
-                         <div key={index} className="ml-6 relative">
-                           <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-teal-600 border-4 border-white shadow-sm"></div>
-                           <h3 className="font-bold text-lg text-gray-900 mb-1">{step.stage}</h3>
-                           <p className="text-sm text-gray-600">{step.description}</p>
-                         </div>
-                       ))}
-                     </div>
-                     
-                     {roleData.workflow.length > 3 && (
-                        <p className="text-center text-sm text-gray-500 italic">...and {roleData.workflow.length - 3} more steps</p>
-                     )}
-
-                     <button
-                       onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="w-full py-4 bg-teal-600 text-white font-bold rounded-xl shadow-md hover:bg-teal-700 transition-all flex items-center justify-center gap-2 mt-4"
-                     >
-                       <GitBranch className="w-5 h-5" />
-                       View Full Workflow & Lifecycle Details
-                     </button>
-                   </>
-                 ) : (
-                   <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                      <p className="text-gray-500 mb-4">Detailed workflow data is being generated.</p>
-                      <button
-                       onClick={() => navigate('/workflow-lifecycle', { state: { role, analysis: roleData } })}
-                       className="px-6 py-2 bg-white border border-gray-300 text-teal-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
-                     >
-                       Check Full View
-                     </button>
-                   </div>
-                 )}
-               </div>
-             </div>
-           )}
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-end mt-4 mb-8">
-          <button
-            onClick={() => navigate('/dashboard', { state: { role, analysis: roleData } })}
-            className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm flex items-center gap-1.5 transition-colors shadow-sm"
-          >
-            Continue <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
       </div>
     </div>
   );
