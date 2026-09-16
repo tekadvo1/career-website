@@ -423,12 +423,12 @@ router.post('/unpublish', async (req, res) => {
         const userId = req.user.id;
 
         const result = await pool.query(
-            \`UPDATE portfolios SET 
+            `UPDATE portfolios SET 
                 is_published = false, 
                 is_private = true, 
                 updated_at = CURRENT_TIMESTAMP 
              WHERE user_id = $1 
-             RETURNING id\`,
+             RETURNING id`,
             [userId]
         );
 
