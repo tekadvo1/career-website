@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getUser } from '../utils/auth';
 import {
-  ArrowLeft, Briefcase, Eye, Edit2, Shield, Settings, Link as LinkIcon,
+  ArrowLeft, Briefcase, Eye, Edit2, Settings, Link as LinkIcon,
   User as UserIcon, Code, X, Plus, Save, Globe, Linkedin, LayoutTemplate,
   AlertTriangle, ChevronUp, ChevronDown, Star, Trash2, CheckCircle2, Github, FolderGit2
 } from "lucide-react";
+import PortfolioPresentation from "./PortfolioPresentation";
 
 // Themes definition
 const THEMES: Record<string, any> = {
@@ -337,176 +338,20 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   // --- RENDERING PUBLIC PORTFOLIO PREVIEW ---
   const renderPreview = () => {
     const dataToRender = isPublic ? savedData : editForm;
-    const isActuallyEmpty = !dataToRender.about && dataToRender.experiences.length === 0 && dataToRender.skills.length === 0 && !dataToRender.linkedin && !dataToRender.website;
-
-    if (isPublic && savedData.isPrivate) {
-      return (
-          <div className={`min-h-screen ${t.bg} flex flex-col items-center justify-center p-6 text-center`}>
-              <Shield className="w-12 h-12 text-slate-400 mb-4" />
-              <h1 className={`text-2xl font-bold ${t.textPrimary} mb-2`}>Portfolio is Private</h1>
-              <p className={`${t.textSecondary}`}>This portfolio is currently hidden from public view.</p>
-          </div>
-      );
-    }
-
-    if (isActuallyEmpty) {
-       return (
-          <div className={`min-h-full flex flex-col items-center justify-center p-12 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50`}>
-              <LayoutTemplate className="w-12 h-12 text-slate-300 mb-4" />
-              <h3 className="text-lg font-bold text-slate-700">Introduce yourself and choose the work you want to showcase.</h3>
-              <p className="text-sm text-slate-500 mt-2 max-w-sm">Switch to the editor to add your introduction, skills, and projects to start building your portfolio.</p>
-          </div>
-       );
-    }
-
     return (
-      <div className={`w-full ${t.card} rounded-2xl overflow-hidden shadow-sm border`}>
-        {/* Banner */}
-        <div className={`h-32 sm:h-48 bg-gradient-to-r ${t.headerBg}`}></div>
-        
-        <div className="px-6 pb-10">
-            {/* Header / Identity */}
-            <div className="flex flex-col sm:flex-row sm:items-end -mt-12 sm:-mt-16 mb-8 gap-4">
-                <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-xl ${t.card} p-1 shadow-md z-10`}>
-                    <div className={`w-full h-full bg-gradient-to-br ${t.headerBg} rounded-lg flex items-center justify-center text-white text-3xl font-bold`}>
-                        {displayName ? displayName.substring(0,2).toUpperCase() : "G"}
-                    </div>
-                </div>
-                <div className="z-10 mb-2">
-                    <h1 className={`text-2xl sm:text-3xl font-extrabold ${t.textPrimary}`}>{displayName}</h1>
-                </div>
-                
-                <div className="sm:ml-auto flex items-center gap-3 z-10 mt-4 sm:mt-0">
-                    {dataToRender.linkedin && (
-                      <a href={dataToRender.linkedin} target="_blank" rel="noreferrer" className={`flex items-center gap-2 px-4 py-2 bg-[#0A66C2] text-white rounded-lg font-bold text-[12px]`}>
-                          <Linkedin className="w-4 h-4" /> LinkedIn
-                      </a>
-                    )}
-                    {dataToRender.website && (
-                      <a href={dataToRender.website} target="_blank" rel="noreferrer" className={`flex items-center gap-2 px-4 py-2 ${t.primaryBtn} rounded-lg font-bold text-[12px]`}>
-                          <Globe className="w-4 h-4" /> Website
-                      </a>
-                    )}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column */}
-                <div className="lg:col-span-2 space-y-8">
-                    {dataToRender.about && (
-                      <section>
-                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-3`}>About Me</h2>
-                          <p className={`text-[14px] ${t.textSecondary} leading-relaxed whitespace-pre-wrap`}>{dataToRender.about}</p>
-                      </section>
-                    )}
-
-                    {dataToRender.experiences.filter((e: any) => e.isProject).length > 0 && (
-                      <section>
-                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-4`}>Featured Projects</h2>
-                          <div className="space-y-6">
-                              {dataToRender.experiences.filter((e: any) => e.isProject).map((exp: any, i: number) => (
-                                  <div key={i} className={`p-5 rounded-xl border ${t.card}`}>
-                                      <div className="flex justify-between items-start mb-3">
-                                          <div>
-                                              <h3 className={`text-[16px] font-bold ${t.textPrimary} flex items-center gap-2`}>
-                                                  {exp.title}
-                                                  {exp.isFeatured && <span className="bg-amber-100 text-amber-700 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1"><Star className="w-3 h-3 fill-amber-700" /> Featured</span>}
-                                              </h3>
-                                              <p className={`text-[13px] font-medium ${t.accentText} mt-1`}>{exp.role} <span className={`${t.textSecondary} font-medium`}>| {exp.date}</span></p>
-                                          </div>
-                                      </div>
-                                      
-                                      <p className={`text-[14px] ${t.textSecondary} leading-relaxed mb-4 whitespace-pre-wrap`}>{exp.summary || exp.description}</p>
-                                      
-                                      {exp.technologies && (
-                                          <div className="mb-4 flex flex-wrap gap-1.5">
-                                              {exp.technologies.split(',').map((tech: string, j: number) => tech.trim() ? (
-                                                  <span key={j} className={`px-2 py-0.5 text-[11px] font-bold bg-slate-100 text-slate-600 rounded`}>{tech.trim()}</span>
-                                              ) : null)}
-                                          </div>
-                                      )}
-                                      
-                                      {/* Extra structured fields shown if available */}
-                                      {exp.problem && (
-                                          <div className="mb-3">
-                                              <h4 className={`text-[12px] font-bold ${t.textPrimary} mb-1`}>Problem</h4>
-                                              <p className={`text-[13px] ${t.textSecondary}`}>{exp.problem}</p>
-                                          </div>
-                                      )}
-                                      {exp.built && (
-                                          <div className="mb-3">
-                                              <h4 className={`text-[12px] font-bold ${t.textPrimary} mb-1`}>What I Built</h4>
-                                              <p className={`text-[13px] ${t.textSecondary}`}>{exp.built}</p>
-                                          </div>
-                                      )}
-                                      
-                                      {(exp.repoUrl || exp.liveUrl) && (
-                                          <div className="mt-5 flex gap-3">
-                                              {exp.repoUrl && <a href={exp.repoUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[12px] font-bold rounded-lg transition-colors`}><Github className="w-4 h-4" /> Repository</a>}
-                                              {exp.liveUrl && <a href={exp.liveUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-[12px] font-bold rounded-lg transition-colors`}><Globe className="w-4 h-4" /> Live Demo</a>}
-                                          </div>
-                                      )}
-                                  </div>
-                              ))}
-                          </div>
-                      </section>
-                    )}
-
-                    {dataToRender.experiences.filter((e: any) => !e.isProject).length > 0 && (
-                      <section>
-                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-4`}>Experience</h2>
-                          <div className="space-y-6">
-                              {dataToRender.experiences.filter((e: any) => !e.isProject).map((exp: any, i: number) => (
-                                  <div key={i} className={`p-4 rounded-xl border ${t.card}`}>
-                                      <h3 className={`text-[15px] font-bold ${t.textPrimary}`}>{exp.title}</h3>
-                                      <p className={`text-[13px] font-semibold ${t.accentText} mb-2`}>{exp.role} <span className={`${t.textSecondary} font-medium`}>| {exp.date}</span></p>
-                                      <p className={`text-[13px] ${t.textSecondary} leading-relaxed`}>{exp.description}</p>
-                                  </div>
-                              ))}
-                          </div>
-                      </section>
-                    )}
-                </div>
-
-                {/* Right Column */}
-                <div className="space-y-8">
-                    {dataToRender.skills.length > 0 && (
-                      <section>
-                          <h2 className={`text-lg font-bold ${t.textPrimary} mb-3`}>Skills</h2>
-                          <div className="flex flex-wrap gap-2">
-                              {dataToRender.skills.map((skill: string, i: number) => (
-                                  <span key={i} className={`px-2.5 py-1.5 ${t.skillBadge} rounded-lg text-[12px] font-bold border`}>
-                                      {skill}
-                                  </span>
-                              ))}
-                          </div>
-                      </section>
-                    )}
-                </div>
-            </div>
-        </div>
-      </div>
+        <PortfolioPresentation 
+            data={dataToRender} 
+            displayName={displayName} 
+            t={t} 
+            isPublic={isPublic} 
+            isPrivate={savedData.isPrivate}
+        />
     );
   };
 
   // --- RENDERING EDITOR ---
   if (isPublic) {
-    if (savedData.isPrivate) {
-       return (
-          <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-4">
-             <Shield className="w-16 h-16 text-slate-300 mb-6 mx-auto" />
-             <h2 className="text-2xl font-bold text-slate-800 mb-3">Portfolio is Private</h2>
-             <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">This portfolio is currently private or unpublished. Please check back later.</p>
-          </div>
-       );
-    }
-    return (
-       <div className={`min-h-screen ${t.bg} pt-12 pb-20 px-4`}>
-          <div className="max-w-4xl mx-auto">
-             {renderPreview()}
-          </div>
-       </div>
-    );
+    return renderPreview();
   }
 
   return (

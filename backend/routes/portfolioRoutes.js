@@ -122,16 +122,44 @@ router.get('/public/:username', async (req, res) => {
             return res.status(404).json({ success: false, message: 'Portfolio is private or unavailable' });
         }
 
-        let parsedData = null;
+        let parsedData = {};
         if (portfolio.published_data) {
-            parsedData = typeof portfolio.published_data === 'string' 
+            const raw = typeof portfolio.published_data === 'string' 
                 ? JSON.parse(portfolio.published_data) 
                 : portfolio.published_data;
+                
+            // Explicit allowlist of public fields. Exclude draft_revision, internal notes, etc.
+            parsedData = {
+                about: raw.about || '',
+                experiences: Array.isArray(raw.experiences) ? raw.experiences.map(exp => ({
+                    id: exp.id,
+                    title: exp.title,
+                    role: exp.role,
+                    date: exp.date,
+                    description: exp.description,
+                    summary: exp.summary,
+                    problem: exp.problem,
+                    built: exp.built,
+                    contribution: exp.contribution,
+                    technologies: exp.technologies,
+                    challenge: exp.challenge,
+                    learned: exp.learned,
+                    nextSteps: exp.nextSteps,
+                    repoUrl: exp.repoUrl,
+                    liveUrl: exp.liveUrl,
+                    isProject: !!exp.isProject,
+                    isFeatured: !!exp.isFeatured
+                })) : [],
+                skills: Array.isArray(raw.skills) ? raw.skills : [],
+                linkedin: raw.linkedin || '',
+                website: raw.website || '',
+                theme: raw.theme || 'minimalist'
+            };
         }
 
         res.json({
             success: true,
-            portfolio: parsedData || {},
+            portfolio: parsedData,
             username: portfolio.username
         });
     } catch (err) {
