@@ -179,7 +179,7 @@ router.get('/draft', async (req, res) => {
         const userId = req.user.id;
         
         const result = await pool.query(
-            'SELECT id, user_id, is_private, is_published, about, experiences, skills, linkedin, website, theme, draft_revision, updated_at FROM portfolios WHERE user_id = $1',
+            'SELECT id, user_id, is_private, is_published, about, experiences, skills, linkedin, website, theme, draft_revision, published_data, updated_at FROM portfolios WHERE user_id = $1',
             [userId]
         );
 
@@ -187,7 +187,21 @@ router.get('/draft', async (req, res) => {
             return res.json({ success: true, draft: null });
         }
 
-        res.json({ success: true, draft: result.rows[0] });
+        const draft = result.rows[0];
+        let published_revision = null;
+        if (draft.published_data) {
+            try {
+                const pubData = typeof draft.published_data === 'string' ? JSON.parse(draft.published_data) : draft.published_data;
+                published_revision = pubData.draft_revision || null;
+            } catch (e) {
+                console.error("Error parsing published_data for revision check", e);
+            }
+        }
+        
+        // Remove published_data from the response to save bandwidth
+        delete draft.published_data;
+
+        res.json({ success: true, draft, published_revision });
     } catch (err) {
         console.error('Error fetching portfolio draft:', err);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -325,6 +339,107 @@ router.post('/import-legacy', async (req, res) => {
         }
     } catch (err) {
         console.error('Error importing legacy draft:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// @route   POST /api/portfolio/publish
+// @desc    Publish the current draft
+// @access  Private
+router.post('/publish', async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { expected_draft_revision } = req.body;
+
+        const result = await pool.query(
+            'SELECT * FROM portfolios WHERE user_id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'No draft found to publish' });
+        }
+
+        const portfolio = result.rows[0];
+
+        // Revision conflict check
+        if (expected_draft_revision && parseInt(expected_draft_revision) !== portfolio.draft_revision) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Conflict: The draft has been modified since you last loaded it. Please refresh and review before publishing.',
+                current_revision: portfolio.draft_revision
+            });
+        }
+
+        // Validate minimum content
+        const hasAbout = portfolio.about && portfolio.about.trim().length > 0;
+        const experiences = typeof portfolio.experiences === 'string' ? JSON.parse(portfolio.experiences) : portfolio.experiences || [];
+        const hasExperiences = experiences.length > 0;
+
+        if (!hasAbout && !hasExperiences) {
+            return res.status(400).json({ success: false, message: 'Your portfolio must have at least an introduction (About) or one experience/project to be published.' });
+        }
+
+        // Create the published snapshot
+        const publishedData = {
+            about: portfolio.about,
+            experiences: experiences,
+            skills: typeof portfolio.skills === 'string' ? JSON.parse(portfolio.skills) : portfolio.skills || [],
+            linkedin: portfolio.linkedin,
+            website: portfolio.website,
+            theme: portfolio.theme,
+            draft_revision: portfolio.draft_revision
+        };
+
+        const updateRes = await pool.query(
+            `UPDATE portfolios SET 
+                published_data = $1, 
+                is_published = true, 
+                is_private = false, 
+                updated_at = CURRENT_TIMESTAMP 
+             WHERE user_id = $2 
+             RETURNING draft_revision, updated_at`,
+            [JSON.stringify(publishedData), userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Portfolio published successfully',
+            published_revision: updateRes.rows[0].draft_revision,
+            updated_at: updateRes.rows[0].updated_at
+        });
+
+    } catch (err) {
+        console.error('Error publishing portfolio:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// @route   POST /api/portfolio/unpublish
+// @desc    Unpublish the portfolio
+// @access  Private
+router.post('/unpublish', async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const result = await pool.query(
+            \`UPDATE portfolios SET 
+                is_published = false, 
+                is_private = true, 
+                updated_at = CURRENT_TIMESTAMP 
+             WHERE user_id = $1 
+             RETURNING id\`,
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Portfolio not found' });
+        }
+
+        res.json({ success: true, message: 'Portfolio unpublished successfully' });
+
+    } catch (err) {
+        console.error('Error unpublishing portfolio:', err);
         res.status(500).json({ success: false, message: 'Server error' });
     }
 });

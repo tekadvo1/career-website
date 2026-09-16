@@ -64,11 +64,15 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     experiences: [] as any[],
     skills: [] as string[],
     theme: "minimalist",
-    draft_revision: 1
+    draft_revision: 1,
+    is_published: false
   };
 
   const [savedData, setSavedData] = useState(defaultData);
   const [editForm, setEditForm] = useState(defaultData);
+  const [publishedRevision, setPublishedRevision] = useState<number | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success'>('idle');
   
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
@@ -121,10 +125,14 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
             experiences: Array.isArray(data.draft.experiences) ? data.draft.experiences : (typeof data.draft.experiences === 'string' ? JSON.parse(data.draft.experiences) : []),
             skills: Array.isArray(data.draft.skills) ? data.draft.skills : (typeof data.draft.skills === 'string' ? JSON.parse(data.draft.skills) : []),
             theme: data.draft.theme || "minimalist",
-            draft_revision: data.draft.draft_revision || 1
+            draft_revision: data.draft.draft_revision || 1,
+            is_published: !!data.draft.is_published
           };
           setSavedData(draftData);
           setEditForm(draftData);
+          if (data.published_revision !== undefined) {
+              setPublishedRevision(data.published_revision);
+          }
         } else {
             // Load initial skills from active role if brand new
             const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
@@ -311,6 +319,57 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
     }
   };
 
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+        const { apiFetch } = await import('../utils/apiFetch');
+        const res = await apiFetch('/api/portfolio/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expected_draft_revision: editForm.draft_revision })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            setPublishedRevision(data.published_revision);
+            setSavedData(prev => ({ ...prev, is_published: true, draft_revision: data.published_revision }));
+            setEditForm(prev => ({ ...prev, draft_revision: data.published_revision }));
+            setShowPublishModal(false);
+            alert("Portfolio published successfully!");
+        } else if (res.status === 409) {
+            setConflictError(data.message);
+            setShowPublishModal(false);
+        } else {
+            alert(data.message || 'Failed to publish portfolio');
+        }
+    } catch (err) {
+        console.error("Failed to publish portfolio", err);
+        alert("An error occurred while publishing.");
+    } finally {
+        setIsPublishing(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!confirm("Are you sure you want to unpublish your portfolio? It will no longer be visible to the public.")) return;
+    
+    try {
+        const { apiFetch } = await import('../utils/apiFetch');
+        const res = await apiFetch('/api/portfolio/unpublish', { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+            setSavedData(prev => ({ ...prev, is_published: false }));
+            setPublishedRevision(null);
+            alert("Portfolio unpublished successfully.");
+        } else {
+            alert(data.message || 'Failed to unpublish');
+        }
+    } catch (err) {
+        console.error("Failed to unpublish", err);
+    }
+  };
+
   const handleDiscard = () => {
     if (confirm("Discard all unsaved changes in this session?")) {
       setEditForm(savedData);
@@ -390,42 +449,77 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
              <ArrowLeft className="w-5 h-5" />
            </button>
            <div>
-              <h1 className="text-[15px] font-bold text-slate-800">My Portfolio</h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Edit how you introduce yourself and showcase your work.</p>
+             <h1 className="font-extrabold text-slate-800 text-[15px] flex items-center gap-2">
+               Portfolio Editor
+               {savedData.is_published ? (
+                   publishedRevision === editForm.draft_revision && !isDirty ? (
+                       <span className="bg-emerald-100 text-emerald-800 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold">Published</span>
+                   ) : (
+                       <span className="bg-amber-100 text-amber-800 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Unpublished Changes</span>
+                   )
+               ) : (
+                   <span className="bg-slate-100 text-slate-600 text-[10px] uppercase px-1.5 py-0.5 rounded font-bold">Private Draft</span>
+               )}
+             </h1>
+             <p className="text-[12px] font-semibold text-slate-500 flex items-center gap-2">
+               {isDirty ? (
+                   <><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Unsaved edits</>
+               ) : (
+                   <><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Saved</>
+               )}
+             </p>
            </div>
         </div>
-        
-        <div className="flex items-center gap-3">
-            {/* Mode Switcher */}
-            <div className="hidden sm:flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-                <button 
+
+        <div className="flex items-center gap-2">
+           <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-lg mr-2">
+               <button 
                   onClick={() => setMode('edit')}
-                  className={`px-3 py-1.5 text-[12px] font-bold rounded-md flex items-center gap-1.5 transition-colors ${mode === 'edit' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                    <Edit2 className="w-3.5 h-3.5" /> Edit
-                </button>
-                <button 
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md transition-colors ${mode === 'edit' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+               >
+                  <Edit2 className="w-3.5 h-3.5" /> Edit
+               </button>
+               <button 
                   onClick={() => setMode('preview')}
-                  className={`px-3 py-1.5 text-[12px] font-bold rounded-md flex items-center gap-1.5 transition-colors ${mode === 'preview' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                    <Eye className="w-3.5 h-3.5" /> Preview
-                </button>
-            </div>
-            
-            {/* Save Controls */}
-            {isDirty && (
-                <button onClick={handleDiscard} className="text-[12px] font-bold text-slate-500 hover:text-slate-700 hidden sm:block">
-                    Discard
-                </button>
-            )}
-            <button 
-                onClick={handleSave}
-                disabled={!isDirty || saveStatus === 'saving' || !!conflictError}
-                className={`px-4 py-2 rounded-lg font-bold text-[12px] flex items-center gap-1.5 transition-colors ${isDirty && !conflictError ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400'}`}
-            >
-                <Save className="w-3.5 h-3.5" />
-                {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'success' ? 'Saved' : isDirty ? 'Save Draft' : 'Saved'}
-            </button>
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-md transition-colors ${mode === 'preview' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+               >
+                  <Eye className="w-3.5 h-3.5" /> Preview
+               </button>
+           </div>
+           
+           {isDirty && (
+               <button onClick={handleDiscard} className="hidden lg:block text-[12px] font-bold text-slate-500 hover:text-slate-700 mr-2">
+                   Discard
+               </button>
+           )}
+
+           <button 
+              onClick={handleSave} 
+              disabled={saveStatus === 'saving' || !isDirty}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-lg transition-colors ${!isDirty ? 'bg-slate-100 text-slate-400' : 'bg-slate-800 text-white hover:bg-slate-700'}`}
+           >
+              {saveStatus === 'saving' ? <span className="animate-spin text-lg leading-none mt-[-2px]">↻</span> : <Save className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{saveStatus === 'success' ? 'Saved' : 'Save Draft'}</span>
+           </button>
+
+           <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+
+           {savedData.is_published && (
+               <button onClick={() => {
+                   navigator.clipboard.writeText(window.location.origin + '/portfolio/' + (user?.username || ''));
+                   alert("Link copied!");
+               }} className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                   <LinkIcon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Copy Link</span>
+               </button>
+           )}
+
+           <button 
+              onClick={() => setShowPublishModal(true)} 
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold rounded-lg transition-colors ${savedData.is_published && publishedRevision !== editForm.draft_revision && !isDirty ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : (savedData.is_published ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white')}`}
+           >
+              <Globe className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{savedData.is_published ? (publishedRevision !== editForm.draft_revision && !isDirty ? 'Update Published' : 'Published Options') : 'Publish'}</span>
+           </button>
         </div>
       </header>
 
@@ -737,6 +831,83 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                               </div>
                           );
                       })}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {showPublishModal && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md flex flex-col overflow-hidden animate-in zoom-in-95">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                      <h3 className="font-bold text-slate-800 flex items-center gap-2"><Globe className="w-5 h-5 text-emerald-600" /> {savedData.is_published ? 'Publishing Options' : 'Publish Portfolio'}</h3>
+                      <button onClick={() => setShowPublishModal(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-md transition-colors"><X className="w-5 h-5" /></button>
+                  </div>
+                  <div className="p-6 space-y-6">
+                      
+                      {!savedData.is_published ? (
+                          <div>
+                              <p className="text-[13px] text-slate-600 mb-4 leading-relaxed">
+                                  Publishing will make your portfolio visible to anyone with the link.
+                                  Please ensure your content is professional and accurate.
+                              </p>
+                              <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                  <p className="text-[12px] font-bold text-slate-700 mb-1">Your Public Link will be:</p>
+                                  <a href={window.location.origin + '/portfolio/' + (user?.username || '')} target="_blank" rel="noreferrer" className="text-[12px] text-blue-600 hover:underline break-all">
+                                      {window.location.origin}/portfolio/{user?.username || ''}
+                                  </a>
+                              </div>
+                              <button 
+                                  onClick={handlePublish}
+                                  disabled={isPublishing || (editForm.experiences.length === 0 && !editForm.about)}
+                                  className="mt-6 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[13px] flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                  {isPublishing ? <span className="animate-spin">↻</span> : <Globe className="w-4 h-4" />} 
+                                  {isPublishing ? 'Publishing...' : 'Publish to Web'}
+                              </button>
+                              {(editForm.experiences.length === 0 && !editForm.about) && (
+                                  <p className="text-[11px] text-red-600 mt-2 text-center">You must add at least an About section or a Project to publish.</p>
+                              )}
+                          </div>
+                      ) : (
+                          <div>
+                              {publishedRevision !== editForm.draft_revision && (
+                                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                                      <h4 className="text-[13px] font-bold text-amber-800 flex items-center gap-2 mb-1"><AlertTriangle className="w-4 h-4" /> Unpublished Changes</h4>
+                                      <p className="text-[12px] text-amber-700">You have saved changes that are not yet visible to the public. Do you want to update your public portfolio to match this draft?</p>
+                                      <button 
+                                          onClick={handlePublish}
+                                          disabled={isPublishing}
+                                          className="mt-3 w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-[13px] flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                                      >
+                                          {isPublishing ? <span className="animate-spin">↻</span> : <Globe className="w-4 h-4" />} 
+                                          Update Published Version
+                                      </button>
+                                  </div>
+                              )}
+                              
+                              <div className="space-y-4">
+                                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                      <p className="text-[12px] font-bold text-slate-700 mb-1">Your Public Link:</p>
+                                      <a href={window.location.origin + '/portfolio/' + (user?.username || '')} target="_blank" rel="noreferrer" className="text-[12px] text-blue-600 hover:underline break-all">
+                                          {window.location.origin}/portfolio/{user?.username || ''}
+                                      </a>
+                                  </div>
+                                  
+                                  <div className="pt-4 border-t border-slate-100">
+                                      <h4 className="text-[13px] font-bold text-slate-800 mb-2">Danger Zone</h4>
+                                      <p className="text-[12px] text-slate-500 mb-3">Unpublishing will hide your portfolio from the public immediately. Your draft will be saved.</p>
+                                      <button 
+                                          onClick={handleUnpublish}
+                                          className="w-full py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg font-bold text-[13px] transition-colors"
+                                      >
+                                          Unpublish Portfolio
+                                      </button>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                      
                   </div>
               </div>
           </div>
