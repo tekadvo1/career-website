@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { checkAICredits } = require('../middleware/aiCredits');
+const { checkAICredits } = require('../middleware/creditMiddleware');
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
