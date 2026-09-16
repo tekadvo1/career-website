@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { getToken, getUser } from '../utils/auth';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { getToken } from '../utils/auth';
 import { apiFetch } from '../utils/apiFetch';
 import type { NormalizedRoleAnalysis } from '../types/roleAnalysis';
 
@@ -15,18 +15,11 @@ import RoleOutlookSection from './role-analysis/RoleOutlookSection';
 import RoleNextAction from './role-analysis/RoleNextAction';
 
 export default function RoleAnalysis() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const analysisId = searchParams.get('id');
+
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Detect if this is a returning user (onboarding already completed)
-  const isReturningUser = (() => {
-    try {
-      const user = (getUser() ?? {});
-      return !!user.onboarding_completed;
-    } catch {
-      return false;
-    }
-  })();
 
   const [roleDataState, setRoleDataState] = useState<NormalizedRoleAnalysis | null>(null);
   
@@ -48,8 +41,21 @@ export default function RoleAnalysis() {
   const skillPreference = location.state?.learningPath;
   const resumeSkills = location.state?.resumeSkills;
 
-  const experienceLevel = location.state?.experienceLevel;
-  const country = location.state?.country;
+  const experienceLevelInit = location.state?.experienceLevel;
+  const countryInit = location.state?.country;
+
+  const [experienceLevel, setExperienceLevel] = useState<string | undefined>(experienceLevelInit);
+  const [country, setCountry] = useState<string | undefined>(countryInit);
+
+  const [inputExp, setInputExp] = useState(experienceLevelInit || '');
+  const [inputCountry, setInputCountry] = useState(countryInit || '');
+
+  const userStr = sessionStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : {};
+
+  // Check if this analysis is the user's active plan
+  const isActivePlan = user.preferences?.active_role_analysis_id === (analysisId ? parseInt(analysisId, 10) : null) || 
+                       user.preferences?.active_role_analysis_id === analysisId;
 
   // Strict Normalizer
   const getAiRoleData = useCallback((analysis: any, roleName: string): NormalizedRoleAnalysis => {
@@ -86,12 +92,40 @@ export default function RoleAnalysis() {
       setError(null);
 
       try {
-        if (aiAnalysis) {
+        if (analysisId) {
+           // Durable routing: load explicitly by ID
+           const response = await apiFetch(`/api/role/analysis/${analysisId}`);
+           if (response.ok) {
+             const data = await response.json();
+             if (data.status === 'processing') {
+                setTimeout(fetchData, 5000);
+                return;
+             }
+             if (data.success && data.data) {
+                const normalized = getAiRoleData(data.data, data.role_title || role);
+                setRoleDataState(normalized);
+                
+                // Update local inputs so they match the loaded data if it's missing in state
+                if (!experienceLevel) setExperienceLevel(location.state?.experienceLevel || 'Beginner');
+                if (!country) setCountry(location.state?.country || 'USA');
+                
+                setStatus('ready');
+                return;
+             }
+           }
+        }
+
+        if (!experienceLevel || !country) {
+           setStatus('idle');
+           return;
+        }
+
+        if (aiAnalysis && !analysisId) {
           const normalized = getAiRoleData(aiAnalysis, role);
           setRoleDataState(normalized);
           sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
             role,
-            analysis: aiAnalysis, // store raw analysis
+            analysis: aiAnalysis,
             hasResume,
             resumeFileName,
             timestamp: new Date().getTime()
@@ -121,8 +155,8 @@ export default function RoleAnalysis() {
           body: JSON.stringify({ 
             role: role, 
             userId: user.id || null,
-            experienceLevel: experienceLevel || 'Beginner', 
-            country: country || 'USA',
+            experienceLevel: experienceLevel, 
+            country: country,
             learningPath: skillPreference
           }) 
         });
@@ -133,8 +167,22 @@ export default function RoleAnalysis() {
 
         const data = await response.json();
         
+        if (data.status === 'processing') {
+            if (data.analysisId && data.analysisId !== analysisId) {
+                setSearchParams({ id: data.analysisId });
+            } else {
+                setTimeout(fetchData, 5000);
+            }
+            return;
+        }
+
         if (data.success && data.data) {
            setRoleDataState(getAiRoleData(data.data, role));
+           
+           if (data.analysisId && data.analysisId !== analysisId) {
+               setSearchParams({ id: data.analysisId });
+           }
+
            sessionStorage.setItem('lastRoleAnalysis', JSON.stringify({
              role,
              analysis: data.data,
@@ -155,7 +203,7 @@ export default function RoleAnalysis() {
     };
 
     fetchData();
-  }, [aiAnalysis, role, getAiRoleData, hasResume, resumeFileName, experienceLevel, country, skillPreference]);
+  }, [aiAnalysis, role, getAiRoleData, hasResume, resumeFileName, experienceLevel, country, skillPreference, analysisId, setSearchParams]);
 
   // Effect to mark onboarding as complete once data is loaded
   useEffect(() => {
@@ -185,10 +233,6 @@ export default function RoleAnalysis() {
     markOnboardingComplete();
   }, [status, roleDataState]);
 
-  const handleContinue = () => {
-    navigate('/dashboard', { state: { role, analysis: roleDataState } });
-  };
-
   return (
     <div className="flex h-screen bg-slate-50 font-sans">
       <Sidebar activePage="/dashboard" />
@@ -196,7 +240,53 @@ export default function RoleAnalysis() {
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-8 w-full pt-16 md:pt-8">
           
-          {status === 'loading' && (
+          {(!experienceLevel || !country) && status === 'idle' && (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-lg mx-auto text-center mt-20">
+              <h2 className="text-xl font-bold text-slate-900 mb-2">We need a bit more context</h2>
+              <p className="text-slate-600 mb-6">To provide accurate salary and growth insights, please confirm your experience level and location.</p>
+              
+              <div className="text-left mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Experience Level</label>
+                <select 
+                  className="w-full border-slate-300 rounded-lg shadow-sm p-2 border"
+                  value={inputExp}
+                  onChange={e => setInputExp(e.target.value)}
+                >
+                  <option value="">Select Level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Expert">Expert</option>
+                </select>
+              </div>
+
+              <div className="text-left mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Target Country/Market</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. USA, UK, India"
+                  className="w-full border-slate-300 rounded-lg shadow-sm p-2 border"
+                  value={inputCountry}
+                  onChange={e => setInputCountry(e.target.value)}
+                />
+              </div>
+
+              <button 
+                onClick={() => {
+                   if (inputExp && inputCountry) {
+                      setExperienceLevel(inputExp);
+                      setCountry(inputCountry);
+                   }
+                }}
+                disabled={!inputExp || !inputCountry}
+                className="w-full px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                Analyze Role
+              </button>
+            </div>
+          )}
+
+          {status === 'loading' && experienceLevel && country && (
             <div className="flex flex-col items-center justify-center py-20">
               <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4"></div>
               <h2 className="text-xl font-semibold text-slate-800">Generating role guidance...</h2>
@@ -250,9 +340,27 @@ export default function RoleAnalysis() {
               <RoleOutlookSection roleData={roleDataState} country={country} />
               
               <RoleNextAction 
-                onContinue={handleContinue}
                 roleData={roleDataState}
-                isReturningUser={isReturningUser}
+                isReturningUser={isActivePlan}
+                onContinue={async () => {
+                    if (!isActivePlan && analysisId) {
+                        try {
+                            const response = await apiFetch('/api/role/activate-plan', {
+                                method: 'POST',
+                                body: JSON.stringify({ analysisId })
+                            });
+                            if (response.ok) {
+                                await response.json(); // ignore data
+                                // Update local user object
+                                const updatedUser = { ...user, preferences: { ...user.preferences, active_role_analysis_id: analysisId } };
+                                sessionStorage.setItem('user', JSON.stringify(updatedUser));
+                            }
+                        } catch (e) {
+                            console.error("Failed to activate plan", e);
+                        }
+                    }
+                    navigate('/roadmap');
+                }}
               />
             </div>
           )}

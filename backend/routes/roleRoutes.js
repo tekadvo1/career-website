@@ -71,21 +71,23 @@ router.post('/analyze', protect, async (req, res) => {
       const isPersonalized = !!learningPath;
       if (!cachedData && !analysisId && !isPersonalized) {
         const globalCacheResult = await pool.query(
-          "SELECT analysis_data, user_id, lifecycle_status FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
+          "SELECT id, analysis_data, user_id, lifecycle_status FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
           [normalizedRole]
         );
         if (globalCacheResult.rows.length > 0) {
           const grow = globalCacheResult.rows[0];
+          analysisId = grow.id;
           if (grow.lifecycle_status === 'ready' || !grow.lifecycle_status) {
             cachedData = grow.analysis_data;
             console.log(`Using GLOBAL cached analysis for: ${normalizedRole}`);
             
             if (userId && grow.user_id !== userId) {
                try {
-                   await pool.query(
-                     "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready')",
+                   const cloneResult = await pool.query(
+                     "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready') RETURNING id",
                      [userId, normalizedRole, cachedData]
                    );
+                   analysisId = cloneResult.rows[0].id;
                    console.log(`Cloned GLOBAL cache to USER cache for User ${userId}`);
                } catch (cloneErr) {
                    console.error("Failed to clone cache to user:", cloneErr);
@@ -119,6 +121,7 @@ router.post('/analyze', protect, async (req, res) => {
         return res.json({
           success: true,
           data: cachedData,
+          analysisId: analysisId,
           source: isUserCache ? 'cache_user' : 'cache_global'
         });
       }
@@ -153,6 +156,7 @@ router.post('/analyze', protect, async (req, res) => {
     res.json({
       success: true,
       status: 'processing',
+      analysisId: analysisId,
       message: 'Analysis generation started in background'
     });
 
@@ -2073,28 +2077,132 @@ Return the response strictly as a JSON array of objects with this structure:
 
 // GET /api/role/saved-roadmap - Fetch the latest saved roadmap for a user by role prefix
 router.get('/saved-roadmap', protect, async (req, res) => {
-    const { role } = req.query;
+    const { role, analysisId } = req.query;
     const userId = req.user.id;
 
-    if (!role) {
-        return res.status(400).json({ error: 'role is required' });
-    }
-
     try {
-        const normalizedRole = role.trim().toLowerCase();
-        const cacheResult = await pool.query(
-            "SELECT analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) LIKE $2 || '%' ORDER BY created_at DESC LIMIT 1",
-            [userId, normalizedRole]
-        );
+        let cacheResult;
+        
+        if (analysisId) {
+            cacheResult = await pool.query(
+                "SELECT analysis_data FROM role_analyses WHERE id = $1 AND user_id = $2 AND lifecycle_status = 'ready'",
+                [analysisId, userId]
+            );
+        } else if (role) {
+            const normalizedRole = role.trim().toLowerCase();
+            cacheResult = await pool.query(
+                "SELECT analysis_data FROM role_analyses WHERE user_id = $1 AND LOWER(role_title) LIKE $2 || '%' AND lifecycle_status = 'ready' ORDER BY created_at DESC LIMIT 1",
+                [userId, normalizedRole]
+            );
+        } else {
+            return res.status(400).json({ error: 'role or analysisId is required' });
+        }
 
         if (cacheResult.rows.length === 0) {
-            return res.status(404).json({ error: 'No existing roadmap found for this user and role.' });
+            return res.status(404).json({ error: 'No existing roadmap found for this user.' });
         }
 
         res.json({ success: true, data: cacheResult.rows[0].analysis_data });
     } catch (err) {
         console.error('Error in /api/role/saved-roadmap:', err);
         res.status(500).json({ error: 'Failed to fetch saved roadmap' });
+    }
+});
+
+// GET /api/role/analysis/:id - Fetch a specific analysis securely
+router.get('/analysis/:id', protect, async (req, res) => {
+    const analysisId = req.params.id;
+    const userId = req.user.id;
+
+    try {
+        const dbResult = await pool.query(
+            "SELECT id, role_title, analysis_data, lifecycle_status, error_message, user_id FROM role_analyses WHERE id = $1",
+            [analysisId]
+        );
+
+        if (dbResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Analysis not found' });
+        }
+
+        const analysis = dbResult.rows[0];
+
+        // Security check: must be user's OR it must be a global one (user_id is null) if we support global cache sharing
+        // Given Task 3: "Verify ownership of the analysis and roadmap"
+        if (analysis.user_id !== null && analysis.user_id !== userId) {
+            return res.status(403).json({ error: 'Unauthorized to access this analysis' });
+        }
+
+        // We return the raw data plus the status
+        res.json({
+            success: true,
+            status: analysis.lifecycle_status,
+            error: analysis.error_message,
+            role_title: analysis.role_title,
+            data: typeof analysis.analysis_data === 'string' ? JSON.parse(analysis.analysis_data) : analysis.analysis_data
+        });
+    } catch (err) {
+        console.error('Error fetching analysis by ID:', err);
+        res.status(500).json({ error: 'Failed to fetch analysis' });
+    }
+});
+
+// POST /api/role/activate-plan - Set the active learning plan for the user
+router.post('/activate-plan', protect, async (req, res) => {
+    const { analysisId } = req.body;
+    const userId = req.user.id;
+
+    if (!analysisId) {
+        return res.status(400).json({ error: 'analysisId is required' });
+    }
+
+    try {
+        // Verify ownership and existence
+        const dbResult = await pool.query(
+            "SELECT id, role_title FROM role_analyses WHERE id = $1 AND user_id = $2 AND lifecycle_status = 'ready'",
+            [analysisId, userId]
+        );
+
+        if (dbResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Analysis not found or not ready' });
+        }
+
+        const roleTitle = dbResult.rows[0].role_title;
+
+        // Fetch current user preferences
+        const userRes = await pool.query("SELECT preferences, current_workspace_id FROM users WHERE id = $1", [userId]);
+        let preferences = userRes.rows[0].preferences || {};
+        if (typeof preferences === 'string') {
+            preferences = JSON.parse(preferences);
+        }
+
+        // Set active plan ID
+        preferences.active_role_analysis_id = analysisId;
+
+        await pool.query(
+            "UPDATE users SET preferences = $1 WHERE id = $2",
+            [preferences, userId]
+        );
+
+        // Optional: Ensure a workspace exists for this role to satisfy other parts of the app
+        let workspaceId = userRes.rows[0].current_workspace_id;
+        const wsRes = await pool.query("SELECT id FROM workspaces WHERE user_id = $1 AND role = $2 LIMIT 1", [userId, roleTitle]);
+        
+        if (wsRes.rows.length === 0) {
+            const newWs = await pool.query(
+                "INSERT INTO workspaces (user_id, name, role) VALUES ($1, $2, $3) RETURNING id",
+                [userId, `${roleTitle} Workspace`, roleTitle]
+            );
+            workspaceId = newWs.rows[0].id;
+        } else {
+            workspaceId = wsRes.rows[0].id;
+        }
+
+        await pool.query("UPDATE users SET current_workspace_id = $1 WHERE id = $2", [workspaceId, userId]);
+
+        res.json({ success: true, message: 'Plan activated successfully', active_role_analysis_id: analysisId });
+    } catch (err) {
+        console.error('Error activating plan:', err);
+        res.status(500).json({ error: 'Failed to activate plan' });
     }
 });
 

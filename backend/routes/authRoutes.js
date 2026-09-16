@@ -48,13 +48,25 @@ router.get('/me', protect, async (req, res) => {
     }
 
     let roleRes = { rows: [] };
-    if (targetRole) {
-        roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND role_title = $2 ORDER BY created_at DESC LIMIT 1', [req.user.id, targetRole]);
-        if (roleRes.rows.length === 0) {
-            roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE LOWER(role_title) = LOWER($1) ORDER BY created_at DESC LIMIT 1', [targetRole]);
+    const preferences = typeof userRecord.preferences === 'string' ? JSON.parse(userRecord.preferences) : (userRecord.preferences || {});
+    const activeAnalysisId = preferences.active_role_analysis_id;
+
+    if (activeAnalysisId) {
+        roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE id = $1 AND user_id = $2 AND lifecycle_status = \'ready\' LIMIT 1', [activeAnalysisId, req.user.id]);
+        if (roleRes.rows.length > 0) {
+            targetRole = roleRes.rows[0].role_title;
         }
-    } else {
-        roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+    }
+
+    if (roleRes.rows.length === 0) {
+        if (targetRole) {
+            roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 AND role_title = $2 ORDER BY created_at DESC LIMIT 1', [req.user.id, targetRole]);
+            if (roleRes.rows.length === 0) {
+                roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE LOWER(role_title) = LOWER($1) ORDER BY created_at DESC LIMIT 1', [targetRole]);
+            }
+        } else {
+            roleRes = await pool.query('SELECT role_title, analysis_data FROM role_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+        }
     }
     let lastRoleAnalysis = null;
     if (targetRole || roleRes.rows.length > 0) {

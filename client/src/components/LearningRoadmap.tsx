@@ -397,6 +397,10 @@ export default function LearningRoadmap() {
                 }
             } catch (e) { console.error(e); }
 
+            const userStr = sessionStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : {};
+            const activeAnalysisId = user.preferences?.active_role_analysis_id;
+
             let analysis = location.state?.analysis;
             let targetRole = location.state?.role || role;
 
@@ -419,7 +423,9 @@ export default function LearningRoadmap() {
                 setIsLoading(false);
             } else {
                 try {
-                    const response = await apiFetch(`/api/role/saved-roadmap?role=${encodeURIComponent(targetRole)}`);
+                    // Fetch using explicit active ID if available, otherwise fallback to role prefix
+                    const queryParam = activeAnalysisId ? `analysisId=${activeAnalysisId}` : `role=${encodeURIComponent(targetRole)}`;
+                    const response = await apiFetch(`/api/role/saved-roadmap?${queryParam}`);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success && data.data && data.data.roadmap) {
@@ -431,13 +437,11 @@ export default function LearningRoadmap() {
                             }));
                         }
                     } else {
-                        // Fallback to analyze if not found, though ideally it should already exist
-                        const userStr = sessionStorage.getItem('user');
-                        const user = userStr ? JSON.parse(userStr) : {};
+                        // Fallback to analyze if not found
                         const analyzeResponse = await apiFetch('/api/role/analyze', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ role: targetRole, userId: user.id || null })
+                            body: JSON.stringify({ role: targetRole, userId: user.id || null, experienceLevel: 'Beginner', country: 'USA' }) // Adding fallback defaults for Dashboard loading
                         });
                         if (analyzeResponse.ok) {
                             const data = await analyzeResponse.json();
