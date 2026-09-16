@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ProjectAdvisor from './ProjectAdvisor';
+import { getUser } from '../utils/auth';
 import {
   Search,
-  Sparkles,
   Wrench,
   LayoutGrid,
   Terminal,
@@ -13,134 +13,235 @@ import {
   FolderTree,
 } from 'lucide-react';
 
+interface ToolAction {
+  id: string;
+  label: string;
+  description: string;
+  actionText: string;
+  icon: React.ReactNode;
+  bgColor: string;
+  route?: string;
+  onClick?: () => void;
+}
+
+interface ToolSection {
+  id: string;
+  title: string;
+  items: ToolAction[];
+}
+
 export default function ToolsPage() {
   const navigate = useNavigate();
   const [showAdvisor, setShowAdvisor] = useState(false);
+  const [hasAdvisorDraft, setHasAdvisorDraft] = useState(false);
+  const [currentRole, setCurrentRole] = useState<string | null>(null);
 
-  // Restore advisor if user refreshed mid-flow
   useEffect(() => {
+    try {
+      const user: any = getUser() || {};
+      if (user.lastRoleAnalysis && user.lastRoleAnalysis.role) {
+        setCurrentRole(user.lastRoleAnalysis.role);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     const saved = sessionStorage.getItem('advisor_state');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.step && parsed.step > 1) setShowAdvisor(true);
-      } catch (_e) { /* ignore */ }
+        if (parsed.step && parsed.step > 1) {
+          setHasAdvisorDraft(true);
+        }
+      } catch (_e) {
+        // ignore invalid JSON
+      }
     }
   }, []);
 
-  // ── If the advisor is open, render it full-screen (replaces content area) ──
   if (showAdvisor) {
     return <ProjectAdvisor onClose={() => setShowAdvisor(false)} />;
   }
 
-  const toolCategories = [
+  const navigateToTool = (route: string) => {
+    navigate(route, { state: { role: currentRole } });
+  };
+
+  const sections: ToolSection[] = [
     {
-      label:    'Start New Journey',
-      subtitle: 'Analyze a new role or resume',
-      icon:     <Sparkles className="w-5 h-5 text-purple-600" />,
-      bgColor:  'bg-purple-100',
-      onClick:  () => navigate('/onboarding', { state: { force: true } }),
+      id: 'explore-careers',
+      title: 'EXPLORE CAREERS',
+      items: [
+        {
+          id: 'role-analysis',
+          label: 'Explore a role',
+          description: 'Understand the responsibilities, skills, and learning options for a career.',
+          actionText: 'Explore role',
+          icon: <Search className="w-5 h-5 text-blue-600" />,
+          bgColor: 'bg-blue-100',
+          route: '/role-analysis',
+        },
+        {
+          id: 'tech-stack',
+          label: 'Tools for your role',
+          description: 'Understand which tools support your work and why they matter.',
+          actionText: 'Explore tools',
+          icon: <Terminal className="w-5 h-5 text-indigo-600" />,
+          bgColor: 'bg-indigo-100',
+          route: '/tech-stack',
+        },
+        {
+          id: 'workflow-lifecycle',
+          label: 'How this role works',
+          description: 'See the stages of everyday work and how the tools fit together.',
+          actionText: 'View workflow',
+          icon: <Wrench className="w-5 h-5 text-orange-600" />,
+          bgColor: 'bg-orange-100',
+          route: '/workflow-lifecycle',
+        }
+      ]
     },
     {
-      label:    'Role Analysis',
-      subtitle: 'AI career insights',
-      icon:     <Search className="w-5 h-5 text-blue-600" />,
-      bgColor:  'bg-blue-100',
-      badge:    'NEW',
-      onClick:  () => navigate('/role-analysis'),
-    },
-    {
-      label:    'Workflow Lifecycle',
-      subtitle: 'Productivity tools',
-      icon:     <Wrench className="w-5 h-5 text-orange-600" />,
-      bgColor:  'bg-orange-100',
-      badge:    'NEW',
-      onClick:  () => navigate('/workflow-lifecycle'),
-    },
-    {
-      label:    'Tech Stack & Tools',
-      subtitle: 'AI trending analysis',
-      icon:     <Terminal className="w-5 h-5 text-indigo-600" />,
-      bgColor:  'bg-indigo-100',
-      badge:    'NEW',
-      onClick:  () => navigate('/tech-stack'),
-    },
-    {
-      label:    'Interview Guide',
-      subtitle: 'AI Prep & Q&A',
-      icon:     <MessageSquare className="w-5 h-5 text-pink-600" />,
-      bgColor:  'bg-pink-100',
-      badge:    'NEW',
-      onClick:  () => navigate('/interview-guide'),
-    },
-    {
-      label:    'Project Structure Advisor',
-      subtitle: 'AI picks your stack & builds your folder structure',
-      icon:     <FolderTree className="w-5 h-5 text-emerald-600" />,
-      bgColor:  'bg-emerald-100',
-      badge:    'NEW',
-      highlight: true,
-      onClick:  () => setShowAdvisor(true),
-    },
+      id: 'learn-and-practise',
+      title: 'LEARN AND PRACTISE',
+      items: [
+        {
+          id: 'interview-guide',
+          label: 'Interview practice',
+          description: 'Prepare answers and practise questions for your target role.',
+          actionText: 'Open interview practice',
+          icon: <MessageSquare className="w-5 h-5 text-pink-600" />,
+          bgColor: 'bg-pink-100',
+          route: '/interview-guide',
+        }
+      ]
+    }
   ];
 
+  const projectSection: ToolSection = {
+    id: 'build-projects',
+    title: 'BUILD PROJECTS',
+    items: [
+      {
+        id: 'project-advisor',
+        label: 'Plan a project',
+        description: 'Explore a suitable stack and a proposed project structure.',
+        actionText: 'Open project advisor',
+        icon: <FolderTree className="w-5 h-5 text-emerald-600" />,
+        bgColor: 'bg-emerald-100',
+      }
+    ]
+  };
+
   return (
-    <div className="min-h-[100dvh] bg-[#F8FAFC]">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <Sidebar activePage="tools" />
 
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 sticky top-0 z-40 shadow-sm pl-16 md:pl-0">
-        <div className="max-w-5xl mx-auto px-4 py-4 md:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-              <LayoutGrid className="w-5 h-5 text-emerald-600" />
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm pl-16 md:pl-0">
+        <div className="max-w-5xl mx-auto px-4 py-6 md:px-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+                <LayoutGrid className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900">Tools & Utilities</h1>
+                <p className="text-sm text-slate-600 mt-1">Explore your career, practise your skills, and plan your next project.</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Advanced Tools</h1>
-              <p className="text-xs text-slate-500 mt-0.5">All your career, study, and productivity utilities</p>
+
+            {/* Context Area */}
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 px-4 py-3 rounded-lg">
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Role</span>
+                <span className="text-sm font-bold text-slate-800">
+                  {currentRole || 'Choose a role'}
+                </span>
+              </div>
+              <button 
+                onClick={() => navigate('/onboarding', { state: { force: true } })}
+                className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded px-2 py-1"
+                aria-label="Explore another career"
+              >
+                Explore another career
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tool grid */}
-      <div className="max-w-5xl mx-auto px-4 py-6 md:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {toolCategories.map((tool, idx) => (
-            <div
-              key={idx}
-              onClick={tool.onClick}
-              className={`bg-white rounded-xl shadow-sm border p-5 flex flex-col justify-between cursor-pointer group transition-all hover:shadow-md ${
-                tool.highlight
-                  ? 'border-emerald-200 hover:border-emerald-400'
-                  : 'border-slate-200 hover:border-emerald-200'
-              }`}
-            >
-              <div>
-                <div className="flex items-start justify-between mb-3">
-                  <div className={`w-10 h-10 ${tool.bgColor} rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 duration-300`}>
-                    {tool.icon}
+      {/* Main Content */}
+      <main className="max-w-5xl mx-auto px-4 py-8 md:px-6 pb-20">
+        <div className="space-y-12">
+          
+          {/* Render Sections */}
+          {[...sections, projectSection].map((section) => (
+            <section key={section.id} aria-labelledby={`heading-${section.id}`}>
+              <h2 id={`heading-${section.id}`} className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6">
+                {section.title}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {section.items.map((tool) => (
+                  <div
+                    key={tool.id}
+                    className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between hover:border-emerald-300 hover:shadow-md transition-all focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500"
+                  >
+                    <div>
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className={`w-12 h-12 ${tool.bgColor} rounded-xl flex items-center justify-center shrink-0`}>
+                          {tool.icon}
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">{tool.label}</h3>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                        {tool.description}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-auto">
+                      {tool.id === 'project-advisor' ? (
+                        <div className="flex flex-col gap-3">
+                          <button
+                            onClick={() => {
+                              sessionStorage.removeItem('advisor_state'); // Start fresh
+                              setShowAdvisor(true);
+                            }}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                          >
+                            {tool.actionText}
+                          </button>
+                          {hasAdvisorDraft && (
+                            <button
+                              onClick={() => setShowAdvisor(true)} // Resume
+                              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-sm font-bold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                            >
+                              Resume draft
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            if (tool.route) navigateToTool(tool.route);
+                            else if (tool.onClick) tool.onClick();
+                          }}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                        >
+                          {tool.actionText}
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {tool.badge && (
-                    <span className="px-2 py-1 bg-red-100 text-red-600 text-[9px] font-bold rounded uppercase tracking-wider">
-                      {tool.badge}
-                    </span>
-                  )}
-                </div>
-                <h3 className="text-base font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
-                  {tool.label}
-                </h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{tool.subtitle}</p>
+                ))}
               </div>
-              <div className="mt-4 flex items-center justify-end">
-                <div className="w-7 h-7 rounded-full bg-slate-50 group-hover:bg-emerald-50 flex items-center justify-center transition-colors">
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-                </div>
-              </div>
-            </div>
+            </section>
           ))}
+
         </div>
-      </div>
+      </main>
     </div>
   );
 }
