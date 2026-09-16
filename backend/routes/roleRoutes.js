@@ -28,11 +28,12 @@ function assignTopicIds(analysisData) {
   return modified;
 }
 // POST /api/role/analyze - Generate detailed role analysis using AI
-router.post('/analyze', async (req, res) => {
-  const { role, userId, experienceLevel = 'Beginner', country = 'USA', learningPath, forceRefresh = false } = req.body;
+router.post('/analyze', protect, async (req, res) => {
+  const { role, experienceLevel, country, learningPath, forceRefresh = false } = req.body;
+  const userId = req.user.id;
 
-  if (!role) {
-    return res.status(400).json({ error: 'Role is required' });
+  if (!role || !experienceLevel || !country) {
+    return res.status(400).json({ error: 'Role, experienceLevel, and country context are strictly required' });
   }
 
   try {
@@ -66,8 +67,9 @@ router.post('/analyze', async (req, res) => {
         }
       }
 
-      // Fallback to global cache
-      if (!cachedData && !analysisId) {
+      // Fallback to global cache ONLY IF no personal context exists
+      const isPersonalized = !!learningPath;
+      if (!cachedData && !analysisId && !isPersonalized) {
         const globalCacheResult = await pool.query(
           "SELECT analysis_data, user_id, lifecycle_status FROM role_analyses WHERE LOWER(role_title) = $1 ORDER BY created_at DESC LIMIT 1",
           [normalizedRole]
@@ -185,13 +187,13 @@ router.post('/analyze', async (req, res) => {
                    {
                      "title": "${role}",
                      "description": "Comprehensive, multi-paragraph description of exactly what this professional does day-to-day, their responsibilities, and their impact on the business.",
-                     "jobGrowth": "Current market growth rate and future outlook in ${country}",
-                     "salaryRange": "Overview salary range in ${country}",
+                     "jobGrowth": "Current market growth rate and future outlook in ${country}. If verified retrieval is unavailable, return 'UNAVAILABLE'.",
+                     "salaryRange": "Overview salary range in ${country}. If verified retrieval is unavailable, return 'UNAVAILABLE'.",
                      
                      "salary_insights": {
-                        "entry_level": "e.g. $60k - $80k",
-                        "senior_level": "e.g. $120k - $160k",
-                        "salary_growth_potential": "High/Medium/Low",
+                        "entry_level": "e.g. $60k - $80k or 'UNAVAILABLE'",
+                        "senior_level": "e.g. $120k - $160k or 'UNAVAILABLE'",
+                        "salary_growth_potential": "High/Medium/Low or 'UNAVAILABLE'",
                         "negotiation_tips": "Specific advice on how to negotiate deeper compensation for this role."
                      },
 
@@ -357,6 +359,10 @@ router.post('/analyze', async (req, res) => {
                 throw new Error('Invalid JSON response from AI');
              }
            }
+           
+           if (!analysisData || typeof analysisData !== 'object' || !Array.isArray(analysisData.skills) || !Array.isArray(analysisData.roadmap)) {
+               throw new Error('Invalid JSON structure returned by AI');
+           }
 
            // Ensure topics have stable IDs
            assignTopicIds(analysisData);
@@ -365,12 +371,12 @@ router.post('/analyze', async (req, res) => {
            if (userId) {
               if (analysisId) {
                  await pool.query(
-                    "UPDATE role_analyses SET analysis_data = $1, lifecycle_status = 'ready' WHERE id = $2",
+                    "UPDATE role_analyses SET analysis_data = $1, lifecycle_status = 'ready', updated_at = NOW(), schema_version = 2 WHERE id = $2",
                     [analysisData, analysisId]
                  );
               } else {
                  await pool.query(
-                  "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready')",
+                  "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status, schema_version) VALUES ($1, $2, $3, 'ready', 2)",
                   [userId, normalizedRole, analysisData]
                  );
               }
