@@ -1,6 +1,125 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { protect } = require('../middleware/authMiddleware');
+
+// --- Helper Functions ---
+function isSafeUrl(string) {
+    if (!string) return true;
+    try {
+        const url = new URL(string);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+        if (url.username || url.password) return false; 
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+function stripHtml(text) {
+    if (!text) return '';
+    return text.replace(/<[^>]*>?/gm, '');
+}
+
+async function validatePortfolioData(reqBody, userId) {
+    const {
+        about,
+        experiences,
+        skills,
+        linkedin,
+        website,
+        theme
+    } = reqBody;
+
+    if (theme && !['minimalist', 'dark', 'executive'].includes(theme)) {
+        throw new Error('Invalid theme selected');
+    }
+    if (linkedin && (linkedin.length > 255 || !isSafeUrl(linkedin))) {
+        throw new Error('Invalid LinkedIn URL');
+    }
+    if (website && (website.length > 255 || !isSafeUrl(website))) {
+        throw new Error('Invalid Website URL');
+    }
+
+    const safeAbout = stripHtml(about || '').substring(0, 5000);
+    
+    let safeExperiences = Array.isArray(experiences) ? experiences : [];
+    if (safeExperiences.length > 50) safeExperiences = safeExperiences.slice(0, 50);
+    
+    for (let i = 0; i < safeExperiences.length; i++) {
+        const exp = safeExperiences[i];
+        if (exp && exp.id) {
+            const checkRes = await pool.query('SELECT id FROM user_projects WHERE id = $1 AND user_id = $2', [exp.id, userId]);
+            if (checkRes.rows.length === 0) {
+                throw new Error(`Project reference ${exp.id} is invalid or does not belong to you`);
+            }
+        }
+        if (exp.title) exp.title = stripHtml(exp.title).substring(0, 255);
+        if (exp.role) exp.role = stripHtml(exp.role).substring(0, 255);
+        if (exp.date) exp.date = stripHtml(exp.date).substring(0, 100);
+        if (exp.description) exp.description = stripHtml(exp.description).substring(0, 2000);
+    }
+
+    let safeSkills = Array.isArray(skills) ? skills : [];
+    if (safeSkills.length > 50) safeSkills = safeSkills.slice(0, 50);
+    safeSkills = safeSkills.map(s => stripHtml(String(s)).substring(0, 100));
+
+    return {
+        safeAbout,
+        safeExperiences,
+        safeSkills,
+        safeLinkedin: linkedin || '',
+        safeWebsite: website || '',
+        safeTheme: theme || 'minimalist'
+    };
+}
+// ------------------------
+
+// @route   GET /api/portfolio/public/:username
+// @desc    Fetch a public portfolio for viewing
+// @access  Public
+router.get('/public/:username', async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        const query = `
+            SELECT p.published_data, p.is_private, p.is_published, u.username
+            FROM portfolios p
+            JOIN users u ON p.user_id = u.id
+            WHERE u.username = $1
+        `;
+        const result = await pool.query(query, [username]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Portfolio not found' });
+        }
+
+        const portfolio = result.rows[0];
+
+        if (portfolio.is_private || !portfolio.is_published) {
+            return res.status(404).json({ success: false, message: 'Portfolio is private or unavailable' });
+        }
+
+        let parsedData = null;
+        if (portfolio.published_data) {
+            parsedData = typeof portfolio.published_data === 'string' 
+                ? JSON.parse(portfolio.published_data) 
+                : portfolio.published_data;
+        }
+
+        res.json({
+            success: true,
+            portfolio: parsedData || {},
+            username: portfolio.username
+        });
+    } catch (err) {
+        console.error('Error fetching public portfolio:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// Protect all routes below this line
+router.use(protect);
 
 // @route   GET /api/portfolio/draft
 // @desc    Get the current user's portfolio draft
@@ -15,17 +134,10 @@ router.get('/draft', async (req, res) => {
         );
 
         if (result.rows.length === 0) {
-            // Return empty draft with default revision 1
-            return res.json({
-                success: true,
-                draft: null
-            });
+            return res.json({ success: true, draft: null });
         }
 
-        res.json({
-            success: true,
-            draft: result.rows[0]
-        });
+        res.json({ success: true, draft: result.rows[0] });
     } catch (err) {
         console.error('Error fetching portfolio draft:', err);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -38,44 +150,23 @@ router.get('/draft', async (req, res) => {
 router.post('/draft', async (req, res) => {
     try {
         const userId = req.user.id;
-        const {
-            is_private,
-            about,
-            experiences,
-            skills,
-            linkedin,
-            website,
-            theme,
-            draft_revision // Revision expected from client
-        } = req.body;
-
-        // 1. Validate inputs
-        if (theme && !['minimalist', 'dark', 'executive'].includes(theme)) {
-            return res.status(400).json({ success: false, message: 'Invalid theme selected' });
+        const { draft_revision } = req.body;
+        
+        let validated;
+        try {
+            validated = await validatePortfolioData(req.body, userId);
+        } catch (validationErr) {
+            return res.status(400).json({ success: false, message: validationErr.message });
         }
-        if (linkedin && linkedin.length > 255) {
-            return res.status(400).json({ success: false, message: 'LinkedIn URL too long' });
-        }
-        if (website && website.length > 255) {
-            return res.status(400).json({ success: false, message: 'Website URL too long' });
-        }
-
-        const safeAbout = about || '';
-        const safeExperiences = Array.isArray(experiences) ? experiences : [];
-        const safeSkills = Array.isArray(skills) ? skills : [];
-        const safeLinkedin = linkedin || '';
-        const safeWebsite = website || '';
-        const safeTheme = theme || 'minimalist';
-        const isPrivate = typeof is_private === 'boolean' ? is_private : true;
+        
+        const { safeAbout, safeExperiences, safeSkills, safeLinkedin, safeWebsite, safeTheme } = validated;
         const clientRevision = parseInt(draft_revision, 10) || 1;
 
-        // 2. Concurrency Check
         const currentRes = await pool.query('SELECT draft_revision FROM portfolios WHERE user_id = $1', [userId]);
         
         if (currentRes.rows.length > 0) {
             const currentRevision = currentRes.rows[0].draft_revision;
             
-            // If the client's revision is LESS than the server's, they are editing stale data.
             if (clientRevision < currentRevision) {
                 return res.status(409).json({ 
                     success: false, 
@@ -84,21 +175,19 @@ router.post('/draft', async (req, res) => {
                 });
             }
 
-            // Update existing draft, incrementing the revision
             const updatedRes = await pool.query(
                 `UPDATE portfolios SET 
-                    is_private = $1, 
-                    about = $2, 
-                    experiences = $3, 
-                    skills = $4, 
-                    linkedin = $5, 
-                    website = $6, 
-                    theme = $7, 
+                    about = $1, 
+                    experiences = $2, 
+                    skills = $3, 
+                    linkedin = $4, 
+                    website = $5, 
+                    theme = $6, 
                     draft_revision = draft_revision + 1, 
                     updated_at = CURRENT_TIMESTAMP 
-                 WHERE user_id = $8 
+                 WHERE user_id = $7 
                  RETURNING draft_revision, updated_at`,
-                [isPrivate, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme, userId]
+                [safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme, userId]
             );
 
             return res.json({
@@ -109,12 +198,11 @@ router.post('/draft', async (req, res) => {
             });
 
         } else {
-            // Create a new draft starting at revision 1
             const insertedRes = await pool.query(
                 `INSERT INTO portfolios (user_id, is_private, about, experiences, skills, linkedin, website, theme, draft_revision) 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1) 
+                 VALUES ($1, true, $2, $3, $4, $5, $6, $7, 1) 
                  RETURNING draft_revision, updated_at`,
-                [userId, isPrivate, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme]
+                [userId, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme]
             );
 
             return res.json({
@@ -136,43 +224,32 @@ router.post('/draft', async (req, res) => {
 router.post('/import-legacy', async (req, res) => {
     try {
         const userId = req.user.id;
-        const {
-            isPrivate,
-            about,
-            experiences,
-            skills,
-            linkedin,
-            website,
-            theme
-        } = req.body;
+        
+        let validated;
+        try {
+            validated = await validatePortfolioData(req.body, userId);
+        } catch (validationErr) {
+            return res.status(400).json({ success: false, message: validationErr.message });
+        }
+        
+        const { safeAbout, safeExperiences, safeSkills, safeLinkedin, safeWebsite, safeTheme } = validated;
 
-        const safeAbout = about || '';
-        const safeExperiences = Array.isArray(experiences) ? experiences : [];
-        const safeSkills = Array.isArray(skills) ? skills : [];
-        const safeLinkedin = linkedin || '';
-        const safeWebsite = website || '';
-        const safeTheme = theme || 'minimalist';
-        const isPrivateBool = typeof isPrivate === 'boolean' ? isPrivate : true;
-
-        // Check if there is already a portfolio
         const currentRes = await pool.query('SELECT draft_revision FROM portfolios WHERE user_id = $1', [userId]);
         
         if (currentRes.rows.length > 0) {
-            // Already has a portfolio. We overwrite but increment revision since it's an explicit "Import" action requested by user.
             const updatedRes = await pool.query(
                 `UPDATE portfolios SET 
-                    is_private = $1, 
-                    about = $2, 
-                    experiences = $3, 
-                    skills = $4, 
-                    linkedin = $5, 
-                    website = $6, 
-                    theme = $7, 
+                    about = $1, 
+                    experiences = $2, 
+                    skills = $3, 
+                    linkedin = $4, 
+                    website = $5, 
+                    theme = $6, 
                     draft_revision = draft_revision + 1, 
                     updated_at = CURRENT_TIMESTAMP 
-                 WHERE user_id = $8 
+                 WHERE user_id = $7 
                  RETURNING draft_revision, updated_at`,
-                [isPrivateBool, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme, userId]
+                [safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme, userId]
             );
 
             return res.json({
@@ -182,12 +259,11 @@ router.post('/import-legacy', async (req, res) => {
                 updated_at: updatedRes.rows[0].updated_at
             });
         } else {
-            // Create new
             const insertedRes = await pool.query(
                 `INSERT INTO portfolios (user_id, is_private, about, experiences, skills, linkedin, website, theme, draft_revision) 
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1) 
+                 VALUES ($1, true, $2, $3, $4, $5, $6, $7, 1) 
                  RETURNING draft_revision, updated_at`,
-                [userId, isPrivateBool, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme]
+                [userId, safeAbout, JSON.stringify(safeExperiences), JSON.stringify(safeSkills), safeLinkedin, safeWebsite, safeTheme]
             );
 
             return res.json({

@@ -123,7 +123,7 @@ app.use('/api/admin-auth', adminAuthRoutes);   // Public admin login — no user
 app.use('/api/ai',          protect, aiRoutes);
 app.use('/api/resume',      protect, resumeRoutes);
 app.use('/api/role',        protect, roleRoutes);
-app.use('/api/portfolio',   protect, portfolioRoutes);
+app.use('/api/portfolio',   portfolioRoutes);
 app.use('/api/missions',    protect, missionRoutes);
 app.use('/api/achievements',protect, achievementRoutes);
 app.use('/api/realtime',    protect, realtimeRoutes);

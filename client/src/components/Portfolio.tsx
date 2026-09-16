@@ -78,7 +78,25 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const t = THEMES[editForm.theme] || THEMES.minimalist;
 
   useEffect(() => {
-    if (isPublic) return; // Public view will be handled in another task via a public endpoint
+    if (isPublic) {
+      const loadPublic = async () => {
+        try {
+          const { apiFetch } = await import('../utils/apiFetch');
+          const res = await apiFetch(`/api/portfolio/public/${username}`);
+          const data = await res.json();
+          if (data.success && data.portfolio) {
+            setSavedData(data.portfolio);
+            setEditForm(data.portfolio);
+          } else {
+            setSavedData({ ...defaultData, isPrivate: true });
+          }
+        } catch (e) {
+          setSavedData({ ...defaultData, isPrivate: true });
+        }
+      };
+      loadPublic();
+      return;
+    }
 
     const loadDraft = async () => {
       try {
@@ -363,6 +381,15 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
   // --- RENDERING EDITOR ---
   if (isPublic) {
+    if (savedData.isPrivate) {
+       return (
+          <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-center px-4">
+             <Shield className="w-16 h-16 text-slate-300 mb-6 mx-auto" />
+             <h2 className="text-2xl font-bold text-slate-800 mb-3">Portfolio is Private</h2>
+             <p className="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">This portfolio is currently private or unpublished. Please check back later.</p>
+          </div>
+       );
+    }
     return (
        <div className={`min-h-screen ${t.bg} pt-12 pb-20 px-4`}>
           <div className="max-w-4xl mx-auto">
@@ -584,25 +611,6 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                             
                             <div className="space-y-6 max-w-md">
                                 <div>
-                                    <label className="block text-[13px] font-semibold text-slate-600 mb-2">Visibility</label>
-                                    <div className="flex gap-2">
-                                        <button 
-                                          onClick={() => setEditForm({...editForm, isPrivate: false})}
-                                          className={`flex-1 py-2 border rounded-lg text-[13px] font-bold transition-colors ${!editForm.isPrivate ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-white border-slate-200 text-slate-600'}`}
-                                        >
-                                            Public
-                                        </button>
-                                        <button 
-                                          onClick={() => setEditForm({...editForm, isPrivate: true})}
-                                          className={`flex-1 py-2 border rounded-lg text-[13px] font-bold transition-colors ${editForm.isPrivate ? 'bg-slate-100 border-slate-300 text-slate-800' : 'bg-white border-slate-200 text-slate-600'}`}
-                                        >
-                                            Private
-                                        </button>
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 mt-2">When private, only you can view your portfolio link.</p>
-                                </div>
-
-                                <div className="pt-4 border-t border-slate-100">
                                     <label className="block text-[13px] font-semibold text-slate-600 mb-2">Theme</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {Object.values(THEMES).map(themeDef => (
