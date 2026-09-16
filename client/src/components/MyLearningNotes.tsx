@@ -231,6 +231,39 @@ export default function MyLearningNotes() {
         }
     };
 
+    const handleRenameNoteList = (e: React.MouseEvent, note: Note) => {
+        e.stopPropagation();
+        if (hasUnsavedChanges) {
+            if (!window.confirm("You have unsaved changes. Discard them?")) return;
+        }
+        setSearchParams({ id: note.id.toString() });
+        // The URL change triggers loadSingleNote which sets isEditing(false).
+        // Wait for the note to load, then set isEditing(true)
+        setTimeout(() => setIsEditing(true), 100);
+    };
+
+    const handleDeleteNoteList = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        if (!window.confirm("Are you sure you want to delete this note?")) return;
+        
+        try {
+            const res = await apiFetch(`/api/notes/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                if (selectedNote?.id === id) {
+                    setSelectedNote(null);
+                    setSearchParams({});
+                }
+                loadNotes();
+                showAlert("Note deleted", "success");
+            } else {
+                showAlert("Failed to delete note", "error");
+            }
+        } catch (err) {
+            console.error(err);
+            showAlert("Failed to delete note", "error");
+        }
+    };
+
     // Body change handler
     const handleBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setEditBody(e.target.value);
@@ -324,12 +357,30 @@ export default function MyLearningNotes() {
                                     <button
                                         key={note.id}
                                         onClick={() => handleSelectNote(note)}
-                                        className={`w-full text-left p-4 hover:bg-slate-50 transition-colors ${
+                                        className={`group w-full text-left p-4 hover:bg-slate-50 transition-colors ${
                                             selectedNote?.id === note.id ? 'bg-emerald-50 hover:bg-emerald-50 border-l-4 border-l-emerald-500 pl-3' : 'border-l-4 border-l-transparent'
                                         }`}
                                     >
-                                        <div className="font-bold text-sm text-slate-900 mb-1 line-clamp-1">{note.title}</div>
-                                        <div className="text-xs text-slate-500 line-clamp-2 mb-2">{note.excerpt || 'Empty note'}</div>
+                                        <div className="flex justify-between items-start mb-1 gap-2">
+                                            <div className="font-bold text-sm text-slate-900 line-clamp-1">{note.title}</div>
+                                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button 
+                                                    onClick={(e) => handleRenameNoteList(e, note)}
+                                                    className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded"
+                                                    title="Rename Note"
+                                                >
+                                                    <Edit3 className="w-3 h-3" />
+                                                </button>
+                                                <button 
+                                                    onClick={(e) => handleDeleteNoteList(e, note.id)}
+                                                    className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                                    title="Delete Note"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="text-xs text-slate-500 line-clamp-2 mb-2 pr-6">{note.excerpt || 'Empty note'}</div>
                                         <div className="flex justify-between items-center text-[10px] text-slate-400">
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-3 h-3" /> 

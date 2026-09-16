@@ -226,3 +226,56 @@ CREATE TABLE IF NOT EXISTS user_saved_resources (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY(user_id, resource_id)
 );
+CREATE TABLE IF NOT EXISTS learning_notes (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) DEFAULT 'Untitled Note',
+    body TEXT DEFAULT '',
+    tags JSONB,
+    related_type VARCHAR(50),
+    related_id VARCHAR(255),
+    related_title VARCHAR(255),
+    revision INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for fast user queries
+CREATE INDEX IF NOT EXISTS idx_learning_notes_user_id ON learning_notes(user_id);
+-- Composite index for finding notes linked to specific entities (like a specific lesson or project)
+CREATE INDEX IF NOT EXISTS idx_learning_notes_related ON learning_notes(user_id, related_type, related_id);
+CREATE TABLE IF NOT EXISTS practice_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(255) NOT NULL,
+    topic VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    score INTEGER DEFAULT 0,
+    total_questions INTEGER DEFAULT 0,
+    revision INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS practice_questions (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER REFERENCES practice_sessions(id) ON DELETE CASCADE,
+    question_text TEXT NOT NULL,
+    options JSONB NOT NULL,
+    answer_index INTEGER NOT NULL,
+    explanation TEXT,
+    order_index INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS practice_answers (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER REFERENCES practice_sessions(id) ON DELETE CASCADE,
+    question_id INTEGER REFERENCES practice_questions(id) ON DELETE CASCADE,
+    selected_option INTEGER NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(session_id, question_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_practice_sessions_user_id ON practice_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_practice_answers_session_id ON practice_answers(session_id);
