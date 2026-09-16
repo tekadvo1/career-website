@@ -38,7 +38,7 @@ import ProjectStructurePage from './components/ProjectStructurePage';
 import Settings from './components/Settings';
 import ToolsPage from './components/ToolsPage';
 import SkillComparison from './components/SkillComparison';
-import MyLearningNotes from './components/MyLearningNotes';
+import MyLearningNotes from './components/MyLearningNotes'; // ide cache trigger
 import GettingStarted from './components/GettingStarted';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
