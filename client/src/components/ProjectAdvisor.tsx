@@ -49,10 +49,7 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
 
   const typedSummary = useTypewriter(recs?.summary ?? '', 14);
 
-  const user: { id?: number } = (() => {
-    try { return JSON.parse(sessionStorage.getItem('user') || '{}'); }
-    catch { return {}; }
-  })();
+
 
   // ── Fetch tech recommendations ─────────────────────────────────────────────
   const fetchRecs = async () => {
@@ -109,15 +106,18 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
   const handleSave = async () => {
     if (!recs || !structure || saving || saved) return;
     setSaving(true);
+    setError('');
     try {
-      await apiFetch('/api/project-structure/save-advisor', {
+      const res = await apiFetch('/api/project-structure/save-advisor', {
         method: 'POST',
-        body: JSON.stringify({ userId: user.id, type, goal, level, recs, structure }),
+        body: JSON.stringify({ type, goal, level, recs, structure }),
       });
+      if (!res.ok) throw new Error('Save failed');
       setSaved(true);
+      // Remove any lingering draft from local browser storage on success
+      localStorage.removeItem('project_advisor_draft');
     } catch (_e) {
-      localStorage.setItem(`advisor_${Date.now()}`, JSON.stringify({ type, goal, recs, structure }));
-      setSaved(true);
+      setError('Failed to save to your account. Please try again.');
     }
     setSaving(false);
   };
@@ -200,9 +200,13 @@ export default function ProjectAdvisor({ onClose }: { onClose: () => void }) {
               )}
               {step === 4 && structure && (
                 <Step4
-                  structure={structure} goal={goal}
-                  saving={saving} saved={saved}
-                  onSave={handleSave} onReset={resetAll}
+                  structure={structure}
+                  goal={goal}
+                  saving={saving}
+                  saved={saved}
+                  error={error}
+                  onSave={handleSave}
+                  onReset={resetAll}
                 />
               )}
             </>

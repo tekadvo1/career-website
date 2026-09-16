@@ -161,10 +161,10 @@ const STR_TABS = [
 ];
 
 export function Step4({
-  structure, goal, saving, saved, onSave, onReset,
+  structure, goal, saving, saved, error, onSave, onReset,
 }: {
   structure: ProjectStructure; goal: string;
-  saving: boolean; saved: boolean;
+  saving: boolean; saved: boolean; error?: string;
   onSave: () => void; onReset: () => void;
 }) {
   const [tab, setTab] = useState<'frontend' | 'backend' | 'database' | 'env' | 'workflow'>('frontend');
@@ -250,6 +250,11 @@ export function Step4({
           {saved ? <><CheckCheck className="w-4 h-4" /> Saved</> : saving ? 'Saving…' : <><Save className="w-4 h-4" /> Save</>}
         </button>
       </div>
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm font-medium rounded-lg border border-red-200">
+          {error}
+        </div>
+      )}
       {structure.overview && <p className="text-sm text-slate-500 mb-2 leading-relaxed">{structure.overview}</p>}
       {structure.stack && (
         <div className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200 mb-5">

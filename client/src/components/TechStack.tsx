@@ -13,13 +13,18 @@ export default function TechStack() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [showRefreshConfirm, setShowRefreshConfirm] = useState(false);
+    const [roleAnalysisId, setRoleAnalysisId] = useState<number | null>(null);
 
     const cleanRole = (r: string) => r ? r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() : r;
 
     useEffect(() => {
         let currentRole = "Software Engineer";
+        let currentRoleId: number | null = null;
+        
         const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
         if (lastStateRaw) {
             try {
@@ -28,28 +33,31 @@ export default function TechStack() {
                     currentRole = cleanRole(lastRoleState.role);
                     setRole(currentRole);
                 }
+                if (lastRoleState?.id) {
+                    currentRoleId = lastRoleState.id;
+                    setRoleAnalysisId(currentRoleId);
+                }
             } catch (e) {}
         }
         
-        const savedResult = localStorage.getItem(`techStack_${currentRole}`);
-        if (savedResult) {
-            try {
-                setResult(JSON.parse(savedResult));
-            } catch (err) {}
-        }
+        fetchSavedTechStack(currentRoleId);
     }, []);
 
-    useEffect(() => {
-        if (!role) return;
-        const savedResult = localStorage.getItem(`techStack_${role}`);
-        if (savedResult) {
-            try {
-                setResult(JSON.parse(savedResult));
-            } catch (err) {}
-        } else {
-            setResult(null);
+    const fetchSavedTechStack = async (analysisId: number | null) => {
+        if (!analysisId) return;
+        try {
+            const res = await apiFetch(`/api/ai/tech-stack/saved?role_analysis_id=${analysisId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.techStack) {
+                    setResult(data.techStack);
+                    setIsSaved(true);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch saved tech stack:', err);
         }
-    }, [role]);
+    };
 
     const handleAnalyze = () => {
         if (result) {
@@ -64,6 +72,7 @@ export default function TechStack() {
 
         setIsLoading(true);
         setResult(null);
+        setIsSaved(false);
 
         const formData = new FormData();
         formData.append('role', role);
@@ -79,7 +88,6 @@ export default function TechStack() {
             const data = await res.json();
             if (data.languages || data.frameworks || data.tools) {
                 setResult(data);
-                localStorage.setItem(`techStack_${role}`, JSON.stringify(data));
             } else {
                 showAlert("Failed to analyze. Please try again.", "error");
             }
@@ -88,6 +96,34 @@ export default function TechStack() {
             showAlert("Error connecting to AI service.", "error");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!result || !role || isSaving || isSaved) return;
+        
+        setIsSaving(true);
+        try {
+            const res = await apiFetch('/api/ai/tech-stack/save', {
+                method: 'POST',
+                body: JSON.stringify({
+                    role_analysis_id: roleAnalysisId,
+                    role_title: role,
+                    result_data: result
+                })
+            });
+            
+            if (res.ok) {
+                setIsSaved(true);
+                showAlert("Tech stack saved to your account.", "success");
+            } else {
+                showAlert("Failed to save to your account. Please try again.", "error");
+            }
+        } catch (err) {
+            console.error("Error saving tech stack:", err);
+            showAlert("Failed to save to your account. Please try again.", "error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -207,6 +243,20 @@ export default function TechStack() {
                                 </div>
                             ) : result ? (
                                 <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-xl font-bold text-slate-800">Your Tech Stack</h2>
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={isSaving || isSaved}
+                                            className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2 ${
+                                                isSaved 
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {isSaved ? 'Saved to Account' : isSaving ? 'Saving...' : 'Save to Account'}
+                                        </button>
+                                    </div>
                                     <div className="bg-white rounded-2xl shadow-sm border border-teal-100 p-5 bg-gradient-to-r from-teal-50/50 to-transparent">
                                         <p className="text-sm font-semibold text-teal-900 leading-relaxed italic">
                                             "{result.summary}"

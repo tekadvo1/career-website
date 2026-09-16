@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { OpenAI } = require('openai');
 const pool = require('../config/db');
+const { protect } = require('../middleware/authMiddleware');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -210,9 +211,10 @@ Your role:
 
 // ── POST /api/project-structure/save-advisor ─────────────────────────────────
 // Saves a Project Advisor result (tech stack + structure) to project_structures_custom
-router.post('/save-advisor', async (req, res) => {
-  const { userId, type, goal, level, recs, structure } = req.body;
-  if (!userId) return res.status(400).json({ error: 'userId is required' });
+router.post('/save-advisor', protect, async (req, res) => {
+  const { type, goal, level, recs, structure } = req.body;
+  const userId = req.user.id;
+  
   if (!type || !goal) return res.status(400).json({ error: 'type and goal are required' });
 
   try {
@@ -231,9 +233,8 @@ router.post('/save-advisor', async (req, res) => {
 
 // ── GET /api/project-structure/my-advisors ────────────────────────────────────
 // Fetches all saved advisor results for a user
-router.get('/my-advisors', async (req, res) => {
-  const { userId } = req.query;
-  if (!userId) return res.status(400).json({ error: 'userId is required' });
+router.get('/my-advisors', protect, async (req, res) => {
+  const userId = req.user.id;
 
   try {
     const result = await pool.query(

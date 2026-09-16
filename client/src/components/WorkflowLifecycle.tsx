@@ -1,5 +1,5 @@
 import { apiFetch } from '../utils/apiFetch';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getUser } from '../utils/auth';
 import { 
@@ -50,13 +50,17 @@ export default function WorkflowLifecycle() {
 
   const [activeStage, setActiveStage] = useState<number | null>(null);
   
-  // Custom Workflow State
   const [customTools, setCustomTools] = useState('');
   const [promptInput, setPromptInput] = useState('');
   const [currentWorkflow, setCurrentWorkflow] = useState<WorkflowStage[]>(analysis?.workflow || []);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [displayRole, setDisplayRole] = useState(cleanRole(role));
   
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isCustom, setIsCustom] = useState(false);
+  const [roleAnalysisId, setRoleAnalysisId] = useState<number | null>(analysis?.id || null);
+
   // Step Details Modal State
   const [selectedStep, setSelectedStep] = useState<WorkflowStage | null>(null);
   const [stepDetails, setStepDetails] = useState<any>(null);
@@ -74,6 +78,8 @@ export default function WorkflowLifecycle() {
       const result = await response.json();
       if (result.success && result.data && result.data.workflow) {
         setCurrentWorkflow(result.data.workflow);
+        setIsCustom(true);
+        setIsSaved(false);
         if (result.data.role) setDisplayRole(cleanRole(result.data.role));
       } else {
         showAlert('Failed to generate workflow. Please try again.', 'error');
@@ -98,6 +104,8 @@ export default function WorkflowLifecycle() {
       const result = await response.json();
       if (result.success && result.data && result.data.workflow) {
         setCurrentWorkflow(result.data.workflow);
+        setIsCustom(true);
+        setIsSaved(false);
         if (result.data.role) setDisplayRole(cleanRole(result.data.role));
       } else {
         showAlert('Failed to generate custom workflow. Please try again.', 'error');
@@ -109,6 +117,64 @@ export default function WorkflowLifecycle() {
       setIsRegenerating(false);
     }
   };
+
+  const handleSave = async () => {
+    if (!currentWorkflow || currentWorkflow.length === 0 || isSaving || isSaved) return;
+    setIsSaving(true);
+    try {
+      const res = await apiFetch('/api/role/save-workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role_analysis_id: roleAnalysisId,
+          role: displayRole,
+          workflow: currentWorkflow,
+          is_custom: isCustom
+        })
+      });
+      if (res.ok) {
+        setIsSaved(true);
+        showAlert('Workflow saved to your account.', 'success');
+      } else {
+        showAlert('Failed to save workflow. Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Save workflow error:', err);
+      showAlert('Error connecting to server.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadSavedWorkflow = async () => {
+      if (!roleAnalysisId) {
+        // Attempt to find it from session storage if state didn't provide it
+        const lastStateRaw = sessionStorage.getItem('lastRoleAnalysis');
+        if (lastStateRaw) {
+          try {
+            const parsed = JSON.parse(lastStateRaw);
+            if (parsed.id) setRoleAnalysisId(parsed.id);
+          } catch (e) {}
+        }
+      }
+
+      if (roleAnalysisId) {
+        try {
+          const res = await apiFetch(`/api/role/workflow-saved?role_analysis_id=${roleAnalysisId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.workflow) {
+              setCurrentWorkflow(data.workflow);
+              setIsCustom(data.is_custom);
+              setIsSaved(true);
+            }
+          }
+        } catch (e) {}
+      }
+    };
+    loadSavedWorkflow();
+  }, [roleAnalysisId]);
 
   // Fallback if no workflow data found
   if (!currentWorkflow || currentWorkflow.length === 0) {
@@ -185,6 +251,17 @@ export default function WorkflowLifecycle() {
               <p className="text-xs text-gray-500">End-to-end workflow visualization</p>
             </div>
           </div>
+          <button
+            onClick={handleSave}
+            disabled={isSaving || isSaved}
+            className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all flex items-center gap-2 ${
+                isSaved 
+                    ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            {isSaved ? 'Saved to Account' : isSaving ? 'Saving...' : 'Save to Account'}
+          </button>
         </div>
       </div>
 

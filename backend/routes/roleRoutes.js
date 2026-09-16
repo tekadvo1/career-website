@@ -5,6 +5,7 @@ const realtimeRoutes = require('./realtimeRoutes');
 const { OpenAI } = require('openai');
 const { v4: uuidv4 } = require('uuid');
 const { protect } = require('../middleware/authMiddleware');
+const { checkAICredits } = require('../middleware/creditMiddleware');
 const crypto = require('crypto');
 
 // Utility to ensure all topics have stable IDs based on their phase and name
@@ -880,11 +881,53 @@ CRITICAL RULES:
 });
 
 // POST /api/role/save-workflow - Save a custom workflow
-router.post('/save-workflow', async (req, res) => {
-    const { userId, role, workflow } = req.body;
-    // Implementation for DB save would go here
-    // For now, we'll just mock success
-    res.json({ success: true, message: "Workflow saved successfully" });
+router.post('/save-workflow', protect, async (req, res) => {
+    const { role_analysis_id, role, workflow, is_custom } = req.body;
+    const userId = req.user.id;
+    
+    if (!role || !workflow) {
+        return res.status(400).json({ error: 'role and workflow are required' });
+    }
+
+    try {
+        const result = await pool.query(
+            `INSERT INTO workflow_results (user_id, role_analysis_id, role_title, workflow_data, is_custom)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, created_at`,
+            [userId, role_analysis_id || null, role, JSON.stringify(workflow), !!is_custom]
+        );
+        res.json({ success: true, message: "Workflow saved successfully", id: result.rows[0].id, savedAt: result.rows[0].created_at });
+    } catch (err) {
+        console.error('Save workflow error:', err);
+        res.status(500).json({ error: 'Failed to save workflow' });
+    }
+});
+
+// GET /api/role/workflow-saved - Get the saved custom workflow
+router.get('/workflow-saved', protect, async (req, res) => {
+    const { role_analysis_id } = req.query;
+    const userId = req.user.id;
+
+    try {
+        let query, params;
+        if (role_analysis_id) {
+            query = `SELECT workflow_data, created_at, is_custom FROM workflow_results WHERE user_id = $1 AND role_analysis_id = $2 ORDER BY created_at DESC LIMIT 1`;
+            params = [userId, role_analysis_id];
+        } else {
+            query = `SELECT workflow_data, created_at, is_custom FROM workflow_results WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`;
+            params = [userId];
+        }
+
+        const result = await pool.query(query, params);
+        if (result.rows.length > 0) {
+            res.json({ success: true, workflow: result.rows[0].workflow_data, is_custom: result.rows[0].is_custom, savedAt: result.rows[0].created_at });
+        } else {
+            res.json({ success: true, workflow: null });
+        }
+    } catch (err) {
+        console.error('Fetch workflow error:', err);
+        res.status(500).json({ error: 'Failed to fetch saved workflow' });
+    }
 });
 
 

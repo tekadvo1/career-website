@@ -5,6 +5,7 @@ const pool = require('../config/db');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const { checkAICredits } = require('../middleware/creditMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -859,5 +860,54 @@ Rules:
     }
 });
 
-module.exports = router;
+// ── POST /api/ai/tech-stack/save ───────────────────────────────────────────
+router.post('/tech-stack/save', protect, async (req, res) => {
+    const { role_analysis_id, role_title, result_data, input_context } = req.body;
+    const userId = req.user.id;
 
+    if (!role_title || !result_data) {
+        return res.status(400).json({ error: 'role_title and result_data are required' });
+    }
+
+    try {
+        const result = await pool.query(
+            `INSERT INTO tech_stack_results (user_id, role_analysis_id, role_title, result_data, input_context)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, created_at`,
+            [userId, role_analysis_id || null, role_title, JSON.stringify(result_data), input_context ? JSON.stringify(input_context) : null]
+        );
+        res.json({ success: true, id: result.rows[0].id, savedAt: result.rows[0].created_at });
+    } catch (err) {
+        console.error('Save tech stack error:', err);
+        res.status(500).json({ error: 'Failed to save tech stack' });
+    }
+});
+
+// ── GET /api/ai/tech-stack/saved ───────────────────────────────────────────
+router.get('/tech-stack/saved', protect, async (req, res) => {
+    const { role_analysis_id } = req.query;
+    const userId = req.user.id;
+
+    try {
+        let query, params;
+        if (role_analysis_id) {
+            query = `SELECT result_data, created_at FROM tech_stack_results WHERE user_id = $1 AND role_analysis_id = $2 ORDER BY created_at DESC LIMIT 1`;
+            params = [userId, role_analysis_id];
+        } else {
+            query = `SELECT result_data, created_at FROM tech_stack_results WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`;
+            params = [userId];
+        }
+
+        const result = await pool.query(query, params);
+        if (result.rows.length > 0) {
+            res.json({ success: true, techStack: result.rows[0].result_data, savedAt: result.rows[0].created_at });
+        } else {
+            res.json({ success: true, techStack: null });
+        }
+    } catch (err) {
+        console.error('Fetch tech stack error:', err);
+        res.status(500).json({ error: 'Failed to fetch saved tech stack' });
+    }
+});
+
+module.exports = router;
