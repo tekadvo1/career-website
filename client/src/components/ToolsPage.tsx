@@ -122,6 +122,15 @@ export default function ToolsPage() {
           icon: <MessageSquare className="w-5 h-5 text-pink-600" />,
           bgColor: 'bg-pink-100',
           route: '/interview-guide',
+        },
+        {
+          id: 'my-learning-notes',
+          label: 'My Learning Notes',
+          description: 'Keep explanations, code snippets, and ideas connected to your learning.',
+          actionText: 'Open my notes',
+          icon: <MessageSquare className="w-5 h-5 text-emerald-600" />,
+          bgColor: 'bg-emerald-100',
+          route: '/my-learning-notes',
         }
       ]
     }
