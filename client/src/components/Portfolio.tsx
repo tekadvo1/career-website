@@ -7,7 +7,7 @@ import {
   AlertTriangle, ChevronUp, ChevronDown, Star, Trash2, CheckCircle2, Github, FolderGit2
 } from "lucide-react";
 import PortfolioPresentation from "./PortfolioPresentation";
-
+import PortfolioWritingHelp from "./PortfolioWritingHelp";
 // Themes definition
 const THEMES: Record<string, any> = {
   minimalist: {
@@ -83,6 +83,7 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
   const [myProjects, setMyProjects] = useState<any[]>([]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | number | null>(null);
 
+  const [activeAIField, setActiveAIField] = useState<string | null>(null);
 
   const isDirty = JSON.stringify(editForm) !== JSON.stringify(savedData);
   const t = THEMES[editForm.theme] || THEMES.minimalist;
@@ -564,8 +565,25 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                     {activeSection === 'about' && (
                         <div className="animate-in fade-in">
                             <h2 className="text-lg font-bold text-slate-800 mb-4">Introduction</h2>
-                            <label className="block text-[13px] font-semibold text-slate-600 mb-1.5">Bio / About Me</label>
+                            <label className="block text-[13px] font-semibold text-slate-600 mb-1.5 flex items-center justify-between">
+                                Bio / About Me
+                                <button onClick={() => setActiveAIField('about')} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[11px] font-bold transition-colors">✨ AI Assist</button>
+                            </label>
                             <p className="text-[12px] text-slate-500 mb-3">Introduce yourself, your background, and your goals. This appears at the top of your portfolio.</p>
+                            
+                            {activeAIField === 'about' && (
+                                <PortfolioWritingHelp
+                                    fieldId="about"
+                                    fieldLabel="Bio / About Me"
+                                    currentValue={editForm.about}
+                                    onApply={(suggestion) => {
+                                        setEditForm({ ...editForm, about: suggestion });
+                                        setActiveAIField(null);
+                                    }}
+                                    onClose={() => setActiveAIField(null)}
+                                />
+                            )}
+                            
                             <textarea 
                                 value={editForm.about}
                                 onChange={e => setEditForm({...editForm, about: e.target.value})}
@@ -637,15 +655,33 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                                                         
                                                         <div className="space-y-4">
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Problem & Intended Users</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    Problem & Intended Users
+                                                                    <button onClick={() => setActiveAIField(`problem-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `problem-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="problem" fieldLabel="Problem & Intended Users" currentValue={exp.problem || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'problem', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.problem || ''} onChange={e => updateExperience(i, 'problem', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Who is this for and what problem does it solve?" />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">What I Built</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    What I Built
+                                                                    <button onClick={() => setActiveAIField(`built-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `built-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="built" fieldLabel="What I Built" currentValue={exp.built || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'built', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.built || ''} onChange={e => updateExperience(i, 'built', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe the final product and features..." />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">My Contribution</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    My Contribution
+                                                                    <button onClick={() => setActiveAIField(`contribution-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `contribution-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="contribution" fieldLabel="My Contribution" currentValue={exp.contribution || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'contribution', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.contribution || ''} onChange={e => updateExperience(i, 'contribution', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="What specific parts did you build?" />
                                                             </div>
                                                             <div>
@@ -656,15 +692,33 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                                                         
                                                         <div className="space-y-4">
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Challenge & Solution</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    Challenge & Solution
+                                                                    <button onClick={() => setActiveAIField(`challenge-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `challenge-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="challenge" fieldLabel="Challenge & Solution" currentValue={exp.challenge || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'challenge', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.challenge || ''} onChange={e => updateExperience(i, 'challenge', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe a technical challenge and how you solved it..." />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">What I Learned</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    What I Learned
+                                                                    <button onClick={() => setActiveAIField(`learned-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `learned-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="learned" fieldLabel="What I Learned" currentValue={exp.learned || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'learned', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.learned || ''} onChange={e => updateExperience(i, 'learned', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Key takeaways from this project..." />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1">Limitations / Next Steps</label>
+                                                                <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                                    Limitations / Next Steps
+                                                                    <button onClick={() => setActiveAIField(`nextSteps-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                                                </label>
+                                                                {activeAIField === `nextSteps-${i}` && (
+                                                                    <PortfolioWritingHelp fieldId="nextSteps" fieldLabel="Limitations / Next Steps" currentValue={exp.nextSteps || ''} projectId={exp.id} onApply={(s) => { updateExperience(i, 'nextSteps', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                                                )}
                                                                 <textarea value={exp.nextSteps || ''} onChange={e => updateExperience(i, 'nextSteps', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="What would you add next?" />
                                                             </div>
                                                             <div className="grid grid-cols-2 gap-3">
@@ -717,7 +771,13 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[12px] font-semibold text-slate-600 mb-1">Description</label>
+                                            <label className="block text-[12px] font-semibold text-slate-600 mb-1 flex justify-between items-center">
+                                                Description
+                                                <button onClick={() => setActiveAIField(`description-${i}`)} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[10px] font-bold transition-colors">✨ AI Assist</button>
+                                            </label>
+                                            {activeAIField === `description-${i}` && (
+                                                <PortfolioWritingHelp fieldId="description" fieldLabel="Description" currentValue={exp.description || ''} onApply={(s) => { updateExperience(i, 'description', s); setActiveAIField(null); }} onClose={() => setActiveAIField(null)} />
+                                            )}
                                             <textarea value={exp.description} onChange={e => updateExperience(i, 'description', e.target.value)} rows={3} className="w-full p-2 border border-slate-300 rounded-md text-[13px] focus:ring-2 focus:ring-teal-500" placeholder="Describe your achievements..." />
                                         </div>
                                     </div>
@@ -732,8 +792,24 @@ export default function Portfolio({ isPublic = false }: { isPublic?: boolean }) 
 
                     {activeSection === 'skills' && (
                         <div className="animate-in fade-in">
-                            <h2 className="text-lg font-bold text-slate-800 mb-4">Skills</h2>
+                            <h2 className="text-lg font-bold text-slate-800 mb-4 flex justify-between items-center">
+                                <span>Skills</span>
+                                <button onClick={() => setActiveAIField('skills')} className="text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-2 py-0.5 rounded text-[11px] font-bold transition-colors">✨ AI Assist</button>
+                            </h2>
                             <p className="text-[12px] text-slate-500 mb-4">List your top technical and professional skills as a comma-separated list.</p>
+                            
+                            {activeAIField === 'skills' && (
+                                <PortfolioWritingHelp
+                                    fieldId="skills"
+                                    fieldLabel="Skills"
+                                    currentValue={editForm.skills.join(", ")}
+                                    onApply={(suggestion) => {
+                                        setEditForm({ ...editForm, skills: suggestion.split(",").map(s=>s.trim()).filter(Boolean) });
+                                        setActiveAIField(null);
+                                    }}
+                                    onClose={() => setActiveAIField(null)}
+                                />
+                            )}
                             <textarea 
                                 value={editForm.skills.join(", ")}
                                 onChange={e => setEditForm({...editForm, skills: e.target.value.split(",").map(s=>s.trim()).filter(Boolean)})}

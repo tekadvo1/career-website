@@ -444,4 +444,91 @@ router.post('/unpublish', async (req, res) => {
     }
 });
 
+// @route   POST /api/portfolio/writing-help
+// @desc    Generate AI writing suggestions for portfolio fields
+// @access  Private
+router.post('/writing-help', async (req, res) => {
+    try {
+        const { fieldId, fieldLabel, notes, currentValue, projectId } = req.body;
+        const userId = req.user.id;
+
+        if (!fieldId || !notes) {
+            return res.status(400).json({ success: false, message: 'Field ID and notes are required.' });
+        }
+
+        let projectContext = '';
+        if (projectId) {
+            const projectRes = await pool.query(
+                'SELECT title, description, role, portfolio_draft FROM user_projects WHERE id = $1 AND user_id = $2',
+                [projectId, userId]
+            );
+            if (projectRes.rows.length === 0) {
+                return res.status(403).json({ success: false, message: 'Project not found or unauthorized.' });
+            }
+            const p = projectRes.rows[0];
+            let pdraft = '';
+            if (p.portfolio_draft) {
+                try {
+                    const parsed = typeof p.portfolio_draft === 'string' ? JSON.parse(p.portfolio_draft) : p.portfolio_draft;
+                    pdraft = `(Draft Context: Problem: ${parsed.problem || ''}, Built: ${parsed.built || ''})`;
+                } catch (e) {}
+            }
+            projectContext = `Project Title: ${p.title}. Role: ${p.role}. Description: ${p.description}. ${pdraft}`;
+        }
+
+        const fetch = (await import('node-fetch')).default;
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ success: false, message: 'OpenAI API key missing.' });
+        }
+
+        const systemPrompt = `You are an expert technical portfolio writer helping a user write their portfolio.
+Strict Rules:
+1. ONLY use the provided facts, notes, and context.
+2. DO NOT invent employers, dates, metrics, features, achievements, skills, clients, deployment success, or URLs.
+3. If organizing skills, just categorize/format the provided skills without adding assumed proficiencies or new skills.
+4. Keep the suggestion concise, professional, and directly suited for the field: "${fieldLabel}".
+5. If the provided notes are too sparse to make a meaningful sentence without inventing facts, ask the user to provide more specific details instead of generating a fake description.
+6. Return ONLY the text suggestion. No markdown formatting unless it's basic bullet points.`;
+
+        const userPrompt = `
+Field: ${fieldLabel}
+Current Value: ${currentValue || '(empty)'}
+User Notes: ${notes}
+${projectContext ? `Project Context: ${projectContext}` : ''}
+
+Generate a clear, professional suggestion for this field.`;
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3,
+                max_tokens: 400
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('OpenAI API failure');
+        }
+
+        const data = await response.json();
+        const suggestion = data.choices[0].message.content.trim();
+
+        res.json({ success: true, suggestion });
+
+    } catch (err) {
+        console.error('Error generating writing help:', err);
+        res.status(500).json({ success: false, message: 'Failed to generate suggestion.' });
+    }
+});
+
 module.exports = router;
