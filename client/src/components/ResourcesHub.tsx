@@ -38,11 +38,7 @@ export default function ResourcesHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("all");
-  const [showFreeOnly, setShowFreeOnly] = useState(false);
-  const [isAiSearching, setIsAiSearching] = useState(false);
-  const [aiResources, setAiResources] = useState<Resource[]>([]);
-  const [showAiResults, setShowAiResults] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>("all");
   
   const [resources, setResources] = useState<Resource[]>([]);
   const [savedResourceIds, setSavedResourceIds] = useState<Set<string>>(new Set());
@@ -55,13 +51,9 @@ export default function ResourcesHub() {
       topicContext ? { topicName: topicContext.topicName, subtopicName: topicContext.subtopicName } : null
   );
 
-  const rawRole = location.state?.role || (() => {
-    try {
-      const saved = sessionStorage.getItem("lastRoleAnalysis");
-      return saved ? JSON.parse(saved).role : "Software Engineer";
-    } catch { return "Software Engineer"; }
-  })();
-  const userRole = rawRole.replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim() || "Software Engineer";
+  const availableTopics = Array.from(
+      new Set(resources.flatMap(r => r.topics || []))
+  ).filter(Boolean).sort();
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -144,42 +136,7 @@ export default function ResourcesHub() {
       }
   };
 
-  const handleAiSearch = async (override?: string | React.MouseEvent) => {
-    const q = typeof override === "string" ? override : searchQuery;
-    if (!q) return;
-    setIsAiSearching(true);
-    setShowAiResults(true);
-    try {
-      const response = await apiFetch("/api/resources/search", {
-        method: "POST",
-        body: JSON.stringify({ 
-          query: q, 
-          role: userRole,
-          filters: {
-            type: selectedType,
-            level: selectedLevel,
-            language: selectedLanguage
-          }
-        })
-      });
-      const data = await response.json();
-      if (data.success) {
-         const mappedResources = data.resources.map((r: Resource & { resource_type?: string, id: number|string }) => ({
-            ...r,
-            id: String(r.id),
-            type: r.resource_type || r.type
-          }));
-        setAiResources(mappedResources);
-      }
-    } catch (error) {
-      console.error("AI Search failed", error);
-    } finally {
-      setIsAiSearching(false);
-    }
-  };
-
-  let baseResources = activeTab === "saved" ? resources.filter(r => savedResourceIds.has(r.id)) : resources;
-  if (showAiResults) baseResources = aiResources;
+  const baseResources = activeTab === "saved" ? resources.filter(r => savedResourceIds.has(r.id)) : resources;
 
   const filteredResources = baseResources.filter((resource) => {
     if (contextFilter) {
@@ -191,18 +148,18 @@ export default function ResourcesHub() {
        if (!hasTopic && !hasTitleMatch) return false;
     }
 
-    const matchesSearch = showAiResults ? true : (
+    const matchesSearch = !searchQuery || (
       resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (resource.description && resource.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (resource.platform && resource.platform.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (resource.topics || []).some((topic) => topic.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    const matchesTopic = selectedTopic === "all" || (resource.topics || []).includes(selectedTopic);
     const matchesLevel = selectedLevel === "all" || resource.level === selectedLevel;
-    const matchesType = selectedType === "all" || resource.type === selectedType || resource.platform?.toLowerCase().includes(selectedType.toLowerCase());
-    const matchesLanguage = selectedLanguage === "all" || resource.language?.toLowerCase() === selectedLanguage.toLowerCase();
-    const matchesFree = !showFreeOnly || resource.free;
+    const matchesType = selectedType === "all" || resource.type === selectedType || (resource.platform && resource.platform.toLowerCase().includes(selectedType.toLowerCase()));
 
-    return matchesSearch && matchesLevel && matchesType && matchesLanguage && matchesFree;
+    return matchesSearch && matchesTopic && matchesLevel && matchesType;
   });
 
   const getTypeIcon = (type: string) => {
@@ -230,7 +187,7 @@ export default function ResourcesHub() {
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 mb-1">Learning Resources</h1>
                 <p className="text-sm text-slate-600">
-                  Curated materials and references for your learning journey
+                  Find helpful material for what you’re learning.
                 </p>
               </div>
             </div>
@@ -267,59 +224,47 @@ export default function ResourcesHub() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search resources, topics, or technologies..."
+                placeholder="Search resources by title, provider, or topic..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAiSearch()}
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 text-sm"
               />
             </div>
-            <button
-              onClick={handleAiSearch}
-              disabled={isAiSearching || !searchQuery}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2 whitespace-nowrap"
-            >
-              {isAiSearching ? <Sparkles className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              AI Search
-            </button>
-            {showAiResults && (
+            {(searchQuery || selectedTopic !== "all" || selectedType !== "all" || selectedLevel !== "all") && (
               <button
                 onClick={() => {
-                  setShowAiResults(false);
                   setSearchQuery("");
+                  setSelectedTopic("all");
+                  setSelectedType("all");
+                  setSelectedLevel("all");
                 }}
-                className="px-3 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors whitespace-nowrap"
               >
-                Clear
+                Clear Filters
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
+            <select value={selectedTopic} onChange={(e) => setSelectedTopic(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[140px] flex-1 sm:flex-none">
+              <option value="all">All Topics</option>
+              {availableTopics.map(topic => (
+                 <option key={topic} value={topic}>{topic}</option>
+              ))}
+            </select>
+            <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px] flex-1 sm:flex-none">
               <option value="all">All Types</option>
               <option value="course">Courses</option>
               <option value="video">Videos</option>
               <option value="documentation">Docs</option>
               <option value="interactive">Interactive</option>
             </select>
-            <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
+            <select value={selectedLevel} onChange={(e) => setSelectedLevel(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px] flex-1 sm:flex-none">
               <option value="all">All Levels</option>
               <option value="Beginner">Beginner</option>
               <option value="Intermediate">Intermediate</option>
               <option value="Advanced">Advanced</option>
             </select>
-            <select value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-600 text-sm bg-white text-slate-700 min-w-[120px]">
-              <option value="all">All Languages</option>
-              <option value="English">English</option>
-              <option value="Spanish">Spanish</option>
-              <option value="Hindi">Hindi</option>
-              <option value="Chinese">Chinese</option>
-            </select>
-            <label className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-md cursor-pointer hover:bg-slate-50 transition-colors">
-              <input type="checkbox" checked={showFreeOnly} onChange={(e) => setShowFreeOnly(e.target.checked)} className="w-3.5 h-3.5 text-emerald-600 rounded" />
-              <span className="text-sm font-medium text-slate-700">Free Only</span>
-            </label>
           </div>
         </div>
 
@@ -390,7 +335,7 @@ export default function ResourcesHub() {
                      {resource.free ? (
                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded">Free</span>
                      ) : (
-                         <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded border border-slate-200">Paid / Not confirmed</span>
+                         <span className="px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold rounded border border-slate-200">Cost not confirmed</span>
                      )}
                      {resource.level && (
                          <span className="px-2 py-0.5 bg-slate-100 text-slate-600 font-medium rounded border border-slate-200">{resource.level}</span>
@@ -415,7 +360,7 @@ export default function ResourcesHub() {
 
                   <div className="pt-2">
                     <a
-                      href={resource.url || "#"}
+                      href={(!resource.url || resource.url.trim().toLowerCase().startsWith("javascript:") || resource.url.trim().toLowerCase().startsWith("data:")) ? "#" : resource.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-900 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
