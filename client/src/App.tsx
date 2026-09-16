@@ -42,6 +42,8 @@ import SkillComparison from './components/SkillComparison';
 // @ts-ignore
 import MyLearningNotes from './components/MyLearningNotes';
 import GettingStarted from './components/GettingStarted';
+// @ts-ignore
+import QuizGame from './components/QuizGame';
 import NotFoundPage from './components/NotFoundPage';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLogin from './components/AdminLogin';
@@ -198,7 +200,9 @@ function App() {
           <Route path="/skill-comparison"        element={<ProtectedRoute><SkillComparison /></ProtectedRoute>} />
           <Route path="/my-learning-notes"       element={<ProtectedRoute><MyLearningNotes /></ProtectedRoute>} />
           <Route path="/learning-roadmap"        element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
-          <Route path="/profile"               element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/profile"                 element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/quiz"                    element={<ProtectedRoute><QuizGame /></ProtectedRoute>} />
+          <Route path="/settings"                element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/roadmap"                 element={<ProtectedRoute><LearningRoadmap /></ProtectedRoute>} />
           <Route path="/resources"               element={<ProtectedRoute><ResourcesHub /></ProtectedRoute>} />
           <Route path="/ai-assistant"            element={<ProtectedRoute><AILearningAssistant /></ProtectedRoute>} />
