@@ -272,7 +272,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
             const finalMessages = [...newMessages, {
                 id: aiMessageId, role: "assistant" as const, content: aiContent, timestamp: new Date().toISOString()
             }];
-            syncChatHistoryToDB(sessionIdToUse, finalMessages);
+            syncChatHistoryToDB();
 
         } catch (error) {
             console.error("Chat error:", error);
