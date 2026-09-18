@@ -232,87 +232,275 @@ router.post('/guide', checkAICredits, async (req, res) => {
     }
 });
 
-// GET /api/ai/chat-history - Sync user's previous chats from mobile/desktop
-router.get('/chat-history', async (req, res) => {
-    const { userId, role, projectId, topicId } = req.query;
-    if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-    }
+// -----------------------------------------------------------------------------
+// SECURE CHAT SESSIONS API
+// -----------------------------------------------------------------------------
+
+// GET /api/ai/chat-sessions - Paginated list of chat sessions
+router.get('/chat-sessions', protect, async (req, res) => {
+    const userId = req.user.id;
+    const { role, contextType, projectId, topicId, page = 1, limit = 50 } = req.query;
     const safeRole = role || 'General';
+    const offset = (page - 1) * limit;
 
     try {
-        let queryStr = "SELECT id, title, messages, updated_at, topic_id, topic_name FROM chat_sessions WHERE user_id = $1 AND role = $2";
+        let queryStr = "SELECT id, title, updated_at, context_type, project_id, topic_id, topic_name FROM chat_sessions WHERE user_id = $1 AND role = $2";
         let params = [userId, safeRole];
 
-        if (projectId) {
+        if (contextType) {
+            queryStr += " AND context_type = $" + (params.length + 1);
+            params.push(contextType);
+        } else if (projectId) {
             queryStr += " AND project_id = $" + (params.length + 1);
             params.push(projectId);
         } else if (topicId) {
             queryStr += " AND topic_id = $" + (params.length + 1);
             params.push(topicId);
-        } else {
-            queryStr += " AND project_id IS NULL AND topic_id IS NULL";
         }
         
-        queryStr += " ORDER BY updated_at DESC";
+        queryStr += ` ORDER BY updated_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
 
         const result = await pool.query(queryStr, params);
-        
-        const history = result.rows.map(row => ({
-            id: row.id,
-            title: row.title,
-            messages: typeof row.messages === 'string' ? JSON.parse(row.messages) : row.messages,
-            updatedAt: row.updated_at,
-            topicId: row.topic_id,
-            topicName: row.topic_name
-        }));
-
-        res.json({ success: true, history });
+        res.json({ success: true, sessions: result.rows });
     } catch (err) {
-        console.error('Error fetching chat history:', err);
-        res.status(500).json({ error: 'Failed to fetch chat history' });
+        console.error('Error fetching chat sessions:', err);
+        res.status(500).json({ error: 'Failed to fetch chat sessions' });
     }
 });
 
-// POST /api/ai/chat-history - Push changes from frontend client to persistent DB
-router.post('/chat-history', async (req, res) => {
-    const { userId, role, chatHistory, projectId, topicId, topicName } = req.body;
-    if (!userId || !Array.isArray(chatHistory)) {
-        return res.status(400).json({ error: 'userId and chatHistory array are required' });
-    }
-    const safeRole = role || 'General';
+// GET /api/ai/chat-sessions/:id/messages - Fetch messages for a specific session
+router.get('/chat-sessions/:id/messages', protect, async (req, res) => {
+    const userId = req.user.id;
+    const sessionId = req.params.id;
 
     try {
-        const client = await pool.connect();
-        await client.query('BEGIN');
-        
-        // Upsert sessions for this role
-        for (const session of chatHistory) {
-             const messagesObj = JSON.stringify(session.messages);
-             const updatedAt = new Date(session.updatedAt || Date.now());
-             await client.query(`
-                INSERT INTO chat_sessions (id, user_id, title, messages, updated_at, role, project_id, topic_id, topic_name) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-                ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, messages = EXCLUDED.messages, updated_at = EXCLUDED.updated_at, role = EXCLUDED.role, project_id = EXCLUDED.project_id, topic_id = EXCLUDED.topic_id, topic_name = EXCLUDED.topic_name
-             `, [session.id, userId, session.title || 'Conversation', messagesObj, updatedAt, safeRole, projectId || null, topicId || null, topicName || null]);
+        // Verify ownership
+        const sessionRes = await pool.query('SELECT id FROM chat_sessions WHERE id = $1 AND user_id = $2', [sessionId, userId]);
+        if (sessionRes.rowCount === 0) {
+            return res.status(404).json({ error: 'Chat session not found or unauthorized' });
         }
 
-        await client.query('COMMIT');
-        client.release();
-        res.json({ success: true, message: 'Chat history synchronized successfully' });
+        const msgRes = await pool.query(
+            "SELECT id, role as type, content, created_at as timestamp FROM chat_messages WHERE session_id = $1 ORDER BY created_at ASC",
+            [sessionId]
+        );
+        res.json({ success: true, messages: msgRes.rows });
     } catch (err) {
-        console.error('Chat history sync error:', err);
-        res.status(500).json({ error: 'Failed to synchronize chats' });
+        console.error('Error fetching chat messages:', err);
+        res.status(500).json({ error: 'Failed to fetch chat messages' });
     }
 });
 
-// PUT /api/ai/chat-history/:id - Rename a chat session
-router.put('/chat-history/:id', async (req, res) => {
-    const { id } = req.params;
-    const { title, userId } = req.body;
+// POST /api/ai/chat-sessions - Create a new chat session
+router.post('/chat-sessions', protect, async (req, res) => {
+    const userId = req.user.id;
+    const { id, title, role, contextType, projectId, topicId, topicName } = req.body;
     
-    if (!title || !userId) {
-        return res.status(400).json({ error: 'title and userId are required' });
+    if (!id || !title) {
+        return res.status(400).json({ error: 'id and title are required' });
+    }
+
+    try {
+        const result = await pool.query(`
+            INSERT INTO chat_sessions (id, user_id, title, role, context_type, project_id, topic_id, topic_name) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+        `, [id, userId, title, role || 'General', contextType || 'general', projectId || null, topicId || null, topicName || null]);
+        
+        res.json({ success: true, session: result.rows[0] });
+    } catch (err) {
+        console.error('Error creating chat session:', err);
+        res.status(500).json({ error: 'Failed to create chat session' });
+    }
+});
+
+// POST /api/ai/chat-sessions/:id/messages - Send a message and get AI response
+router.post('/chat-sessions/:id/messages', protect, checkAICredits, async (req, res) => {
+    const userId = req.user.id;
+    const sessionId = req.params.id;
+    const { message, context, role, conversationHistory } = req.body;
+
+    if (!message) {
+        return res.status(400).json({ error: 'Message is required' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Verify or auto-create ownership
+        let sessionRes = await client.query('SELECT id FROM chat_sessions WHERE id = $1 AND user_id = $2', [sessionId, userId]);
+        if (sessionRes.rowCount === 0) {
+            // Auto-create
+            const title = message.substring(0, 25) + (message.length > 25 ? '...' : '');
+            const contextType = context?.type || 'general';
+            await client.query(`
+                INSERT INTO chat_sessions (id, user_id, title, role, context_type, project_id, topic_id, topic_name) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `, [sessionId, userId, title, role || 'General', contextType, context?.projectId || null, context?.topicId || null, context?.topicName || null]);
+        }
+
+        // Save user message immediately
+        await client.query(`
+            INSERT INTO chat_messages (session_id, role, content) VALUES ($1, 'user', $2)
+        `, [sessionId, message]);
+
+        // Update session timestamp
+        await client.query('UPDATE chat_sessions SET updated_at = NOW() WHERE id = $1', [sessionId]);
+        
+        await client.query('COMMIT');
+
+        // Setup AI request
+        const isProjectContext = context?.type === 'project';
+        const isRoadmapContext = context?.type === 'roadmap';
+        let systemPrompt = '';
+
+        if (isProjectContext) {
+            systemPrompt = `You are FindStreak AI — an expert Senior Software Engineer and Pair Programmer mentoring a user on a real portfolio project.
+
+Project: ${context.projectTitle}
+Current Task: ${context.currentTask}
+Target Role: ${role || 'Software Engineer'}
+
+Your approach:
+- Guide without just handing over answers. Explain the WHY behind every solution.
+- When the user shares code or an error, debug it precisely and explain what went wrong.
+- Provide clean, production-ready code examples when asked.
+- Be direct and technical. Reference earlier parts of the conversation naturally.`;
+        } else if (isRoadmapContext) {
+            systemPrompt = `You are FindStreak AI — an expert tutor guiding a user through their learning roadmap.
+
+Role: ${role || 'Software Engineer'}
+Current Topic: ${context.topicName}
+${context.subtopicName ? `Current Subtopic: ${context.subtopicName}` : ''}
+
+You must base your explanations and tutoring heavily on the following Lesson Guide that the user is currently reading.
+LESSON GUIDE CONTENT:
+${context.guideContent || 'No specific guide available. Provide general guidance.'}
+
+Your approach:
+- Answer the user’s question directly.
+- Explain unfamiliar terms. Use a small relevant example.
+- Suggest a practical next step when useful.
+- Ask a focused follow-up when essential context is missing.
+- For hints: Offer a useful clue before revealing a full solution. Allow the user to request more help.
+- For troubleshooting: State a likely cause with appropriate uncertainty. Suggest one diagnostic step. Explain a proposed fix. Explain how the user can check it.
+- Do not force every answer into a large fixed template.
+- Use markdown, emojis, and be conversational but concise.
+- Include a brief reminder near code/log inputs to exclude passwords, tokens, and secret connection strings.
+
+Honest feedback rules:
+- DO NOT claim you executed code without an actual integration.
+- DO NOT claim access to local files or the user’s computer.
+- DO NOT treat pasted output as independently verified.
+- DO NOT automatically complete topics or award XP.
+- DO NOT claim the user has mastered a skill based on a short chat. "Check my understanding" provides practice feedback, not a formal certification.`;
+        } else {
+            systemPrompt = `You are FindStreak AI — an expert career mentor and technical assistant specialising in ${role || 'Software Engineering'}.
+
+Your personality:
+- Direct, knowledgeable, and encouraging — like a senior engineer who genuinely wants to help
+- Conversational and natural, never robotic or overly formal
+- Real, specific, actionable answers — never vague filler
+
+Your capabilities:
+- Career guidance, role transitions, and skill gap analysis for ${role || 'Software Engineering'}
+- Technical explanations, code reviews, debugging help
+- Interview preparation, resume advice, project strategy
+- Learning roadmap guidance and resource recommendations
+
+Rules:
+- Remember and reference earlier parts of the conversation — never repeat context already given
+- Be specific. If asked for code, provide clean working examples with explanations.
+- Use markdown: headers, bullets, and code blocks where it helps clarity.
+- Stay focused on career and technical topics related to ${role || 'Software Engineering'}.`;
+        }
+
+        const messages = [{ role: 'system', content: systemPrompt }];
+        if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+            const recent = conversationHistory.slice(-20);
+            for (const msg of recent) {
+                const msgRole = msg.role || msg.type;
+                if (msgRole === 'user' && msg.content) {
+                    messages.push({ role: 'user', content: msg.content });
+                } else if (msgRole === 'assistant' && msg.content) {
+                    messages.push({ role: 'assistant', content: msg.content });
+                }
+            }
+        } else {
+            messages.push({ role: 'user', content: message });
+        }
+
+        const requestOptions = {
+            model: 'gpt-4o',
+            messages,
+            max_tokens: 2500,
+            temperature: 0.7,
+        };
+
+        if (req.body.stream) {
+            requestOptions.stream = true;
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+
+            let fullResponse = '';
+            try {
+                const stream = await openai.chat.completions.create(requestOptions);
+                for await (const chunk of stream) {
+                    const content = chunk.choices[0]?.delta?.content || '';
+                    if (content) {
+                        fullResponse += content;
+                        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                    }
+                }
+                
+                // Save assistant message to DB
+                await client.query(`
+                    INSERT INTO chat_messages (session_id, role, content) VALUES ($1, 'assistant', $2)
+                `, [sessionId, fullResponse]);
+                
+                res.write(`data: [DONE]\n\n`);
+                return res.end();
+            } catch (err) {
+                console.error('Streaming error:', err);
+                
+                if (fullResponse.length > 0) {
+                     await client.query(`
+                        INSERT INTO chat_messages (session_id, role, content, status) VALUES ($1, 'assistant', $2, 'failed')
+                    `, [sessionId, fullResponse]);
+                }
+                
+                res.write(`data: ${JSON.stringify({ error: 'Stream failed' })}\n\n`);
+                return res.end();
+            }
+        }
+
+        const completion = await openai.chat.completions.create(requestOptions);
+        const reply = completion.choices[0].message.content;
+        
+        // Save assistant message to DB
+        await client.query(`
+            INSERT INTO chat_messages (session_id, role, content) VALUES ($1, 'assistant', $2)
+        `, [sessionId, reply]);
+        
+        res.json({ reply });
+    } catch (error) {
+        console.error('AI Chat Session Error:', error);
+        res.status(500).json({ error: 'Failed to process chat' });
+    } finally {
+        client.release();
+    }
+});
+
+// PUT /api/ai/chat-sessions/:id - Rename a chat session
+router.put('/chat-sessions/:id', protect, async (req, res) => {
+    const { id } = req.params;
+    const { title } = req.body;
+    const userId = req.user.id;
+    
+    if (!title) {
+        return res.status(400).json({ error: 'title is required' });
     }
     
     try {
@@ -327,14 +515,10 @@ router.put('/chat-history/:id', async (req, res) => {
     }
 });
 
-// DELETE /api/ai/chat-history/:id - Delete a chat session
-router.delete('/chat-history/:id', async (req, res) => {
+// DELETE /api/ai/chat-sessions/:id - Delete a chat session
+router.delete('/chat-sessions/:id', protect, async (req, res) => {
     const { id } = req.params;
-    const { userId } = req.query; // pass userId to ensure authorization
-    
-    if (!userId) {
-        return res.status(400).json({ error: 'userId is required' });
-    }
+    const userId = req.user.id;
     
     try {
         const result = await pool.query('DELETE FROM chat_sessions WHERE id = $1 AND user_id = $2 RETURNING *', [id, userId]);
@@ -347,6 +531,7 @@ router.delete('/chat-history/:id', async (req, res) => {
         res.status(500).json({ error: 'Failed to delete chat' });
     }
 });
+
 
 // POST /api/ai/generate-quiz - Generates real-time quizzes based on role and topic
 router.post('/generate-quiz', checkAICredits, async (req, res) => {

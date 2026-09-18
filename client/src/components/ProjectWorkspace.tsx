@@ -330,14 +330,25 @@ export default function ProjectWorkspace() {
     const fetchChat = async () => {
         setChatLoadingState('loading');
         try {
-            const histRes = await apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}&projectId=${projectId}`);
+            const histRes = await apiFetch(`/api/ai/chat-sessions?userId=${user.id}&role=${encodeURIComponent(role)}&projectId=${projectId}`);
             if (!histRes.ok) throw new Error("Failed to fetch history");
             const histData = await histRes.json();
             
-            if (histData.success && histData.history && histData.history.length > 0) {
-                setChatHistory(histData.history);
-                setMessages(histData.history[0].messages);
-                setActiveSessionId(histData.history[0].id);
+            if (histData.success && histData.sessions && histData.sessions.length > 0) {
+                const loadedHistory = histData.sessions.map((s: any) => ({ ...s, messages: [], updatedAt: s.updated_at }));
+                setChatHistory(loadedHistory);
+                
+                const activeId = loadedHistory[0].id;
+                setActiveSessionId(activeId);
+                
+                // Fetch messages
+                const msgRes = await apiFetch(`/api/ai/chat-sessions/${activeId}/messages`);
+                const msgData = await msgRes.json();
+                if (msgData.success && msgData.messages) {
+                    const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp).toISOString() }));
+                    loadedHistory[0].messages = msgs;
+                    setMessages(msgs);
+                }
                 setChatLoadingState('success');
             } else {
                 setChatLoadingState('success');
@@ -367,30 +378,8 @@ export default function ProjectWorkspace() {
       setIsHistoryVisible(false);
   };
 
-  const syncChatHistoryToDB = async (sessionId: string, newMessages: Message[], titleStr?: string) => {
-      if (!user.id || !projectId) return;
-      
-      const sessionTitle = titleStr || (newMessages.length > 1 ? newMessages[1].content.substring(0, 40) + '...' : "New Conversation");
-      
-      const newSession = {
-          id: sessionId,
-          title: sessionTitle,
-          messages: newMessages,
-          updatedAt: new Date().toISOString()
-      };
-      
-      const updatedHistory = [...chatHistory.filter(s => s.id !== sessionId), newSession].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      setChatHistory(updatedHistory);
-      
-      try {
-          await apiFetch('/api/ai/chat-history', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id, role, projectId, chatHistory: [newSession] }) // just upsert this session
-          });
-      } catch (err) {
-          console.error("Failed to sync chat history", err);
-      }
+  const syncChatHistoryToDB = async () => {
+      // Sync is handled by the backend automatically when sending messages
   };
 
   const handleRenameSession = async (sessionId: string) => {
@@ -405,10 +394,10 @@ export default function ProjectWorkspace() {
       setEditingSessionId(null);
       
       try {
-          await apiFetch(`/api/ai/chat-history/${sessionId}`, {
+          await apiFetch(`/api/ai/chat-sessions/${sessionId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id, title: editSessionTitle })
+              body: JSON.stringify({ title: editSessionTitle })
           });
       } catch (err) {
           console.error("Failed to rename session", err);
@@ -425,11 +414,35 @@ export default function ProjectWorkspace() {
       }
       
       try {
-          await apiFetch(`/api/ai/chat-history/${sessionId}?userId=${user.id}`, {
+          await apiFetch(`/api/ai/chat-sessions/${sessionId}`, {
               method: 'DELETE'
           });
       } catch (err) {
           console.error("Failed to delete session", err);
+      }
+  };
+
+  const handleSwitchSession = async (sessionId: string) => {
+      const session = chatHistory.find(s => s.id === sessionId);
+      if (session) {
+          setActiveSessionId(sessionId);
+          
+          if (!session.messages || session.messages.length === 0) {
+              try {
+                  const msgRes = await apiFetch(`/api/ai/chat-sessions/${sessionId}/messages`);
+                  const msgData = await msgRes.json();
+                  if (msgData.success && msgData.messages) {
+                      const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp).toISOString() }));
+                      setChatHistory(prev => prev.map(c => c.id === sessionId ? { ...c, messages: msgs } : c));
+                      setMessages(msgs);
+                  }
+              } catch (e) {
+                  console.error("Failed to load messages", e);
+              }
+          } else {
+              setMessages(session.messages);
+          }
+          setIsHistoryVisible(false);
       }
   };
 
@@ -453,10 +466,10 @@ export default function ProjectWorkspace() {
     if (!activeSessionId) setActiveSessionId(sessionIdToUse);
 
     // Initial sync
-    syncChatHistoryToDB(sessionIdToUse, newMessages);
+    syncChatHistoryToDB();
 
     try {
-        const res = await apiFetch('/api/ai/chat', {
+        const res = await apiFetch(`/api/ai/chat-sessions/${sessionIdToUse}/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -510,16 +523,16 @@ export default function ProjectWorkspace() {
         }
         
         // Final save
-        syncChatHistoryToDB(sessionIdToUse, [...newMessages, {
-            id: aiMessageId, role: "assistant", content: aiContent, timestamp: new Date().toISOString()
-        }]);
+        // syncChatHistoryToDB(sessionIdToUse, [...newMessages, {
+        //     id: aiMessageId, role: "assistant", content: aiContent, timestamp: new Date().toISOString()
+        // }]);
     } catch (err) {
         const aiResponse: Message = {
             id: (Date.now() + 1).toString(), role: "assistant", content: "Network error.", timestamp: new Date().toISOString(),
         };
         const updatedWithErr = [...newMessages, aiResponse];
         setMessages(updatedWithErr);
-        syncChatHistoryToDB(sessionIdToUse, updatedWithErr);
+        // syncChatHistoryToDB(sessionIdToUse, updatedWithErr);
         setIsTyping(false);
     }
   };
@@ -850,11 +863,7 @@ export default function ProjectWorkspace() {
                        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Previous Conversations</h3>
                        {chatHistory.length > 0 ? chatHistory.map(session => (
                           <div key={session.id} 
-                               onClick={() => {
-                                  setActiveSessionId(session.id);
-                                  setMessages(session.messages);
-                                  setIsHistoryVisible(false);
-                               }}
+                               onClick={() => handleSwitchSession(session.id)}
                                className={`group relative p-3 rounded-xl border cursor-pointer transition-colors ${activeSessionId === session.id ? 'bg-teal-50 border-teal-200' : 'bg-white border-slate-200 hover:border-teal-300'}`}>
                              <div className="flex justify-between items-start">
                                 {editingSessionId === session.id ? (

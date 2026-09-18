@@ -154,29 +154,34 @@ export default function AILearningAssistant() {
   // Sync historical chat states globally across mobile & web environments
   useEffect(() => {
     if (user?.id) {
-       apiFetch(`/api/ai/chat-history?userId=${user.id}&role=${encodeURIComponent(role)}`)
+       apiFetch(`/api/ai/chat-sessions?role=${encodeURIComponent(role)}`)
          .then(res => res.json())
-         .then(data => {
-            if (data.success && data.history && data.history.length > 0) {
-               const parsedServerHistory = data.history.map((session: any) => ({
+         .then(async data => {
+            if (data.success && data.sessions && data.sessions.length > 0) {
+               const parsedServerHistory = data.sessions.map((session: any) => ({
                   ...session,
-                  updatedAt: new Date(session.updatedAt),
-                  messages: session.messages.map((m: any) => ({
-                    ...m,
-                    timestamp: new Date(m.timestamp)
-                  }))
+                  messages: [], // messages loaded on demand
+                  updatedAt: new Date(session.updated_at)
                }));
 
                setChatHistory(parsedServerHistory);
                
-               if (messages.length <= 1) { // If user hasn't typed in new chat yet, restore the most recent active session from server!
-                   setCurrentChatId(parsedServerHistory[0].id);
-                   setMessages(parsedServerHistory[0].messages);
+               if (messages.length <= 1) { 
+                   // Load messages for the most recent session
+                   const activeId = parsedServerHistory[0].id;
+                   setCurrentChatId(activeId);
+                   const msgRes = await apiFetch(`/api/ai/chat-sessions/${activeId}/messages`);
+                   const msgData = await msgRes.json();
+                   if (msgData.success && msgData.messages) {
+                       const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+                       parsedServerHistory[0].messages = msgs;
+                       setMessages(msgs);
+                   }
                } 
             }
          })
          .catch(err => console.error("Could not sync chat history from server", err))
-         .finally(() => { syncRef.current = true; }); // Safely enable DB writes AFTER the initial pull
+         .finally(() => { syncRef.current = true; });
     } else {
         syncRef.current = true; // No user logged in, permit local save immediately 
     }
@@ -211,7 +216,7 @@ export default function AILearningAssistant() {
             timestamp: new Date(),
           }]);
 
-          const res = await apiFetch("/api/ai/chat", {
+          const res = await apiFetch(`/api/ai/chat-sessions/${newChatId}/messages`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -298,22 +303,34 @@ export default function AILearningAssistant() {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
 
       if (user?.id) {
-         apiFetch('/api/ai/chat-history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, role, chatHistory })
-         }).catch(err => console.error("Failed syncing chat history:", err));
+         // Legacy sync removed; handled per-message and per-session on backend.
       }
     } catch (e) {
       console.error("Failed to save chat history", e);
     }
   }, [chatHistory, user?.id]);
 
-  const handleSwitchChat = (chatId: string) => {
+  const handleSwitchChat = async (chatId: string) => {
     const session = chatHistory.find(c => c.id === chatId);
     if (session) {
       setCurrentChatId(session.id);
-      setMessages(session.messages);
+      
+      // Load messages from server if empty
+      if (session.messages.length === 0) {
+          try {
+              const msgRes = await apiFetch(`/api/ai/chat-sessions/${chatId}/messages`);
+              const msgData = await msgRes.json();
+              if (msgData.success && msgData.messages) {
+                  const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+                  setChatHistory(prev => prev.map(c => c.id === chatId ? { ...c, messages: msgs } : c));
+                  setMessages(msgs);
+              }
+          } catch (e) {
+              console.error("Failed to fetch messages for session", e);
+          }
+      } else {
+          setMessages(session.messages);
+      }
       setShowHistoryDrawer(false);
     }
   };
@@ -324,12 +341,21 @@ export default function AILearningAssistant() {
       setEditingChatId(null);
       return;
     }
+    apiFetch(`/api/ai/chat-sessions/${chatId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editingTitle })
+    }).catch(console.error);
+
     setChatHistory(prev => prev.map(c => c.id === chatId ? { ...c, title: editingTitle } : c));
     setEditingChatId(null);
   };
 
   const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
     e.stopPropagation();
+    
+    apiFetch(`/api/ai/chat-sessions/${chatId}`, { method: 'DELETE' }).catch(console.error);
+    
     setChatHistory(prev => prev.filter(c => c.id !== chatId));
     if (currentChatId === chatId) {
       handleNewChat();
@@ -503,7 +529,7 @@ export default function AILearningAssistant() {
         timestamp: new Date(),
       }]);
 
-      const res = await apiFetch("/api/ai/chat", {
+      const res = await apiFetch(`/api/ai/chat-sessions/${currentChatId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

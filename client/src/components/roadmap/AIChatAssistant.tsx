@@ -77,11 +77,11 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
                     queryParams.append('topicId', context.topicName); // Hack: Since we fallback to topic_id match, we can just pass name as topicId if needed. But it's better to rely on topic_id if possible.
                 }
                 
-                const res = await apiFetch(`/api/ai/chat-history?${queryParams.toString()}`);
+                const res = await apiFetch(`/api/ai/chat-sessions?${queryParams.toString()}`);
                 const data = await res.json();
                 
                 if (data.success) {
-                    const loadedHistory: ChatSession[] = data.history || [];
+                    const loadedHistory: ChatSession[] = data.sessions ? data.sessions.map((s: any) => ({ ...s, messages: [], updatedAt: s.updated_at })) : [];
                     // Filter history manually by topicName if the backend didn't use topicId
                     const filtered = context.topicId ? loadedHistory : loadedHistory.filter(s => s.topicName === context.topicName);
                     
@@ -90,7 +90,17 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
                     if (filtered.length > 0) {
                         const mostRecent = filtered[0];
                         setActiveSessionId(mostRecent.id);
-                        setMessages(mostRecent.messages);
+                        
+                        // Fetch messages
+                        const msgRes = await apiFetch(`/api/ai/chat-sessions/${mostRecent.id}/messages`);
+                        const msgData = await msgRes.json();
+                        if (msgData.success && msgData.messages) {
+                            const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp).toISOString() }));
+                            mostRecent.messages = msgs;
+                            setMessages(msgs);
+                        } else {
+                            setMessages([]);
+                        }
                     } else {
                         startNewChat();
                     }
@@ -118,39 +128,32 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
         setIsHistoryVisible(false);
     };
 
-    const syncChatHistoryToDB = async (sessionId: string, updatedMessages: ChatMessage[]) => {
-        if (!user) return;
-        
-        const title = updatedMessages.length > 1 && updatedMessages[0].role === 'user' 
-            ? updatedMessages[0].content.substring(0, 30) + '...'
-            : 'Roadmap Chat';
+    const syncChatHistoryToDB = async () => {
+        // Sync is handled by the backend automatically when sending messages
+    };
 
-        const newSession: ChatSession = {
-            id: sessionId,
-            title,
-            messages: updatedMessages,
-            updatedAt: new Date().toISOString(),
-            topicId: context.topicId,
-            topicName: context.topicName
-        };
-        
-        const updatedHistory = [...chatHistory.filter(s => s.id !== sessionId), newSession].sort((a,b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-        setChatHistory(updatedHistory);
-        
-        try {
-            await apiFetch('/api/ai/chat-history', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    userId: user.id, 
-                    role, 
-                    topicId: context.topicId,
-                    topicName: context.topicName,
-                    chatHistory: [newSession] 
-                })
-            });
-        } catch (err) {
-            console.error("Failed to sync chat history", err);
+    const handleSwitchSession = async (sessionId: string) => {
+        const session = chatHistory.find(s => s.id === sessionId);
+        if (session) {
+            setActiveSessionId(sessionId);
+            
+            // Load messages if empty
+            if (!session.messages || session.messages.length === 0) {
+                try {
+                    const msgRes = await apiFetch(`/api/ai/chat-sessions/${sessionId}/messages`);
+                    const msgData = await msgRes.json();
+                    if (msgData.success && msgData.messages) {
+                        const msgs = msgData.messages.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp).toISOString() }));
+                        setChatHistory(prev => prev.map(c => c.id === sessionId ? { ...c, messages: msgs } : c));
+                        setMessages(msgs);
+                    }
+                } catch (e) {
+                    console.error("Failed to load messages", e);
+                }
+            } else {
+                setMessages(session.messages);
+            }
+            setIsHistoryVisible(false);
         }
     };
 
@@ -165,10 +168,10 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
         setEditingSessionId(null);
         
         try {
-            await apiFetch(`/api/ai/chat-history/${sessionId}`, {
+            await apiFetch(`/api/ai/chat-sessions/${sessionId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id, title: editSessionTitle })
+                body: JSON.stringify({ title: editSessionTitle })
             });
         } catch (err) {
             console.error("Failed to rename session", err);
@@ -186,7 +189,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
         }
         
         try {
-            await apiFetch(`/api/ai/chat-history/${sessionId}?userId=${user.id}`, {
+            await apiFetch(`/api/ai/chat-sessions/${sessionId}`, {
                 method: 'DELETE'
             });
         } catch (err) {
@@ -210,10 +213,10 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
         const sessionIdToUse = activeSessionId || `session_${Date.now()}`;
         if (!activeSessionId) setActiveSessionId(sessionIdToUse);
 
-        syncChatHistoryToDB(sessionIdToUse, newMessages);
+        syncChatHistoryToDB();
 
         try {
-            const res = await apiFetch('/api/ai/chat', {
+            const res = await apiFetch(`/api/ai/chat-sessions/${sessionIdToUse}/messages`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -360,11 +363,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
                                 ) : (
                                     <div 
                                         className="truncate mb-1 pr-16 cursor-pointer font-medium"
-                                        onClick={() => {
-                                            setActiveSessionId(session.id);
-                                            setMessages(session.messages);
-                                            setIsHistoryVisible(false);
-                                        }}
+                                          onClick={() => handleSwitchSession(session.id)}
                                     >
                                         {session.title}
                                     </div>
