@@ -62,7 +62,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
           <div className="prose prose-slate prose-sm md:prose-base max-w-none break-words">
             <ReactMarkdown
               components={{
-                a: ({ node, href, children, ...props }) => {
+                a: ({ href, children, ...props }) => {
                   const safeHref = href?.startsWith('javascript:') ? '#' : href;
                   return (
                     <a href={safeHref} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline" {...props}>
@@ -70,7 +70,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
                     </a>
                   );
                 },
-                img: ({ node, src, alt }) => {
+                img: ({ src, alt }) => {
                   const safeSrc = src?.startsWith('javascript:') ? '' : src;
                   return (
                     <a href={safeSrc} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline" title="View external image">
@@ -78,19 +78,19 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
                     </a>
                   );
                 },
-                table: ({ node, children, ...props }) => (
+                table: ({ children, ...props }) => (
                   <div className="overflow-x-auto my-4 rounded-lg border border-slate-200">
                     <table className="min-w-full divide-y divide-slate-200" {...props}>
                       {children}
                     </table>
                   </div>
                 ),
-                th: ({ node, children, ...props }) => (
+                th: ({ children, ...props }) => (
                   <th className="bg-slate-50 px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" {...props}>
                     {children}
                   </th>
                 ),
-                td: ({ node, children, ...props }) => (
+                td: ({ children, ...props }) => (
                   <td className="px-4 py-2 text-sm text-slate-700 border-t border-slate-200" {...props}>
                     {children}
                   </td>
