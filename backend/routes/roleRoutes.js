@@ -30,7 +30,7 @@ function assignTopicIds(analysisData) {
 }
 // POST /api/role/analyze - Generate detailed role analysis using AI
 router.post('/analyze', protect, async (req, res) => {
-  const { role, experienceLevel, country, learningPath, forceRefresh = false } = req.body;
+  const { role, experienceLevel, country, learningPath, forceRefresh = false, workspaceId } = req.body;
   const userId = req.user.id;
 
   if (!role || !experienceLevel || !country) {
@@ -46,11 +46,21 @@ router.post('/analyze', protect, async (req, res) => {
     // 1. Check for existing analysis (USER CACHE FIRST, THEN GLOBAL)
     if (!forceRefresh) {
       if (userId) {
-        // Try user cache first
-        const userCacheResult = await pool.query(
-          "SELECT id, analysis_data, lifecycle_status, error_message FROM role_analyses WHERE LOWER(role_title) = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
-          [normalizedRole, userId]
-        );
+        // Try user cache first. If a workspaceId is provided, we STRICTLY require it to match.
+        // If not provided, we fall back to the legacy string match (for backwards compatibility).
+        let userCacheResult;
+        if (workspaceId) {
+            userCacheResult = await pool.query(
+                "SELECT id, analysis_data, lifecycle_status, error_message FROM role_analyses WHERE workspace_id = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
+                [workspaceId, userId]
+            );
+        } else {
+            userCacheResult = await pool.query(
+                "SELECT id, analysis_data, lifecycle_status, error_message FROM role_analyses WHERE LOWER(role_title) = $1 AND user_id = $2 ORDER BY created_at DESC LIMIT 1",
+                [normalizedRole, userId]
+            );
+        }
+
         if (userCacheResult.rows.length > 0) {
           const row = userCacheResult.rows[0];
           
@@ -85,8 +95,8 @@ router.post('/analyze', protect, async (req, res) => {
             if (userId && grow.user_id !== userId) {
                try {
                    const cloneResult = await pool.query(
-                     "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status) VALUES ($1, $2, $3, 'ready') RETURNING id",
-                     [userId, normalizedRole, cachedData]
+                     "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status, workspace_id) VALUES ($1, $2, $3, 'ready', $4) RETURNING id",
+                     [userId, normalizedRole, cachedData, workspaceId || null]
                    );
                    analysisId = cloneResult.rows[0].id;
                    console.log(`Cloned GLOBAL cache to USER cache for User ${userId}`);
@@ -135,8 +145,8 @@ router.post('/analyze', protect, async (req, res) => {
           await pool.query("UPDATE role_analyses SET lifecycle_status = 'processing' WHERE id = $1", [analysisId]);
        } else {
           const insertResult = await pool.query(
-            "INSERT INTO role_analyses (user_id, role_title, lifecycle_status) VALUES ($1, $2, 'processing') RETURNING id",
-            [userId, normalizedRole]
+            "INSERT INTO role_analyses (user_id, role_title, lifecycle_status, workspace_id) VALUES ($1, $2, 'processing', $3) RETURNING id",
+            [userId, normalizedRole, workspaceId || null]
           );
           analysisId = insertResult.rows[0].id;
        }
@@ -381,8 +391,8 @@ router.post('/analyze', protect, async (req, res) => {
                  );
               } else {
                  await pool.query(
-                  "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status, schema_version) VALUES ($1, $2, $3, 'ready', 2)",
-                  [userId, normalizedRole, analysisData]
+                  "INSERT INTO role_analyses (user_id, role_title, analysis_data, lifecycle_status, schema_version, workspace_id) VALUES ($1, $2, $3, 'ready', 2, $4)",
+                  [userId, normalizedRole, analysisData, workspaceId || null]
                  );
               }
               // Mark onboarding complete

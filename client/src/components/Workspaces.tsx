@@ -63,7 +63,7 @@ export default function Workspaces() {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiFetch(`/api/workspaces?userId=${user?.id}`);
+      const res = await apiFetch(`/api/workspaces`);
       if (!res.ok) throw new Error('Failed to fetch workspaces');
       const data = await res.json();
       
@@ -82,7 +82,7 @@ export default function Workspaces() {
     const res = await apiFetch('/api/workspaces', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user?.id, name, role })
+      body: JSON.stringify({ name, role })
     });
     const data = await res.json();
     if (data.success) {
@@ -95,10 +95,10 @@ export default function Workspaces() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this career track? This will permanently remove its associated records.')) return;
     try {
-      const res = await apiFetch(`/api/workspaces/${id}?userId=${user?.id}`, {
+      const res = await apiFetch(`/api/workspaces/${id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id })
+        body: JSON.stringify({})
       });
       if (res.ok) {
         setWorkspaces(prev => prev.filter(w => w.id !== id));
@@ -119,7 +119,7 @@ export default function Workspaces() {
     const res = await apiFetch(`/api/workspaces/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user?.id, name: newName })
+      body: JSON.stringify({ name: newName })
     });
     if (res.ok) {
       setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, name: newName } : w));
@@ -137,17 +137,22 @@ export default function Workspaces() {
       const response = await apiFetch('/api/role/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: workspace.role, userId: user?.id || null, forceRefresh: false })
+        body: JSON.stringify({ role: workspace.role, forceRefresh: false, workspaceId: workspace.id })
       });
       const data = await response.json();
 
       if (response.ok && data.success) {
         if (user?.id) {
-            await apiFetch('/api/workspaces/set-active', {
+            const setActiveRes = await apiFetch('/api/workspaces/set-active', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id, workspaceId: workspace.id })
+                body: JSON.stringify({ workspaceId: workspace.id })
             });
+            if (!setActiveRes.ok) {
+                showAlert('Failed to switch active track. Please try again.', 'error');
+                setSwitchingTo(null);
+                return;
+            }
             setCurrentWorkspaceId(workspace.id);
             const updatedUser = { ...user, current_workspace_id: workspace.id };
             sessionStorage.setItem('user', JSON.stringify(updatedUser));

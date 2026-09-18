@@ -5,11 +5,8 @@ const pool = require('../config/db');
 // GET /api/workspaces - Get all workspaces for a user
 router.get('/', async (req, res) => {
     try {
-        const { userId } = req.query;
-        if (!userId) {
-            return res.status(400).json({ error: 'userId is required' });
-        }
-
+        const userId = req.user.id;
+        
         const result = await pool.query(
             'SELECT * FROM workspaces WHERE user_id = $1 ORDER BY created_at DESC',
             [userId]
@@ -24,10 +21,11 @@ router.get('/', async (req, res) => {
 // POST /api/workspaces - Create a new workspace
 router.post('/', async (req, res) => {
     try {
-        const { userId, name, role } = req.body;
+        const userId = req.user.id;
+        const { name, role } = req.body;
         
-        if (!userId || !name || !role) {
-            return res.status(400).json({ error: 'userId, name, and role are required' });
+        if (!name || !role) {
+            return res.status(400).json({ error: 'name and role are required' });
         }
 
         const result = await pool.query(
@@ -45,11 +43,7 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const userId = req.body.userId || req.query.userId; // To verify ownership
-
-        if (!userId) {
-            return res.status(400).json({ error: 'userId is required to delete' });
-        }
+        const userId = req.user.id;
 
         const result = await pool.query(
             'DELETE FROM workspaces WHERE id = $1 AND user_id = $2 RETURNING *',
@@ -69,10 +63,18 @@ router.delete('/:id', async (req, res) => {
 // POST /api/workspaces/set-active
 router.post('/set-active', async (req, res) => {
     try {
-        const { userId, workspaceId } = req.body;
-        if (!userId || !workspaceId) {
-            return res.status(400).json({ error: 'userId and workspaceId are required' });
+        const userId = req.user.id;
+        const { workspaceId } = req.body;
+        if (!workspaceId) {
+            return res.status(400).json({ error: 'workspaceId is required' });
         }
+        
+        // Verify ownership
+        const workspaceResult = await pool.query('SELECT id FROM workspaces WHERE id = $1 AND user_id = $2', [workspaceId, userId]);
+        if (workspaceResult.rowCount === 0) {
+            return res.status(404).json({ error: 'Workspace not found or unauthorized' });
+        }
+
         await pool.query('UPDATE users SET current_workspace_id = $1 WHERE id = $2', [workspaceId, userId]);
         res.json({ success: true });
     } catch (error) {
@@ -85,10 +87,11 @@ router.post('/set-active', async (req, res) => {
 router.patch('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { userId, name } = req.body;
+        const userId = req.user.id;
+        const { name } = req.body;
 
-        if (!userId || !name || !name.trim()) {
-            return res.status(400).json({ error: 'userId and name are required' });
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'name is required' });
         }
 
         const result = await pool.query(
