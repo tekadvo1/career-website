@@ -7,11 +7,55 @@ router.get('/', async (req, res) => {
     try {
         const userId = req.user.id;
         
-        const result = await pool.query(
-            'SELECT * FROM workspaces WHERE user_id = $1 ORDER BY created_at DESC',
-            [userId]
-        );
-        res.json({ success: true, workspaces: result.rows });
+        const result = await pool.query(`
+            SELECT 
+                w.id, w.user_id, w.name, w.role, w.created_at, w.last_opened_lesson,
+                ra.analysis_data,
+                (SELECT COUNT(*) FROM roadmap_progress rp WHERE rp.workspace_id = w.id) as completed_count,
+                (SELECT json_agg(topic_name) FROM roadmap_progress rp WHERE rp.workspace_id = w.id) as completed_topics
+            FROM workspaces w
+            LEFT JOIN role_analyses ra ON w.id = ra.workspace_id
+            WHERE w.user_id = $1 
+            ORDER BY w.created_at DESC
+        `, [userId]);
+
+        const enrichedWorkspaces = result.rows.map(row => {
+            const hasPlan = !!row.analysis_data;
+            const completedCount = parseInt(row.completed_count) || 0;
+            const completedTopics = row.completed_topics || [];
+            
+            let totalCount = 0;
+            let nextEligibleLesson = null;
+
+            if (hasPlan && row.analysis_data.roadmap) {
+                const roadmap = row.analysis_data.roadmap;
+                for (const phase of roadmap) {
+                    if (phase.topics) {
+                        for (const topic of phase.topics) {
+                            totalCount++;
+                            if (!nextEligibleLesson && !completedTopics.includes(topic.id)) {
+                                nextEligibleLesson = topic.id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return {
+                id: row.id,
+                user_id: row.user_id,
+                name: row.name,
+                role: row.role,
+                created_at: row.created_at,
+                lastOpenedLesson: row.last_opened_lesson,
+                hasPlan,
+                completedCount,
+                totalCount,
+                nextEligibleLesson
+            };
+        });
+
+        res.json({ success: true, workspaces: enrichedWorkspaces });
     } catch (error) {
         console.error('Error fetching workspaces:', error);
         res.status(500).json({ error: 'Failed to fetch workspaces' });
@@ -80,6 +124,33 @@ router.post('/set-active', async (req, res) => {
     } catch (error) {
         console.error('Error setting active workspace:', error);
         res.status(500).json({ error: 'Failed to set active workspace' });
+    }
+});
+
+// POST /api/workspaces/:id/last-opened
+router.post('/:id/last-opened', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const { lessonId } = req.body;
+
+        if (!lessonId) {
+            return res.status(400).json({ error: 'lessonId is required' });
+        }
+
+        const result = await pool.query(
+            'UPDATE workspaces SET last_opened_lesson = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+            [lessonId, id, userId]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Workspace not found or unauthorized' });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error setting last opened lesson:', error);
+        res.status(500).json({ error: 'Failed to set last opened lesson' });
     }
 });
 

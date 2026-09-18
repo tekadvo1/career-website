@@ -7,6 +7,11 @@ interface CareerTrackCardProps {
   role: string;
   isActive: boolean;
   isSwitching: boolean;
+  hasPlan?: boolean;
+  completedCount?: number;
+  totalCount?: number;
+  nextEligibleLesson?: string | null;
+  lastOpenedLesson?: string | null;
   onOpenTrack: () => void;
   onRename: () => void;
   onDelete: () => void;
@@ -17,6 +22,9 @@ export default function CareerTrackCard({
   role,
   isActive,
   isSwitching,
+  hasPlan = false,
+  completedCount = 0,
+  totalCount = 0,
   onOpenTrack,
   onRename,
   onDelete
@@ -39,6 +47,19 @@ export default function CareerTrackCard({
   }, [menuOpen]);
 
   const cleanRole = (r: string) => r.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+
+  let primaryActionLabel = 'Create learning plan';
+  if (hasPlan) {
+    if (completedCount === 0) {
+      primaryActionLabel = 'Start learning';
+    } else if (completedCount >= totalCount && totalCount > 0) {
+      primaryActionLabel = 'Review learning plan';
+    } else {
+      primaryActionLabel = 'Continue learning';
+    }
+  }
+
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
     <div className={`bg-white rounded-xl border ${isActive ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/20' : 'border-slate-200 shadow-sm'} transition-all duration-200 p-5 flex flex-col relative`}>
@@ -91,9 +112,24 @@ export default function CareerTrackCard({
       </div>
 
       {isActive && (
-        <p className="text-[12px] text-slate-500 font-medium mb-4">
+        <p className="text-[12px] text-slate-500 font-medium mb-3">
           This track is currently active. Learning paths and projects will use this context.
         </p>
+      )}
+
+      {hasPlan && totalCount > 0 && (
+        <div className="mb-4 flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-[12px] font-bold text-slate-700">
+            <span>{completedCount} of {totalCount} lessons completed</span>
+            <span>{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div 
+              className="bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out" 
+              style={{ width: `${progressPercent}%` }} 
+            />
+          </div>
+        </div>
       )}
 
       <div className="mt-auto pt-4 border-t border-slate-100">
@@ -113,7 +149,7 @@ export default function CareerTrackCard({
             </span>
           ) : (
             <>
-              Open track
+              {primaryActionLabel}
               <ArrowRight className="w-4 h-4" />
             </>
           )}

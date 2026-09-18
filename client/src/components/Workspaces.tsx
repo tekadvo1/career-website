@@ -14,6 +14,11 @@ interface Workspace {
   name: string;
   role: string;
   created_at: string;
+  hasPlan?: boolean;
+  completedCount?: number;
+  totalCount?: number;
+  nextEligibleLesson?: string | null;
+  lastOpenedLesson?: string | null;
 }
 
 export default function Workspaces() {
@@ -172,9 +177,22 @@ export default function Workspaces() {
         if (!visited.includes(workspace.id)) {
           visited.push(workspace.id);
           sessionStorage.setItem('visitedWorkspaces', JSON.stringify(visited));
-          navigate('/roadmap', { state: { role: workspace.role, fromWorkspaceSwitch: true } });
+          
+          let targetTopicId = workspace.lastOpenedLesson || workspace.nextEligibleLesson;
+          let navigationState: any = { role: workspace.role, fromWorkspaceSwitch: true };
+          if (targetTopicId) {
+             navigationState.openTopicId = targetTopicId;
+          }
+          
+          navigate('/roadmap', { state: navigationState });
         } else {
-          navigate('/dashboard');
+          // even if visited, let's open the correct topic
+          let targetTopicId = workspace.lastOpenedLesson || workspace.nextEligibleLesson;
+          let navigationState: any = { role: workspace.role, fromWorkspaceSwitch: true };
+          if (targetTopicId) {
+             navigationState.openTopicId = targetTopicId;
+          }
+          navigate('/roadmap', { state: navigationState });
         }
       } else {
         showAlert('Failed to sync workspace. Please try again.', 'error');
@@ -263,6 +281,11 @@ export default function Workspaces() {
                       role={activeTrack.role}
                       isActive={true}
                       isSwitching={switchingTo === activeTrack.id}
+                      hasPlan={activeTrack.hasPlan}
+                      completedCount={activeTrack.completedCount}
+                      totalCount={activeTrack.totalCount}
+                      nextEligibleLesson={activeTrack.nextEligibleLesson}
+                      lastOpenedLesson={activeTrack.lastOpenedLesson}
                       onOpenTrack={() => handleSwitchContext(activeTrack)}
                       onRename={() => setRenamingTrack(activeTrack)}
                       onDelete={() => handleDelete(activeTrack.id)}
@@ -288,6 +311,11 @@ export default function Workspaces() {
                         role={ws.role}
                         isActive={false}
                         isSwitching={switchingTo === ws.id}
+                        hasPlan={ws.hasPlan}
+                        completedCount={ws.completedCount}
+                        totalCount={ws.totalCount}
+                        nextEligibleLesson={ws.nextEligibleLesson}
+                        lastOpenedLesson={ws.lastOpenedLesson}
                         onOpenTrack={() => handleSwitchContext(ws)}
                         onRename={() => setRenamingTrack(ws)}
                         onDelete={() => handleDelete(ws.id)}

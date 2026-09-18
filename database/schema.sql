@@ -303,3 +303,12 @@ BEGIN
     ALTER TABLE roadmap_progress ADD CONSTRAINT unique_user_workspace_topic UNIQUE NULLS NOT DISTINCT (user_id, workspace_id, role, topic_name);
 
 END $$;
+
+-- Migration: Add last_opened_lesson to workspaces (Task 3)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'workspaces' AND column_name = 'last_opened_lesson') THEN
+        ALTER TABLE workspaces ADD COLUMN last_opened_lesson VARCHAR(255);
+    END IF;
+END $$;
+

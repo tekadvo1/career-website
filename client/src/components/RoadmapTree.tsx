@@ -146,7 +146,8 @@ export default function RoadmapTree() {
         
         // Progress
         if (user) {
-          const res = await apiFetch(`/api/role/progress?role=${encodeURIComponent(selectedRole)}&userId=${user.id}`);
+          const wsParam = user.current_workspace_id ? `&workspaceId=${user.current_workspace_id}` : '';
+          const res = await apiFetch(`/api/role/progress?role=${encodeURIComponent(selectedRole)}${wsParam}`);
           const data = await res.json();
           if (data.success && Array.isArray(data.completedTopics)) {
             setCompletedTopics(new Set(data.completedTopics));
@@ -249,6 +250,18 @@ export default function RoadmapTree() {
       );
   }, [searchQuery, allNodes]);
 
+  useEffect(() => {
+      if (!isLoading && allNodes.length > 0 && location.state?.openTopicId && !location.state?.topicOpened) {
+          const targetTopicId = location.state.openTopicId;
+          const targetNode = allNodes.find(n => n.topicId === targetTopicId || n.id === targetTopicId);
+          if (targetNode) {
+              setSelectedNode(targetNode);
+              // prevent infinite loops
+              window.history.replaceState({}, document.title);
+          }
+      }
+  }, [isLoading, allNodes, location.state]);
+
   const togglePhase = (phaseId: string) => {
       setCollapsedPhases(prev => {
           const next = new Set(prev);
@@ -331,12 +344,26 @@ export default function RoadmapTree() {
       }, 50);
   };
 
-  const handleOpenLesson = () => {
+  const handleOpenLesson = async () => {
       if (!selectedNode) return;
       const topicName = selectedNode.type === 'subtopic' ? selectedNode.parentTopic : selectedNode.name;
       const subtopicName = selectedNode.type === 'subtopic' ? selectedNode.name : undefined;
       const topicId = selectedNode.type === 'topic' ? selectedNode.topicId : undefined;
       const subtopics = selectedNode.type === 'topic' ? selectedNode.subtopics : null;
+
+      const userStr = sessionStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      if (user?.current_workspace_id && topicId) {
+          try {
+              await apiFetch(`/api/workspaces/${user.current_workspace_id}/last-opened`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ lessonId: topicId })
+              });
+          } catch (e) {
+              console.error('Failed to save last opened lesson:', e);
+          }
+      }
 
       navigate("/roadmap-guide", { 
           state: { 

@@ -134,7 +134,8 @@ export default function RoadmapGuideView() {
               const userStr = sessionStorage.getItem('user');
               if (userStr) {
                   const user = JSON.parse(userStr);
-                  const res = await apiFetch(`/api/role/progress?role=${encodeURIComponent(role)}&userId=${user.id}`);
+                  const wsParam = user.current_workspace_id ? `&workspaceId=${user.current_workspace_id}` : '';
+                  const res = await apiFetch(`/api/role/progress?role=${encodeURIComponent(role)}${wsParam}`);
                   const data = await res.json();
                   if (data.success && Array.isArray(data.completedTopics)) {
                       setCompletedTopics(new Set(data.completedTopics));
@@ -233,7 +234,14 @@ export default function RoadmapGuideView() {
               const response = await apiFetch('/api/role/progress', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: user.id, role, topicName: currentTopic.name, topicId: currentTopic.id, isCompleted: true })
+                  body: JSON.stringify({ 
+                      userId: user.id, 
+                      role, 
+                      topicName: currentTopic.name, 
+                      topicId: currentTopic.id, 
+                      isCompleted: true,
+                      workspaceId: user.current_workspace_id || null
+                  })
               });
               
               if (!response.ok) throw new Error("Failed to save progress");

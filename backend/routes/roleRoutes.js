@@ -958,18 +958,27 @@ router.get('/workflow-saved', protect, async (req, res) => {
 
 
 // GET /api/role/progress - Get completed topics for a role
-router.get('/progress', async (req, res) => {
-    const { role, userId } = req.query;
+router.get('/progress', protect, async (req, res) => {
+    const { role, workspaceId } = req.query;
+    const userId = req.user.id;
 
-    if (!userId || !role) {
-        return res.status(400).json({ error: 'User ID and Role are required' });
+    if (!role) {
+        return res.status(400).json({ error: 'Role is required' });
     }
 
     try {
-        const result = await pool.query(
-            "SELECT topic_name, topic_id FROM roadmap_progress WHERE user_id = $1 AND role = $2",
-            [userId, role]
-        );
+        let result;
+        if (workspaceId) {
+            result = await pool.query(
+                "SELECT topic_name, topic_id FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND workspace_id = $3",
+                [userId, role, workspaceId]
+            );
+        } else {
+            result = await pool.query(
+                "SELECT topic_name, topic_id FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND workspace_id IS NULL",
+                [userId, role]
+            );
+        }
         
         const completedTopics = result.rows.map(row => row.topic_id || row.topic_name);
         res.json({ success: true, completedTopics });
@@ -980,10 +989,11 @@ router.get('/progress', async (req, res) => {
 });
 
 // POST /api/role/progress - Toggle topic completion
-router.post('/progress', async (req, res) => {
-    const { role, userId, topicName, topicId, isCompleted } = req.body;
+router.post('/progress', protect, async (req, res) => {
+    const { role, topicName, topicId, isCompleted, workspaceId } = req.body;
+    const userId = req.user.id;
 
-    if (!userId || !role || (!topicName && !topicId)) {
+    if (!role || (!topicName && !topicId)) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -991,25 +1001,25 @@ router.post('/progress', async (req, res) => {
         if (isCompleted) {
             // Add to progress
             await pool.query(
-                "INSERT INTO roadmap_progress (user_id, role, topic_name, topic_id) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, role, topic_name) DO UPDATE SET topic_id = $4",
-                [userId, role, topicName || (topicId || 'unknown'), topicId || null]
+                "INSERT INTO roadmap_progress (user_id, role, topic_name, topic_id, workspace_id) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, workspace_id, role, topic_name) DO UPDATE SET topic_id = $4",
+                [userId, role, topicName || (topicId || 'unknown'), topicId || null, workspaceId || null]
             );
         } else {
             // Remove from progress
             if (topicId && topicName) {
                 await pool.query(
-                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND (topic_id = $3 OR topic_name = $4)",
-                    [userId, role, topicId, topicName]
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND (topic_id = $3 OR topic_name = $4) AND (workspace_id = $5 OR ($5 IS NULL AND workspace_id IS NULL))",
+                    [userId, role, topicId, topicName, workspaceId || null]
                 );
             } else if (topicId) {
                 await pool.query(
-                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_id = $3",
-                    [userId, role, topicId]
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_id = $3 AND (workspace_id = $4 OR ($4 IS NULL AND workspace_id IS NULL))",
+                    [userId, role, topicId, workspaceId || null]
                 );
             } else {
                 await pool.query(
-                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_name = $3",
-                    [userId, role, topicName]
+                    "DELETE FROM roadmap_progress WHERE user_id = $1 AND role = $2 AND topic_name = $3 AND (workspace_id = $4 OR ($4 IS NULL AND workspace_id IS NULL))",
+                    [userId, role, topicName, workspaceId || null]
                 );
             }
         }
