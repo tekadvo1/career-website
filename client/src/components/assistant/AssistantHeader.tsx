@@ -1,6 +1,5 @@
-import React from 'react';
 import { Menu, Maximize2, Minimize2, Sparkles, X } from 'lucide-react';
-import { AssistantContextData, ChatSession } from './types';
+import type { AssistantContextData } from './types';
 
 interface AssistantHeaderProps {
   currentSessionTitle?: string;

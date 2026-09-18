@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { apiFetch } from '../utils/apiFetch';
 import { getUser } from '../utils/auth';
@@ -8,10 +8,9 @@ import AssistantHeader from './assistant/AssistantHeader';
 import ConversationSidebar from './assistant/ConversationSidebar';
 import MessageList from './assistant/MessageList';
 import ChatComposer from './assistant/ChatComposer';
-import { ChatSession, Message, AssistantContextData } from './assistant/types';
+import type { ChatSession, Message, AssistantContextData } from './assistant/types';
 
 export default function AILearningAssistant() {
-  const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
   
@@ -21,7 +20,7 @@ export default function AILearningAssistant() {
   const _rawAIRole = location.state?.role || lastRoleState?.role || "Software Engineer";
   const role = _rawAIRole.replace(/\s*\([^)]*\)/g, '').replace(/\s+/g, ' ').trim() || "Software Engineer";
 
-  const [contextData, setContextData] = useState<AssistantContextData>({
+  const [contextData] = useState<AssistantContextData>({
     type: "roadmap",
     topicName: role
   });

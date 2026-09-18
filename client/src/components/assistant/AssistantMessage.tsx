@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Copy, Check, User, Sparkles } from 'lucide-react';
-import { Message } from './types';
+import type { Message } from './types';
 
 interface AssistantMessageProps {
   message: Message;
@@ -70,7 +70,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
                     </a>
                   );
                 },
-                img: ({ node, src, alt, ...props }) => {
+                img: ({ node, src, alt }) => {
                   const safeSrc = src?.startsWith('javascript:') ? '' : src;
                   return (
                     <a href={safeSrc} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:text-emerald-700 underline" title="View external image">

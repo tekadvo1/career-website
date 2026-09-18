@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState, UIEvent } from 'react';
-import { ArrowDown, Sparkles, MessageSquare, Wrench, Lightbulb, Map } from 'lucide-react';
-import { Message } from './types';
+import { useRef, useEffect, useState } from 'react';
+import type { UIEvent } from 'react';
+import { ArrowDown, Sparkles, Wrench, Lightbulb, Map } from 'lucide-react';
+import type { Message } from './types';
 import AssistantMessage from './AssistantMessage';
 
 interface MessageListProps {
