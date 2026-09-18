@@ -60,25 +60,25 @@ export default function MessageList({
         className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-300"
       >
         {messages.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center min-h-full p-8 text-center max-w-2xl mx-auto mt-12 md:mt-24">
-            <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
-              <Sparkles className="w-8 h-8 text-emerald-600" />
+          <div className="flex flex-col items-center justify-center min-h-[50vh] p-6 text-center max-w-2xl mx-auto my-auto">
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4 shadow-sm">
+              <Sparkles className="w-6 h-6 text-emerald-600" />
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+            <h2 className="text-[24px] md:text-[28px] font-bold text-slate-900 mb-2">
               What would you like to understand or work on?
             </h2>
-            <p className="text-slate-600 mb-8 max-w-md">
-              I'm here to help you debug code, explain complex concepts, and guide your learning journey.
+            <p className="text-sm md:text-base text-slate-600 mb-6 max-w-md">
+              Ask questions about your career track, discuss code, or request help with a concept.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
               {promptButtons.map((btn, i) => (
                 <button
                   key={i}
                   onClick={() => onPromptClick(btn.text)}
-                  className="flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="flex items-center gap-3 p-3 bg-white border border-slate-200 hover:border-emerald-300 hover:shadow-sm rounded-lg text-left transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <div className="bg-white p-2 rounded-lg shadow-sm border border-slate-100 shrink-0">
+                  <div className="bg-slate-50 p-1.5 rounded-md text-slate-700 shrink-0">
                     {btn.icon}
                   </div>
                   <span className="text-sm font-medium text-slate-700">{btn.text}</span>

@@ -52,7 +52,7 @@ export default function ConversationSidebar({
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200 w-full sm:w-72 shrink-0">
+    <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200 w-full sm:w-[260px] shrink-0">
       <div className="p-4 border-b border-slate-200">
         <button
           onClick={onNewChat}

@@ -250,16 +250,12 @@ export default function AILearningAssistant() {
   const currentSession = chatHistory.find(s => s.id === currentChatId);
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      {/* Global App Sidebar */}
-      {!isFocusMode && (
-        <div className="hidden lg:block w-64 shrink-0 shadow-lg z-20">
-          <Sidebar />
-        </div>
-      )}
+    <>
+      {/* Global App Sidebar - Renders absolute/fixed globally and injects body padding */}
+      {!isFocusMode && <Sidebar />}
 
       {/* Main Workspace Layout */}
-      <div className="flex flex-1 flex-col md:flex-row overflow-hidden relative">
+      <div className="flex flex-col md:flex-row bg-slate-50 relative overflow-hidden h-[calc(100vh-4rem)] md:h-[100vh]">
         
         {/* Mobile History Drawer Overlay */}
         {showHistoryPanel && (
@@ -312,6 +308,6 @@ export default function AILearningAssistant() {
           />
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -10,7 +10,7 @@ const HIDDEN_PATHS = [
   '/reset-password', '/google-callback', '/onboarding',
   '/privacy', '/privacy-policy', '/cookies', '/cookie-policy',
   '/terms', '/terms-and-conditions', '/about', '/about-us',
-  '/contact', '/contact-us', '/how-it-works',
+  '/contact', '/contact-us', '/how-it-works', '/ai-assistant'
 ];
 
 export default function WidgetDock() {
