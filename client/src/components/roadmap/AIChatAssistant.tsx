@@ -269,9 +269,7 @@ export default function AIChatAssistant({ isOpen, onClose, context, role, aiLayo
                 }
             }
             
-            const finalMessages = [...newMessages, {
-                id: aiMessageId, role: "assistant" as const, content: aiContent, timestamp: new Date().toISOString()
-            }];
+
             syncChatHistoryToDB();
 
         } catch (error) {
